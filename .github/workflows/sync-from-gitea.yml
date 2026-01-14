@@ -1,1 +1,77 @@
+name: Sync from Gitea
 
+on:
+  # 监听 repository_dispatch 事件
+  repository_dispatch:
+    types: [gitea_push]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+          fetch-depth: 0  # 获取所有历史记录
+          
+      # 2. 设置 Git 用户信息
+      - name: Setup Git
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions@github.com"
+          
+      # 3. 添加 Gitea 远程仓库
+      - name: Add Gitea remote
+        run: |
+          # 使用传入的参数构建 Gitea URL
+          GITEA_URL="${{ github.event.client_payload.gitea_url }}"
+          # 如果有 token，添加到 URL 中
+          if [ -n "${{ secrets.GITEA_TOKEN }}" ]; then
+            # 将 URL 转换为带 token 的形式
+            # 格式: https://username:token@gitea.domain.com/user/repo.git
+            GITEA_URL=$(echo "$GITEA_URL" | sed "s|https://|https://${{ secrets.GITEA_USER }}:${{ secrets.GITEA_TOKEN }}@|")
+          fi
+          
+          git remote add gitea $GITEA_URL
+          
+      # 4. 拉取 Gitea 更新
+      - name: Fetch from Gitea
+        run: |
+          git fetch gitea
+          
+      # 5. 获取要同步的分支
+      - name: Get branch info
+        id: branch
+        run: |
+          # 从 Webhook 数据中获取分支名
+          REF="${{ github.event.client_payload.ref }}"
+          BRANCH=${REF#refs/heads/}
+          echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
+          
+      # 6. 同步分支
+      - name: Sync branch
+        run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          
+          # 检查分支是否存在
+          if git show-ref --verify --quiet "refs/remotes/gitea/$BRANCH"; then
+            echo "同步分支: $BRANCH"
+            
+            # 切换到该分支或创建
+            git checkout -B $BRANCH gitea/$BRANCH 2>/dev/null || git checkout $BRANCH
+            
+            # 合并更新（快进合并）
+            git merge --ff-only gitea/$BRANCH || echo "无法快进合并，尝试强制推送"
+            
+            # 推送到 GitHub
+            git push origin $BRANCH
+          else
+            echo "分支 $BRANCH 在 Gitea 中不存在"
+          fi
+          
+      # 7. 同步所有标签
+      - name: Sync tags
+        run: |
+          git push origin --tags --force
