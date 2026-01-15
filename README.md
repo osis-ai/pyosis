@@ -8,3 +8,7 @@
 pip install osis-python
 
 ```
+
+## Usage
+
+首先需要安装最新版OSIS，并配置好python环境变量

@@ -3,25 +3,64 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "osis-python"  # PyPI上显示的名称（必须唯一）
+# PyPI 上的包名
+name = "osis-python"
+# 版本号
 version = "0.1.0"
+# 作者信息
 authors = [
     {name = "CCCC Highway Consultant Co. Ltd.", email = "support@osisbim.com"},
 ]
+# 描述
 description = "A Python client library for Osis APDL"
+# 详细描述文件
 readme = "README.md"
+# 许可证文件
+license = {file = "LICENSE"}
+# Python 版本要求
 requires-python = ">=3.11"
+# 分类器
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+# 依赖
+dependencies = [
+    "langchain>=1.0.3",
+    "langchain-core>=1.0.3",
+    "langchain-openai>=1.0.2",
+    "pydantic>=2.12.4",
+    "pydantic_core>=2.41.5",
 ]
 
+# 项目链接
 [project.urls]
 Homepage = "https://github.com/osis-ai/pyosis"
+Documentation = "https://github.com/osis-ai/pyosis#readme"
+Repository = "https://github.com/osis-ai/pyosis.git"
+BugTracker = "https://github.com/osis-ai/pyosis/issues"
 
+# 可选依赖（如果有的话）
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "black>=23.0",
+    "mypy>=1.0",
+]
+test = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+# 包发现配置
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# 包含的包数据
 [tool.setuptools.package-data]
-"*" = ["*.txt", "*.md"]
+"*" = ["*.txt", "*.md", "*.json"]
