@@ -5,6 +5,12 @@ on:
   release:
     types: [published]
 
+    # 关键：设置全局权限
+permissions:
+  contents: write  # 创建 Release 和上传 Assets 需要这个
+  issues: write    # 可选，如果要在 Release 中关联 issue
+  pull-requests: write  # 可选
+  
 jobs:
   publish:
     runs-on: ubuntu-latest
