@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # PyPI 上的包名
 name = "osis-python"
 # 版本号
-version = "0.1.3"
+dynamic = ["version"]
 # 作者信息
 authors = [
     {name = "CCCC Highway Consultant Co. Ltd.", email = "support@osisbim.com"},
@@ -37,6 +37,9 @@ dependencies = [
     "pydantic>=2.12.4",
     "pydantic_core>=2.41.5",
 ]
+
+[tool.setuptools.dynamic]
+version = {attr = "pyosis.__version__"}
 
 # 项目链接
 [project.urls]
