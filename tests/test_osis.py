@@ -26,11 +26,11 @@ osis_ln_srch(0)
 osis_auto_ts(0)
 osis_mod_opt(0)
 
-osis_section_circle(1, "圆形截面1", "Circle", "Hollow", 0.219, 0.012)
-osis_section_circle(2, "圆形截面2", "Circle", "Hollow", 0.180, 0.008)
-osis_section_circle(3, "圆形截面3", "Circle", "Hollow", 0.114, 0.005)
-osis_section_circle(4, "圆形截面4", "Circle", "Hollow", 0.089, 0.004)
-osis_section_circle(5, "圆形截面5", "Circle", "Hollow", 0.045, 0.003)
+osis_section_circle(1, "圆形截面1", "CIRCLE", "Hollow", 0.219, 0.012)
+osis_section_circle(2, "圆形截面2", "CIRCLE", "Hollow", 0.180, 0.008)
+osis_section_circle(3, "圆形截面3", "CIRCLE", "Hollow", 0.114, 0.005)
+osis_section_circle(4, "圆形截面4", "CIRCLE", "Hollow", 0.089, 0.004)
+osis_section_circle(5, "圆形截面5", "CIRCLE", "Hollow", 0.045, 0.003)
 
 osis_material_steel(1, "钢材1", "STEEL", "JTGD64_2015", "Q345", 0.05)
 
@@ -40,11 +40,6 @@ osis_node(2, 15, 5, 0)
 # 荷载作用节点
 osis_node(3, 7.5, 0, 0)
 osis_node(4, 20, 0, 0)
-
-# osis_element(1, "Truss", {"nNode1": 1, "nNode2": 3, "nMat": 1, "nSec1": 1, "nSec2": 1, "dStrain": 0.00})
-# osis_element(2, "Truss", {"nNode1": 2, "nNode2": 3, "nMat": 1, "nSec1": 1, "nSec2": 1, "dStrain": 0.00})
-# osis_element(3, "Truss", {"nNode1": 2, "nNode2": 4, "nMat": 1, "nSec1": 1, "nSec2": 1, "dStrain": 0.00})
-# osis_element(4, "Truss", {"nNode1": 3, "nNode2": 4, "nMat": 1, "nSec1": 1, "nSec2": 1, "dStrain": 0.00})
 
 osis_element_beam3d(1, "BEAM3D", 1, 3, 1, 4, 4, 1, 1, 0.00, 0, 0.00, 0)
 osis_element_beam3d(2, "BEAM3D", 2, 3, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
