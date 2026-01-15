@@ -1,0 +1,42 @@
+name: Publish Python Package
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.x'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+    - name: Build package
+      run: python -m build
+    
+    # 检查构建了哪些文件
+    - name: List built files
+      run: |
+        echo "构建的文件:"
+        ls -la dist/
+    
+    - name: Publish to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+    
+    # 新增：上传构建产物到 GitHub Release
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      if: github.event_name == 'release'
+      with:
+        files: |
+          dist/*.whl
+          dist/*.tar.gz
