@@ -1,27 +1,48 @@
-﻿################################################################################
-# 此 .gitignore 文件已由 Microsoft(R) Visual Studio 自动创建。
-################################################################################
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+env.bak/
+venv.bak/
 
-/PyInterface/Debug
-/PyInterface/Release
+# Build artifacts
+dist/
+build/
+*.egg-info/
+*.egg
 
-*.pyc
-/Python/__pycache__
-/Python/pyosis/__pycache__
-/Python/pyosis/ai/__pycache__
-/Python/pyosis/ai/agents/__pycache__
-/Python/pyosis/analysis/__pycache__
-/Python/pyosis/boundary/__pycache__
-/Python/pyosis/control/__pycache__
-/Python/pyosis/core/__pycache__
-/Python/pyosis/element/__pycache__
-/Python/pyosis/general/__pycache__
-/Python/pyosis/live/__pycache__
-/Python/pyosis/load/__pycache__
-/Python/pyosis/material/__pycache__
-/Python/pyosis/node/__pycache__
-/Python/pyosis/post/__pycache__
-/Python/pyosis/property/__pycache__
-/Python/pyosis/quick_building/__pycache__
-/Python/pyosis/section/__pycache__
-/Python/pyosis/stage/__pycache__
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PyPI upload
+.eggs/
+*.whl
+*.tar.gz

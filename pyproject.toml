@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osis-python"  # PyPI上显示的名称（必须唯一）
+version = "0.1.0"
+authors = [
+    {name = "CCCC Highway Consultant Co. Ltd.", email = "support@osisbim.com"},
+]
+description = "A Python client library for Osis APDL"
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/osis-ai/pyosis"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["*.txt", "*.md"]
