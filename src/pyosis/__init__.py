@@ -7,7 +7,7 @@ A library for extending OSIS functionality.
 A library that allows users to use CAE with great flexibility.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.1.2"
 __author__ = "Li Zihao" # 中交公路规划设计院 - 工程技术研究中心 - 生产数智化研究室
 
 # from .core import engine
