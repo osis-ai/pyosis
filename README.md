@@ -1,3 +1,5 @@
+[简体中文](README.zh-CN.md) | [English](README.md)
+
 # pyosis
 
 Python client library for OSIS Bridge Analysis Platform

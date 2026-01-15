@@ -1,3 +1,5 @@
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 # pyosis
 
 中交公路规划设计院自研OSIS桥隧分析平台的Python接口库`pyosis`
