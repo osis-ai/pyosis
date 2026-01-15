@@ -7,6 +7,10 @@
 ```bash
 pip install osis-python
 ```
+如果您的镜像站未同步`pyosis`，请使用以下命令：
+```bash
+pip install osis-python -i https://pypi.org/simple
+```
 
 ## Usage
 
@@ -90,4 +94,4 @@ def dict_to_json_txt(data, filename):
 dict_to_json_txt(ef, "output.json")
 ```
 
-在OSIS中选择并运行这个脚本，如果一切正常的话，您将会看到OSIS开始了计算，并在`C:\Program Files\osis`下生成了一个名为`output.json`的文件被生成，其中包含了OSIS计算内力的结果。
+在OSIS中选择并运行这个脚本，如果一切正常的话，您将会看到OSIS开始了计算，并在`C:\Program Files\osis`下生成了一个名为`output.json`的文件，其中包含了OSIS计算内力的结果。
