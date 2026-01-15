@@ -1,0 +1,5 @@
+langchain==1.0.3
+langchain-core==1.0.3
+langchain-openai==1.0.2
+pydantic==2.12.4
+pydantic_core==2.41.5
