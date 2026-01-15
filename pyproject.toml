@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 # PyPI 上的包名
 name = "osis-python"
 # 版本号
-version = "0.1.1"
+version = "0.1.2"
 # 作者信息
 authors = [
     {name = "CCCC Highway Consultant Co. Ltd.", email = "support@osisbim.com"},
