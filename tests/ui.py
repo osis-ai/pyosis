@@ -3,7 +3,7 @@ from tkinter import ttk, scrolledtext
 import time
 import threading
 import queue
-
+ 
 class ChatInterface:
     def __init__(self, root, on_send_message=None):
         self.root = root

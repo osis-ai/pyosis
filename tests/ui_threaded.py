@@ -4,7 +4,7 @@ import time
 import threading
 import queue
 import sys
-
+ 
 class ThreadedChatInterface(threading.Thread):
     """
     线程化的聊天界面类
