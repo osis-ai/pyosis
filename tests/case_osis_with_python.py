@@ -12,6 +12,7 @@ import debugpy
 # print("调试器已连接，开始执行...")
 
 # 导入OSIS功能
+from pyosis.core import osis_run
 from pyosis.control import *
 from pyosis.general import *
 from pyosis.section import *
@@ -125,13 +126,13 @@ def calculate_internal_forces(nodes, edges, loads, load_node_ids, section_ids):
     osis_auto_ts(0)
     osis_mod_opt(0)
 
-    osis_section(1, "圆形截面1", "Circle", {"CircleType": "Hollow", "D": 0.219,"Tw": 0.012})
-    osis_section(2, "圆形截面2", "Circle", {"CircleType": "Hollow", "D": 0.180,"Tw": 0.008})
-    osis_section(3, "圆形截面3", "Circle", {"CircleType": "Hollow", "D": 0.114,"Tw": 0.005})
-    osis_section(4, "圆形截面4", "Circle", {"CircleType": "Hollow", "D": 0.089,"Tw": 0.004})
-    osis_section(5, "圆形截面5", "Circle", {"CircleType": "Hollow", "D": 0.045,"Tw": 0.003})
+    osis_section_circle(1, "圆形截面1", "CIRCLE", "Hollow", 0.219, 0.012)
+    osis_section_circle(2, "圆形截面2", "CIRCLE", "Hollow", 0.180, 0.008)
+    osis_section_circle(3, "圆形截面3", "CIRCLE", "Hollow", 0.114, 0.005)
+    osis_section_circle(4, "圆形截面4", "CIRCLE", "Hollow", 0.089, 0.004)
+    osis_section_circle(5, "圆形截面5", "CIRCLE", "Hollow", 0.045, 0.003)
 
-    osis_material(1, "钢材1", "STEEL", "JTGD64_2015", "Q345", -1, 0.05)
+    osis_material_steel(1, "钢材1", "STEEL", "JTGD64_2015", "Q345", 0.05)
 
     # 需要调整的
     for i in range(len(nodes)):
@@ -140,19 +141,22 @@ def calculate_internal_forces(nodes, edges, loads, load_node_ids, section_ids):
 
     for i in range(len(edges)):
         e = edges[i]
-        osis_element(i + 1, "BEAM3D", {"nNode1": e[0] + 1, "nNode2": e[1] + 1, "nMat": 1, "nSec1": section_ids[i] + 1, "nSec2": section_ids[i] + 1, 
-          "nYTrans": 1, "nZTrans": 1, "dStrain": 0.00, "bFlag": 0, "dTheta": 0.00, "bWarping": 0})
+        
+        osis_element_beam3d(1, "BEAM3D", e[0] + 1, e[1] + 1, 1, section_ids[i] + 1, section_ids[i] + 1,
+                             1, 1, 0.00, 0, 0.00, 0)
 
-    osis_boundary(1, "GENERAL", {"nCoor": -1, "bDX": 1, "bDY": 1, "bDZ": 1, "bRX": 1, "bRY": 1, "bRZ": 1, "bRW": 1})
+    osis_boundary_general(1, "GENERAL", "", 1, 1, 1, 1, 1, 1, 1)
     osis_assign_boundary(1, "a", [1, 2])
 
     osis_loadcase("自定义工况1", "USER", 1, "两个力")
     for i in range(len(loads)):
         l = loads[i]        # 力的大小  单位 kN
         idx = load_node_ids[i]  # 节点ID
-        osis_load("NFORCE", "自定义工况1", {"nNO": idx + 1, "dFX": l[0] * 1000, "dFY": l[1] * 1000, "dFZ": 0, "dMX": 0, "dMY": 0, "dMZ": 0})
+        
+        osis_load_nforce("NFORCE", "自定义工况1", idx + 1, l[0] * 1000, l[1] * 1000, 0, 0, 0, 0)
 
     osis_solve()
+    osis_run()      # 让OSIS执行所有前处理命令
     isok, error, ef = osis_elem_force("自定义工况1", "EF", "BEAM3D")
     dict_to_json_txt(ef, "liu_output.json")   # 保存结果用于调试
     # log_to_file(f"ef = {ef}\n")
