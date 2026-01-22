@@ -29,6 +29,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
+
 # 依赖
 dependencies = [
     "langchain>=1.0.3",
@@ -36,6 +37,10 @@ dependencies = [
     "langchain-openai>=1.0.2",
     "pydantic>=2.12.4",
     "pydantic_core>=2.41.5",
+    "fastapi>=0.128.0",
+    "httpx>=0.28.1",
+    "openai>=2.7.1",
+    "uvicorn>=0.40.0",
 ]
 
 [tool.setuptools.dynamic]
@@ -48,7 +53,7 @@ Documentation = "https://github.com/osis-ai/pyosis#readme"
 Repository = "https://github.com/osis-ai/pyosis.git"
 BugTracker = "https://github.com/osis-ai/pyosis/issues"
 
-# 可选依赖（如果有的话）
+# 可选依赖
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
