@@ -3,3 +3,7 @@ langchain-core==1.0.3
 langchain-openai==1.0.2
 pydantic==2.12.4
 pydantic_core==2.41.5
+fastapi==0.128.0
+httpx==0.28.1
+openai==2.7.1
+uvicorn==0.40.0
