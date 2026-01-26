@@ -1,5 +1,5 @@
 '''
-pyosis.quick_building.py.interface 的 Docstring
+pyosis.quick_building.interface 的 Docstring
 '''
 from typing import Tuple, Literal
 from ..core import *
@@ -14,7 +14,8 @@ from ..core import *
 
 def osis_set_qb_bridge_type(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEAM", "CONTINUOUSSMALLBOXBEAM", "CONTINUOUSTBEAM"]):
     '''
-    快速建模设置桥梁类型
+    ## 快速建模设置桥梁类型
+    pyosis.quick_building.osis_set_qb_bridge_type
 
     Args:
         eBridgeType (str): 桥梁类型
@@ -46,7 +47,8 @@ def osis_set_qb_overall(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEA
                     dKxOfAbutment1: float=0, dKyOfAbutment1: float=0, dKzOfAbutment1: float=0, 
                     dKxOfAbutment2: float=0, dKyOfAbutment2: float=0, dKzOfAbutment2: float=0, dElasticLength: float=0.3) -> Tuple[bool, str]:
     '''
-    快速建模设置桥梁总体数据
+    ## 快速建模设置桥梁总体数据
+    pyosis.quick_building.osis_set_qb_overall
 
     Args:
         eBridgeType (str): 桥梁类型
@@ -75,7 +77,8 @@ def osis_set_qb_overall(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEA
 def osis_set_qb_portrait(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEAM", "CONTINUOUSSMALLBOXBEAM", "CONTINUOUSTBEAM"], dEleLengthMin: float=0.5, dEleLengthMax: float=2.0, 
                       S1: float=0.04, L1: float=0.8, F1: float=2.0, Tb: float=0.3, Tw: float=0.3, D1: float=0.54):
     '''
-    快速建模设置桥梁纵向参数等
+    ## 快速建模设置桥梁纵向参数等
+    pyosis.quick_building.osis_set_qb_portrait
 
     Args:
         eBridgeType (str): 桥梁类型
@@ -105,7 +108,8 @@ def osis_set_qb_load(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEAM",
                   dTransVehDistribution: float=1, dFundFreq: float=0, dWarming: float=20, dCooling: float=-20, 
                   T1: float=14.0, T2: float=5.5, dSupSettle: float=0):
     '''
-    快速建模设置桥梁荷载
+    ## 快速建模设置桥梁荷载
+    pyosis.quick_building.osis_set_qb_load
     
     Args:
         eBridgeType (str): 桥梁类型
@@ -159,7 +163,8 @@ def osis_set_qb_tendon(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEAM
                                             {"name": "N4", "prop": "15-6", "Le": 0.16, "He": 0.60, "A": 5, "Hm": 0.09, "R": 45, "stress": 1.395e9, "tieNums": 2},
                                             {"name": "N5", "prop": "15-5", "Le": 0.16, "He": 0.1550, "A": 2, "Hm": 0.09, "R": 45, "stress": 1.395e9, "tieNums": 2}]):
     '''
-    快速建模设置桥梁钢束
+    ## 快速建模设置桥梁钢束
+    pyosis.quick_building.osis_set_qb_tendon
     
     Args:
         eBridgeType (str): 桥梁类型
@@ -192,7 +197,8 @@ def osis_set_qb_stage(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEAM"
                                           {"stageNum": 4, "name": "徐变十年", "state": "持续十年时间", "duration": "3650", "age": ""},
                                           {"stageNum": 5, "name": "运营阶段", "state": "移动荷载、温度荷载、风荷载等运营阶段的荷载", "duration": "3650", "age": ""}]):
     '''
-    快速建模设置桥梁施工阶段
+    ## 快速建模设置桥梁施工阶段
+    pyosis.quick_building.osis_set_qb_stage
     
     Args:
         eBridgeType (str): 桥梁类型
@@ -216,13 +222,13 @@ def osis_set_qb_stage(eBridgeType: Literal["HOLLOWSLAB", "SMALLBOXBEAM", "TBEAM"
 
 def osis_create_qb_bridge():
     '''
-    开始创建桥梁
+    ## 开始创建桥梁
+    pyosis.quick_building.osis_create_qb_bridge
 
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''
     return osis_run("/control,quickCreateModel")
-    # return osis_execute_qb("quickCreateModel")
 
 
 ## 老的写法，快速建模简化版
