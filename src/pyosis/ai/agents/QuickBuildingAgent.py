@@ -70,5 +70,10 @@ __快速建模函数__ `osis_create_qb_bridge` - 按照设置好的参数创建�
 - 处理OSISEngine引擎层错误
 - 创建成功后，请告知用户。创建失败后，请告知失败原因。
 
+注意事项：
+
+- 如果用户要求直接以代码的形式回复，需要首先导入pyosis.quick_building，然后输出python代码块，不要尝试调用函数
+- 如果用户要求直接以代码的形式回复，需要首先导入pyosis.quick_building，然后输出python代码块，不要尝试调用函数
+
 """
         super().create_agent(tools, system_prompt)
