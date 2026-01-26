@@ -26,7 +26,8 @@ from ..core import REGISTRY
 @REGISTRY.register("Boundary")
 def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL", nCoor: int = -1, bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1, bRW: bool = 1):
     '''
-    定义或修改一般边界
+    ## 定义或修改一般边界
+    pyosis.boundary.osis_boundary_general
     
     Args:
         nBd (int): 编号
@@ -48,7 +49,8 @@ def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL",
 @REGISTRY.register("AsgnBd")
 def osis_assign_boundary(nBd: int=1, eOP: Literal["a", "s", "r", "aa", "ra"]="a", param: list=[]):
     '''
-    分配边界给节点(一般支撑，节点弹性支撑)
+    ## 分配边界给节点(一般支撑，节点弹性支撑)
+    pyosis.boundary.osis_assign_boundary
     
     Args:
         nBd (int): 边界编号
@@ -68,7 +70,8 @@ def osis_assign_boundary(nBd: int=1, eOP: Literal["a", "s", "r", "aa", "ra"]="a"
 @REGISTRY.register("BdGrp")
 def osis_boundary_group(strName: str, eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], param: list=[]):
     '''
-    添加或移除边界组
+    ## 添加或移除边界组
+    pyosis.boundary.osis_boundary_group
     
     Args:
         strName (str): 边界组名
