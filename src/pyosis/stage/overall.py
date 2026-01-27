@@ -6,7 +6,7 @@ from typing import Literal
 from ..core import REGISTRY
 
 
-@REGISTRY("Stage")
+@REGISTRY.register("Stage")
 def stage(nIndex: int, strLCName: str, nDuration: int):
     """创建或修改施工阶段
 
@@ -25,7 +25,7 @@ def stage(nIndex: int, strLCName: str, nDuration: int):
     """
     pass
 
-@REGISTRY("StageDel")
+@REGISTRY.register("StageDel")
 def stage_del(nIndex: int):
     """删除施工阶段
 
@@ -40,7 +40,7 @@ def stage_del(nIndex: int):
     """
     pass
 
-@REGISTRY("StageIst")
+@REGISTRY.register("StageIst")
 def stage_insert(nInsertRef: int, nPos: Literal[0, 1], strLCName: str, nDuration: int):
     """插入施工阶段
 
@@ -68,7 +68,7 @@ def stage_insert(nInsertRef: int, nPos: Literal[0, 1], strLCName: str, nDuration
     """
     pass
 
-@REGISTRY("StageRmv")
+@REGISTRY.register("StageRmv")
 def stage_remove(nIndex: int):
     """移除插入的施工阶段
 
