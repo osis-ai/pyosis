@@ -155,12 +155,12 @@ def osis_load_utemp(eType: str="UTEMP", strLCName: str="自定义工况1", nEnti
     pass
 
 @REGISTRY.register("Load")
-def osis_load_gtemp(eType: str="UTEMP", strLCName: str="自定义工况1", nEntity: int=1, eDirect: Literal["Y", "Z"]="Y", eGTempType: Literal["R", "T", "C", "B"]="R", nNum: int=1, param: list=["", 10, 10, 0, 0]):
+def osis_load_gtemp(eType: str="GTEMP", strLCName: str="自定义工况1", nEntity: int=1, eDirect: Literal["Y", "Z"]="Y", eGTempType: Literal["R", "T", "C", "B"]="R", nNum: int=1, param: list=["", 10, 10, 0, 0]):
     '''
     创建或修改梯度温度荷载
 
     Args:
-        eType (str): 荷载类型，不区分大小写。固定为 UTEMP
+        eType (str): 荷载类型，不区分大小写。固定为 GTEMP
         strLCName (str): 荷载工况名称
         nEntity (int): 单元编号
         eDirect (str): 局部方向
