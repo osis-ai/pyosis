@@ -41,7 +41,7 @@ class OSISFunctionRegistry:
 
     ---
     Attributes:
-        commands (dict): 存储所有注册的命令，键为命令流名称，值为对应的函数
+        commands (dict): 存储所有注册的命令，键为函数名称，值为对应的函数信息
     
     Example:
         >>> REGISTRY = OSISFunctionRegistry()
@@ -76,7 +76,7 @@ class OSISFunctionRegistry:
         注册函数装饰器
         
         Args:
-            cmd_name: 命令别名，不提供则使用函数名
+            cmd_name: 命令名，不提供则使用函数名
         """
         def decorator(func):
             name = cmd_name or func.__name__
