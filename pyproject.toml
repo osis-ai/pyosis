@@ -16,7 +16,8 @@ description = "A Python client library for Osis APDL"
 # 详细描述文件
 readme = "README.md"
 # 许可证文件
-license = {file = "LICENSE"}
+license = "MIT"
+license-files = ["LICENSE"]
 # Python 版本要求
 requires-python = ">=3.11"
 # 分类器
@@ -24,7 +25,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
