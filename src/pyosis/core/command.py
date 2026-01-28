@@ -146,7 +146,9 @@ class OSISFunctionRegistry:
     def _execute_command(self, cmd) -> Tuple[bool, str, Any]:
         """执行命令（发送到软件）"""
         # _log(cmd)
-        return osis_run(cmd, self.run_mode)
+        result = osis_run(cmd, self.run_mode)
+        isok, error, *rest = result
+        return result
     
     def list_commands(self):
         """列出所有命令"""
