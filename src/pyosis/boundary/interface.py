@@ -24,7 +24,7 @@ from ..core import REGISTRY
 #     pass
 
 @REGISTRY.register("Boundary")
-def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL", nCoor: int = -1, bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1, bRW: bool = 1):
+def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL", nCoor: int = "", bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1, bRW: bool = 1):
     '''
     ## 定义或修改一般边界
     pyosis.boundary.osis_boundary_general
@@ -32,7 +32,7 @@ def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL",
     Args:
         nBd (int): 编号
         eBoundaryType (str): 固定为 GENERAL
-        nCoor (int): 局部坐标系编号，-1代表缺省
+        nCoor (int): 局部坐标系编号，"" 代表缺省
         bX (bool): 0 = 释放，1 = 约束
         bY (bool): 0 = 释放，1 = 约束
         bZ (bool): 0 = 释放，1 = 约束
@@ -45,6 +45,70 @@ def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL",
     '''
     pass
 
+
+@REGISTRY.register("Boundary")
+def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSLV", nNode: int = 1, bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1):
+    '''
+    ## 定义或修改主从约束
+    pyosis.boundary.osis_boundary_master_slave
+    
+    Args:
+        nBd (int): 编号
+        eBoundaryType (str): 固定为 MSTSLV
+        nNode (int): 主节点编号
+        bDX (bool): 0 = 释放，1 = 约束
+        bDY (bool): 0 = 释放，1 = 约束
+        bDZ (bool): 0 = 释放，1 = 约束
+        bRX (bool): 0 = 释放，1 = 约束
+        bRY (bool): 0 = 释放，1 = 约束
+        bRZ (bool): 0 = 释放，1 = 约束
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("Boundary")
+def osis_boundary_Release(nBd: int, eBoundaryType: Literal["RELEASE"], 
+                          Fxi_state: bool, Fyi_state: bool, Fzi_state: bool, Mxi_state: bool, Myi_state: bool, Mzi_state: bool, Mbi_state: bool,
+                          Fxi: float,      Fyi: float,      Fzi: float,      Mxi: float,      Myi: float,      Mzi: float,      Mbi: float,
+                          Fxj_state: bool, Fyj_state: bool, Fzj_state: bool, Mxj_state: bool, Myj_state: bool, Mzj_state: bool, Mbj_state: bool,
+                          Fxj: float,      Fyj: float,      Fzj: float,      Mxj: float,      Myj: float,      Mzj: float,      Mbj: float):
+    '''
+    ## 定义或修改释放梁端约束
+    pyosis.boundary.osis_boundary_Release
+    
+    Args:
+        nBd (int): 编号
+        eBoundaryType (str): 固定为 MSTSLV
+        \\*_state (bool): 
+            * 0 = 释放
+            * 1 = 约束
+        F\\*i and M\\*i (float): 部分约束的大小，0-1之间，表示释放后残余的约束能力的百分比
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("Boundary")
+def osis_boundary_elastic_support(nBd: int, eBoundaryType: Literal["ELSTCSPT"], nCoor: int, bX: float, bY: float, bZ: float, bRX: float, bRY: float, bRZ: float):
+    '''
+    ## 定义或修改节点弹性支撑
+    pyosis.boundary.osis_boundary_elastic_support
+    
+    Args:
+        nBd (int): 编号
+        eBoundaryType (str): 固定为 ELSTCSPT
+        nCoor (int): 局部坐标系编号
+        dDX (float): 坐标系 X 轴方向的弹性支承刚度
+        dDY (float): 坐标系 Y 轴方向的弹性支承刚度
+        dDZ (float): 坐标系 Z 轴方向的弹性支承刚度
+        dRX (float): 绕坐标系 X 轴方向的转动弹性刚度
+        dRY (float): 绕坐标系 Y 轴方向的转动弹性刚度
+        dRZ (float): 绕坐标系 Z 轴方向的转动弹性刚度
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
 
 @REGISTRY.register("AsgnBd")
 def osis_assign_boundary(nBd: int=1, eOP: Literal["a", "s", "r", "aa", "ra"]="a", param: list=[]):
