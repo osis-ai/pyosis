@@ -163,7 +163,7 @@ class OSISFunctionRegistry:
     
     def set_run_mode(self, mode: Literal["stash", "exec"]="exec"):
         '''设置命令运行模式，默认是暂存，可以提高性能'''
-        self.mode = mode
+        self.run_mode = mode
 
 # 全局函数注册表实例
 REGISTRY = OSISFunctionRegistry()       # 作用为提供python函数和命令流的映射关系，保证参数个数与顺序正常，python函数一定要注册一下
