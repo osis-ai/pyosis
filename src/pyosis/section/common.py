@@ -169,7 +169,7 @@ def osis_section_Ishape(nSec: int, strName: str, eSectionType: Literal["ISHAPE"]
 
 @REGISTRY.register('Section')
 def osis_section_smallbox(nSec: int, strName: str, eSectionType: Literal["SMALLBOX"], eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"], 
-                          H: float, Bs: float, Bc: float, Bb: float, Tt: float, Tb: float, Tw: float, i: float, Tc: float, Tc1: float, x: float, xi1: float, Tt1: float, xi2: float, yi2: float, bSlope: bool, i1: float, i2: float, R: float):
+                          H: float, Bs: float, Bm: float, Bc: float, Bb: float, Tt: float, Tb: float, Tw: float, i: float, Tc: float, Tc1: float, x: float, xi1: float, Tt1: float, xi2: float, yi2: float, bSlope: bool, i1: float, i2: float, R: float):
     """定义或修改小箱梁截面(SMALLBOX)。
 
     Args:
