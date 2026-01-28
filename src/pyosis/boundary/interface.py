@@ -68,14 +68,14 @@ def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSL
     pass
 
 @REGISTRY.register("Boundary")
-def osis_boundary_Release(nBd: int, eBoundaryType: Literal["RELEASE"], 
+def osis_boundary_release(nBd: int, eBoundaryType: Literal["RELEASE"], 
                           Fxi_state: bool, Fyi_state: bool, Fzi_state: bool, Mxi_state: bool, Myi_state: bool, Mzi_state: bool, Mbi_state: bool,
                           Fxi: float,      Fyi: float,      Fzi: float,      Mxi: float,      Myi: float,      Mzi: float,      Mbi: float,
                           Fxj_state: bool, Fyj_state: bool, Fzj_state: bool, Mxj_state: bool, Myj_state: bool, Mzj_state: bool, Mbj_state: bool,
                           Fxj: float,      Fyj: float,      Fzj: float,      Mxj: float,      Myj: float,      Mzj: float,      Mbj: float):
     '''
     ## 定义或修改释放梁端约束
-    pyosis.boundary.osis_boundary_Release
+    pyosis.boundary.osis_boundary_release
     
     Args:
         nBd (int): 编号
