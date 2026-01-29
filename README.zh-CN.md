@@ -84,4 +84,4 @@ print(osis_run())      # 让OSIS执行所有前处理命令
 
 ```
 
-在OSIS中选择并运行这个脚本，如果一切正常的话，您将会看到OSIS开始了计算，并在`C:\Program Files\osis`下生成了一个名为`output.json`的文件，其中包含了OSIS计算内力的结果。（还未完成）
+在OSIS中选择并运行这个脚本，如果一切正常的话，您将会看到OSIS完成了前处理操作。

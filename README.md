@@ -87,4 +87,4 @@ print(osis_run())      # Let OSIS execute all preprocessing commands
 
 ```
 
-Select and run this script in OSIS. If everything is normal, you will see OSIS start the calculation and generate a file named output.json in C:\Program Files\osis, containing the internal force results from OSIS. (Not yet completed)
+Select and run this script in OSIS. If everything is normal, you will see OSIS finish the preprocessing.
