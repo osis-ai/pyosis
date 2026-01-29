@@ -66,7 +66,8 @@ def osis_load_nforce(eType: str="NFORCE", strLCName: str="自定义工况1", nEn
 
 @REGISTRY.register("Load")
 def osis_load_line(eType: str="LINE", strLCName: str="自定义工况1", nEntity: int=1, eCoordSystem: Literal[0, 1]=1, eLoadType: Literal[0, 1]=1, 
-                   dOffsetXI: float=0, dOffsetYI: float=0, dOffsetZI: float=0, dFXI: float=100, dFYI: float=100, dFZI: float=0, dMXI: float=0, dMYI: float=0, dMZI: float=0):
+                   dOffsetXI: float=0, dOffsetYI: float=0, dOffsetZI: float=0, dFXI: float=100, dFYI: float=100, dFZI: float=0, dMXI: float=0, dMYI: float=0, dMZI: float=0,
+                   dOffsetXJ: float=0, dOffsetYJ: float=0, dOffsetZJ: float=0, dFXJ: float=100, dFYJ: float=100, dFZJ: float=0, dMXJ: float=0, dMYJ: float=0, dMZJ: float=0):
     '''
     创建或修改任意线荷载
 
@@ -89,6 +90,15 @@ def osis_load_line(eType: str="LINE", strLCName: str="自定义工况1", nEntity
         dMXI (float): I端坐标系x方向的集中弯矩
         dMYI (float): I端坐标系y方向的集中弯矩
         dMZI (float): I端坐标系z方向的集中弯矩
+        dOffsetXJ (float):  J端偏移量X/L，输入范围[0,1]
+        dOffsetYJ (float):  J端Y轴偏移量
+        dOffsetZJ (float):  J端Z轴偏移量
+        dFXJ (float): J端坐标系x方向的集中力
+        dFYJ (float): J端坐标系y方向的集中力
+        dFZJ (float): J端坐标系z方向的集中力
+        dMXJ (float): J端坐标系x方向的集中弯矩
+        dMYJ (float): J端坐标系y方向的集中弯矩
+        dMZJ (float): J端坐标系z方向的集中弯矩
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''
