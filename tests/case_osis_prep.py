@@ -1,14 +1,5 @@
 import json
-from pyosis.core import osis_run
-from pyosis.control import *
-from pyosis.general import *
-from pyosis.section import *
-from pyosis.material import *
-from pyosis.node import *
-from pyosis.element import *
-from pyosis.boundary import *
-from pyosis.load import *
-from pyosis.post import *
+from pyosis.core.all_func import *
 
 osis_clear()
 
@@ -54,19 +45,19 @@ osis_loadcase("自定义工况1", "USER", 1, "施加于节点3和4的两个力")
 osis_load_nforce("NFORCE", "自定义工况1", 3, 0, -1000000, 0, 0, 0, 0)
 osis_load_nforce("NFORCE", "自定义工况1", 4, 200000, 0, 0, 0, 0, 0)
 
-osis_solve()
+# osis_solve()
 
-osis_run()      # 让OSIS执行所有前处理命令
+print(osis_run())      # 让OSIS执行所有前处理命令
 
-isok, error, ef = osis_elem_force("自定义工况1", "EF", "BEAM3D")
+# isok, error, ef = osis_elem_force("自定义工况1", "EF", "BEAM3D")
 
 
-def dict_to_json_txt(data, filename):
-    """将字典以JSON格式写入文件"""
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4)
+# def dict_to_json_txt(data, filename):
+#     """将字典以JSON格式写入文件"""
+#     with open(filename, 'w', encoding='utf-8') as f:
+#         json.dump(data, f, indent=4)
     
-    print(f"字典已写入文件: {filename}")
+#     print(f"字典已写入文件: {filename}")
 
-# 使用
-dict_to_json_txt(ef, "output.json")
+# # 使用
+# dict_to_json_txt(ef, "output.json")
