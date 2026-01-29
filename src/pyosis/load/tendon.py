@@ -240,7 +240,7 @@ def osis_tendon_shape_arc2d(strName: str="钢束形状1", nNum: int=10, strProp:
         nNum (int): 钢束数量
         strProp (str): 钢束特性
         strElementGroup (str): 作用的单元组
-        strLayoutType (str): 形状类型，固定为ARC3D
+        strLayoutType (str): 形状类型，固定为ARC2D
         eType (int): 参考类型
             * 0 = 距离
             * 1 = 坐标
