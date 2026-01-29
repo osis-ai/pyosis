@@ -81,21 +81,10 @@ osis_loadcase("Custom Load Case 1", "USER", 1, "Two forces applied at nodes 3 an
 osis_load_nforce("NFORCE", "Custom Load Case 1", 3, 0, -1000000, 0, 0, 0, 0)
 osis_load_nforce("NFORCE", "Custom Load Case 1", 4, 200000, 0, 0, 0, 0, 0)
 
-osis_solve()
+# osis_solve()
 
-osis_run()      # Let OSIS execute all preprocessing commands
+print(osis_run())      # Let OSIS execute all preprocessing commands
 
-isok, error, ef = osis_elem_force("Custom Load Case 1", "EF", "BEAM3D")
-
-def dict_to_json_txt(data, filename):
-    """Write dictionary to file in JSON format"""
-    with open(filename, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=4)
-    
-    print(f"Dictionary written to file: {filename}")
-
-# Usage
-dict_to_json_txt(ef, "output.json")
 ```
 
 Select and run this script in OSIS. If everything is normal, you will see OSIS start the calculation and generate a file named output.json in C:\Program Files\osis, containing the internal force results from OSIS. (Not yet completed)
