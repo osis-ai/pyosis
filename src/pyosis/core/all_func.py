@@ -11,3 +11,4 @@ from ..property import *
 from ..general import *
 from ..section import *
 from ..stage import *
+from ..geometry import *
