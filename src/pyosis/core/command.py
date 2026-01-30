@@ -27,12 +27,12 @@ def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[boo
     e = OSISEngine.GetInstance()
     return e.OSIS_Run(strCmd, mode)
 
-# def _log(text, filename="pyosis.log"):
-#     """简单的日志函数"""
-#     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-#     with open(filename, 'a', encoding='utf-8') as f:
-#         f.write(f"[{timestamp}] {text}\n")
-#         f.close()
+def _log(text, filename="pyosis.log"):
+    """简单的日志函数"""
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(filename, 'a', encoding='utf-8') as f:
+        f.write(f"[{timestamp}] {text}\n")
+        f.close()
 
 
 class OSISFunctionRegistry:
@@ -145,7 +145,7 @@ class OSISFunctionRegistry:
     
     def _execute_command(self, cmd) -> Tuple[bool, str, Any]:
         """执行命令（发送到软件）"""
-        # _log(cmd)
+        _log(cmd)
         result = osis_run(cmd, self.run_mode)
         isok, error, *rest = result
         return result
