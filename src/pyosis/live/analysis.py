@@ -114,3 +114,21 @@ def osis_live_analysis_inc_mod(strName: str, eOP: Literal["d", "mn"], strLiveSub
             - str: 失败原因（如果操作失败）
     '''
     pass
+
+@REGISTRY.register("LiveAnalFactor")
+def osis_live_analysis_factor(strName: str, *factor: float):
+    # Name, OP, LiveSub, LiveGrade, factor, muFlag,  bridgeType, para_i..., LaneLoad_i, LaneLoad_j, ... 
+    '''
+    定义或修改活载工况的横向布载折减系数
+    
+    Args:
+        strName (str): 活载工况名称
+        *factor: factor_i, , factor_j, factor_k,...,系数，最少1个，最多10个
+        
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    '''
+    pass

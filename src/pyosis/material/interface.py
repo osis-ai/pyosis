@@ -132,7 +132,7 @@ def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["P
 @REGISTRY.register('Material')
 def osis_material_rebar(nMat: int, strName: str, eMaterialType: Literal["REBAR"], eCode: Literal["JTG3362_2018", "JTGD62_2004"], 
                         eGrade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"], dDmp: float):
-    """创建或修改钢材
+    """创建或修改钢筋
 
     Args:
         nMat (int): 材料编号
