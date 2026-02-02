@@ -132,7 +132,7 @@ def osis_live_analysis_factor(strName: str, *factor: float):
     '''
     pass
 
-@REGISTRY.register("LiveAnalFactor")
+@REGISTRY.register("LiveAnalOpt")
 def osis_live_analysis_option(strName: str, LiveSub: str, min: int, max: int):
     '''
     定义或修改活载工况的横向布载折减系数

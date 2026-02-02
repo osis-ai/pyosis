@@ -287,9 +287,9 @@ def osis_section_hollowslab(nSec: int=1, strName: str="截面1-空心板", eSect
         Tt (float): 顶板厚
         Tb (float): 底板厚
         Tw (float): 腹板下端厚
-        Tc (float): 边板悬臂端部厚，eGirderPos=Middle时设置为 ""
-        Tc1 (float): 边板悬臂根部厚，eGirderPos=Middle时设置为 ""
-        Bc (float): 边板悬臂厚，eGirderPos=Middle时设置为 ""
+        Tc (float): 边板悬臂端部厚，eGirderPos=Middle时不变
+        Tc1 (float): 边板悬臂根部厚，eGirderPos=Middle时不变
+        Bc (float): 边板悬臂厚，eGirderPos=Middle时不变
         xi1 (float): 倒角1宽（顶板）
         yi1 (float): 倒角1高
         xi2 (float): 倒角2宽（底板）
