@@ -4,7 +4,7 @@ pyosis.core.command 的 Docstring
 ===
 # OSIS命令流兼容
 '''
-
+import os
 import datetime
 import inspect
 import functools
@@ -27,13 +27,56 @@ def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[boo
     e = OSISEngine.GetInstance()
     return e.OSIS_Run(strCmd, mode)
 
-def _log(text, filename="pyosis.log"):
-    """简单的日志函数"""
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(filename, 'a', encoding='utf-8') as f:
-        f.write(f"[{timestamp}] {text}\n")
-        f.close()
+# def _log(text, filename="pyosis.log"):
+#     """简单的日志函数"""
+#     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+#     with open(filename, 'a', encoding='utf-8') as f:
+#         f.write(f"[{timestamp}] {text}\n")
+#         f.close()
 
+def _log(text, log_dir="pyosis_logs"):
+    """
+    同一轮执行（<1秒间隔）的代码追加到同一文件，
+    超过1秒则创建新文件
+    
+    Args:
+        text: 要记录的代码行
+        log_dir: 日志文件夹路径
+    Returns:
+        目标文件路径
+    """
+    # 创建日志目录
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+        files = []
+    else:
+        # 获取所有文件（排除子目录）
+        files = [os.path.join(log_dir, f) for f in os.listdir(log_dir) 
+                if os.path.isfile(os.path.join(log_dir, f))]
+    
+    current_time = datetime.datetime.now()
+    target_file = None
+    is_new_file = True
+    
+    # 查找最近修改的文件
+    if files:
+        latest_file = max(files, key=os.path.getmtime)
+        mtime = datetime.datetime.fromtimestamp(os.path.getmtime(latest_file))
+        
+        # 如果小于1秒，追加到该文件
+        if (current_time - mtime).total_seconds() < 1.0:
+            target_file = latest_file
+            is_new_file = False
+    
+    # 需要创建新文件
+    if is_new_file:
+        timestamp = current_time.strftime("%Y%m%d_%H%M%S_%f")[:-3]  # 毫秒级
+        target_file = os.path.join(log_dir, f"session_{timestamp}.txt")
+    
+    with open(target_file, 'a', encoding='utf-8') as f:
+        f.write(f"{text}\n")
+    
+    return target_file
 
 class OSISFunctionRegistry:
     """
