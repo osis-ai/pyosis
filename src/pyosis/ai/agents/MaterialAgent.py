@@ -13,7 +13,7 @@ class MaterialAgent(BaseAgent):
             tool(osis_creep_shrink), 
             tool(osis_material_conc),
             tool(osis_material_steel),
-            tool(osis_material_reber),
+            tool(osis_material_rebar),
             tool(osis_material_prestressed),
             tool(osis_material_custom),
             tool(osis_material_del),
@@ -34,6 +34,9 @@ class MaterialAgent(BaseAgent):
 - 默认创建C50混凝土材料
 
 创建成功后，请告知决策智能体。创建失败后，请告知失败原因。
+
+- 如果用户要求直接以代码的形式回复，需要首先导入:from pyosis.core.all_func import *，然后输出python代码块，不要尝试调用函数
+- 如果用户要求直接以代码的形式回复，需要首先导入:from pyosis.core.all_func import *，然后输出python代码块，不要尝试调用函数
 """
         super().create_agent(tools, system_prompt)
 

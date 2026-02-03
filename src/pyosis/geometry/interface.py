@@ -4,7 +4,6 @@ Interfaces of OSIS functions
 ========
 
 """
-from typing import Literal
 from ..core import REGISTRY
 
 from typing import Literal, List, Tuple, Optional

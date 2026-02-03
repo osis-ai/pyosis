@@ -8,7 +8,7 @@ from ..core import REGISTRY
 @REGISTRY.register("CrpShrk")
 def osis_creep_shrink(nNO: int=1, strName: str="收缩徐变1", dAvgHumidity: float=70.0, nBirthTime: int=7, dTypeCoeff: float=5.0, nBirthByShrinking: int=3):
     """
-    设置收缩徐变
+    创建或修改收缩徐变特性
 
     Args:
         nNO (int): 收缩徐变特性编号

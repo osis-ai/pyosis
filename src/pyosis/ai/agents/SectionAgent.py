@@ -35,6 +35,9 @@ class SectionAgent(BaseAgent):
 - 默认创建矩形截面
 
 创建成功后，请告知决策智能体。创建失败后，请告知失败原因。
+
+- 如果用户要求直接以代码的形式回复，需要首先导入:from pyosis.core.all_func import *，然后输出python代码块，不要尝试调用函数
+- 如果用户要求直接以代码的形式回复，需要首先导入:from pyosis.core.all_func import *，然后输出python代码块，不要尝试调用函数
 """
         super().create_agent(tools, system_prompt)
 
