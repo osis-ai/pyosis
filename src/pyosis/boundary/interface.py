@@ -44,6 +44,32 @@ def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL",
         tuple (bool, str): 是否成功，失败原因
     '''
     pass
+@REGISTRY.register("Boundary")
+def osis_boundary_elstcspt(nBd: int, eBoundaryType: Literal["ELSTCSPT"]="ELSTCSPT", nCoor: int = -1, bX: bool = 1, DX: int = 1e13, bY: bool = 1, DY: int = 1e13, bZ: bool = 1, DZ: int = 1e13, bRX: bool = 1, RX: int = 1e16, bRY: bool = 1, RY: int = 1e16, bRZ: bool = 1, RZ: int = 1e16):
+    '''
+    定义或修改弹簧单元弹性支承
+    
+    Args:
+        nBd (int): 编号
+        eBoundaryType (str): 固定为 ELSTCSPT
+        nCoor (int): 局部坐标系编号，-1代表缺省
+        bX：UX方向，0 = 弹性，1 = 固定
+        DX：坐标系X轴方向的弹性支承刚度
+        bY：UY方向，0 = 弹性，1 = 固定
+        DY：坐标系Y轴方向的弹性支承刚度
+        bZ：UZ方向，0 = 弹性，1 = 固定
+        DZ：坐标系Z轴方向的弹性支承刚度
+        bRX：RX方向，0 = 弹性，1 = 固定
+        RX：绕坐标系X轴方向的转动弹性刚度
+        bRY：RY方向，0 = 弹性，1 = 固定
+        RY：绕坐标系Y轴方向的转动弹性刚度
+        bRZ：RZ方向，0 = 弹性，1 = 固定
+        RZ：绕坐标系Z轴方向的转动弹性刚度
+        注：弹性支撑与一般边界固定的自由度相同，且弹性支撑其余自由度上约束为零时，二者结果完全相同，不存在数值差异
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
 
 
 @REGISTRY.register("Boundary")

@@ -114,3 +114,40 @@ def osis_live_analysis_inc_mod(strName: str, eOP: Literal["d", "mn"], strLiveSub
             - str: 失败原因（如果操作失败）
     '''
     pass
+
+@REGISTRY.register("LiveAnalFactor")
+def osis_live_analysis_factor(strName: str, *factor: float):
+    '''
+    定义或修改活载工况的横向布载折减系数
+    
+    Args:
+        strName (str): 活载工况名称
+        *factor: factor_i, , factor_j, factor_k,...,系数，最少1个，最多10个
+        
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    '''
+    pass
+
+@REGISTRY.register("LiveAnalOpt")
+def osis_live_analysis_option(strName: str, LiveSub: str, min: int, max: int):
+    '''
+    定义或修改活载工况的横向布载折减系数
+    
+    Args:
+        strName (str): 活载工况名称
+        LiveSub：子工况名
+        min: 加载的最少车道数
+        max: 加载的最大车道数
+        注：不输入此命令则默认min = 0，max = 最多车道数
+        
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    '''
+    pass
