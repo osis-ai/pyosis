@@ -183,7 +183,7 @@ def osis_tendon_prop_del(strName: str="钢束特性1"):
 @REGISTRY.register("TdPropMod")
 def osis_tendon_prop_mod(strOldName: str="钢束特性1", strNewName: str="钢束特性2"):
     '''
-    定义或修改荷载工况
+    修改钢束特性
 
     Args:
         strOldName (str): 旧名称
