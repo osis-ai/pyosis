@@ -199,10 +199,10 @@ def osis_element_mod(nOld: int=1, nNew: int=2):
 @REGISTRY.register("EleGrp")
 def osis_element_group(strName: str="单元组1", eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"]='a', param: list=[1]):
     '''
-    分配边界给节点(一般支撑，节点弹性支撑)
+    添加或移除单元
     
     Args:
-        strName (str): 边界编号
+        strName (str): 单元组名
         eOP (str): 操作
             * c = 创建
             * a = 添加
