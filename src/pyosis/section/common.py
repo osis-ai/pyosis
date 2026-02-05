@@ -6,50 +6,6 @@ from typing import Any, Dict, Literal
 from ..core import REGISTRY
 
 
-# @REGISTRY.register('Section')
-# def osis_section(nSec: int, strName: str, eSectionType: Literal["RECT", "ISHAPE", "TSHAPE", "CIRCLE", "LSHAPE"], params: Dict[str, Any]):
-#     """创建或修改截面
-    
-#     根据指定的截面类型和参数创建或修改截面定义。重复使用截面编号会修改现有截面。
-    
-#     Args:
-#         nSec: 截面编号，从1开始编号，所有类型的截面均使用同一编号序列
-#         strName: 截面名称，默认为"截面1"
-#         eSectionType: 截面类型，可选值：
-#             - RECT: 矩形截面
-#             - ISHAPE: 工字形截面  
-#             - TSHAPE: T形截面
-#             - CIRCLE: 圆形截面
-#             - LSHAPE: L形截面
-#         kwargs: 截面参数字典，具体参数根据eSectionType不同而变化，详细参数说明请查看函数完整文档
-    
-#     Returns:
-#         tuple (bool, str): 返回一个元组，包含：
-#             - bool: 操作是否成功
-#             - str: 失败原因（如果操作失败）
-    
-#     Examples:
-#         >>> # 创建矩形截面
-#         >>> result = osis_section(1, "截面1 (矩形)", "RECT", {
-#         ...     "TransitionType": "Fillet", "SecType": "Solid",
-#         ...     "B": 0.6, "H": 0.3
-#         ... })
-#         >>> print(result)
-#         (True, "")
-        
-#         >>> # 创建工字形截面  
-#         >>> result = osis_section(2, "截面2 (工字形)", "ISHAPE", {
-#         ...     "H": 0.4, "Bt": 0.2, "Bb": 0.2,
-#         ...     "Tt": 0.016, "Tb": 0.016, "Tw": 0.01
-#         ... })
-#         >>> print(result)
-#         (True, "")
-    
-#     """
-#     e = OSISEngine.GetInstance()
-#     return e.OSIS_Section(nSec, strName, eSectionType, params)
-
-
 @REGISTRY.register('Section')
 def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"], nDir: Literal[0, 1], H: float, B: float, Tf1: float, Tf2: float):
     """创建或修改L形截面(LShape)。
