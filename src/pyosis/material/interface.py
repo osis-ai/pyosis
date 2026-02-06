@@ -74,7 +74,6 @@ def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["P
                   Wire1770, Wire1860, Rebar785, Rebar930, Rebar1080
             * JTGD62_2004: Strand1860, Wire1670, Wire1770, Rebar785, Rebar930
         dDmp (float): 材料阻尼比
-        params (dict): 自定义材料的参数 (E, G, Mu, ExpCoeff, UnitWeight, Density, Dmp)
 
     Returns:
         tuple (bool, str):
