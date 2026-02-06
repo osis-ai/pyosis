@@ -2,7 +2,7 @@ from typing import Any, Dict, Literal
 from ..core import REGISTRY
 
 @REGISTRY.register("Rib")
-def osis_rib_flat(SecIndex: int, Type: Literal["Flat"]="Flat", Name: str, H: float, T: float):
+def osis_rib_flat(SecIndex: int, Type: Literal["Flat"], Name: str, H: float, T: float):
     """定义或修改扁平加劲肋。
 
     Args:
@@ -20,7 +20,7 @@ def osis_rib_flat(SecIndex: int, Type: Literal["Flat"]="Flat", Name: str, H: flo
     pass
 
 @REGISTRY.register("Rib")
-def osis_rib_t(SecIndex: int, Type: Literal["T"]="T", Name: str, H: float, B: float, T1: float, T2: float):
+def osis_rib_t(SecIndex: int, Type: Literal["T"], Name: str, H: float, B: float, T1: float, T2: float):
     """定义或修改T形加劲肋。
 
     Args:
@@ -40,7 +40,7 @@ def osis_rib_t(SecIndex: int, Type: Literal["T"]="T", Name: str, H: float, B: fl
     pass
 
 @REGISTRY.register("Rib")
-def osis_rib_u(SecIndex: int, Type: Literal["U"]="U", Name: str, H: float, B1: float, B2: float, T: float, R: float):
+def osis_rib_u(SecIndex: int, Type: Literal["U"], Name: str, H: float, B1: float, B2: float, T: float, R: float):
     """定义或修改U形加劲肋。
 
     Args:
