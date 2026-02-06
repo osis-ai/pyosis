@@ -28,8 +28,6 @@ def osis_livegrade_vehicle(strName: str="活载-VEHICLE", eCode: str="JTGD60_201
         strName (str): 名称
         eCode (str): 规范类型，不区分大小写，固定为 JTGD60_2015
         eLiveLoadType (str): 活载类型，不区分大小写，固定为 VEHICLE
-
-        dPara (float): 人群横向宽度
     
     Returns:
         tuple (bool, str): 是否成功，失败原因
