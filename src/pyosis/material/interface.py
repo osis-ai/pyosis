@@ -24,7 +24,7 @@ def osis_material_conc(nMat: int, strName: str, eMaterialType: Literal["CONC"],
             * JTGD62_2004
         eGrade (str): 材料等级牌号，不区分大小写。根据材料类型可选：
             * C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80
-        nCrepShrk (int): 收缩徐变特性编号
+        nCrepShrk (int): 收缩徐变特性编号，可以缺省，缺省时设为 ""
         dDmp (float): 材料阻尼比
 
     Returns:
@@ -73,7 +73,6 @@ def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["P
             * JTG3362_2018: Strand1720, Strand1860, Strand1960, Wire1470, Wire1570, 
                   Wire1770, Wire1860, Rebar785, Rebar930, Rebar1080
             * JTGD62_2004: Strand1860, Wire1670, Wire1770, Rebar785, Rebar930
-        nCrepShrk (int): 收缩徐变特性编号（混凝土材料需要，其他材料设置为-1）
         dDmp (float): 材料阻尼比
         params (dict): 自定义材料的参数 (E, G, Mu, ExpCoeff, UnitWeight, Density, Dmp)
 
