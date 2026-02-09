@@ -1,10 +1,8 @@
-
-
-from typing import Any, Dict, Literal
+from typing import Any, Dict, Literal, List
 from ..core import REGISTRY
 
 @REGISTRY.register("Section")
-def osis_section_steel_i(Index: int, Name: str, Type: Literal["STEELI"]="STEELI", 
+def osis_section_steel_i(Index: int, Name: str, Type: Literal["STEELI"], 
                          H: float, Bt: float, Bb: float, Tt: float, Tb: float, Tw: float, 
                          WebRibPos: Literal["Left", "Right", "Both"]):
     """定义或修改工字形截面。
@@ -29,7 +27,7 @@ def osis_section_steel_i(Index: int, Name: str, Type: Literal["STEELI"]="STEELI"
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_box(Index: int, Name: str, Type: Literal["STEELBOX"]="STEELBOX", 
+def osis_section_steel_box(Index: int, Name: str, Type: Literal["STEELBOX"], 
                            H: float, Bt: float, Bct: float, Bb: float, Bcb: float, 
                            Tt: float, Tb: float, Tw: float, SameLayout: Literal[0, 1]):
     """定义或修改箱型截面。
@@ -56,7 +54,7 @@ def osis_section_steel_box(Index: int, Name: str, Type: Literal["STEELBOX"]="STE
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_box_three_cell(Index: int, Name: str, Type: Literal["STEELBOXTHREECELL"]="STEELBOXTHREECELL", 
+def osis_section_steel_box_three_cell(Index: int, Name: str, Type: Literal["STEELBOXTHREECELL"], 
                                       H: float, Bt: float, Bb: float, i: float, a1: float, a2: float, 
                                       Dt: float, Tt1: float, Tt2: float, Tb1: float, Db: float, 
                                       Tb2: float, Tb3: float, Tw1: float, Dw: float, 
@@ -95,7 +93,7 @@ def osis_section_steel_box_three_cell(Index: int, Name: str, Type: Literal["STEE
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_box_itf(Index: int, Name: str, Type: Literal["STEELBOXITF"]="STEELBOXITF", 
+def osis_section_steel_box_itf(Index: int, Name: str, Type: Literal["STEELBOXITF"], 
                                H: float, B: float, Bt: float, Bb: float, i: float, a1: float, a2: float, 
                                Dt: float, Tt1: float, Tt2: float, Tt3: float, Tb1: float, 
                                Db: float, Tb2: float, Tb3: float, Tw1: float):
@@ -130,7 +128,7 @@ def osis_section_steel_box_itf(Index: int, Name: str, Type: Literal["STEELBOXITF
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_canti_box(Index: int, Name: str, Type: Literal["STEELCANTIBOX"]="STEELCANTIBOX", 
+def osis_section_steel_canti_box(Index: int, Name: str, Type: Literal["STEELCANTIBOX"], 
                                  H: float, Bt: float, Bb: float, i: float, a: float, Dt: float, 
                                  Tt1: float, Tt2: float, Tb1: float, Tw1: float, 
                                  HasWeb: Literal[0, 1], Tw2: float, 
@@ -165,7 +163,7 @@ def osis_section_steel_canti_box(Index: int, Name: str, Type: Literal["STEELCANT
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_canti_box_ibf(Index: int, Name: str, Type: Literal["STEELCANTIBOXIBF"]="STEELCANTIBOXIBF", 
+def osis_section_steel_canti_box_ibf(Index: int, Name: str, Type: Literal["STEELCANTIBOXIBF"], 
                                      H: float, Bt: float, Bb: float, Bc: float, i: float, a: float, 
                                      Dt: float, Tt1: float, Tt2: float, Tb1: float, Tb2: float, 
                                      Tw1: float, HasWeb: Literal[0, 1], Tw2: float, 
@@ -202,26 +200,31 @@ def osis_section_steel_canti_box_ibf(Index: int, Name: str, Type: Literal["STEEL
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_custom(Index: int, Name: str, Type: Literal["STEELCUSTOM"]="STEELCUSTOM", 
-                              PointMatrix: List[List[float]], LineMatrix: List[List[float]]):
+def osis_section_steel_custom(Index: int, Name: str, Type: Literal["STEELCUSTOM"], 
+                              PointMatrix: str, LineMatrix: str):
     """定义或修改自定义钢梁截面（通过点线关系输入）。
 
     Args:
         Index (int): 编号。
         Name (str): 截面名。
         Type (str): 截面类型，固定为 STEELCUSTOM。
-        PointMatrix (List[List[float]]): n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标。
-        LineMatrix (List[List[float]]): n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽。
+        PointMatrix (str): n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标,需使用osis_matrix先定义矩阵。
+        LineMatrix (str): n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽,需使用osis_matrix先定义矩阵。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
+    Example:
+        >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
+        >>> osis_matrix("PointMatrix", matrix)
+        >>> osis_matrix("LineMatrix", matrix)
+        >>> osis_section_steel_custom(1,"三角形钢截面","STEELCUSTOM","PointMatrix","LineMatrix")
     """
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_custom_plate(Index: int, Name: str, Type: Literal["STEELCUSTOMPLATE"]="STEELCUSTOMPLATE", 
+def osis_section_steel_custom_plate(Index: int, Name: str, Type: Literal["STEELCUSTOMPLATE"], 
                                     PlatePositions: List[Literal[
                                         "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
                                         "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",

@@ -3,7 +3,7 @@ from ..core import REGISTRY
 
 
 @REGISTRY.register("RebarL")
-def osis_rebar_l_point(SecNo: int, RebarLNo: int, RebarLType: Literal["Point"]="Point", 
+def osis_rebar_l_point(SecNo: int, RebarLNo: int, RebarLType: Literal["Point"], 
                        MaterialNo: int, CoorY: float, CoorZ: float, Diameter: str):
     """定义或修改纵向钢筋，通过点输入。
 
@@ -24,7 +24,7 @@ def osis_rebar_l_point(SecNo: int, RebarLNo: int, RebarLType: Literal["Point"]="
     pass
 
 @REGISTRY.register("RebarL")
-def osis_rebar_l_line_a(SecNo: int, RebarLNo: int, RebarLType: Literal["LineA"]="LineA", 
+def osis_rebar_l_line_a(SecNo: int, RebarLNo: int, RebarLType: Literal["LineA"], 
                         MaterialNo: int, YRef: Literal["Left", "Center"], YRefValue: float, 
                         ZRef: Literal["Top", "Bottom"], ZRefValue: float, Num: int, Interval: float, Diameter: str):
     """定义或修改纵向钢筋，通过直线-输入方法A输入。
@@ -50,7 +50,7 @@ def osis_rebar_l_line_a(SecNo: int, RebarLNo: int, RebarLType: Literal["LineA"]=
     pass
 
 @REGISTRY.register("RebarL")
-def osis_rebar_l_line_b(SecNo: int, RebarLNo: int, RebarLType: Literal["LineB"]="LineB", 
+def osis_rebar_l_line_b(SecNo: int, RebarLNo: int, RebarLType: Literal["LineB"], 
                         MaterialNo: int, StartY: float, StartZ: float, EndY: float, EndZ: float, 
                         Method: Literal[0, 1], Num: int, Interval: float, 
                         LayoutRef: Literal["StartPoint", "MidPoint", "EndPoint"], HasEndRebar: Literal[0, 1], Diameter: str):
@@ -95,7 +95,7 @@ def osis_rebar_l_del(SecNo: int, RebarLNo: int):
     pass
 
 @REGISTRY.register("RebarS")
-def osis_rebar_s_bent_up(SecNo: int, RebarSType: Literal["BentUpRebar"]="BentUpRebar", 
+def osis_rebar_s_bent_up(SecNo: int, RebarSType: Literal["BentUpRebar"], 
                          MaterialNo: int, Interval: float, Area: float, Angle: float):
     """定义或修改弯起钢筋。
 
@@ -115,7 +115,7 @@ def osis_rebar_s_bent_up(SecNo: int, RebarSType: Literal["BentUpRebar"]="BentUpR
     pass
 
 @REGISTRY.register("RebarS")
-def osis_rebar_s_shear_stirrup(SecNo: int, RebarSType: Literal["ShearStirrup"]="ShearStirrup", 
+def osis_rebar_s_shear_stirrup(SecNo: int, RebarSType: Literal["ShearStirrup"], 
                                MaterialNo: int, Interval: float, Area: float):
     """定义或修改抗剪箍筋。
 
@@ -134,7 +134,7 @@ def osis_rebar_s_shear_stirrup(SecNo: int, RebarSType: Literal["ShearStirrup"]="
     pass
 
 @REGISTRY.register("RebarS")
-def osis_rebar_s_web_vertical(SecNo: int, RebarSType: Literal["WebVerticalRebar"]="WebVerticalRebar", 
+def osis_rebar_s_web_vertical(SecNo: int, RebarSType: Literal["WebVerticalRebar"], 
                               MaterialNo: int, Interval: float, Area: float, Angle: float, 
                               EffectiveStress: float, ReductionFactor: float):
     """定义或修改腹板竖筋。
@@ -157,7 +157,7 @@ def osis_rebar_s_web_vertical(SecNo: int, RebarSType: Literal["WebVerticalRebar"
     pass
 
 @REGISTRY.register("RebarS")
-def osis_rebar_s_torsional_stirrup(SecNo: int, RebarSType: Literal["TorsionalStirrup"]="TorsionalStirrup", 
+def osis_rebar_s_torsional_stirrup(SecNo: int, RebarSType: Literal["TorsionalStirrup"], 
                                    MaterialNo: int, Interval: float, LongiArea: float, StirrupArea: float):
     """定义或修改扭转箍筋。
 
