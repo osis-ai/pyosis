@@ -24,7 +24,7 @@ def osis_material_conc(nMat: int, strName: str, eMaterialType: Literal["CONC"],
             * JTGD62_2004
         eGrade (str): 材料等级牌号，不区分大小写。根据材料类型可选：
             * C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80
-        nCrepShrk (int): 收缩徐变特性编号，可以缺省，缺省时设为 ""
+        nCrepShrk (int): 收缩徐变特性编号，可以缺省，缺省时设为 ""， 不缺省时设置为1
         dDmp (float): 材料阻尼比
 
     Returns:
