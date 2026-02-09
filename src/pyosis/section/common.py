@@ -19,7 +19,7 @@ def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
     
     Example:
         >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
-        >>> osis_matrix("LineMatrix", matrix))
+        >>> osis_matrix("LineMatrix", matrix)
         >>> osis_section_custom(1,"三角形截面","CUSTOM","LineMatrix")
     """
     # 验证输入
@@ -328,19 +328,23 @@ def osis_section_hollowslab(nSec: int=1, strName: str="截面1-空心板", eSect
     pass
 
 @REGISTRY.register("Section")
-def osis_section_custom(nSec: int, strName: str, eSectionType: Literal["CUSTOM"], contourMatrix: list):
+def osis_section_custom(nSec: int, strName: str, eSectionType: Literal["CUSTOM"], contourMatrix: str):
     """定义或修改自定义截面(CUSTOM)。
 
     Args:
         nSec (int): 截面编号，从1开始编号，所有类型的截面均使用同一编号序列。
         strName (str): 截面名称。
         eSectionType (str): 截面类型，固定为 CUSTOM
-        contourMatrix (list): 轮廓点矩阵，大小为n*3，n为点的个数，第一列为点所在的轮廓线编号，第二列为点的x坐标，第三列为点的y坐标。需要按照行顺序组织成list
+        contourMatrix (str): 轮廓点矩阵，大小为n*3，n为点的个数，第一列为点所在的轮廓线编号，第二列为点的x坐标，第三列为点的y坐标。需要使用osis_matrix先定义list
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
+    Example:
+        >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
+        >>> osis_matrix("LineMatrix", matrix)
+        >>> osis_section_custom(1,"三角形截面","CUSTOM","LineMatrix")
     """
     pass
 

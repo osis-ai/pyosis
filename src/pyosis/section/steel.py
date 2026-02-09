@@ -201,20 +201,25 @@ def osis_section_steel_canti_box_ibf(Index: int, Name: str, Type: Literal["STEEL
 
 @REGISTRY.register("Section")
 def osis_section_steel_custom(Index: int, Name: str, Type: Literal["STEELCUSTOM"], 
-                              PointMatrix: List[List[float]], LineMatrix: List[List[float]]):
+                              PointMatrix: str, LineMatrix: str):
     """定义或修改自定义钢梁截面（通过点线关系输入）。
 
     Args:
         Index (int): 编号。
         Name (str): 截面名。
         Type (str): 截面类型，固定为 STEELCUSTOM。
-        PointMatrix (List[List[float]]): n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标。
-        LineMatrix (List[List[float]]): n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽。
+        PointMatrix (str): n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标,需使用osis_matrix先定义矩阵。
+        LineMatrix (str): n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽,需使用osis_matrix先定义矩阵。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
+    Example:
+        >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
+        >>> osis_matrix("PointMatrix", matrix)
+        >>> osis_matrix("LineMatrix", matrix)
+        >>> osis_section_custom(1,"三角形钢截面","CUSTOM","PointMatrix","LineMatrix")
     """
     pass
 
