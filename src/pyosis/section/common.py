@@ -74,7 +74,7 @@ def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
 
 
 @REGISTRY.register('Section')
-def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"], nDir: Literal[0, 1], H: float, B: float, Tf1: float, Tf2: float):
+def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]="LSHAPE", nDir: Literal[0, 1]=1, H: float=0.1, B: float=0.1, Tf1: float=0.016, Tf2: float=0.016):
     """创建或修改L形截面(LShape)。
 
     Args:
@@ -104,7 +104,7 @@ def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]
     pass
 
 @REGISTRY.register('Section')
-def osis_section_circle(nSec: int, strName: str, eSectionType: Literal["CIRCLE"], eCircleType: Literal["Hollow", "Solid"], D: float,Tw: float):
+def osis_section_circle(nSec: int, strName: str, eSectionType: Literal["CIRCLE"]="CIRCLE", eCircleType: Literal["Hollow", "Solid"]="Solid", D: float=0.5, Tw: float=0.02):
     """创建或修改圆形截面(Circle)。
 
     Args:
@@ -133,7 +133,7 @@ e
     pass
 
 @REGISTRY.register('Section')
-def osis_section_Tshape(nSec: int, strName: str, eSectionType: Literal["TSHAPE"], nDir: Literal[0, 1], H: float, B: float, Tf: float, Tw: float):
+def osis_section_Tshape(nSec: int, strName: str, eSectionType: Literal["TSHAPE"]="TSHAPE", nDir: Literal[0, 1]=1, H: float=0.3, B: float=0.2, Tf: float=0.016, Tw: float=0.016):
     """创建或修改T形截面(TShape)。
 
     Args:
@@ -191,8 +191,9 @@ def osis_section_Ishape(nSec: int, strName: str, eSectionType: Literal["ISHAPE"]
     pass
 
 @REGISTRY.register('Section')
-def osis_section_smallbox(nSec: int, strName: str, eSectionType: Literal["SMALLBOX"], eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"], 
-                          H: float, Bs: float, Bm: float, Bc: float, Bb: float, Tt: float, Tb: float, Tw: float, i: float, Tc: float, Tc1: float, x: float, xi1: float, Tt1: float, xi2: float, yi2: float, bSlope: bool, i1: float, i2: float, R: float):
+def osis_section_smallbox(nSec: int, strName: str, eSectionType: Literal["SMALLBOX"]="SMALLBOX", eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"]="MIDDLE", 
+                          H: float=1.6, Bs: float=1.65, Bm: float=1.2, Bc: float=0.0, Bb: float=1, Tt: float=0.18, Tb: float=0.2, Tw: float=0.2, i: float=4, 
+                          Tc: float=0.18, Tc1: float=0.25, x: float=0.2, xi1: float=0.15, Tt1: float=0.25, xi2: float=0.05, yi2: float=0.05, bSlope: bool=False, i1: float=0.0, i2: float=0.0, R: float=0.05):
     """定义或修改小箱梁截面(SMALLBOX)。
 
     Args:
