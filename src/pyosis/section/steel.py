@@ -219,7 +219,7 @@ def osis_section_steel_custom(Index: int, Name: str, Type: Literal["STEELCUSTOM"
         >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
         >>> osis_matrix("PointMatrix", matrix)
         >>> osis_matrix("LineMatrix", matrix)
-        >>> osis_section_custom(1,"三角形钢截面","CUSTOM","PointMatrix","LineMatrix")
+        >>> osis_section_steel_custom(1,"三角形钢截面","CUSTOM","PointMatrix","LineMatrix")
     """
     pass
 
