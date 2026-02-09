@@ -101,7 +101,7 @@ def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]
     pass
 
 @REGISTRY.register('Section')
-def osis_section_circle(nSec: int, strName: str, eSectionType: Literal["CIRCLE"]="CIRCLE", eCircleType: Literal["Hollow", "Solid"], D: float,Tw: float):
+def osis_section_circle(nSec: int, strName: str, eSectionType: Literal["CIRCLE"]="CIRCLE", eCircleType: Literal["Hollow", "Solid"]="Solid", D: float=0.5, Tw: float=0.02):
     """创建或修改圆形截面(Circle)。
 
     Args:
