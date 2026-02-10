@@ -193,6 +193,9 @@ class OSISFunctionRegistry:
     def _execute_command(self, cmd) -> Tuple[bool, str, Any]:
         """执行命令（发送到软件）"""
         _log(cmd)
+        if cmd.split(",")[0].lower() == "section":
+            nSec = cmd.split(",").split(",")[0]
+            cmd += f"ExportSecPic,{nSec};"      # 自动保存截面图片
         result = osis_run(cmd, self.run_mode)
         isok, error, *rest = result
         return result
