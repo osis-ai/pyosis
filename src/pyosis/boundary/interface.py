@@ -45,14 +45,14 @@ def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL",
     '''
     pass
 @REGISTRY.register("Boundary")
-def osis_boundary_elstcspt(nBd: int, eBoundaryType: Literal["ELSTCSPT"]="ELSTCSPT", nCoor: int = -1, bX: bool = 1, DX: int = 1e13, bY: bool = 1, DY: int = 1e13, bZ: bool = 1, DZ: int = 1e13, bRX: bool = 1, RX: int = 1e16, bRY: bool = 1, RY: int = 1e16, bRZ: bool = 1, RZ: int = 1e16):
+def osis_boundary_elstcspt(nBd: int, eBoundaryType: Literal["ELSTCSPT"]="ELSTCSPT", nCoor: int = "", bX: bool = 1, DX: int = 1e13, bY: bool = 1, DY: int = 1e13, bZ: bool = 1, DZ: int = 1e13, bRX: bool = 1, RX: int = 1e16, bRY: bool = 1, RY: int = 1e16, bRZ: bool = 1, RZ: int = 1e16):
     '''
     定义或修改弹簧单元弹性支承
     
     Args:
         nBd (int): 编号
         eBoundaryType (str): 固定为 ELSTCSPT
-        nCoor (int): 局部坐标系编号，-1代表缺省
+        nCoor (int): 局部坐标系编号，固定使用""缺省
         bX：UX方向，0 = 弹性，1 = 固定
         DX：坐标系X轴方向的弹性支承刚度
         bY：UY方向，0 = 弹性，1 = 固定
@@ -115,26 +115,26 @@ def osis_boundary_release(nBd: int, eBoundaryType: Literal["RELEASE"],
     '''
     pass
 
-@REGISTRY.register("Boundary")
-def osis_boundary_elastic_support(nBd: int, eBoundaryType: Literal["ELSTCSPT"], nCoor: int, bX: float, bY: float, bZ: float, bRX: float, bRY: float, bRZ: float):
-    '''
-    ## 定义或修改节点弹性支撑
-    pyosis.boundary.osis_boundary_elastic_support
+# @REGISTRY.register("Boundary")
+# def osis_boundary_elastic_support(nBd: int, eBoundaryType: Literal["ELSTCSPT"], nCoor: int, bX: float, bY: float, bZ: float, bRX: float, bRY: float, bRZ: float):
+#     '''
+#     ## 定义或修改节点弹性支撑
+#     pyosis.boundary.osis_boundary_elastic_support
     
-    Args:
-        nBd (int): 编号
-        eBoundaryType (str): 固定为 ELSTCSPT
-        nCoor (int): 局部坐标系编号
-        dDX (float): 坐标系 X 轴方向的弹性支承刚度
-        dDY (float): 坐标系 Y 轴方向的弹性支承刚度
-        dDZ (float): 坐标系 Z 轴方向的弹性支承刚度
-        dRX (float): 绕坐标系 X 轴方向的转动弹性刚度
-        dRY (float): 绕坐标系 Y 轴方向的转动弹性刚度
-        dRZ (float): 绕坐标系 Z 轴方向的转动弹性刚度
-    Returns:
-        tuple (bool, str): 是否成功，失败原因
-    '''
-    pass
+#     Args:
+#         nBd (int): 编号
+#         eBoundaryType (str): 固定为 ELSTCSPT
+#         nCoor (int): 局部坐标系编号
+#         dDX (float): 坐标系 X 轴方向的弹性支承刚度
+#         dDY (float): 坐标系 Y 轴方向的弹性支承刚度
+#         dDZ (float): 坐标系 Z 轴方向的弹性支承刚度
+#         dRX (float): 绕坐标系 X 轴方向的转动弹性刚度
+#         dRY (float): 绕坐标系 Y 轴方向的转动弹性刚度
+#         dRZ (float): 绕坐标系 Z 轴方向的转动弹性刚度
+#     Returns:
+#         tuple (bool, str): 是否成功，失败原因
+#     '''
+#     pass
 
 @REGISTRY.register("AsgnBd")
 def osis_assign_boundary(nBd: int=1, eOP: Literal["a", "s", "r", "aa", "ra"]="a", param: list=[]):

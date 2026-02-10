@@ -28,6 +28,9 @@ def osis_loadcase(strName: str="自定义工况1", eLoadCaseType: Literal["USER"
         strPrompt (str): 说明，默认空
     Returns:
         tuple (bool, str): 是否成功，失败原因
+    
+    Example:
+        osis_loadcase("自重工况","USER",1.0,"Load")
     '''
     pass
 
