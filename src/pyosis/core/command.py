@@ -11,44 +11,26 @@ import functools
 from typing import Dict, Any, Tuple, Literal, Optional
 from .engine import OSISEngine
 
-# def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[bool, str, Any]:
-#     '''
-#     直接以命令流的形式运行OSIS功能
-    
-#     Args:
-#         strCmd: 完整的命令流
-#         mode: 运行模式，此参数为了同时执行多条命令提高效率
-#             * 使用 stash 仅会将命令流存到OSIS中，不会执行
-#             * 收到 exec 信号才会执行暂存包括当前的所有命令流。
-
-#     Returns:
-#         tuple (bool, str, Any): 是否成功，失败原因，其他结果数据
-#     '''
-    
-#     e = OSISEngine.GetInstance()
-#     return e.OSIS_Run(strCmd, mode)
-
-
-def osis_run(strCmd: str="", mode: Optional[Literal["stash", "exec"]] = None) -> Tuple[bool, str, Any]:
+def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[bool, str, Any]:
     '''
     直接以命令流的形式运行OSIS功能
-
-    Args:
-        strCmd: 完整的命令流，默认为空
-        mode: 运行模式
-            * None: 自动模式（strCmd非空则暂存，strCmd为空则执行）
-            * stash: 仅暂存命令流
-            * exec: 执行暂存的所有命令流
     
+    Args:
+        strCmd: 完整的命令流
+        mode: 运行模式，此参数为了同时执行多条命令提高效率
+            * 使用 stash 仅会将命令流存到OSIS中，不会执行
+            * 收到 exec 信号才会执行暂存包括当前的所有命令流。
+
     Returns:
-        tuple (bool, str, Any): 是否成功, 失败原因, 其他结果数据
+        tuple (bool, str, Any): 是否成功，失败原因，其他结果数据
     '''
-    # 自动判断模式：非空默认暂存，为空默认执行
-    if mode is None:
-        mode = "stash" if strCmd else "exec"
+#     # 自动判断模式：非空默认暂存，为空默认执行
+#     if mode is None:
+#         mode = "stash" if strCmd else "exec"
     
     e = OSISEngine.GetInstance()
     return e.OSIS_Run(strCmd, mode)
+
 # def _log(text, filename="pyosis.log"):
 #     """简单的日志函数"""
 #     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

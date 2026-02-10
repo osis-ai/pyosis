@@ -42,7 +42,7 @@ def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
     # 生成 *DIM 定义语句
     cmd = f"*dim,{matrix_name},{rows},{cols}"
     _log(cmd)
-    osis_run(cmd)
+    osis_run(cmd, "stash")
     # 生成赋值语句
     for i in range(rows):
         for j in range(cols):
@@ -68,7 +68,7 @@ def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
                     raise ValueError(f"位置[{i},{j}]的值'{value}'不是有效数字")
             cmd = f"{matrix_name}[{i},{j}] = {val_str}"
             _log(cmd)
-            osis_run(cmd)
+            osis_run(cmd, "stash")
     
     return
 
@@ -289,7 +289,6 @@ def osis_section_rect(nSec: int, strName: str, eSectionType: Literal["RECT"]="RE
     """
     pass
 
-# 0.9500,1.0000,0.5700,0.0500,0.1200,0.1200,0.1600,0.1200,0.1600,0.3800, 0.1500,0.0800,0.1200,0.0800,0.0500,0.0500,0.0800,0.0800,0.1200; SectionOffset,1,Middle,0.0000,Center,0.0000; SectionMesh,1,0,0.1000; 
 @REGISTRY.register("Section")
 def osis_section_hollowslab(nSec: int=1, strName: str="截面1-空心板", eSectionType: Literal["HOLLOWSLAB"]="HOLLOWSLAB", eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"]="MIDDLE", 
                           H: float=0.95, Bs: float=1.0, Bm: float=0.57, Bj: float=0.05, Tt: float=0.12, Tb: float=0.12, Tw: float=0.16, 
