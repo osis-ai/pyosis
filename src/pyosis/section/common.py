@@ -160,7 +160,7 @@ def osis_section_Tshape(nSec: int, strName: str, eSectionType: Literal["TSHAPE"]
     pass
 
 @REGISTRY.register('Section')
-def osis_section_Ishape(nSec: int, strName: str, eSectionType: Literal["ISHAPE"], H: float, Bt: float, Bb: float, Tt: float, Tb: float, Tw: float):
+def osis_section_Ishape(nSec: int, strName: str, eSectionType: Literal["ISHAPE"]="ISHAPE", H: float=0.3, Bt: float=0.13, Bb: float=0.13, Tt: float=0.016, Tb: float=0.016, Tw: float=0.016):
     """创建或修改I形截面（工字形截面）(IShape)。
 
     Args:
@@ -232,9 +232,9 @@ def osis_section_smallbox(nSec: int, strName: str, eSectionType: Literal["SMALLB
     pass
 
 @REGISTRY.register('Section')
-def osis_section_rect(nSec: int, strName: str, eSectionType: Literal["RECT"], TransitionType: Literal["Chamfer", "Fillet"], SecType: Literal["Solid", "Hollow"],
-        B: float, H: float, xo1: float, yo1: float, R: float, t1: float, t2: float, xi1: float, yi1: float, HasDiaphragm: bool, tw: float, xi2: float, yi2: float,
-        HasGroove: bool, b1: float, b2: float, h: float):
+def osis_section_rect(nSec: int, strName: str, eSectionType: Literal["RECT"]="RECT", TransitionType: Literal["Chamfer", "Fillet"]="Fillet", SecType: Literal["Solid", "Hollow"]="Solid",
+        B: float=6.5, H: float=3.2, xo1: float=1.0, yo1: float=0.5, R: float=0.5, t1: float=1.0, t2: float=1.0, xi1: float=0.5, yi1: float=0.25, HasDiaphragm: bool=False, tw: float=1.0, xi2: float=0.5, yi2: float=0.25,
+        HasGroove: bool=False, b1: float=1.2, b2: float=0.8, h: float=0.2):
     """创建或修改矩形截面(RECT)。
 
     Args:
@@ -328,33 +328,12 @@ def osis_section_hollowslab(nSec: int=1, strName: str="截面1-空心板", eSect
     """
     pass
 
-@REGISTRY.register("Section")
-def osis_section_custom(nSec: int, strName: str, eSectionType: Literal["CUSTOM"], contourMatrix: str):
-    """定义或修改自定义截面(CUSTOM)。
-
-    Args:
-        nSec (int): 截面编号，从1开始编号，所有类型的截面均使用同一编号序列。
-        strName (str): 截面名称。
-        eSectionType (str): 截面类型，固定为 CUSTOM
-        contourMatrix (str): 轮廓点矩阵，大小为n*3，n为点的个数，第一列为点所在的轮廓线编号，第二列为点的x坐标，第三列为点的y坐标。需要使用osis_matrix先定义list
-
-    Returns:
-        tuple (bool, str): 返回一个元组，包含：
-            - bool: 操作是否成功
-            - str: 失败原因（如果操作失败）
-    Example:
-        >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
-        >>> osis_matrix("LineMatrix", matrix)
-        >>> osis_section_custom(1,"三角形截面","CUSTOM","LineMatrix")
-    """
-    pass
-
 @REGISTRY.register('Section')
-def osis_section_rounded_end(nSec: int, strName: str, eSectionType: Literal["ROUNDEDEND"], 
-                             eFillingType: Literal["Solid", "Hollow"],
-                             B: float, H: float, R: float, bHasDiaphragm: bool, 
-                             b: float, t: float, xi1: float, yi1: float, 
-                             tw: float, xi2: float, yi2: float):
+def osis_section_rounded_end(nSec: int, strName: str, eSectionType: Literal["ROUNDEDEND"]="ROUNDEDEND", 
+                             eFillingType: Literal["Solid", "Hollow"]="Solid",
+                             B: float=7.0, H: float=3.0, R: float=2.0, bHasDiaphragm: bool=False, 
+                             b: float=4.0, t: float=1.0, xi1: float=0.5, yi1: float=0.25, 
+                             tw: float=1.0, xi2: float=0.5, yi2: float=0.25):
     """定义或修改圆端形截面(RoundedEnd)。
 
     Args:
@@ -382,19 +361,19 @@ def osis_section_rounded_end(nSec: int, strName: str, eSectionType: Literal["ROU
     pass
 
 @REGISTRY.register('Section')
-def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal["CONVENTIONALBOX"],
-                                  H: float, BtL: float, BtR: float, BbL: float, BbR: float, Bs: float,
-                                  Tt: float, Tb: float, Tw1: float, Tw2: float, nCellNum: int,
-                                  Bi1: float, Bi2: float, Bi3: float, Bi4: float,
-                                  xi1: float, Tt1: float, xi2: float, Tt2: float, 
-                                  xi3: float, yi3: float, xi4: float, Tt4: float,
-                                  xi5: float, yi5: float, xi6: float, Tt6: float,
-                                  xi7: float, yi7: float,
-                                  BcL: float, TcL: float, Bc1L: float, Tc1L: float, Tc2L: float,
-                                  bSymmetry: bool, BcR: float, TcR: float, Bc1R: float, Tc1R: float, Tc2R: float,
-                                  eSlopeType: Literal["Intergal", "CastInPlace"],
-                                  i: float, i1: float, i2: float, i3: float, i4: float,
-                                  R1: float, R2: float):
+def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal["CONVENTIONALBOX"]="CONVENTIONALBOX",
+                                  H: float=2.7, BtL: float=6.375, BtR: float=6.375, BbL: float=3.5, BbR: float=3.5, Bs: float=0.5,
+                                  Tt: float=0.28, Tb: float=0.32, Tw1: float=0.5, Tw2: float=0.5, nCellNum: int=1,
+                                  Bi1: float=5.05, Bi2: float=4.5, Bi3: float=5.05, Bi4: float=5.05,
+                                  xi1: float=1.5, Tt1: float=0.7, xi2: float=0.0, Tt2: float=0.0, 
+                                  xi3: float=1.0, yi3: float=0.5, xi4: float=0.5, Tt4: float=0.35,
+                                  xi5: float=0.6, yi5: float=0.3, xi6: float=1.0, Tt6: float=0.5,
+                                  xi7: float=0.6, yi7: float=0.3,
+                                  BcL: float=2.875, TcL: float=0.2, Bc1L: float=1.325, Tc1L: float=0.7, Tc2L: float=0.4,
+                                  bSymmetry: bool=True, BcR: float=2.875, TcR: float=0.2, Bc1R: float=1.325, Tc1R: float=0.7, Tc2R: float=0.4,
+                                  eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                                  i: float=0, i1: float=0, i2: float=0, i3: float=0, i4: float=0,
+                                  R1: float=0, R2: float=0):
     """定义或修改常规箱梁截面(ConventionalBox)。
 
     Args:
@@ -458,19 +437,19 @@ def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal[
     pass
 
 @REGISTRY.register('Section')
-def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["FLATBOX"],
-                          H: float, BtL: float, BtR: float, BbL: float, BbR: float, Bs: float,
-                          Tt: float, Tb1: float, Tb2: float, Tw: float, Ttj: float, Tbj: float, Twj: float,
-                          nCellNum: int, Bi1: float, Bi2: float, Bi3: float, Bi4: float,
-                          xi1: float, Tt1: float, xi2: float, Tt2: float,
-                          xi3: float, yi3: float, xi4: float, Tt4: float,
-                          xi5: float, yi5: float, xi6: float, Tt6: float,
-                          xi7: float, yi7: float,
-                          BcL: float, TcL: float, Bc1L: float, Tc1L: float, Tc2L: float,
-                          bSymmetry: bool, BcR: float, TcR: float, Bc1R: float, Tc1R: float, Tc2R: float,
-                          eSlopeType: Literal["Intergal", "CastInPlace"],
-                          i: float, i1: float, i2: float, i3: float, i4: float,
-                          R1: float, R2: float):
+def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["FLATBOX"]="FLATBOX",
+                          H: float=4.0, BtL: float=20.0, BtR: float=20.0, BbL: float=10.5, BbR: float=10.5, Bs: float=0.8,
+                          Tt: float=0.28, Tb1: float=0.27, Tb2: float=0.27, Tw: float=0.25, Ttj: float=0.5, Tbj: float=0.27, Twj: float=0.4,
+                          nCellNum: int=5, Bi1: float=4.7, Bi2: float=6.85, Bi3: float=6, Bi4: float=6.85,
+                          xi1: float=0.6, Tt1: float=0.6, xi2: float=1.0, Tt2: float=0.7,
+                          xi3: float=0.2, yi3: float=0.2, xi4: float=1.0, Tt4: float=0.7,
+                          xi5: float=0.6, yi5: float=0.3, xi6: float=0.5, Tt6: float=0.7,
+                          xi7: float=0.5, yi7: float=0.3,
+                          BcL: float=4.0, TcL: float=0.2, Bc1L: float=0.5, Tc1L: float=0.7, Tc2L: float=0.4,
+                          bSymmetry: bool=True, BcR: float=4.0, TcR: float=0.2, Bc1R: float=0.5, Tc1R: float=0.7, Tc2R: float=0.4,
+                          eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                          i: float=0.0, i1: float=0.0, i2: float=0.0, i3: float=0.0, i4: float=0.0,
+                          R1: float=0.5, R2: float=0.2):
     """定义或修改扁平箱梁截面(FlatBox)。
 
     Args:
@@ -537,14 +516,14 @@ def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["FLATBO
     pass
 
 @REGISTRY.register('Section')
-def osis_section_double_side_box(nSec: int, strName: str, eSectionType: Literal["DOUBLESIDEBOX"],
-                                 H: float, Bt: float, bt: float, Bs: float, Bb: float,
-                                 tt: float, Tb1: float, Tb2: float, Tw: float,
-                                 b: float, n: float, Bi: float,
-                                 xi1: float, Tt1: float, xi2: float, Tt2: float,
-                                 xi3: float, yi3: float, xo4: float, Tt4: float, b1: float,
-                                 eSlopeType: Literal["Intergal", "CastInPlace"],
-                                 i: float, i1: float, i2: float):
+def osis_section_double_side_box(nSec: int, strName: str, eSectionType: Literal["DOUBLESIDEBOX"]="DOUBLESIDEBOX",
+                                 H: float=3.8, Bt: float=36.0, bt: float=14.8, Bs: float=2.1, Bb: float=4.4,
+                                 tt: float=0.3, Tb1: float=0.3, Tb2: float=0.3, Tw: float=0.5,
+                                 b: float=1.0, n: float=1.0, 
+                                 Bi: float=8.0, xi1: float=1.0, Tt1: float=0.6, xi2: float=1.0, Tt2: float=0.7,
+                                 xi3: float=0.6, yi3: float=0.3, xo4: float=1.0, Tt4: float=0.7, b1: float=0.3,
+                                 eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                                 i: float=0.0, i1: float=0.0, i2: float=0.0):
     """定义或修改双边箱截面(DoubleSideBox)。
 
     Args:
@@ -585,12 +564,12 @@ def osis_section_double_side_box(nSec: int, strName: str, eSectionType: Literal[
     pass
 
 @REGISTRY.register('Section')
-def osis_section_ribbed_slab(nSec: int, strName: str, eSectionType: Literal["RIBBEDSLAB"],
-                             H: float, Bt: float, bt: float, Tt: float,
-                             b: float, h: float, b1: float, b2: float,
-                             x: float, y: float,
-                             eSlopeType: Literal["Intergal", "CastInPlace"],
-                             i: float, i1: float, i2: float):
+def osis_section_ribbed_slab(nSec: int, strName: str, eSectionType: Literal["RIBBEDSLAB"]="RIBBEDSLAB",
+                             H: float=2.8, Bt: float=21.5, bt: float=17.7, Tt: float=0.3,
+                             b: float=0.2, h: float=1.25, b1: float=1.8, b2: float=0.2,
+                             x: float=1.5, y: float=0.3,
+                             eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                             i: float=0.0, i1: float=0.0, i2: float=0.0):
     """定义或修改肋板式截面(RibbedSlab)。
 
     Args:
@@ -620,12 +599,12 @@ def osis_section_ribbed_slab(nSec: int, strName: str, eSectionType: Literal["RIB
     pass
 
 @REGISTRY.register('Section')
-def osis_section_TGirder(nSec: int, strName: str, eSectionType: Literal["TGIRDER"],
-                          eGirderPos: Literal["Left", "Middle", "Right"],
-                          H: float, Bs: float, Bm: float, Bc: float,
-                          Tt1: float, Tt2: float, x: float, Tw: float,
-                          Bh: float, Hh: float, yh: float,
-                          bSlope: bool, i1: float, i2: float, R: float):
+def osis_section_TGirder(nSec: int, strName: str, eSectionType: Literal["TGIRDER"]="TGIRDER",
+                          eGirderPos: Literal["Left", "Middle", "Right"]="Middle",
+                          H: float=2.5, Bs: float=1.125, Bm: float=0.85, Bc: float=0.0,
+                          Tt1: float=0.16, Tt2: float=0.25, x: float=0.6, Tw: float=0.2,
+                          Bh: float=0.6, Hh: float=0.35, yh: float=0.25,
+                          bSlope: bool=False, i1: float=0.0, i2: float=0.0, R: float=0.05):
     """定义或修改T梁截面(TGirder)。
 
     Args:
@@ -653,5 +632,27 @@ def osis_section_TGirder(nSec: int, strName: str, eSectionType: Literal["TGIRDER
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
+@REGISTRY.register("Section")
+def osis_section_custom(nSec: int, strName: str, eSectionType: Literal["CUSTOM"], contourMatrix: str):
+    """定义或修改自定义截面(CUSTOM)。
+
+    Args:
+        nSec (int): 截面编号，从1开始编号，所有类型的截面均使用同一编号序列。
+        strName (str): 截面名称。
+        eSectionType (str): 截面类型，固定为 CUSTOM
+        contourMatrix (str): 轮廓点矩阵，大小为n*3，n为点的个数，第一列为点所在的轮廓线编号，第二列为点的x坐标，第三列为点的y坐标。需要使用osis_matrix先定义list
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    Example:
+        >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
+        >>> osis_matrix("LineMatrix", matrix)
+        >>> osis_section_custom(1,"三角形截面","CUSTOM","LineMatrix")
     """
     pass

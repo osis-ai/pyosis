@@ -27,6 +27,8 @@ from .engine import OSISEngine
     
 #     e = OSISEngine.GetInstance()
 #     return e.OSIS_Run(strCmd, mode)
+
+
 def osis_run(strCmd: str="", mode: Optional[Literal["stash", "exec"]] = None) -> Tuple[bool, str, Any]:
     '''
     直接以命令流的形式运行OSIS功能
