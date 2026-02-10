@@ -4,7 +4,7 @@ pyosis.section.interface 的 Docstring
 
 from typing import Any, Dict, Literal, List, Union, Sequence
 from ..core import REGISTRY, osis_run
-
+from ..core.command import _log
 
 def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
     """
@@ -40,7 +40,9 @@ def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
     lines = []
     
     # 生成 *DIM 定义语句
-    osis_run(f"*dim,{matrix_name},{rows},{cols}")
+    cmd = f"*dim,{matrix_name},{rows},{cols}"
+    _log(cmd)
+    osis_run(cmd)
     # 生成赋值语句
     for i in range(rows):
         for j in range(cols):
@@ -64,8 +66,9 @@ def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
                         val_str = f"{fval:.6g}"
                 except (TypeError, ValueError):
                     raise ValueError(f"位置[{i},{j}]的值'{value}'不是有效数字")
-            
-            osis_run(f"{matrix_name}[{i},{j}] = {val_str}")
+            cmd = f"{matrix_name}[{i},{j}] = {val_str}"
+            _log(cmd)
+            osis_run(cmd)
     
     return
 
