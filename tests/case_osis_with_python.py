@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import networkx as nx
 from scipy.linalg import solve
 import json
-import debugpy
 
 # # 启用调试器，监听端口 5678
 # debugpy.listen(5678)
