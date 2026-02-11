@@ -194,7 +194,7 @@ class OSISFunctionRegistry:
         """执行命令（发送到软件）"""
         _log(cmd)
         if cmd.split(",")[0].lower() == "section":
-            nSec = cmd.split(",").split(",")[0]
+            nSec = cmd.split(",")[1]
             cmd += f"ExportSecPic,{nSec};"      # 自动保存截面图片
         result = osis_run(cmd, self.run_mode)
         isok, error, *rest = result
