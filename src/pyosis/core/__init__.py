@@ -8,5 +8,5 @@ OSISEngine中的函数，将会分发到各个模块，被再次封装，意图�
 - 将函数命名格式转换成python的常用格式，便于人与AI的理解
 """
 
-from .engine import OSISEngine
 from .command import REGISTRY, osis_run, set_run_mode
+from .project import *

@@ -15,6 +15,9 @@ class PyInterface:
 
     # def setProjects(self, project: Any) -> None: ...
 
+    def GetProjectDirectory(self) -> Tuple[bool, str]:
+        return True, ""
+
     def OSIS_Run(self, strCmd: str, mode: str) -> Tuple[bool, str]:
         return True, ""
     

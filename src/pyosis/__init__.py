@@ -7,7 +7,7 @@ A library for extending OSIS functionality.
 A library that allows users to use CAE with great flexibility.
 """
 
-__version__ = "0.1.8"
+__version__ = "0.1.9"
 __author__ = "CCCC Highway Consultant Co. Ltd." # 中交公路规划设计院 - 工程技术研究中心
 
 # from .core import engine
