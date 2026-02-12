@@ -10,6 +10,7 @@ import inspect
 import functools
 from typing import Dict, Any, Tuple, Literal, Optional
 from .engine import OSISEngine
+from .project import get_project_directory
 
 def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[bool, str, Any]:
     '''
@@ -81,6 +82,12 @@ def _log(text, log_dir="pyosis_logs"):
         f.write(f"{text}\n")
     
     return target_file
+
+def _tmp(text, tmp_file="tmp.tmp", clear=False):        # 运行时临时信息
+    if clear:
+        os.remove(tmp_file)
+    with open(tmp_file, "a+", encoding="utf-8") as f:
+        f.write(text)
 
 class OSISFunctionRegistry:
     """
@@ -196,7 +203,11 @@ class OSISFunctionRegistry:
         if cmd.split(",")[0].lower() == "section":
             nSec = cmd.split(",")[1]
             cmd += f"ExportSecPic,{nSec};"      # 自动保存截面图片
-        result = osis_run(cmd, self.run_mode)
+            path = get_project_directory()[1] + f"Image/section/{nSec}.jpg" # 会默认保存到这里
+            _tmp(path, 'image.tmp')                          # 放到临时信息-图片里
+            # isok, error = osis_run(cmd, "exec")
+            # return isok, error, path
+        result = osis_run(cmd, "exec")
         isok, error, *rest = result
         return result
     
