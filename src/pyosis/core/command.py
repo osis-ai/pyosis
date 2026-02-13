@@ -123,7 +123,7 @@ class OSISFunctionRegistry:
     
     def __init__(self):
         self.commands = {}      # func_name -> info
-        self.run_mode = "stash"     # 命令处理模式，默认暂存
+        self.run_mode = "exec"     # 命令处理模式，默认执行
     
     def register(self, cmd_name=None):
         """
