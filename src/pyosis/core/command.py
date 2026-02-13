@@ -203,7 +203,7 @@ class OSISFunctionRegistry:
         if cmd.split(",")[0].lower() == "section":
             nSec = cmd.split(",")[1]
             cmd += f"ExportSecPic,{nSec};"      # 自动保存截面图片
-            path = get_project_directory()[1] + f"Image/section/{nSec}.jpg" # 会默认保存到这里
+            path = get_project_directory()[1] + f"Image/section/_{nSec}.jpg\n" # 会默认保存到这里
             _tmp(path, 'image.tmp')                          # 放到临时信息-图片里
             # isok, error = osis_run(cmd, "exec")
             # return isok, error, path
