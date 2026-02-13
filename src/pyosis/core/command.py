@@ -10,7 +10,6 @@ import inspect
 import functools
 from typing import Dict, Any, Tuple, Literal, Optional
 from .engine import OSISEngine
-from .project import get_project_directory
 
 def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[bool, str, Any]:
     '''
@@ -200,13 +199,6 @@ class OSISFunctionRegistry:
     def _execute_command(self, cmd) -> Tuple[bool, str, Any]:
         """执行命令（发送到软件）"""
         _log(cmd)
-        if cmd.split(",")[0].lower() == "section":
-            nSec = cmd.split(",")[1]
-            cmd += f"ExportSecPic,{nSec};"      # 自动保存截面图片
-            path = get_project_directory()[1] + f"Image/section/_{nSec}.jpg\n" # 会默认保存到这里
-            _tmp(path, 'image.tmp')                          # 放到临时信息-图片里
-            # isok, error = osis_run(cmd, "exec")
-            # return isok, error, path
         result = osis_run(cmd, "exec")
         isok, error, *rest = result
         return result

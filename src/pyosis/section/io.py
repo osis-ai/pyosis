@@ -1,7 +1,8 @@
 # --- 截面IO相关功能
 
 from typing import Any, Dict, Literal
-from ..core import REGISTRY
+from ..core import REGISTRY, get_project_directory
+from ..core.command import _tmp
 
 # class SectionManager():
 #     def __init__(self):
@@ -21,4 +22,6 @@ def osis_export_section_pic(nSec: int):
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
     '''
+    path = get_project_directory()[1] + f"Image/section/_{nSec}.jpg\n" # 会默认保存到这里
+    _tmp(path, 'image.tmp')                          # 放到临时信息-图片里
     pass
