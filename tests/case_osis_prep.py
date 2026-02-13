@@ -45,9 +45,8 @@ osis_loadcase("自定义工况1", "USER", 1, "施加于节点3和4的两个力")
 osis_load_nforce("NFORCE", "自定义工况1", 3, 0, -1000000, 0, 0, 0, 0)
 osis_load_nforce("NFORCE", "自定义工况1", 4, 200000, 0, 0, 0, 0, 0)
 
-# osis_solve()
+osis_solve()
 
-print(osis_run())      # 让OSIS执行所有前处理命令
 
 # isok, error, ef = osis_elem_force("自定义工况1", "EF", "BEAM3D")
 
