@@ -20,23 +20,14 @@ pip install osis-python -i https://pypi.org/simple
 
 ## Usage
 
-First, install the latest version of OSIS (>=5.0) and configure the Python environment variables. pyosis requires Python 3.11 or higher. You need to set PYTHONHOME in the environment variables to your Python installation directory, e.g., C:\Program Files\python, and set PYTHONIOENCODING to utf-8. Then add %PYTHONHOME% and %PYTHONHOME%\Scripts to the Path variable.
+First, install the latest version of OSIS (>=5.0), which includes the required Python environment.
 
-Your scripts should be placed in the python folder under the OSIS installation directory, e.g., C:\Program Files\osis\python. Suppose there is a script named test_osis.py with the following content:
+Switch AI assistant to command mode and send:
 
 
 ```python
 import json
-from pyosis.core import osis_run    # Import required functions
-from pyosis.control import *
-from pyosis.general import *
-from pyosis.section import *
-from pyosis.material import *
-from pyosis.node import *
-from pyosis.element import *
-from pyosis.boundary import *
-from pyosis.load import *
-from pyosis.post import *
+from pyosis.core.all_func import *
 
 osis_clear()
 
@@ -81,10 +72,8 @@ osis_loadcase("Custom Load Case 1", "USER", 1, "Two forces applied at nodes 3 an
 osis_load_nforce("NFORCE", "Custom Load Case 1", 3, 0, -1000000, 0, 0, 0, 0)
 osis_load_nforce("NFORCE", "Custom Load Case 1", 4, 200000, 0, 0, 0, 0, 0)
 
-# osis_solve()
-
-print(osis_run())      # Let OSIS execute all preprocessing commands
+osis_solve()
 
 ```
 
-Select and run this script in OSIS. If everything is normal, you will see OSIS finish the preprocessing.
+If everything is normal, you will see OSIS finish the processing.

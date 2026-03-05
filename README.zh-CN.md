@@ -16,23 +16,13 @@ pip install osis-python -i https://pypi.org/simple
 
 ## 使用
 
-首先需要安装最新版OSIS(>=5.0)，并配置好python环境变量。pyosis需要python3.11版本以上的环境。并且，您需要在环境变量中设置`PYTHONHOME`为您python的安装目录，例如：`C:\Program Files\python`，设置`PYTHONIOENCODING`为`utf-8`。然后在`path`中分别添加`%PYTHONHOME%`和`%PYTHONHOME%\Scripts`两个条目。
+首先需要安装最新版OSIS(>=5.0)，其中包含了所需要的python环境。
 
-
-您的脚本应放置于OSIS安装目录下的python文件夹中，例如：`C:\Program Files\osis\python`。假设存在一个名为`test_osis.py`的脚本，其内容如下：
+将智能助手切换到命令模式，输入以下代码并发送：
 
 ```python
 import json
-from pyosis.core import osis_run    # 导入需要的功能
-from pyosis.control import *
-from pyosis.general import *
-from pyosis.section import *
-from pyosis.material import *
-from pyosis.node import *
-from pyosis.element import *
-from pyosis.boundary import *
-from pyosis.load import *
-from pyosis.post import *
+from pyosis.core.all_func import *
 
 osis_clear()
 
@@ -84,4 +74,4 @@ print(osis_run())      # 让OSIS执行所有前处理命令
 
 ```
 
-在OSIS中选择并运行这个脚本，如果一切正常的话，您将会看到OSIS完成了前处理操作。
+如果一切正常的话，您将会看到OSIS完成了操作。
