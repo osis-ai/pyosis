@@ -155,5 +155,5 @@ class PyInterface:
     def OSIS_QBStage(self, eBridgeType: str, stageInfo: list) -> Tuple[bool, str]:
         return True, ""
 
-    def OSIS_CheckResult(base_path: str, middle_path: str, end_path: str) -> tuple[bool, str, str]:
-        return True, "", None
+    def OSIS_CheckResult(eSheetType: str, eCheckItem: str, strCheckName: str) -> tuple[bool, str, str]:
+        return True, "", ""

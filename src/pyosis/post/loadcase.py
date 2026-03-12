@@ -1,5 +1,6 @@
 from typing import Literal
 from ..core import OSISEngine
+import json
 
 def osis_elem_force(strLCName: str, eDataItem: Literal['EF'], eElementType: Literal["BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"]):
     '''
@@ -19,7 +20,3 @@ def osis_elem_force(strLCName: str, eDataItem: Literal['EF'], eElementType: Lite
     eDataItem = eDataItem.upper()
     eElementType = eElementType.upper()
     return e.OSIS_ElemForce(strLCName, eDataItem, eElementType)
-
-def osis_check_result(base_path: str, middle_path: str, end_path: str) -> tuple[bool, str, str]:
-    e = OSISEngine.GetInstance()
-    return e.OSIS_CheckResult(base_path, middle_path, end_path)
