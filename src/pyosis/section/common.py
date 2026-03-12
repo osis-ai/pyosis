@@ -2,76 +2,8 @@
 pyosis.section.interface 的 Docstring
 '''
 
-from typing import Any, Dict, Literal, List, Union, Sequence
-from ..core import REGISTRY, osis_run
-from ..core.command import _log
-
-def osis_matrix(matrix_name: str, matrix_data: List[List[Union[int, float]]]):
-    """
-    将Python矩阵转换为OSIS DSL格式的矩阵定义和赋值语句。适用于自定义截面函数osis_section_custom、osis_section_steel_custom所需的坐标参数矩阵输入。
-    
-    Args:
-        matrix_name: OSIS中的矩阵变量名
-        matrix_data: 二维列表（List[List[int|float]]）
-    
-    Returns:
-        OSIS DSL格式的字符串
-    
-    Example:
-        >>> matrix = [[1, 2, 20], [2, 3, 25], [3, 4, 30], [4, 1, 25]]
-        >>> osis_matrix("LineMatrix", matrix)
-        >>> osis_section_custom(1,"三角形截面","CUSTOM","LineMatrix")
-    """
-    # 验证输入
-    if not matrix_data or not isinstance(matrix_data, list):
-        raise ValueError("输入必须是二维列表且不能为空")
-    
-    if not all(isinstance(row, list) for row in matrix_data):
-        raise ValueError("输入必须是二维列表")
-    
-    rows = len(matrix_data)
-    cols = len(matrix_data[0]) if rows > 0 else 0
-    
-    # 检查矩阵是否规则（所有行列数一致）
-    for i, row in enumerate(matrix_data):
-        if len(row) != cols:
-            raise ValueError(f"第{i}行长度({len(row)})与首行长度({cols})不一致")
-    
-    lines = []
-    
-    # 生成 *DIM 定义语句
-    cmd = f"*dim,{matrix_name},{rows},{cols}"
-    _log(cmd)
-    osis_run(cmd, "stash")
-    # 生成赋值语句
-    for i in range(rows):
-        for j in range(cols):
-            value = matrix_data[i][j]
-            
-            # 格式化数值
-            if isinstance(value, int):
-                val_str = str(value)
-            elif isinstance(value, float):
-                if value.is_integer():
-                    val_str = str(int(value))
-                else:
-                    val_str = f"{value:.6g}"
-            else:
-                # 其他类型尝试转为float
-                try:
-                    fval = float(value)
-                    if fval.is_integer():
-                        val_str = str(int(fval))
-                    else:
-                        val_str = f"{fval:.6g}"
-                except (TypeError, ValueError):
-                    raise ValueError(f"位置[{i},{j}]的值'{value}'不是有效数字")
-            cmd = f"{matrix_name}[{i},{j}] = {val_str}"
-            _log(cmd)
-            osis_run(cmd, "stash")
-    
-    return
-
+from typing import Any, Dict, Literal
+from ..core import REGISTRY
 
 @REGISTRY.register('Section')
 def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]="LSHAPE", nDir: Literal[0, 1]=1, H: float=0.1, B: float=0.1, Tf1: float=0.016, Tf2: float=0.016):
