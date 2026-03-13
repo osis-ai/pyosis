@@ -1,6 +1,11 @@
+from pathlib import Path
 from typing import Literal, Any
-from ..core import OSISEngine
+from ..core import OSISEngine, project, command
 import json
+
+_CMD = "/output,{out_file_path},echk,{check_file_name}"
+_CHECK_FILE_PATH = "check"
+_CHECK_TXT_PATH = "temp"
 
 def osis_check_result(
         eSheetType: Literal["一般", "混凝土"], 
@@ -49,17 +54,41 @@ def osis_check_result(
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
     '''
-    e = OSISEngine.GetInstance()
-    # return e.OSIS_CheckResult(base_path, middle_path, end_path)
-    isok, error, result_txt_path = e.OSIS_CheckResult(eSheetType, eCheckItem, strCheckName)
-    if isok:
-        data = read_ansi_file_to_json(result_txt_path)
-        return isok, error, json.dumps(data, indent=2, ensure_ascii=False)
-    else:
-        return isok, error, None
+    # e = OSISEngine.GetInstance()
+    # # return e.OSIS_CheckResult(base_path, middle_path, end_path)
+    # isok, error, result_txt_path = e.OSIS_CheckResult(eSheetType, eCheckItem, strCheckName)
+    # if isok:
+    #     data = read_ansi_file_to_json(result_txt_path)
+    #     return isok, error, json.dumps(data, indent=2, ensure_ascii=False)
+    # else:
+    #     return isok, error, None
+    # 1 获取项目目录
+    is_ok, project_path = project.get_project_directory()
+    if not is_ok:
+        return False, "获取文件夹失败", ""
+
+    project_path = Path(project_path)
+
+    # 2 工况文件路径
+    check_file_path = project_path / _CHECK_FILE_PATH
+
+    # 3 生成命令
+    str_cmd = _CMD.format(out_file_path=check_file_path, check_file_name=strCheckName)
+
+    # 4 执行命令
+    is_ok, error, _ = command.osis_run(str_cmd, mode="exec")
+    if not is_ok:
+        return False, error, ""
+
+    # 5 读取结果
+    txt_file_path = project_path / _CHECK_TXT_PATH / strCheckName
+    txt_file_path = txt_file_path.with_suffix(".txt")
+    data = read_check_txt_file_to_json(str(txt_file_path))
+
+    return True, "", json.dumps(data, indent=2, ensure_ascii=False)
 
     
-def read_ansi_file_to_json(file_path):
+def read_check_txt_file_to_json(file_path):
 
     with open(file_path, 'r', encoding='gbk') as f:
         lines = f.readlines()
