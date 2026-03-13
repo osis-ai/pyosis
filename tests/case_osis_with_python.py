@@ -155,8 +155,8 @@ def calculate_internal_forces(nodes, edges, loads, load_node_ids, section_ids):
         osis_load_nforce("NFORCE", "自定义工况1", idx + 1, l[0] * 1000, l[1] * 1000, 0, 0, 0, 0)
 
     osis_solve()
-    isok, error, ef = osis_elem_force("自定义工况1", "EF", "BEAM3D")
-    dict_to_json_txt(ef, "liu_output.json")   # 保存结果用于调试
+    isok, error, ef = osis_loadcase_result("自定义工况1", "LCEF")
+    # dict_to_json_txt(ef, "liu_output.json")   # 保存结果用于调试
     # log_to_file(f"ef = {ef}\n")
     ef_fx = ef["Fx"]      # 轴向内力
     # log_to_file(f"ef_fx = {ef_fx}\n")
