@@ -9,7 +9,7 @@ _CMD = "/output,{out_file_path}.txt,echk,{check_file_name}"
 _CHECK_TXT_PATH = "Temperary"
 
 def osis_check_result(
-    eSheetType: Literal["一般", "混凝土"], 
+    eSheetType: Literal["一般", "混凝土", "施工阶段荷载包络"],
     eCheckItem: Literal["正截面抗弯验算",
                         "斜截面抗剪验算",
                         "正截面抗压验算",
@@ -24,7 +24,14 @@ def osis_check_result(
                         "PC斜截面主压应力验算",
                         "PC钢束拉应力验算",
                         "PC施工阶段正截面压应力验算",
-                        "PC施工阶段正截面拉应力验算"], 
+                        "PC施工阶段正截面拉应力验算",
+                        "正截面杭拉/压承载力验算",
+                        "PC斜载面抗裂验算",
+                        "PC使用阶段正截面压应力验算",
+                        "PC使用阶段斜载面主压应力验算",
+                        "RC施工阶段正截面压应力验算",
+                        "RC施工阶段中性轴处主拉应力验算",
+                        "RC施工阶段受拉钢筋拉应力验算"], 
     strCheckName: str) -> tuple[bool, str, pd.DataFrame]:
     '''
     验算结果导出
@@ -33,6 +40,7 @@ def osis_check_result(
         eSheetType (str): 表格名称
             * "一般"
             * "混凝土"
+            * "施工阶段荷载包络"
         eCheckItem (str): 验算类型
             * "正截面抗弯验算"
             * "斜截面抗剪验算"
@@ -49,6 +57,14 @@ def osis_check_result(
             * "PC钢束拉应力验算"
             * "PC施工阶段正截面压应力验算"
             * "PC施工阶段正截面拉应力验算"
+            * "PC施工阶段正截面拉应力验算",
+            * "正截面杭拉/压承载力验算",
+            * "PC斜载面抗裂验算",
+            * "PC使用阶段正截面压应力验算",
+            * "PC使用阶段斜载面主压应力验算",
+            * "RC施工阶段正截面压应力验算",
+            * "RC施工阶段中性轴处主拉应力验算",
+            * "RC施工阶段受拉钢筋拉应力验算"
         strCheckName (str): 验算名称
 
     Returns:
