@@ -155,5 +155,8 @@ class PyInterface:
     def OSIS_QBStage(self, eBridgeType: str, stageInfo: list) -> Tuple[bool, str]:
         return True, ""
 
-    def OSIS_CheckResult(eSheetType: str, eCheckItem: str, strCheckName: str) -> tuple[bool, str, str]:
+    def OSIS_CheckResult(slef, eSheetType: str, eCheckItem: str, strCheckName: str) -> tuple[bool, str, str]:
+        return True, "", ""
+
+    def OSIS_LoadCaseResult(self, fileName:str, eType: str) -> tuple[bool, str, str]:
         return True, "", ""
