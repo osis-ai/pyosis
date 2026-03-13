@@ -9,27 +9,29 @@ import datetime
 import inspect
 import functools
 from typing import Dict, Any, Tuple, Literal, Optional
-from .engine import OSISEngine
+# from .engine import OSISEngine
+from .client import osis_client
 
-def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[bool, str, Any]:
-    '''
-    直接以命令流的形式运行OSIS功能
     
-    Args:
-        strCmd: 完整的命令流
-        mode: 运行模式，此参数为了同时执行多条命令提高效率
-            * 使用 stash 仅会将命令流存到OSIS中，不会执行
-            * 收到 exec 信号才会执行暂存包括当前的所有命令流。
+# def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[bool, str, Any]:
+#     '''
+#     直接以命令流的形式运行OSIS功能
+    
+#     Args:
+#         strCmd: 完整的命令流
+#         mode: 运行模式，此参数为了同时执行多条命令提高效率
+#             * 使用 stash 仅会将命令流存到OSIS中，不会执行
+#             * 收到 exec 信号才会执行暂存包括当前的所有命令流。
 
-    Returns:
-        tuple (bool, str, Any): 是否成功，失败原因，其他结果数据
-    '''
-#     # 自动判断模式：非空默认暂存，为空默认执行
-#     if mode is None:
-#         mode = "stash" if strCmd else "exec"
+#     Returns:
+#         tuple (bool, str, Any): 是否成功，失败原因，其他结果数据
+#     '''
+# #     # 自动判断模式：非空默认暂存，为空默认执行
+# #     if mode is None:
+# #         mode = "stash" if strCmd else "exec"
     
-    e = OSISEngine.GetInstance()
-    return e.OSIS_Run(strCmd, mode)
+#     e = OSISEngine.GetInstance()
+#     return e.OSIS_Run(strCmd, mode)
 
 # def _log(text, filename="pyosis.log"):
 #     """简单的日志函数"""
@@ -37,6 +39,47 @@ def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[boo
 #     with open(filename, 'a', encoding='utf-8') as f:
 #         f.write(f"[{timestamp}] {text}\n")
 #         f.close()
+
+def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> tuple[bool, str]:
+    """
+    http 模拟 C++ 原生 OSIS_Run 函数
+    Args:
+        strCmd: 完整的命令流
+        mode: 运行模式，此参数为了同时执行多条命令提高效率
+            * 使用 stash 仅会将命令流存到OSIS中，不会执行
+            * 收到 exec 信号才会执行暂存包括当前的所有命令流。
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    """
+    return osis_client("OSIS_Run", locals())
+    # # 1. 配置 C++ 服务地址
+    # url = "http://localhost:8080/OSIS_Run"
+    
+    # # 2. 构造请求参数（JSON 格式，UTF-8 编码）
+    # payload = {
+    #     "strCmd": strCmd,
+    #     "mode": mode
+    # }
+    
+    # # 3. 发送 POST 请求（自动处理中文编码）
+    # try:
+    #     response = requests.post(
+    #         url,
+    #         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+    #         headers={"Content-Type": "application/json; charset=utf-8"},
+    #         timeout=10
+    #     )
+    #     response.raise_for_status()  # 抛出 HTTP 错误
+        
+    #     # 4. 解析返回值，还原为 C++ 原生返回格式
+    #     resp_data = response.json()
+    #     return resp_data["success"], resp_data["message"]
+    
+    # except Exception as e:
+    #     # 异常时返回和 C++ 一致的格式
+    #     return False, f"调用失败：{str(e)}"
+    
 
 def _log(text, log_dir="pyosis_logs"):
     """
