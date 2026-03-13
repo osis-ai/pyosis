@@ -1,15 +1,17 @@
 from typing import Literal, Any
 
+import pandas as pd
+
 from pyosis.post.result import txt_file_path
 
 # 将包络结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
 
-def osis_env_result(fileName:str, eType: Literal['EnvBF','EnvEF','EnvES','EnvS','EnvND']) -> tuple[bool, str, Any]:
+def osis_env_result(strEnvName:str, eType: Literal['EnvBF','EnvEF','EnvES','EnvS','EnvND']) -> tuple[bool, str, pd.DataFrame]:
     """
     提取包络结果
     Args:
-        fileName (str): 文件名字
+        strEnvName (str): 文件名字
         eType (str): 包络结果名
             * EnvBF = 包络/并发结果的边界反力;
             * EnvEF = 包络/并发结果的单元内力;
@@ -20,46 +22,14 @@ def osis_env_result(fileName:str, eType: Literal['EnvBF','EnvEF','EnvES','EnvS',
         tuple (bool, str): 是否成功，失败原因
 
     """
-    is_ok, err, file_path = txt_file_path(fileName, eType, _CMD)
-    data = read_env_txt_file_to_json(str(file_path))
-    return True, "", data
+    is_ok, err, file_path = txt_file_path(strEnvName, eType, _CMD)
+    df = pd.read_csv(
+        file_path,
+        sep=r"\s+",  # 用正则匹配任意空白（空格/制表符）
+        header=0,  # 表头在第3行（索引从0开始，这里跳过前两行标题）
+        skiprows=4,  # 若还有多余空行可在这里加行号
+        encoding="gbk",  # 若乱码可换成 "gbk" / "gb2312"
+        on_bad_lines="skip"  # 跳过格式异常行
+    )
 
-def read_env_txt_file_to_json(file_path)-> list[dict]:
-    with open(file_path, 'r', encoding='gbk') as f:
-        lines = f.readlines()
-
-    # 查找实际数据开始的位置
-    start_index = 0
-    for i, line in enumerate(lines):
-        if "工况" in line and "边界" in line:  # 查找包含表头的行
-            start_index = i
-            break
-
-    if start_index == 0 and len(lines) < 2:
-        return []
-
-    # 解析表头
-    headers = lines[start_index].strip().split('\t')
-
-    # 处理数据行
-    result = []
-    for line in lines[start_index + 1:]:
-        line = line.strip()
-        if not line:  # 跳过空行
-            continue
-
-        values = line.split('\t')
-        if len(values) != len(headers):
-            continue  # 跳过不完整行
-
-        # 创建字典对象
-        row_dict = {}
-        for i, header in enumerate(headers):
-            header = header.replace(' ', '')
-            value = values[i].replace(' ', '')
-
-            row_dict[header] = value
-
-        result.append(row_dict)
-
-    return result
+    return True, "", df

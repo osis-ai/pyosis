@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import Literal, Any
+
+from .result import txt_file_path
 from ..core import project, command
 import json
 import pandas as pd
@@ -44,29 +46,11 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
         tuple (bool, str): 是否成功，失败原因
 
     """
-    # 1 获取项目目录
-    is_ok, project_path = project.get_project_directory()
-    if not is_ok:
-        return False, "获取文件夹失败", None
 
-    project_path = Path(project_path)
+    is_ok, err, file_path = txt_file_path(strLCName, eType, _CMD)
 
-    # 2 工况文件路径
-    load_case_file_path = project_path / _LOAD_CASE_FILE_PATH / strLCName
-
-    # 3 生成命令
-    str_cmd = _CMD.format(out_file_path=load_case_file_path,e_type=eType,check_file_name=strLCName)
-
-    # 4 执行命令
-    is_ok, error = command.osis_run(str_cmd, mode="exec")
-    if not is_ok:
-        return False, error, None
-
-    # 5 读取结果
-    txt_file_path = project_path / _LOAD_CASE_TXT_PATH / strLCName
-    txt_file_path = txt_file_path.with_suffix(".txt")
     df = pd.read_csv(
-        txt_file_path,
+        file_path,
         sep=r"\s+",          # 用正则匹配任意空白（空格/制表符）
         header=0,            # 表头在第3行（索引从0开始，这里跳过前两行标题）
         skiprows=[],         # 若还有多余空行可在这里加行号
