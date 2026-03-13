@@ -1,31 +1,8 @@
-from pathlib import Path
 from typing import Literal, Any
-from ..core import project, command
-import json
+from .result import txt_file_path
 
 # 将工况结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
-_LOAD_CASE_FILE_PATH = "Temperary"
-_LOAD_CASE_TXT_PATH = "Temperary"
-
-# def osis_elem_force(strLCName: str, eDataItem: Literal['EF'], eElementType: Literal["BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"]):
-#     '''
-#     提取内力结果
-#
-#     Args:
-#         strLCName (str): 工况名称
-#         eDataItem (str): 数据类型，不区分大小写。EF = 内力
-#         eElementType (str): 单元类型，不区分大小写。BEAM3D = 梁柱单元，TRUSS = 桁架单元，SPRING = 弹簧单元，CABLE = 拉索单元，SHELL = 壳单元
-#
-#     Returns:
-#         tuple (bool, str):
-#             - bool: 操作是否成功
-#             - str: 失败原因（如果操作失败）
-#     '''
-#     e = OSISEngine.GetInstance()
-#     eDataItem = eDataItem.upper()
-#     eElementType = eElementType.upper()
-#     return e.OSIS_ElemForce(strLCName, eDataItem, eElementType)
 
 def osis_loadcase_result(fileName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, Any]:
     """
@@ -41,31 +18,9 @@ def osis_loadcase_result(fileName:str, eType: Literal['LCEF','LCED','LCND','LCBF
             * LCS = 荷载工况结果的单元应力;
     Returns:
         tuple (bool, str): 是否成功，失败原因
-
     """
-    # 1 获取项目目录
-    is_ok, project_path = project.get_project_directory()
-    if not is_ok:
-        return False, "获取文件夹失败", ""
-
-    project_path = Path(project_path)
-
-    # 2 工况文件路径
-    load_case_file_path = project_path / _LOAD_CASE_FILE_PATH / fileName
-
-    # 3 生成命令
-    str_cmd = _CMD.format(out_file_path=load_case_file_path,e_type=eType,check_file_name=fileName)
-
-    # 4 执行命令
-    is_ok, error = command.osis_run(str_cmd, mode="exec")
-    if not is_ok:
-        return False, error, ""
-
-    # 5 读取结果
-    txt_file_path = project_path / _LOAD_CASE_TXT_PATH / fileName
-    txt_file_path = txt_file_path.with_suffix(".txt")
-    data = read_loadcase_txt_file_to_json(str(txt_file_path))
-
+    is_ok, err, file_path, = txt_file_path(fileName, eType, _CMD)
+    data = read_loadcase_txt_file_to_json(str(file_path))
     return True, "", data
 
 def read_loadcase_txt_file_to_json(file_path)-> list[dict]:
@@ -92,5 +47,4 @@ def read_loadcase_txt_file_to_json(file_path)-> list[dict]:
         row_dict = {headers[i]: parts[i].strip() for i in range(num_cols)}
         result.append(row_dict)
     # json_result = json.dumps(result, ensure_ascii=False)
-    # 打印结果
     return result
