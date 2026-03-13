@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Literal, Any
 from ..core import project, command
 import json
+import pandas as pd
 
 # /output,D:\\temp\\Temp1\\Check\\频遇组合包络.txt,echk,混凝土_PC腹板斜截面抗裂验算_频遇组合包络
 _CMD = "/output,{out_file_path}.txt,echk,{check_file_name}"
@@ -25,7 +26,7 @@ def osis_check_result(
                         "PC钢束拉应力验算",
                         "PC施工阶段正截面压应力验算",
                         "PC施工阶段正截面拉应力验算"], 
-    strCheckName: str) -> tuple[bool, str, Any]:
+    strCheckName: str) -> tuple[bool, str, pd.DataFrame]:
     '''
     验算结果导出
     
@@ -67,7 +68,7 @@ def osis_check_result(
     # 1 获取项目目录
     is_ok, project_path = project.get_project_directory()
     if not is_ok:
-        return False, "获取文件夹失败", ""
+        return False, "获取文件夹失败", None
 
     project_path = Path(project_path)
     check_name = eSheetType + "_" + eCheckItem + "_" + strCheckName
@@ -81,53 +82,18 @@ def osis_check_result(
     # 4 执行命令
     is_ok, error = command.osis_run(str_cmd, mode="exec")
     if not is_ok:
-        return False, error, ""
+        return False, error, None
 
     # 5 读取结果
     txt_file_path = project_path / _CHECK_TXT_PATH / check_name
     txt_file_path = txt_file_path.with_suffix(".txt")
-    data = read_check_txt_file_to_json(str(txt_file_path))
+    df = pd.read_csv(
+        txt_file_path,
+        sep=r"\s+",          # 用正则匹配任意空白（空格/制表符）
+        header=2,            # 表头在第3行（索引从0开始，这里跳过前两行标题）
+        skiprows=[],         # 若还有多余空行可在这里加行号
+        encoding="gbk",    # 若乱码可换成 "gbk" / "gb2312"
+        on_bad_lines="skip"  # 跳过格式异常行
+    )
 
-    return True, "", data
-
-    
-def read_check_txt_file_to_json(file_path):
-
-    with open(file_path, 'r', encoding='gbk') as f:
-        lines = f.readlines()
-    
-    # 查找实际数据开始的位置
-    start_index = 0
-    for i, line in enumerate(lines):
-        if "单元" in line and "验算位置" in line:  # 查找包含表头的行
-            start_index = i
-            break
-    
-    if start_index == 0 and len(lines) < 2:
-        return []
-    
-    # 解析表头
-    headers = lines[start_index].strip().split('\t')
-    
-    # 处理数据行
-    result = []
-    for line in lines[start_index + 1:]:
-        line = line.strip()
-        if not line:  # 跳过空行
-            continue
-            
-        values = line.split('\t')
-        if len(values) != len(headers):
-            continue  # 跳过不完整行
-            
-        # 创建字典对象
-        row_dict = {}
-        for i, header in enumerate(headers):
-            header = header.replace(' ','')
-            value = values[i].replace(' ','')
-
-            row_dict[header] = value
-        
-        result.append(row_dict)
-    
-    return result
+    return True, "", df
