@@ -1,14 +1,10 @@
-from pathlib import Path
-from typing import Literal, Any
+from typing import Literal
 
 from .result import txt_file_path
-from ..core import project, command
-import json
 import pandas as pd
 
 # 将工况结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
-_LOAD_CASE_FILE_PATH = "Temperary"
 _LOAD_CASE_TXT_PATH = "Temperary"
 
 # def osis_elem_force(strLCName: str, eDataItem: Literal['EF'], eElementType: Literal["BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"]):
@@ -46,7 +42,6 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
         tuple (bool, str): 是否成功，失败原因
 
     """
-
     is_ok, err, file_path = txt_file_path(strLCName, eType, _CMD)
 
     df = pd.read_csv(
