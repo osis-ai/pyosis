@@ -3,8 +3,9 @@ from typing import Literal, Any
 from ..core import project, command
 import json
 
-_CMD = "/output,{out_file_path},echk,{check_file_name}"
-_CHECK_FILE_PATH = "Check"
+# /output,D:\\temp\\Temp1\\Check\\频遇组合包络.txt,echk,混凝土_PC腹板斜截面抗裂验算_频遇组合包络
+_CMD = "/output,{out_file_path}.txt,echk,{check_file_name}"
+_CHECK_FILE_PATH = "Temperary"
 _CHECK_TXT_PATH = "Temperary"
 
 def osis_check_result(
@@ -69,20 +70,21 @@ def osis_check_result(
         return False, "获取文件夹失败", ""
 
     project_path = Path(project_path)
+    check_name = eSheetType + "_" + eCheckItem + "_" + strCheckName
 
     # 2 工况文件路径
-    check_file_path = project_path / _CHECK_FILE_PATH
+    check_file_path = project_path / _CHECK_FILE_PATH / check_name
 
     # 3 生成命令
-    str_cmd = _CMD.format(out_file_path=check_file_path, check_file_name=strCheckName)
+    str_cmd = _CMD.format(out_file_path=check_file_path, check_file_name=check_name)
 
     # 4 执行命令
-    is_ok, error, _ = command.osis_run(str_cmd, mode="exec")
+    is_ok, error = command.osis_run(str_cmd, mode="exec")
     if not is_ok:
         return False, error, ""
 
     # 5 读取结果
-    txt_file_path = project_path / _CHECK_TXT_PATH / strCheckName
+    txt_file_path = project_path / _CHECK_TXT_PATH / check_name
     txt_file_path = txt_file_path.with_suffix(".txt")
     data = read_check_txt_file_to_json(str(txt_file_path))
 
