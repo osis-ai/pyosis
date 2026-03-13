@@ -11,8 +11,8 @@ def osis_env_result(strEnvName:str, eType: Literal['EnvBF','EnvEF','EnvES','EnvS
     """
     提取包络结果
     Args:
-        strEnvName (str): 文件名字
-        eType (str): 包络结果名
+        strEnvName (str): 包络名称
+        eType (str): 包络类型
             * EnvBF = 包络/并发结果的边界反力;
             * EnvEF = 包络/并发结果的单元内力;
             * EnvES = 包络/并发结果的单元应变;

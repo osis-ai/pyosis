@@ -1,4 +1,4 @@
-import json
+# 本文件是前处理的示例
 from pyosis.core.all_func import *
 
 osis_clear()
