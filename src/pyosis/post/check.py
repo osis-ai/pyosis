@@ -88,7 +88,7 @@ def osis_check_result(
     txt_file_path = txt_file_path.with_suffix(".txt")
     data = read_check_txt_file_to_json(str(txt_file_path))
 
-    return True, "", json.dumps(data, indent=2, ensure_ascii=False)
+    return True, "", data
 
     
 def read_check_txt_file_to_json(file_path):
