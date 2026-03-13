@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Literal, Any
 from ..core import project, command
 import json
+import pandas as pd
 
 # 将工况结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
@@ -27,7 +28,7 @@ _LOAD_CASE_TXT_PATH = "Temperary"
 #     eElementType = eElementType.upper()
 #     return e.OSIS_ElemForce(strLCName, eDataItem, eElementType)
 
-def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, Any]:
+def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, pd.DataFrame]:
     """
     提取荷载工况结果
     Args:
@@ -46,7 +47,7 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
     # 1 获取项目目录
     is_ok, project_path = project.get_project_directory()
     if not is_ok:
-        return False, "获取文件夹失败", ""
+        return False, "获取文件夹失败", None
 
     project_path = Path(project_path)
 
@@ -59,38 +60,18 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
     # 4 执行命令
     is_ok, error = command.osis_run(str_cmd, mode="exec")
     if not is_ok:
-        return False, error, ""
+        return False, error, None
 
     # 5 读取结果
     txt_file_path = project_path / _LOAD_CASE_TXT_PATH / strLCName
     txt_file_path = txt_file_path.with_suffix(".txt")
-    data = read_loadcase_txt_file_to_json(str(txt_file_path))
+    df = pd.read_csv(
+        txt_file_path,
+        sep=r"\s+",          # 用正则匹配任意空白（空格/制表符）
+        header=0,            # 表头在第3行（索引从0开始，这里跳过前两行标题）
+        skiprows=[],         # 若还有多余空行可在这里加行号
+        encoding="gbk",    # 若乱码可换成 "gbk" / "gb2312"
+        on_bad_lines="skip"  # 跳过格式异常行
+    )
 
-    return True, "", data
-
-def read_loadcase_txt_file_to_json(file_path)-> list[dict]:
-    with open(file_path, 'r', encoding='gbk') as f:
-        lines = [line.rstrip('\n') for line in f if line.strip()]
-
-    # 提取表头（第一行）
-    headers = lines[0].split()
-    num_cols = len(headers)
-
-    # 初始化结果列表
-    result = []
-
-    # 处理数据行
-    for line in lines[1:]:
-        # 按空白分割，但最多分割 num_cols - 1 次，防止 Rw 列缺失导致错位
-        parts = line.split(maxsplit=num_cols - 1)
-
-        # 如果列数不足，用空字符串补齐到 num_cols
-        while len(parts) < num_cols:
-            parts.append("")
-
-        # 构建字典，所有值保持为字符串
-        row_dict = {headers[i]: parts[i].strip() for i in range(num_cols)}
-        result.append(row_dict)
-    # json_result = json.dumps(result, ensure_ascii=False)
-    # 打印结果
-    return result
+    return True, "", df
