@@ -44,7 +44,7 @@ def osis_client(func_name: str, payload: dict) -> dict | tuple[bool, str]:
             timeout=30  # 批量调用适当延长超时
         )
         response.raise_for_status()  # 抛出 HTTP 状态码错误
-        return tuple(response.json().values())
+        return tuple(response.json())
         
     except Exception as e:
         # 异常时保持和 C++ 一致的返回格式
