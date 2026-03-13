@@ -6,7 +6,7 @@ Interfaces of OSIS functions
 """
 
 
-from ..core import OSISEngine, REGISTRY
+from ..core import REGISTRY
 
 @REGISTRY.register("Acel")
 def osis_acel(dG: float = 9.8066):
@@ -72,7 +72,7 @@ def osis_calc_creep(bFlag: int=1):
     '''
     pass
 
-@REGISTRY.register("CalcCreep")
+@REGISTRY.register("CalcShear")
 def osis_calc_shear(bFlag: int=1):
     '''
     是否计算剪切

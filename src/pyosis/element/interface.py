@@ -7,7 +7,7 @@ Interfaces of OSIS functions
 
 
 from typing import Any, Dict, Literal
-from ..core import OSISEngine, REGISTRY
+from ..core import REGISTRY
 
 
 # @REGISTRY.register("Element")
