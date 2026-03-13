@@ -27,18 +27,18 @@ _LOAD_CASE_TXT_PATH = "Temperary"
 #     eElementType = eElementType.upper()
 #     return e.OSIS_ElemForce(strLCName, eDataItem, eElementType)
 
-def osis_loadcase_result(fileName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, Any]:
+def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, Any]:
     """
     提取荷载工况结果
     Args:
-        fileName (str): 文件名字
-        eType (str): 荷载工况结果名
+        strLCName (str): 工况名称
+        eType (str): 荷载工况结果类型
             * LCEF = 荷载工况结果的单元内力;
             * LCED = 荷载工况结果的单元位移;
             * LCND = 荷载工况结果的节点位移;
             * LCBF = 荷载工况结果的边界反力;
             * LCTL = 荷载工况结果的钢束损失;
-            * LCS = 荷载工况结果的单元应力;
+            * LCS  = 荷载工况结果的单元应力;
     Returns:
         tuple (bool, str): 是否成功，失败原因
 
@@ -51,10 +51,10 @@ def osis_loadcase_result(fileName:str, eType: Literal['LCEF','LCED','LCND','LCBF
     project_path = Path(project_path)
 
     # 2 工况文件路径
-    load_case_file_path = project_path / _LOAD_CASE_FILE_PATH / fileName
+    load_case_file_path = project_path / _LOAD_CASE_FILE_PATH / strLCName
 
     # 3 生成命令
-    str_cmd = _CMD.format(out_file_path=load_case_file_path,e_type=eType,check_file_name=fileName)
+    str_cmd = _CMD.format(out_file_path=load_case_file_path,e_type=eType,check_file_name=strLCName)
 
     # 4 执行命令
     is_ok, error = command.osis_run(str_cmd, mode="exec")
@@ -62,7 +62,7 @@ def osis_loadcase_result(fileName:str, eType: Literal['LCEF','LCED','LCND','LCBF
         return False, error, ""
 
     # 5 读取结果
-    txt_file_path = project_path / _LOAD_CASE_TXT_PATH / fileName
+    txt_file_path = project_path / _LOAD_CASE_TXT_PATH / strLCName
     txt_file_path = txt_file_path.with_suffix(".txt")
     data = read_loadcase_txt_file_to_json(str(txt_file_path))
 
