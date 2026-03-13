@@ -6,7 +6,6 @@ import pandas as pd
 
 # 将工况结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
-_LOAD_CASE_FILE_PATH = "Temperary"
 _LOAD_CASE_TXT_PATH = "Temperary"
 
 # def osis_elem_force(strLCName: str, eDataItem: Literal['EF'], eElementType: Literal["BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"]):
@@ -52,7 +51,7 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
     project_path = Path(project_path)
 
     # 2 工况文件路径
-    load_case_file_path = project_path / _LOAD_CASE_FILE_PATH / strLCName
+    load_case_file_path = project_path / _LOAD_CASE_TXT_PATH / strLCName
 
     # 3 生成命令
     str_cmd = _CMD.format(out_file_path=load_case_file_path,e_type=eType,check_file_name=strLCName)

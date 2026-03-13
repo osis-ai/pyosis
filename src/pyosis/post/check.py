@@ -6,7 +6,6 @@ import pandas as pd
 
 # /output,D:\\temp\\Temp1\\Check\\频遇组合包络.txt,echk,混凝土_PC腹板斜截面抗裂验算_频遇组合包络
 _CMD = "/output,{out_file_path}.txt,echk,{check_file_name}"
-_CHECK_FILE_PATH = "Temperary"
 _CHECK_TXT_PATH = "Temperary"
 
 def osis_check_result(
@@ -50,7 +49,7 @@ def osis_check_result(
             * "PC钢束拉应力验算"
             * "PC施工阶段正截面压应力验算"
             * "PC施工阶段正截面拉应力验算"
-        strCheckName (str): 文件名称
+        strCheckName (str): 验算名称
 
     Returns:
         tuple (bool, str):
@@ -74,7 +73,7 @@ def osis_check_result(
     check_name = eSheetType + "_" + eCheckItem + "_" + strCheckName
 
     # 2 工况文件路径
-    check_file_path = project_path / _CHECK_FILE_PATH / check_name
+    check_file_path = project_path / _CHECK_TXT_PATH / check_name
 
     # 3 生成命令
     str_cmd = _CMD.format(out_file_path=check_file_path, check_file_name=check_name)
