@@ -43,6 +43,8 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
 
     """
     is_ok, err, file_path = txt_file_path(strLCName, eType, _CMD)
+    if not is_ok:
+        return False, err, None
 
     df = pd.read_csv(
         file_path,

@@ -23,6 +23,8 @@ def osis_env_result(strEnvName:str, eType: Literal['EnvBF','EnvEF','EnvES','EnvS
 
     """
     is_ok, err, file_path = txt_file_path(strEnvName, eType, _CMD)
+    if not is_ok:
+        return False, err, None
     df = pd.read_csv(
         file_path,
         sep=r"\s+",  # 用正则匹配任意空白（空格/制表符）
