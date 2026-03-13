@@ -4,33 +4,34 @@ from ..core import project, command
 import json
 
 _CMD = "/output,{out_file_path},echk,{check_file_name}"
-_CHECK_FILE_PATH = "check"
-_CHECK_TXT_PATH = "temp"
+_CHECK_FILE_PATH = "Check"
+_CHECK_TXT_PATH = "Temperary"
 
 def osis_check_result(
         eSheetType: Literal["一般", "混凝土"], 
-        eCheckItem: Literal["EN_MOMENTCAPACITY_PSC_JTG33622018",
-                            "EN_SHEARCAPACITY_PSC_JTG33622018",
-                            "EN_NORMALCOMPRESSANDTENSIONCAPACITY_PSC_JTG33622018",
-                            "EN_TORSIONCAPACITY_PSC_JTG33622018",
-                            "EN_NORMALCRACKSHORT_PSC_JTG33622018",
-                            "EN_NORMALCRACKLONG_PSC_JTG33622018",
-                            "EN_OBLIQUECRACKTOPBOT_PSC_JTG33622018",
-                            "EN_OBLIQUECRACKPLATE_PSC_JTG33622018",
-                            "EN_CRACKWIDTH_PSC_JTG33622018",
-                            "EN_DEFLECTION_PSC_JTG33622018",
-                            "EN_NORMALCOMPSTRESS_PSC_JTG33622018",
-                            "EN_OBLIQUECOMPSTRESS_PSC_JTG33622018",
-                            "EN_STRANDSTRESS_PSC_JTG33622018",
-                            "EN_STAGENORMALCOMPRESS_PSC_JTG33622018",
-                            "EN_STAGENORMALTENSILE_PSC_JTG33622018"
-                            ], 
+        eCheckItem: Literal["正截面抗弯验算",
+                            "斜截面抗剪验算",
+                            "正截面抗压验算",
+                            "PC抗扭验算",
+                            "PS正截面短期抗裂验算",
+                            "PC正截面长期抗裂验算",
+                            "PC顶底板斜截面抗裂验算",
+                            "PC腹板斜截面抗裂验算",
+                            "裂缝宽度验算",
+                            "挠度验算",
+                            "PC正截面压应力验算",
+                            "PC斜截面主压应力验算",
+                            "PC钢束拉应力验算",
+                            "PC施工阶段正截面压应力验算",
+                            "PC施工阶段正截面拉应力验算"], 
         strCheckName: str) -> tuple[bool, str, Any]:
     '''
     验算
     
     Args:
-        eSheetType (Literal["一般", "混凝土"]): 
+        eSheetType (str): 
+            * "一般"
+            * "混凝土"
         eCheckItem (Literal["正截面抗弯验算",
                             "斜截面抗剪验算",
                             "正截面抗压验算",
