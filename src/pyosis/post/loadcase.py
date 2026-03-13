@@ -4,8 +4,8 @@ from ..core import project, command
 import json
 
 # 将工况结果转换为txt的命令
-_CMD = "/output,{out_file_path},{e_type},{check_file_name}"
-_LOAD_CASE_FILE_PATH = "Result"
+_CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
+_LOAD_CASE_FILE_PATH = "Temperary"
 _LOAD_CASE_TXT_PATH = "Temperary"
 
 # def osis_elem_force(strLCName: str, eDataItem: Literal['EF'], eElementType: Literal["BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"]):
@@ -51,13 +51,13 @@ def osis_loadcase_result(fileName:str, eType: Literal['LCEF','LCED','LCND','LCBF
     project_path = Path(project_path)
 
     # 2 工况文件路径
-    load_case_file_path = project_path / _LOAD_CASE_FILE_PATH
+    load_case_file_path = project_path / _LOAD_CASE_FILE_PATH / fileName
 
     # 3 生成命令
     str_cmd = _CMD.format(out_file_path=load_case_file_path,e_type=eType,check_file_name=fileName)
 
     # 4 执行命令
-    is_ok, error, _ = command.osis_run(str_cmd, mode="exec")
+    is_ok, error = command.osis_run(str_cmd, mode="exec")
     if not is_ok:
         return False, error, ""
 
@@ -66,7 +66,7 @@ def osis_loadcase_result(fileName:str, eType: Literal['LCEF','LCED','LCND','LCBF
     txt_file_path = txt_file_path.with_suffix(".txt")
     data = read_loadcase_txt_file_to_json(str(txt_file_path))
 
-    return True, "", json.dumps(data, indent=2, ensure_ascii=False)
+    return True, "", data
 
 def read_loadcase_txt_file_to_json(file_path)-> list[dict]:
     with open(file_path, 'r', encoding='gbk') as f:
