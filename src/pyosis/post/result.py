@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from pyosis.core import project, command
+from pyosis.common import project
+from pyosis.core import command
 
 _LOAD_CASE_FILE_PATH = "Temperary"
 _LOAD_CASE_TXT_PATH = "Temperary"
