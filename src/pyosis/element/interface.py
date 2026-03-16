@@ -119,7 +119,7 @@ def osis_element_spring(nEle: int=1, eElementType: str="SPRING", nNode1: int=1, 
 @REGISTRY.register("Element")
 def osis_element_cable(nEle: int=1, eElementType: str="CABLE", nNode1: int=1, nNode2: int=2, nMat: int=1, nSec: int=1, eMethod: Literal["UL", "IF", "HF", "VF", "IS"]="UL", dPara: float="10.0"):
     '''
-    创建弹簧单元
+    创建或修改拉索单元
     
     Args:
         nEle (int): 单元编号。从 1 开始编号，所有类型的单元均使用同一编号序列。
@@ -149,7 +149,7 @@ def osis_element_cable(nEle: int=1, eElementType: str="CABLE", nNode1: int=1, nN
 @REGISTRY.register("Element")
 def osis_element_shell(nEle: int=1, eElementType: str="CABLE", bIsThin: bool=1, nMat: int=1, nThk: int=1, nNode1: int=1, nNode2: int=2, nNode3: int=3, nNode4: int = None):
     '''
-    创建弹簧单元
+    创建或修改壳单元
     
     Args:
         nEle (int): 单元编号。从 1 开始编号，所有类型的单元均使用同一编号序列。
@@ -218,3 +218,79 @@ def osis_element_group(strName: str="单元组1", eOP: Literal["c", "a", "s", "r
     '''
     pass
 
+@REGISTRY.register("TaperEle")
+def osis_taperele(
+    nIndex: str,
+    strZType: Literal["0", "1"],
+    dZTrans: float = 1.0,
+    strZpos: Literal["0", "1"] = "0",
+    dZdis: float = 0.0,
+    strYtype: Literal["0", "1"]="0",
+    dYtrans: float = 1.0,
+    strYpos: Literal["0", "1"] = "0",
+    dYdis: float = 0.0,
+    *eles: str,
+
+) -> tuple[bool, str]:
+    """
+    生成或修改变截面单元组
+
+    Args:
+        nIndex (str): 变截面单元组名称
+        strZType (str): 截面Z向过渡类型，
+            * 0=线性
+            * 1=多项式
+        dZTrans (float): ZType=0时默认1.0
+        strZpos (str):
+            * 0=i
+            * 1=j
+            * ZType=0时默认i
+        dZdis (float): 对称面距，ZType=0时默认0.0
+        strYtype (str): 截面Y向过渡类型
+            * 0=线性
+            * 1=多项式
+        dYtrans (float): YType=0时默认1.0
+        strYpos (str):
+            * 0=i
+            * 1=j
+            * YType=0时默认i
+        dYdis (float): 对称面距，YType=0时默认0.0
+        *eles (str): 单元组编号，示例：1,3,5to10
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因
+    """
+    pass
+
+@REGISTRY.register("TaperEleDel")
+def osis_element_tapereledel(strIndex: str) -> tuple[bool, str]:
+    """
+    删除变截面单元组
+
+    Args:
+        strIndex (str): 变截面单元组名称
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因
+    """
+    pass
+
+@REGISTRY.register("TaperEleMod")
+def osis_element_taperelemod(strOldIndex: str, strNewIndex: str) -> tuple[bool, str]:
+    """
+    修改变截面组名称
+
+    Args:
+        strOldIndex (str):
+        strNewIndex (str):
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因
+    """
+    pass
