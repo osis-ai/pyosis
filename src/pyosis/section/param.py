@@ -65,6 +65,24 @@ def osis_section_mesh(nSec: int=1, nMeshMethod: Literal[0, 1]=0, dMeshSize: floa
     """
     pass
 
+@REGISTRY.register('SectionMat')
+def osis_section_mat(nIndex: int,dERatio: float, dDensRatio:float, dPRSteel:float, dPRConcrete:float):
+    """
+    定义组合截面材料，仅用于组合截面
+    Args:
+        nIndex: 编号
+        dERatio: 钢材与混凝土弹性模量比值
+        dDensRatio: 钢材与混凝土重度比值
+        dPRSteel: 钢材泊松比
+        dPRConcrete: 混凝土泊松比
+
+    Returns:
+        tuple (bool, str):
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
 @REGISTRY.register('SectionDel')
 def osis_section_del(nSec: int):
     """删除截面
