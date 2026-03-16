@@ -1,7 +1,8 @@
 # --- 截面IO相关功能
 
 from typing import Any, Dict, Literal
-from ..core import REGISTRY, get_project_directory
+from ..common import get_project_directory
+from ..core import REGISTRY
 from ..core.command import _tmp
 
 # class SectionManager():
