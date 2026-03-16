@@ -75,3 +75,5 @@ print(osis_run())      # 让OSIS执行所有前处理命令
 ```
 
 如果一切正常的话，您将会看到OSIS完成了操作。
+
+您也可以直接使用代码编辑器（vscode、pycharm、cursor等）执行代码，可能需要首先登陆OSIS软件。

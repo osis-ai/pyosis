@@ -77,3 +77,5 @@ osis_solve()
 ```
 
 If everything is normal, you will see OSIS finish the processing.
+
+You can also directly execute the code using the code editor (vscode, pycharm, cursor, etc.). You may need to log in to the OSIS software first.
