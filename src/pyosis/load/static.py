@@ -105,6 +105,58 @@ def osis_load_line(eType: str="LINE", strLCName: str="自定义工况1", nEntity
     pass
 
 @REGISTRY.register("Load")
+def osis_load_surface_load(eType: str, strLc: str, strEntity: str, strPlanei:str, strDir:str, strGlobalI:Literal["0","1","2"], strP1i:str, strP2i:str,strP3i:str,strP4i:str) -> tuple[bool, str]:
+    """
+    创建或修改单元面荷载，不考虑边中节点荷载插值
+
+    Args:
+        eType (str):
+        strLc (str): 荷载工况名称
+        strEntity (str): 单元编号
+        strPlanei (str): 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
+        strDir (str):方向，默认为 VECTOR
+        strGlobalI (str):
+            * 0 = 局部
+            * 1 = 整体
+            * 2 = 整体 + 投影
+        strP1i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+        strP2i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+        strP3i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+        strP4i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因
+    """
+    pass
+
+@REGISTRY.register("Load")
+def osis_load_surface_load_vector(eType: str, strLc: str, strEntity: str, strPlanei: str, strDir: str, strXi: str, strYi: str, strZi: str, strP1i: str, strP2i: str, strP3i: str, strP4i: str) -> tuple[bool, str]:
+    """
+    创建或修改单元面荷载（方向向量定义），不考虑边中节点荷载插值
+
+    Args:
+        eType: (str): 荷载类型，默认为 ESRFC
+        strLc (str): 荷载工况名称
+        strEntity (str): 单元编号
+        strPlanei (str): 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
+        strDir (str):方向，默认为 VECTOR
+        strXi (str): VECTOR的具体值
+        strYi (str): VECTOR的具体值
+        strZi (str): VECTOR的具体值
+        strP1i (str): 对应Planei的角节点荷载值，量纲为M L^-1 T^-2
+        strP2i (str): 对应Planei的角节点荷载值，量纲为M L^-1 T^-2
+        strP3i (str): 对应Planei的角节点荷载值，量纲为M L^-1 T^-2
+        strP4i (str): 对应Planei的角节点荷载值，量纲为M L^-1 T^-2
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因
+    """
+    pass
+
+@REGISTRY.register("Load")
 def osis_load_displacement(eType: str="DISPLACEMENT", strLCName: str="自定义工况1", nEntity: int=1, dDx: float=100, dDy: float=0, dDz: float=0, dRx: float=0, dRy: float=0, dRz: float=0):
     '''
     创建或修改强迫位移
