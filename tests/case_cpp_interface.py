@@ -4,7 +4,7 @@
 cpp 模块接口测试
 """
 from pyosis.common import get_project_directory
-from src.pyosis.cpp import (
+from pyosis.cpp import (
     get_coordinate,
     get_all_group_info,
     get_all_element_info,
