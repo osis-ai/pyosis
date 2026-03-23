@@ -1,4 +1,4 @@
-# tests/test_cpp_interface.py
+# tests/case_cpp_interface.py
 
 """
 cpp 模块接口测试
