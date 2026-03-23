@@ -9,7 +9,8 @@ if __name__ == '__main__':
         check_path = Path(project_dir) / "Check"
         lcc_files = [f.stem for f in check_path.glob("*.lcc")]
         for filename in lcc_files:
-            isok, error, check_result = osis_check_result(*filename.split("_"))
+            parts = filename.split("_", 2)  # 最多分割3部分，保留名字中的下划线
+            isok, error, check_result = osis_check_result(*parts)
             check_result = check_result.to_string()
             print(filename)
             print(check_result)
