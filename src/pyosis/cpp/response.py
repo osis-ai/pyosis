@@ -3,7 +3,7 @@
 from typing import Any
 
 
-class OSISResponse:
+class OSISParse:
     """
     封装 C++ 接口返回值，解析 dict 格式：
     {"success": bool, "data": [...]} - GetCoordinate 等
@@ -132,4 +132,4 @@ class OSISResponse:
         Returns:
             调试用的字符串表示
         """
-        return f"OSISResponse(success={self._success}, count={len(self._data)})"
+        return f"OSISParse(success={self._success}, count={len(self._data)})"

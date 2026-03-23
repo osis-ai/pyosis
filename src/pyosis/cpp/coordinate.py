@@ -2,11 +2,11 @@
 
 import json
 
-from .response import OSISResponse
+from .response import OSISParse
 from ..core.client import osis_client
 
 
-class CoordinateResponse(OSISResponse):
+class Coordinate(OSISParse):
     """
     GetCoordinate 接口返回封装
     
@@ -94,5 +94,5 @@ class CoordinateResponse(OSISResponse):
         return None
 
 
-def get_coordinate() -> CoordinateResponse:
-    return CoordinateResponse()
+def get_coordinate() -> Coordinate:
+    return Coordinate()

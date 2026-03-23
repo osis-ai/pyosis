@@ -2,10 +2,10 @@
 
 import json
 from ..core.client import osis_client
-from .response import OSISResponse
+from .response import OSISParse
 
 
-class GroupInfoResponse(OSISResponse):
+class GroupInfo(OSISParse):
     """
     GetAllGroupInfo 接口返回封装
     
@@ -78,5 +78,5 @@ class GroupInfoResponse(OSISResponse):
         return g.get("relatedStageCount") if g else None
 
 
-def get_all_group_info() -> GroupInfoResponse:
-    return GroupInfoResponse()
+def get_all_group_info() -> GroupInfo:
+    return GroupInfo()

@@ -1,10 +1,10 @@
 # cpp/element_info.py
 
 from ..core.client import osis_client
-from .response import OSISResponse
+from .response import OSISParse
 
 
-class ElementInfoResponse(OSISResponse):
+class ElementInfo(OSISParse):
     """
     GetAllElementInfo 接口返回封装
 
@@ -485,5 +485,5 @@ class ElementInfoResponse(OSISResponse):
         return elem.get("nodeSum") if elem else None
 
 
-def get_all_element_info() -> ElementInfoResponse:
-    return ElementInfoResponse()
+def get_all_element_info() -> ElementInfo:
+    return ElementInfo()

@@ -1,10 +1,10 @@
 # cpp/node_info.py
 
 from ..core.client import osis_client
-from .response import OSISResponse
+from .response import OSISParse
 
 
-class NodeInfoResponse(OSISResponse):
+class NodeInfo(OSISParse):
     """
     GetAllNodeInfo 接口返回封装
 
@@ -188,5 +188,5 @@ class NodeInfoResponse(OSISResponse):
         return node.get("relatedSetlGrps") if node else None
 
 
-def get_all_node_info() -> NodeInfoResponse:
-    return NodeInfoResponse()
+def get_all_node_info() -> NodeInfo:
+    return NodeInfo()
