@@ -9,6 +9,8 @@ from pyosis.cpp import (
     get_all_group_info,
     get_all_element_info,
     get_all_node_info,
+    get_all_section_info,
+    get_section_info,
 )
 
 
@@ -169,6 +171,26 @@ def test_node_info():
         print(f"is_free({first_no}): {resp.is_free(first_no)}")
 
 
+def test_section_info():
+    """测试获取截面信息"""
+    resp = get_all_section_info()
+    print(f"\n=== GetAllSectionInfo ===")
+    print(f"success: {resp.success}")
+    print(f"count: {len(resp)}")
+
+    if resp.success and len(resp) > 0:
+        first_no = resp.get_no_list()[0]
+        print(f"\n--- 截面 {first_no} ---")
+        print(f"get_by_no({first_no}): {resp.get_by_no(first_no)}")
+        print(f"get_name({first_no}): {resp.get_name(first_no)}")
+        print(f"get_area({first_no}): {resp.get_area(first_no)}")
+
+        one = get_section_info(first_no)
+        print(f"\n=== GetSectionInfo(secNo={first_no}) ===")
+        print(f"success: {one.success}")
+        print(f"section: {one.section}")
+
+
 if __name__ == "__main__":
     print("开始测试 cpp 接口...")
     print("=" * 50)
@@ -177,6 +199,7 @@ if __name__ == "__main__":
     test_group_info()
     test_element_info()
     test_node_info()
+    test_section_info()
     print(get_project_directory())
 
     print("\n" + "=" * 50)
