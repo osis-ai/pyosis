@@ -190,6 +190,16 @@ def test_section_info():
         print(f"success: {one.success}")
         print(f"section: {one.section}")
 
+    defs = get_all_section_definitions()
+    print(f"\n=== GetAllSectionDefinitions ===")
+    print(f"success: {defs.success}, count: {len(defs)}")
+
+    usage = get_all_section_usage()
+    print(f"\n=== GetAllSectionUsage ===")
+    print(f"success: {usage.success}, by_element: {len(usage.by_element)}, by_section: {len(usage.by_section)}")
+    if usage.success and usage.by_element:
+        print(f"first by_element row: {usage.by_element[0]}")
+
 
 if __name__ == "__main__":
     print("开始测试 cpp 接口...")

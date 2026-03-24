@@ -55,6 +55,71 @@ class SectionInfo(OSISParse):
 def get_all_section_info() -> SectionInfo:
     return SectionInfo()
 
+class AllSectionDefinitions(SectionInfo):
+    """
+    GetAllSectionDefinitions：截面库中全部已定义截面（字段与 GetAllSectionInfo 相同）
+
+    预期返回 data 为与 SectionInfo 相同的列表结构。
+    """
+
+    def __init__(self) -> None:
+        OSISParse.__init__(self, osis_client("GetAllSectionDefinitions", {}))
+        self._sec_map: dict[int, dict] = {sec["no"]: sec for sec in self.data if "no" in sec}
+
+
+def get_all_section_definitions() -> AllSectionDefinitions:
+    return AllSectionDefinitions()
+
+
+class SectionUsage(OSISParse):
+    """
+    GetAllSectionUsage：单元对截面的引用关系
+
+    预期返回:
+        {
+            "success": true,
+            "data": {
+                "byElement": [
+                    {"elementNo": int, "elementType": int, "sectionNos": [int, ...]},
+                    ...
+                ],
+                "bySection": [
+                    {"secNo": int, "elementNos": [int, ...]},
+                    ...
+                ]
+            }
+        }
+    """
+
+    def __init__(self) -> None:
+        super().__init__(osis_client("GetAllSectionUsage", {}))
+
+    @property
+    def by_element(self) -> list:
+        d = self.raw.get("data")
+        if isinstance(d, dict):
+            return d.get("byElement", [])
+        return []
+
+    @property
+    def by_section(self) -> list:
+        d = self.raw.get("data")
+        if isinstance(d, dict):
+            return d.get("bySection", [])
+        return []
+
+    def __len__(self) -> int:
+        return len(self.by_element)
+
+    def __repr__(self) -> str:
+        return (
+            f"SectionUsage(success={self._success}, "
+            f"by_element={len(self.by_element)}, by_section={len(self.by_section)})"
+        )
+
+
+def get_all_section_usage() -> SectionUsage:
+    return SectionUsage()
 
 class SectionInfoByNo(OSISParse):
     """
