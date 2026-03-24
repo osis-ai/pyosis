@@ -1,4 +1,4 @@
-# cpp/node_info.py
+# io/node_info.py
 
 from ..core.client import osis_client
 from .response import OSISParse

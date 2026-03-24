@@ -1,10 +1,10 @@
 # tests/case_cpp_interface.py
 
 """
-cpp 模块接口测试
+io 模块接口测试
 """
 from pyosis.common import get_project_directory
-from pyosis.cpp import (
+from pyosis.io import (
     get_coordinate,
     get_all_group_info,
     get_all_element_info,
@@ -202,7 +202,7 @@ def test_section_info():
 
 
 if __name__ == "__main__":
-    print("开始测试 cpp 接口...")
+    print("开始测试 io 接口...")
     print("=" * 50)
 
     test_coordinate()

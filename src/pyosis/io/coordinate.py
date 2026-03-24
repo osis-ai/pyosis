@@ -1,4 +1,4 @@
-# cpp/coordinate.py
+# io/coordinate.py
 
 import json
 

@@ -1,4 +1,4 @@
-# cpp/group_info.py
+# io/group_info.py
 
 import json
 from ..core.client import osis_client

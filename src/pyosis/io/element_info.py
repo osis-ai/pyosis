@@ -1,4 +1,4 @@
-# cpp/element_info.py
+# io/element_info.py
 
 from ..core.client import osis_client
 from .response import OSISParse

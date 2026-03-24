@@ -14,3 +14,4 @@ from ..section import *
 from ..stage import *
 from ..geometry import *
 from ..thickness import *
+from ..io import *
