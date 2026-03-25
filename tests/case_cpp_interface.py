@@ -3,15 +3,7 @@
 """
 io 模块接口测试
 """
-from pyosis.common import get_project_directory
-from pyosis.io import (
-    get_coordinate,
-    get_all_group_info,
-    get_all_element_info,
-    get_all_node_info,
-    get_all_section_info,
-    get_section_info,
-)
+from pyosis.io import *
 
 
 def test_coordinate():
@@ -200,6 +192,67 @@ def test_section_info():
     if usage.success and usage.by_element:
         print(f"first by_element row: {usage.by_element[0]}")
 
+def test_material_info():
+    print("\n=== GetAllMaterialInfo ===")
+    mi = MaterialInfo()
+    print("success:", mi.success, "count:", len(mi.data))
+    for row in mi.data[:5]:
+        print(row)
+
+def test_boundary_info():
+    """测试获取边界信息"""
+    print("\n=== GetAllBoundaryInfo ===")
+    resp = get_all_boundary_info()
+    print(f"success: {resp.success}")
+    print(f"count: {len(resp)}")
+
+    if resp.success and len(resp) > 0:
+        # 获取边界编号列表
+        no_list = resp.get_no_list()
+        print(f"边界编号列表: {no_list}")
+
+        # 遍历所有边界，按类型测试
+        for bd in resp.data:
+            no = bd["no"]
+            bd_type = bd["type"]
+            print(f"\n--- 边界 {no} (类型: {resp.get_type_name(no)}) ---")
+            print(f"  get_by_no({no}): {resp.get_by_no(no)}")
+            print(f"  get_type({no}): {resp.get_type(no)}")
+            print(f"  get_type_name({no}): {resp.get_type_name(no)}")
+            print(f"  get_entity_vec({no}): {resp.get_entity_vec(no)}")
+            print(f"  is_occupied({no}): {resp.is_occupied(no)}")
+            print(f"  is_selected({no}): {resp.is_selected(no)}")
+
+            # 根据不同类型显示特有属性
+            if bd_type == 1:  # General
+                print(f"  get_coor_no({no}): {resp.get_coor_no(no)}")
+                print(f"  get_constraints({no}): {resp.get_constraints(no)}")
+            elif bd_type == 2:  # MstSlv
+                print(f"  get_master_no({no}): {resp.get_master_no(no)}")
+                print(f"  get_constraints({no}): {resp.get_constraints(no)}")
+            elif bd_type == 4:  # Release
+                print(f"  get_constraints({no}): {resp.get_constraints(no)}")
+                release_data = resp.get_by_no(no)
+                if "endIState" in release_data:
+                    print(f"  endIState: {release_data['endIState']}")
+                if "endJState" in release_data:
+                    print(f"  endJState: {release_data['endJState']}")
+                if "endI" in release_data:
+                    print(f"  endI: {release_data['endI']}")
+                if "endJ" in release_data:
+                    print(f"  endJ: {release_data['endJ']}")
+            elif bd_type == 5:  # ElstcSpt
+                print(f"  get_coor_no({no}): {resp.get_coor_no(no)}")
+                elastic_data = resp.get_by_no(no)
+                if "k" in elastic_data:
+                    print(f"  k: {elastic_data['k']}")
+                if "elasticK" in elastic_data:
+                    print(f"  elasticK: {elastic_data['elasticK']}")
+            elif bd_type == 6:  # GeneralElstcSpt
+                print(f"  get_coor_no({no}): {resp.get_coor_no(no)}")
+                print(f"  get_stiffness_matrix({no}): {resp.get_stiffness_matrix(no)}")
+                print(f"  get_mass_matrix({no}): {resp.get_mass_matrix(no)}")
+                print(f"  get_damping_matrix({no}): {resp.get_damping_matrix(no)}")
 
 if __name__ == "__main__":
     print("开始测试 io 接口...")
@@ -211,6 +264,7 @@ if __name__ == "__main__":
     test_node_info()
     test_section_info()
     print(get_project_directory())
-
+    test_material_info()
+    test_boundary_info()
     print("\n" + "=" * 50)
     print("测试完成")

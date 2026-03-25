@@ -5,3 +5,5 @@ from .element_info import *
 from .node_info import *
 from .response import *
 from .section_info import *
+from .material_info import *
+from .boundary_info import *
