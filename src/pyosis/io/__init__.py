@@ -8,3 +8,4 @@ from .section_info import *
 from .material_info import *
 from .boundary_info import *
 from .prestressed_info import *
+from .stage_info import *

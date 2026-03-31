@@ -282,6 +282,22 @@ def test_tendon_info():
     if tp.success:
         print("name list:", tp.get_name_list())
 
+def test_stage_info():
+  """测试获取施工阶段信息"""
+  stage = StageInfo()
+  print("\n=== StageInfo ===")
+  print(f"success: {stage.success}")
+  print(f"count: {len(stage)}")
+  if stage.success and len(stage) > 0:
+      no_list = stage.get_no_list()
+      print(f"阶段编号列表: {no_list}")
+      for no in no_list:
+          print(f"\n--- 施工阶段 {no} ---")
+          print(f"  get_by_no({no}): {stage.get_by_no(no)}")
+          print(f"  get_name({no}): {stage.get_name(no)}")
+          print(f"  get_duration({no}): {stage.get_duration(no)}")
+          print(f"  get_accumulation({no}): {stage.get_accumulation(no)}")
+          print(f"  get_pre_stage_no({no}): {stage.get_pre_stage_no(no)}")
 
 if __name__ == "__main__":
     print("开始测试 io 接口...")
@@ -297,5 +313,6 @@ if __name__ == "__main__":
     test_boundary_info()
     test_prestressed_info()
     test_tendon_info()
+    test_stage_info()
     print("\n" + "=" * 50)
     print("测试完成")
