@@ -11,7 +11,7 @@ from ..core import REGISTRY
 
 
 @REGISTRY.register("LoadCase")
-def osis_loadcase(strName: str="自定义工况1", eLoadCaseType: Literal["USER", "D", "DC", "DW", "DD", "CS"]="USER", dScalar: float=1.0, strPrompt: str =""):
+def osis_loadcase(strName: str="自定义工况1", eLoadCaseType: Literal["USER", "D", "DC", "DW", "DD", "CS"]="USER", dScalar: float=1.0, strPrompt: str =None):
     '''
     创建荷载工况
 
@@ -25,7 +25,7 @@ def osis_loadcase(strName: str="自定义工况1", eLoadCaseType: Literal["USER"
             * DD = 桩端摩擦力
             * CS = 施工阶段荷载
         dScalar (float): 系数，默认1.0
-        strPrompt (str): 说明，默认空
+        strPrompt (str): 说明，默认 None
     Returns:
         tuple (bool, str): 是否成功，失败原因
     
