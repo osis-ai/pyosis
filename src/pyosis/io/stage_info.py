@@ -13,11 +13,42 @@ class StageInfo(OSISParse):
             "success": true,
             "data": [
                 {
-                    "no": int,          # 阶段编号
-                    "name": str,        # 阶段名称
-                    "duration": float,  # 持续时间
-                    "accumulation": float,  # 累积时间
-                    "preStageNo": int,  # 前置阶段编号，-1表示无前置阶段
+                    "no": int,                    # 阶段编号
+                    "name": str,                  # 阶段名称
+                    "duration": float,            # 持续时间
+                    "accumulation": float,        # 累积时间
+                    "preStageNo": int,             # 前置阶段编号，-1表示无前置阶段
+                    "elementGroups": [             # 单元组列表
+                        {
+                            "name": str,          # 单元组名称
+                            "birth": float,       # 激活时间
+                            "part": int,          # 部件标识
+                        },
+                        ...
+                    ],
+                    "boundaryGroups": [           # 边界组列表
+                        {
+                            "name": str,          # 边界组名称
+                            "position": str,      # 位置：beforeDeformation / afterDeformation
+                        },
+                        ...
+                    ],
+                    "loadCases": [                # 作用工况列表
+                        {
+                            "lcName": str,        # 工况名称
+                            "preRefLcName": str,  # 前参考工况名称
+                            "isActivated": bool,  # 是否激活
+                            "time": float,       # 时间
+                        },
+                        ...
+                    ],
+                    "analysisCases": [             # 分析工况列表
+                        {
+                            "category": int,      # 分析类型
+                            "analName": str,      # 分析名称
+                        },
+                        ...
+                    ],
                 },
                 ...
             ]
@@ -102,3 +133,55 @@ class StageInfo(OSISParse):
         """
         stage = self.get_by_no(no)
         return stage.get("preStageNo") if stage else None
+
+    def get_element_groups(self, no: int) -> list[dict] | None:
+        """
+        根据阶段编号获取单元组列表
+
+        Args:
+            no: 阶段编号
+
+        Returns:
+            单元组列表；未找到返回 None
+        """
+        stage = self.get_by_no(no)
+        return stage.get("elementGroups") if stage else None
+
+    def get_boundary_groups(self, no: int) -> list[dict] | None:
+        """
+        根据阶段编号获取边界组列表
+
+        Args:
+            no: 阶段编号
+
+        Returns:
+            边界组列表；未找到返回 None
+        """
+        stage = self.get_by_no(no)
+        return stage.get("boundaryGroups") if stage else None
+
+    def get_load_cases(self, no: int) -> list[dict] | None:
+        """
+        根据阶段编号获取作用工况列表
+
+        Args:
+            no: 阶段编号
+
+        Returns:
+            作用工况列表；未找到返回 None
+        """
+        stage = self.get_by_no(no)
+        return stage.get("loadCases") if stage else None
+
+    def get_analysis_cases(self, no: int) -> list[dict] | None:
+        """
+        根据阶段编号获取分析工况列表
+
+        Args:
+            no: 阶段编号
+
+        Returns:
+            分析工况列表；未找到返回 None
+        """
+        stage = self.get_by_no(no)
+        return stage.get("analysisCases") if stage else None
