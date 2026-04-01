@@ -198,7 +198,7 @@ class NodeManager:
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int) -> Node | None:
+    def get(self, no: int | list[int]) -> Node | list[Node] | None:
         """根据编号获取单个节点 (O(1))
 
         Args:
@@ -208,19 +208,12 @@ class NodeManager:
             Node 对象；节点不存在返回 None
         """
         self._load()
-        return self._node_map.get(no)
-
-    # def exists(self, no: int) -> bool:
-    #     """判断节点是否存在 (O(1))
-
-    #     Args:
-    #         no: 节点编号
-
-    #     Returns:
-    #         是否存在
-    #     """
-    #     self._load()
-    #     return no in self._node_map
+        if isinstance(no, int):
+            return self._node_map.get(no)
+        elif isinstance(no, list):
+            return [self._node_map.get(n) for n in no if n in self._node_map]
+        else:
+            raise TypeError(f"不支持的编号类型: {type(no)}")
 
     def all(self) -> list[Node]:
         """获取所有节点
@@ -239,106 +232,6 @@ class NodeManager:
         """
         self._load()
         return len(self._nodes)
-
-    # def nos(self) -> list[int]:
-    #     """获取所有节点编号列表
-
-    #     Returns:
-    #         节点编号列表
-    #     """
-    #     self._load()
-    #     return [node.no for node in self._nodes]
-
-    # def filter_by_coordinates(
-    #     self,
-    #     x_min: float | None = None,
-    #     x_max: float | None = None,
-    #     y_min: float | None = None,
-    #     y_max: float | None = None,
-    #     z_min: float | None = None,
-    #     z_max: float | None = None,
-    # ) -> list[Node]:
-    #     """按坐标范围筛选节点
-
-    #     Args:
-    #         x_min, x_max: X 坐标范围（None 表示不限制）
-    #         y_min, y_max: Y 坐标范围
-    #         z_min, z_max: Z 坐标范围
-
-    #     Returns:
-    #         符合条件的节点列表
-    #     """
-    #     self._load()
-    #     result = []
-    #     for node in self._nodes:
-    #         if x_min is not None and node.x < x_min:
-    #             continue
-    #         if x_max is not None and node.x > x_max:
-    #             continue
-    #         if y_min is not None and node.y < y_min:
-    #             continue
-    #         if y_max is not None and node.y > y_max:
-    #             continue
-    #         if z_min is not None and node.z < z_min:
-    #             continue
-    #         if z_max is not None and node.z > z_max:
-    #             continue
-    #         result.append(node)
-    #     return result
-
-    # def filter_by_selection(self, selected: bool = True) -> list[Node]:
-    #     """按选中状态筛选节点
-
-    #     Args:
-    #         selected: True 返回选中的节点，False 返回未选中的节点
-
-    #     Returns:
-    #         符合条件的节点列表
-    #     """
-    #     self._load()
-    #     return [n for n in self._nodes if n.is_selected == selected]
-
-    # def filter_by_related_element(self, elem_no: int) -> list[Node]:
-    #     """查询关联到指定单元的节点 (O(k)，k=关联节点数)
-
-    #     Args:
-    #         elem_no: 单元编号
-
-    #     Returns:
-    #         关联到该单元的节点列表
-    #     """
-    #     self._load()
-    #     return self._element_map.get(elem_no, [])
-
-    # ── 高效批量查询 ──────────────────────────────
-
-    def get_batch(self, nos: list[int]) -> list[Node]:
-        """批量查询节点 (O(m)，m=查询数)
-
-        Args:
-            nos: 节点编号列表
-
-        Returns:
-            查询到的节点列表（按输入顺序，不存在的节点跳过）
-        """
-        self._load()
-        return [self._node_map[no] for no in nos if no in self._node_map]
-
-    # def filter_by_related_elements_batch(self, elem_nos: list[int]) -> list[Node]:
-    #     """批量查询关联到指定单元列表的节点，返回去重结果
-
-    #     Args:
-    #         elem_nos: 单元编号列表
-
-    #     Returns:
-    #         关联到任一单元的节点列表（去重）
-    #     """
-    #     self._load()
-    #     result_set = set()
-    #     for elem_no in elem_nos:
-    #         if elem_no in self._element_map:
-    #             result_set.update(self._element_map[elem_no])
-    #     return list(result_set)
 
     def __repr__(self) -> str:
         self._load()
