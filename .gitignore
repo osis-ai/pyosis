@@ -46,3 +46,5 @@ Thumbs.db
 .eggs/
 *.whl
 *.tar.gz
+
+pyosis_logs/
