@@ -283,7 +283,11 @@ class ElementManager:
         """
         ok, err = osis_element_shell(no, "SHELL", bIsThin, nMat, nThk, node1, node2, node3, node4)
         if not ok:
-            raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
+            # todo 暂不支持创建壳单元
+            raise NotImplementedError(
+                f"OSIS 暂不支持创建 SHELL 单元。"
+            )
+            # raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
         self._loaded = False
 
     def delete(self, no: int) -> None:
