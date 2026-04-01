@@ -20,7 +20,7 @@ from pyosis.node import *
 from pyosis.element import *
 from pyosis.boundary import *
 from pyosis.load import *
-from pyosis.post import *
+from pyosis.result import *
 
 def dict_to_json_txt(data, filename):
     """将字典以JSON格式写入文件"""

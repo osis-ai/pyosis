@@ -2,7 +2,7 @@ from typing import Literal, Any
 
 import pandas as pd
 
-from pyosis.post.result import txt_file_path
+from pyosis.result.result import txt_file_path
 
 # 将包络结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
