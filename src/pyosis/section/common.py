@@ -305,7 +305,7 @@ def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal[
                                   xi7: float=0.6, yi7: float=0.3,
                                   BcL: float=2.875, TcL: float=0.2, Bc1L: float=1.325, Tc1L: float=0.7, Tc2L: float=0.4,
                                   bSymmetry: bool=True, BcR: float=2.875, TcR: float=0.2, Bc1R: float=1.325, Tc1R: float=0.7, Tc2R: float=0.4,
-                                  eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                                  eSlopeType: Literal["Integral", "CastInPlace"]="Integral",
                                   i: float=0, i1: float=0, i2: float=0, i3: float=0, i4: float=0,
                                   R1: float=0, R2: float=0):
     """定义或修改常规箱梁截面(ConventionalBox)。
@@ -354,7 +354,7 @@ def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal[
         Bc1R (float): 右悬臂倒角1宽。
         Tc1R (float): 右悬臂倒角1根部厚。
         Tc2R (float): 右悬臂倒角2根部厚。
-        eSlopeType (str): 横坡类型，Intergal=整体旋转找坡，CastInPlace=现浇模板找坡。
+        eSlopeType (str): 横坡类型，Integral=整体旋转找坡，CastInPlace=现浇模板找坡。
         i (float): 整体旋转的横坡。
         i1 (float): 顶左坡。
         i2 (float): 顶右坡。
@@ -381,7 +381,7 @@ def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["FLATBO
                           xi7: float=0.5, yi7: float=0.3,
                           BcL: float=4.0, TcL: float=0.2, Bc1L: float=0.5, Tc1L: float=0.7, Tc2L: float=0.4,
                           bSymmetry: bool=True, BcR: float=4.0, TcR: float=0.2, Bc1R: float=0.5, Tc1R: float=0.7, Tc2R: float=0.4,
-                          eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                          eSlopeType: Literal["Integral", "CastInPlace"]="Integral",
                           i: float=0.0, i1: float=0.0, i2: float=0.0, i3: float=0.0, i4: float=0.0,
                           R1: float=0.5, R2: float=0.2):
     """定义或修改扁平箱梁截面(FlatBox)。
@@ -433,7 +433,7 @@ def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["FLATBO
         Bc1R (float): 右悬臂倒角1宽。
         Tc1R (float): 右悬臂倒角1根部厚。
         Tc2R (float): 右悬臂倒角2根部厚。
-        eSlopeType (str): 横坡类型，Intergal=整体旋转找坡，CastInPlace=现浇模板找坡。
+        eSlopeType (str): 横坡类型，Integral=整体旋转找坡，CastInPlace=现浇模板找坡。
         i (float): 整体旋转的横坡。
         i1 (float): 顶左坡。
         i2 (float): 顶右坡。
@@ -456,7 +456,7 @@ def osis_section_double_side_box(nSec: int, strName: str, eSectionType: Literal[
                                  b: float=1.0, n: float=1.0, 
                                  Bi: float=8.0, xi1: float=1.0, Tt1: float=0.6, xi2: float=1.0, Tt2: float=0.7,
                                  xi3: float=0.6, yi3: float=0.3, xo4: float=1.0, Tt4: float=0.7, b1: float=0.3,
-                                 eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                                 eSlopeType: Literal["Integral", "CastInPlace"]="Integral",
                                  i: float=0.0, i1: float=0.0, i2: float=0.0):
     """定义或修改双边箱截面(DoubleSideBox)。
 
@@ -485,7 +485,7 @@ def osis_section_double_side_box(nSec: int, strName: str, eSectionType: Literal[
         xo4 (float): 倒角4宽(顶板)。
         Tt4 (float): 倒角4根部厚。
         b1 (float): 腹板内侧倒角宽。
-        eSlopeType (str): 箱梁橫坡类型，Intergal=整体旋转找坡，CastInPlace=现浇模板找坡。
+        eSlopeType (str): 箱梁橫坡类型，Integral=整体旋转找坡，CastInPlace=现浇模板找坡。
         i (float): 整体转梁横坡。
         i1 (float): 顶左坡。
         i2 (float): 顶右坡。
@@ -502,7 +502,7 @@ def osis_section_ribbed_slab(nSec: int, strName: str, eSectionType: Literal["RIB
                              H: float=2.8, Bt: float=21.5, bt: float=17.7, Tt: float=0.3,
                              b: float=0.2, h: float=1.25, b1: float=1.8, b2: float=0.2,
                              x: float=1.5, y: float=0.3,
-                             eSlopeType: Literal["Intergal", "CastInPlace"]="Intergal",
+                             eSlopeType: Literal["Integral", "CastInPlace"]="Integral",
                              i: float=0.0, i1: float=0.0, i2: float=0.0):
     """定义或修改肋板式截面(RibbedSlab)。
 
@@ -520,10 +520,10 @@ def osis_section_ribbed_slab(nSec: int, strName: str, eSectionType: Literal["RIB
         b2 (float): 边肋内侧倒角宽。
         x (float): 顶板倒角宽。
         y (float): 顶板倒角高。
-        eSlopeType (str): 横坡类型，Intergal=整体旋转找坡，CastInPlace=现浇模板找坡。
+        eSlopeType (str): 横坡类型，Integral=整体旋转找坡，CastInPlace=现浇模板找坡。
         i (float): 整体转梁横坡，SlopeType=CastInPlace时缺省。
-        i1 (float): 顶左坡，SlopeType=Intergal时缺省。
-        i2 (float): 顶右坡，SlopeType=Intergal时缺省。
+        i1 (float): 顶左坡，SlopeType=Integral时缺省。
+        i2 (float): 顶右坡，SlopeType=Integral时缺省。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
