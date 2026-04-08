@@ -344,7 +344,834 @@ class SectionManager:
         """
         ok, err = osis_section_steel_box(no, name, "STEELBOX", H, Bt, Bct, Bb, Bcb, Tt, Tb, Tw, SameLayout)
         if not ok:
-            raise RuntimeError(f"创建箱型钢截面 {no} 失败: {err}")
+            raise NotImplementedError(f"OSIS暂不支持创建箱型钢截面")
+            # raise RuntimeError(f"创建箱型钢截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_steel_box_three_cell(
+        self,
+        no: int,
+        name: str,
+        H: float,
+        Bt: float,
+        Bb: float,
+        i: float,
+        a1: float,
+        a2: float,
+        Dt: float,
+        Tt1: float,
+        Tt2: float,
+        Tb1: float,
+        Db: float,
+        Tb2: float,
+        Tb3: float,
+        Tw1: float,
+        Dw: float,
+        HasWeb: Literal[0, 1],
+        Tw2: float,
+        WebRibPos: Literal["Left", "Right", "Both"],
+    ) -> None:
+        """创建单箱单/三室钢截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 梁高
+            Bt: 上翼缘宽度
+            Bb: 下翼缘宽度
+            i: 顶面横坡
+            a1: 边腹板倾角
+            a2: 斜底板倾角
+            Dt: 顶点变厚点至起点距离
+            Tt1: 顶板厚度1
+            Tt2: 顶板厚度2
+            Tb1: 底板厚度
+            Db: 斜底板变厚点至起点距离
+            Tb2: 斜底板厚度1
+            Tb3: 斜底板厚度2
+            Tw1: 边腹板厚度
+            Dw: 中腹板至主梁中心线距离
+            HasWeb: 是否有中腹板，1=有中腹板，0=无中腹板
+            Tw2: 中腹板厚度
+            WebRibPos: 加劲肋位置，Left=左侧，Right=右侧，Both=两侧
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_steel_box_three_cell(
+            no, name, "STEELBOXTHREECELL", H, Bt, Bb, i, a1, a2, Dt,
+            Tt1, Tt2, Tb1, Db, Tb2, Tb3, Tw1, Dw, HasWeb, Tw2, WebRibPos
+        )
+        if not ok:
+            raise RuntimeError(f"创建单箱单/三室钢截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_steel_box_itf(
+        self,
+        no: int,
+        name: str,
+        H: float,
+        B: float,
+        Bt: float,
+        Bb: float,
+        i: float,
+        a1: float,
+        a2: float,
+        Dt: float,
+        Tt1: float,
+        Tt2: float,
+        Tt3: float,
+        Tb1: float,
+        Db: float,
+        Tb2: float,
+        Tb3: float,
+        Tw1: float,
+    ) -> None:
+        """创建单箱单室斜顶板钢截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 梁高
+            B: 梁宽
+            Bt: 顶板宽度
+            Bb: 平底板宽度
+            i: 顶面横坡
+            a1: 斜顶板倾角
+            a2: 斜底板倾角
+            Dt: 顶板变厚点至起点距离
+            Tt1: 顶板厚度1
+            Tt2: 顶板厚度2
+            Tt3: 斜顶板厚度
+            Tb1: 底板厚度
+            Db: 斜底板变厚点至起点距离
+            Tb2: 斜底板厚度1
+            Tb3: 斜底板厚度2
+            Tw1: 边腹板厚度
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_steel_box_itf(
+            no, name, "STEELBOXITF", H, B, Bt, Bb, i, a1, a2, Dt,
+            Tt1, Tt2, Tt3, Tb1, Db, Tb2, Tb3, Tw1
+        )
+        if not ok:
+            raise NotImplementedError (f"OSIS暂不支持创建单箱单室斜顶板截面")
+            raise RuntimeError(f"创建单箱单室斜顶板截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_steel_canti_box(
+        self,
+        no: int,
+        name: str,
+        H: float,
+        Bt: float,
+        Bb: float,
+        i: float,
+        a: float,
+        Dt: float,
+        Tt1: float,
+        Tt2: float,
+        Tb1: float,
+        Tw1: float,
+        HasWeb: Literal[0, 1],
+        Tw2: float,
+        WebRibPos: Literal["Left", "Right", "Both"],
+        h: float,
+        t: float,
+    ) -> None:
+        """创建悬臂单箱单/双室钢截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 梁高
+            Bt: 顶板宽度
+            Bb: 平底板宽度
+            i: 顶面横坡
+            a: 边腹板倾角
+            Dt: 顶板变厚点至起点距离
+            Tt1: 顶板厚度1
+            Tt2: 顶板厚度2
+            Tb1: 底板厚度
+            Tw1: 边腹板厚度
+            HasWeb: 是否有中腹板，1=有中腹板，0=无中腹板
+            Tw2: 中腹板厚度
+            WebRibPos: 加劲肋位置
+            h: 悬臂端封板高
+            t: 悬臂端封板厚
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_steel_canti_box(
+            no, name, "STEELCANTIBOX", H, Bt, Bb, i, a, Dt,
+            Tt1, Tt2, Tb1, Tw1, HasWeb, Tw2, WebRibPos, h, t
+        )
+        if not ok:
+            raise RuntimeError(f"创建悬臂单箱单/双室截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_steel_canti_box_ibf(
+        self,
+        no: int,
+        name: str,
+        H: float,
+        Bt: float,
+        Bb: float,
+        Bc: float,
+        i: float,
+        a: float,
+        Dt: float,
+        Tt1: float,
+        Tt2: float,
+        Tb1: float,
+        Tb2: float,
+        Tw1: float,
+        HasWeb: Literal[0, 1],
+        Tw2: float,
+        WebRibPos: Literal["Left", "Right", "Both"],
+        h: float,
+        t: float,
+    ) -> None:
+        """创建悬臂单箱单/双室斜底板钢截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 梁高
+            Bt: 顶板宽度
+            Bb: 平底板宽度
+            Bc: 悬臂长
+            i: 顶面横坡
+            a: 边腹板倾角
+            Dt: 顶板变厚点至起点距离
+            Tt1: 顶板厚度1
+            Tt2: 顶板厚度2
+            Tb1: 底板厚度
+            Tb2: 斜底板厚度
+            Tw1: 边腹板厚度
+            HasWeb: 是否有中腹板，1=有中腹板，0=无中腹板
+            Tw2: 中腹板厚度
+            WebRibPos: 加劲肋位置
+            h: 悬臂端封板高
+            t: 悬臂端封板厚
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_steel_canti_box_ibf(
+            no, name, "STEELCANTIBOXIBF", H, Bt, Bb, Bc, i, a, Dt,
+            Tt1, Tt2, Tb1, Tb2, Tw1, HasWeb, Tw2, WebRibPos, h, t
+        )
+        if not ok:
+            raise RuntimeError(f"创建悬臂单箱单/双室斜底板截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_steel_custom(
+        self,
+        no: int,
+        name: str,
+        point_matrix: str,
+        line_matrix: str,
+    ) -> None:
+        """创建自定义钢梁截面（通过点线关系输入）
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            point_matrix: 几何点矩阵名称，需先用 osis_matrix 定义
+            line_matrix: 几何线矩阵名称，需先用 osis_matrix 定义
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_steel_custom(no, name, "STEELCUSTOM", point_matrix, line_matrix)
+        if not ok:
+            raise NotImplementedError(f"OSIS暂不支持创建自定义钢梁截面")
+            # raise RuntimeError(f"创建自定义钢梁截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_steel_custom_plate(
+        self,
+        no: int,
+        name: str,
+        plate_positions: list[str],
+    ) -> None:
+        """创建自定义钢梁截面（通过参数板输入）
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            plate_positions: 指定该截面拥有的板件列表，如 ["TopFlange", "BottomFlange", "SideWeb"]
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_steel_custom_plate(no, name, "STEELCUSTOMPLATE", plate_positions)
+        if not ok:
+            raise RuntimeError(f"创建自定义钢梁参数板截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_smallbox(
+        self,
+        no: int,
+        name: str,
+        eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
+        H: float = 1.6,
+        Bs: float = 1.65,
+        Bm: float = 1.2,
+        Bc: float = 0.0,
+        Bb: float = 1.0,
+        Tt: float = 0.18,
+        Tb: float = 0.2,
+        Tw: float = 0.2,
+        i: float = 4.0,
+        Tc: float = 0.18,
+        Tc1: float = 0.25,
+        x: float = 0.2,
+        xi1: float = 0.15,
+        Tt1: float = 0.25,
+        xi2: float = 0.05,
+        yi2: float = 0.05,
+        bSlope: bool = False,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        R: float = 0.05,
+    ) -> None:
+        """创建小箱梁截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            eGirderPos: 截面位置，Left=左边梁，Middle=中梁，Right=右边梁
+            H: 箱梁高度
+            Bs: 边翼板宽
+            Bm: 中梁半宽
+            Bc: 现浇湿接缝半宽
+            Bb: 底板宽
+            Tt: 顶板厚
+            Tb: 底板厚
+            Tw: 腹板厚
+            i: 腹板倾斜比
+            Tc: 边梁悬臂端部厚
+            Tc1: 边梁悬臂根部厚
+            x: 中梁翼板倒角宽
+            xi1: 倒角1宽（顶板）
+            Tt1: 倒角1根部厚
+            xi2: 倒角2宽（底板）
+            yi2: 倒角2高
+            bSlope: 是否输入横坡
+            i1: 顶左坡
+            i2: 顶右坡
+            R: 底板倒角圆弧半径
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_smallbox(
+            no, name, "SMALLBOX", eGirderPos, H, Bs, Bm, Bc, Bb,
+            Tt, Tb, Tw, i, Tc, Tc1, x, xi1, Tt1, xi2, yi2, bSlope, i1, i2, R
+        )
+        if not ok:
+            raise RuntimeError(f"创建小箱梁截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_hollowslab(
+        self,
+        no: int,
+        name: str,
+        eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
+        H: float = 0.95,
+        Bs: float = 1.0,
+        Bm: float = 0.57,
+        Bj: float = 0.05,
+        Tt: float = 0.12,
+        Tb: float = 0.12,
+        Tw: float = 0.16,
+        Tc: float = 0.12,
+        Tc1: float = 0.16,
+        Bc: float = 0.38,
+        xi1: float = 0.15,
+        yi1: float = 0.08,
+        xi2: float = 0.12,
+        yi2: float = 0.08,
+        xo3: float = 0.05,
+        yo3: float = 0.05,
+        xo4: float = 0.08,
+        yo4: float = 0.08,
+        h1: float = 0.12,
+    ) -> None:
+        """创建空心板截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            eGirderPos: 截面位置，Left=左边梁，Middle=中梁，Right=右边梁
+            H: 板高
+            Bs: 边板宽
+            Bm: 中梁半宽
+            Bj: 铰缝上端缩进宽
+            Tt: 顶板厚
+            Tb: 底板厚
+            Tw: 腹板下端厚
+            Tc: 边板悬臂端部厚
+            Tc1: 边板悬臂根部厚
+            Bc: 边板悬臂厚
+            xi1: 倒角1宽（顶板）
+            yi1: 倒角1高
+            xi2: 倒角2宽（底板）
+            yi2: 倒角2高
+            xo3: 倒角3宽（上端）
+            yo3: 倒角3高
+            xo4: 倒角4宽（下端）
+            yo4: 倒角4高
+            h1: 下端竖直段高
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_hollowslab(
+            no, name, "HOLLOWSLAB", eGirderPos, H, Bs, Bm, Bj,
+            Tt, Tb, Tw, Tc, Tc1, Bc, xi1, yi1, xi2, yi2,
+            xo3, yo3, xo4, yo4, h1
+        )
+        if not ok:
+            raise RuntimeError(f"创建空心板截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_rounded_end(
+        self,
+        no: int,
+        name: str,
+        eFillingType: Literal["Solid", "Hollow"] = "Solid",
+        B: float = 7.0,
+        H: float = 3.0,
+        R: float = 2.0,
+        bHasDiaphragm: bool = False,
+        b: float = 4.0,
+        t: float = 1.0,
+        xi1: float = 0.5,
+        yi1: float = 0.25,
+        tw: float = 1.0,
+        xi2: float = 0.5,
+        yi2: float = 0.25,
+    ) -> None:
+        """创建圆端形截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            eFillingType: 填充类型，Solid=实腹，Hollow=空腹
+            B: 截面宽
+            H: 截面高
+            R: 圆弧半径
+            bHasDiaphragm: 是否有隔板
+            b: 内宽
+            t: 壁厚
+            xi1: 内倒角宽
+            yi1: 内倒角高
+            tw: 隔板厚
+            xi2: 隔板倒角宽
+            yi2: 隔板倒角高
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_rounded_end(
+            no, name, "ROUNDEDEND", eFillingType, B, H, R,
+            bHasDiaphragm, b, t, xi1, yi1, tw, xi2, yi2
+        )
+        if not ok:
+            raise RuntimeError(f"创建圆端形截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_conventionalbox(
+        self,
+        no: int,
+        name: str,
+        H: float = 2.7,
+        BtL: float = 6.375,
+        BtR: float = 6.375,
+        BbL: float = 3.5,
+        BbR: float = 3.5,
+        Bs: float = 0.5,
+        Tt: float = 0.28,
+        Tb: float = 0.32,
+        Tw1: float = 0.5,
+        Tw2: float = 0.5,
+        nCellNum: int = 1,
+        Bi1: float = 5.05,
+        Bi2: float = 4.5,
+        Bi3: float = 5.05,
+        Bi4: float = 5.05,
+        xi1: float = 1.5,
+        Tt1: float = 0.7,
+        xi2: float = 0.0,
+        Tt2: float = 0.0,
+        xi3: float = 1.0,
+        yi3: float = 0.5,
+        xi4: float = 0.5,
+        Tt4: float = 0.35,
+        xi5: float = 0.6,
+        yi5: float = 0.3,
+        xi6: float = 1.0,
+        Tt6: float = 0.5,
+        xi7: float = 0.6,
+        yi7: float = 0.3,
+        BcL: float = 2.875,
+        TcL: float = 0.2,
+        Bc1L: float = 1.325,
+        Tc1L: float = 0.7,
+        Tc2L: float = 0.4,
+        bSymmetry: bool = True,
+        BcR: float = 2.875,
+        TcR: float = 0.2,
+        Bc1R: float = 1.325,
+        Tc1R: float = 0.7,
+        Tc2R: float = 0.4,
+        eSlopeType: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        i3: float = 0.0,
+        i4: float = 0.0,
+        R1: float = 0.0,
+        R2: float = 0.0,
+    ) -> None:
+        """创建常规箱梁截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 截面高度
+            BtL: 设计线左顶板宽
+            BtR: 设计线右顶板宽
+            BbL: 设计线左底板宽
+            BbR: 设计线右底板宽
+            Bs: 悬臂根部至边腹板顶内侧宽度
+            Tt: 顶板厚
+            Tb: 底板厚
+            Tw1: 边腹板厚
+            Tw2: 中腹板厚
+            nCellNum: 箱室个数
+            Bi1~Bi4: 箱室1~4宽度
+            xi1~yi7: 各种倒角参数
+            BcL/TcL等: 左悬臂参数
+            bSymmetry: 右侧是否对称
+            BcR/TcR等: 右悬臂参数
+            eSlopeType: 横坡类型
+            i/i1~i4: 横坡参数
+            R1/R2: 倒角圆弧半径
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_conventionalbox(
+            no, name, "CONVENTIONALBOX", H, BtL, BtR, BbL, BbR, Bs,
+            Tt, Tb, Tw1, Tw2, nCellNum, Bi1, Bi2, Bi3, Bi4,
+            xi1, Tt1, xi2, Tt2, xi3, yi3, xi4, Tt4, xi5, yi5, xi6, Tt6, xi7, yi7,
+            BcL, TcL, Bc1L, Tc1L, Tc2L, bSymmetry, BcR, TcR, Bc1R, Tc1R, Tc2R,
+            eSlopeType, i, i1, i2, i3, i4, R1, R2
+        )
+        if not ok:
+            raise NotImplementedError(
+                f"OSIS 暂不支持创建常规箱梁截面"
+            )
+            # raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_flat_box(
+        self,
+        no: int,
+        name: str,
+        H: float = 4.0,
+        BtL: float = 20.0,
+        BtR: float = 20.0,
+        BbL: float = 10.5,
+        BbR: float = 10.5,
+        Bs: float = 0.8,
+        Tt: float = 0.28,
+        Tb1: float = 0.27,
+        Tb2: float = 0.27,
+        Tw: float = 0.25,
+        Ttj: float = 0.5,
+        Tbj: float = 0.27,
+        Twj: float = 0.4,
+        nCellNum: int = 5,
+        Bi1: float = 4.7,
+        Bi2: float = 6.85,
+        Bi3: float = 6.0,
+        Bi4: float = 6.85,
+        xi1: float = 0.6,
+        Tt1: float = 0.6,
+        xi2: float = 1.0,
+        Tt2: float = 0.7,
+        xi3: float = 0.2,
+        yi3: float = 0.2,
+        xi4: float = 1.0,
+        Tt4: float = 0.7,
+        xi5: float = 0.6,
+        yi5: float = 0.3,
+        xi6: float = 0.5,
+        Tt6: float = 0.7,
+        xi7: float = 0.5,
+        yi7: float = 0.3,
+        BcL: float = 4.0,
+        TcL: float = 0.2,
+        Bc1L: float = 0.5,
+        Tc1L: float = 0.7,
+        Tc2L: float = 0.4,
+        bSymmetry: bool = True,
+        BcR: float = 4.0,
+        TcR: float = 0.2,
+        Bc1R: float = 0.5,
+        Tc1R: float = 0.7,
+        Tc2R: float = 0.4,
+        eSlopeType: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        i3: float = 0.0,
+        i4: float = 0.0,
+        R1: float = 0.5,
+        R2: float = 0.2,
+    ) -> None:
+        """创建扁平箱梁截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 截面高度
+            BtL: 设计线左顶板宽
+            BtR: 设计线右顶板宽
+            BbL: 设计线左底板宽
+            BbR: 设计线右底板宽
+            Bs: 悬臂根部至边腹板顶内侧宽度
+            Tt: 顶板厚
+            Tb1: 底板厚
+            Tb2: 斜底板厚
+            Tw: 腹板厚
+            Ttj: 加强室顶板厚
+            Tbj: 加强室底板厚
+            Twj: 加强室腹板厚
+            nCellNum: 箱室个数
+            Bi1~Bi4: 箱室1~4宽度
+            xi1~yi7: 各种倒角参数
+            BcL/TcL等: 左悬臂参数
+            bSymmetry: 右侧是否对称
+            BcR/TcR等: 右悬臂参数
+            eSlopeType: 横坡类型
+            i/i1~i4: 横坡参数
+            R1/R2: 倒角圆弧半径
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_flat_box(
+            no, name, "FLATBOX", H, BtL, BtR, BbL, BbR, Bs,
+            Tt, Tb1, Tb2, Tw, Ttj, Tbj, Twj, nCellNum, Bi1, Bi2, Bi3, Bi4,
+            xi1, Tt1, xi2, Tt2, xi3, yi3, xi4, Tt4, xi5, yi5, xi6, Tt6, xi7, yi7,
+            BcL, TcL, Bc1L, Tc1L, Tc2L, bSymmetry, BcR, TcR, Bc1R, Tc1R, Tc2R,
+            eSlopeType, i, i1, i2, i3, i4, R1, R2
+        )
+        if not ok:
+            raise NotImplementedError (f"OSIS 暂不支持创建扁平箱梁截面")
+            # raise RuntimeError(f"创建扁平箱梁截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_double_side_box(
+        self,
+        no: int,
+        name: str,
+        H: float = 3.8,
+        Bt: float = 36.0,
+        bt: float = 14.8,
+        Bs: float = 2.1,
+        Bb: float = 4.4,
+        tt: float = 0.3,
+        Tb1: float = 0.3,
+        Tb2: float = 0.3,
+        Tw: float = 0.5,
+        b: float = 1.0,
+        n: float = 1.0,
+        Bi: float = 8.0,
+        xi1: float = 1.0,
+        Tt1: float = 0.6,
+        xi2: float = 1.0,
+        Tt2: float = 0.7,
+        xi3: float = 0.6,
+        yi3: float = 0.3,
+        xo4: float = 1.0,
+        Tt4: float = 0.7,
+        b1: float = 0.3,
+        eSlopeType: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = 0.0,
+        i2: float = 0.0,
+    ) -> None:
+        """创建双边箱截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 梁高
+            Bt: 顶板顶宽
+            bt: 顶板底宽
+            Bs: 边箱实心段顶板宽
+            Bb: 底板宽
+            tt: 顶板厚
+            Tb1: 底板厚
+            Tb2: 斜底板厚
+            Tw: 腹板厚
+            b: 风嘴上部水平宽度
+            n: 风嘴上部竖向高度
+            Bi: 室内宽
+            xi1~Tt4: 倒角参数
+            b1: 腹板内侧倒角宽
+            eSlopeType: 横坡类型
+            i/i1/i2: 横坡参数
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_double_side_box(
+            no, name, "DOUBLESIDEBOX", H, Bt, bt, Bs, Bb,
+            tt, Tb1, Tb2, Tw, b, n, Bi, xi1, Tt1, xi2, Tt2,
+            xi3, yi3, xo4, Tt4, b1, eSlopeType, i, i1, i2
+        )
+        if not ok:
+            raise NotImplementedError (f"OSIS暂不支持创建双边箱截面")
+            # raise RuntimeError(f"创建双边箱截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_ribbed_slab(
+        self,
+        no: int,
+        name: str,
+        H: float = 2.8,
+        Bt: float = 21.5,
+        bt: float = 17.7,
+        Tt: float = 0.3,
+        b: float = 0.2,
+        h: float = 1.25,
+        b1: float = 1.8,
+        b2: float = 0.2,
+        x: float = 1.5,
+        y: float = 0.3,
+        eSlopeType: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = 0.0,
+        i2: float = 0.0,
+    ) -> None:
+        """创建肋板式截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            H: 截面高度
+            Bt: 顶板顶宽
+            bt: 顶板底宽
+            Tt: 顶板厚
+            b: 风嘴上部水平宽度
+            h: 风嘴上部竖向宽度
+            b1: 边肋底宽
+            b2: 边肋内侧倒角宽
+            x: 顶板倒角宽
+            y: 顶板倒角高
+            eSlopeType: 横坡类型
+            i: 整体转梁横坡
+            i1: 顶左坡
+            i2: 顶右坡
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_ribbed_slab(
+            no, name, "RIBBEDSLAB", H, Bt, bt, Tt, b, h, b1, b2, x, y, eSlopeType, i, i1, i2
+        )
+        if not ok:
+            raise NotImplementedError(f"OSIS暂不支持创建肋板式截面")
+            raise RuntimeError(f"创建肋板式截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_TGirder(
+        self,
+        no: int,
+        name: str,
+        eGirderPos: Literal["Left", "Middle", "Right"] = "Middle",
+        H: float = 2.5,
+        Bs: float = 1.125,
+        Bm: float = 0.85,
+        Bc: float = 0.0,
+        Tt1: float = 0.16,
+        Tt2: float = 0.25,
+        x: float = 0.6,
+        Tw: float = 0.2,
+        Bh: float = 0.6,
+        Hh: float = 0.35,
+        yh: float = 0.25,
+        bSlope: bool = False,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        R: float = 0.05,
+    ) -> None:
+        """创建T梁截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            eGirderPos: 截面位置，Left=左边梁，Middle=中梁，Right=右边梁
+            H: 梁高
+            Bs: 边翼板宽
+            Bm: 中梁半宽
+            Bc: 现浇湿接缝半宽
+            Tt1: 翼板厚
+            Tt2: 翼板根部厚
+            x: 翼板倒角宽
+            Tw: 腹板厚度
+            Bh: 马蹄宽度
+            Hh: 马蹄高度
+            yh: 马蹄倒角高
+            bSlope: 指定是否输入横坡
+            i1: 顶左坡
+            i2: 顶右坡
+            R: 顶板处倒角半径
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_TGirder(
+            no, name, "TGIRDER", eGirderPos, H, Bs, Bm, Bc,
+            Tt1, Tt2, x, Tw, Bh, Hh, yh, bSlope, i1, i2, R
+        )
+        if not ok:
+            raise RuntimeError(f"创建T梁截面 {no} 失败: {err}")
+        self._loaded = False
+
+    def create_custom(
+        self,
+        no: int,
+        name: str,
+        contour_matrix: str,
+    ) -> None:
+        """创建自定义截面
+
+        Args:
+            no: 截面编号
+            name: 截面名称
+            contour_matrix: 轮廓点矩阵名称，需先用 osis_matrix 定义
+                矩阵格式：n*3矩阵，第一列为点所在的轮廓线编号，
+                第二列为点的x坐标，第三列为点的y坐标
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_section_custom(no, name, "CUSTOM", contour_matrix)
+        if not ok:
+            raise NotImplementedError(f"OSIS暂不支持创建自定义截面")
+            # raise RuntimeError(f"创建自定义截面 {no} 失败: {err}")
         self._loaded = False
 
     def delete(self, no: int) -> None:
