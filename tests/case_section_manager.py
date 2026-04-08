@@ -351,7 +351,7 @@ def test_create_steel_box():
 
     section_manager.create_steel_box(
         9911, "测试箱型钢",
-        H=2.0, Bt=1.0, Bct=0.5, Bb=0.8, Bcb=0.3,
+        H=2.0, Bt=1.0, Bct=0.4, Bb=0.8, Bcb=0.3,
         Tt=0.02, Tb=0.02, Tw=0.015, SameLayout=1
     )
     sec = section_manager.get(9911)
@@ -465,37 +465,36 @@ def test_create_steel_custom():
 if __name__ == "__main__":
     print("开始测试 SectionManager...")
     print("=" * 50)
-    tests = [test_create_steel_box_itf]
-    # tests = [
-    #     # 基础测试
-    #     test_get_all,
-    #     test_create_circle,
-    #     test_create_Lshape,
-    #     test_create_Tshape,
-    #     test_create_Ishape,
-    #     test_create_rect,
-    #     test_create_steel_i,
-    #     test_renumber,
-    #     test_delete,
-    #     test_get_multiple,
-    #     # 新增混凝土截面测试
-    #     test_create_smallbox,
-    #     test_create_hollowslab,
-    #     test_create_rounded_end,
-    #     test_create_conventionalbox,
-    #     test_create_flat_box,
-    #     test_create_double_side_box,
-    #     test_create_ribbed_slab,
-    #     test_create_TGirder,
-    #     test_create_custom,
-    #     # 新增钢截面测试
-    #     test_create_steel_box,
-    #     test_create_steel_box_three_cell,
-    #     test_create_steel_box_itf,
-    #     test_create_steel_canti_box,
-    #     test_create_steel_canti_box_ibf,
-    #     test_create_steel_custom,
-    # ]
+    tests = [
+        # 基础测试
+        test_get_all,
+        test_create_circle,
+        test_create_Lshape,
+        test_create_Tshape,
+        test_create_Ishape,
+        test_create_rect,
+        test_create_steel_i,
+        test_renumber,
+        test_delete,
+        test_get_multiple,
+        # 新增混凝土截面测试
+        test_create_smallbox,
+        test_create_hollowslab,
+        test_create_rounded_end,
+        test_create_conventionalbox,
+        test_create_flat_box,
+        test_create_double_side_box,
+        test_create_ribbed_slab,
+        test_create_TGirder,
+        test_create_custom,
+        # 新增钢截面测试
+        test_create_steel_box,
+        test_create_steel_box_three_cell,
+        test_create_steel_box_itf,
+        test_create_steel_canti_box,
+        test_create_steel_canti_box_ibf,
+        test_create_steel_custom,
+    ]
 
     passed = 0
     failed = 0
