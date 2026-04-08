@@ -886,6 +886,7 @@ class SectionManager:
         self,
         no: int,
         name: str,
+        eSectionType: Literal["STREAMEDBOX"]="STREAMEDBOX",
         H: float = 4.0,
         BtL: float = 20.0,
         BtR: float = 20.0,
@@ -970,7 +971,7 @@ class SectionManager:
             RuntimeError: 创建失败时抛出异常
         """
         ok, err = osis_section_flat_box(
-            no, name, "FLATBOX", H, BtL, BtR, BbL, BbR, Bs,
+            no, name, eSectionType, H, BtL, BtR, BbL, BbR, Bs,
             Tt, Tb1, Tb2, Tw, Ttj, Tbj, Twj, nCellNum, Bi1, Bi2, Bi3, Bi4,
             xi1, Tt1, xi2, Tt2, xi3, yi3, xi4, Tt4, xi5, yi5, xi6, Tt6, xi7, yi7,
             BcL, TcL, Bc1L, Tc1L, Tc2L, bSymmetry, BcR, TcR, Bc1R, Tc1R, Tc2R,

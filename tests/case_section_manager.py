@@ -255,7 +255,7 @@ def test_create_flat_box():
     cleanup_test_sections()
 
     section_manager.create_flat_box(
-        9905, "测试扁平箱梁",
+        9905, "测试扁平箱梁","STREAMEDBOX",
         H=4.0, BtL=20.0, BtR=20.0, BbL=10.5, BbR=10.5, Bs=0.8,
         Tt=0.28, Tb1=0.27, Tb2=0.27, Tw=0.25, nCellNum=5
     )
@@ -465,7 +465,6 @@ def test_create_steel_custom():
 if __name__ == "__main__":
     print("开始测试 SectionManager...")
     print("=" * 50)
-
     tests = [
         # 基础测试
         test_get_all,
