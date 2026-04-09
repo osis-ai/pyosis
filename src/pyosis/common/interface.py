@@ -59,21 +59,29 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     # 获取维度信息
     try:
         dims = get_dimensions_and_validate(matrix_data)
-        matrix_data = [matrix_data]
+        # matrix_data = [matrix_data]
     except Exception as e:
         raise ValueError(f"矩阵验证失败：{str(e)}") from e
     
     # 处理空矩阵
     if any(d == 0 for d in dims):
         raise ValueError("不支持空矩阵输入")
-    
-    # 生成 *DIM 定义语句
-    # 如果数组元素为字符串，用charn定义
-    dim_type = "charn" if (isinstance(matrix_data, list) and isinstance(matrix_data[0], str)) or isinstance(matrix_data, str) else "*dim"
-    
-    dim_str = ",".join(map(str, dims))
-    dim_cmd = f"{dim_type},{matrix_name},{dim_str}"
-
+    # 字符数组用 charn（与 *dim 参数格式不同）；数值数组 OSIS 固定为三维 I,J,K（不足补 1）
+    is_charn = (
+            (isinstance(matrix_data, list) and len(matrix_data) > 0 and isinstance(matrix_data[0], str))
+            or isinstance(matrix_data, str)
+    )
+    if is_charn:
+        dim_str = ",".join(map(str, dims))
+        dim_cmd = f"charn,{matrix_name},{dim_str}"
+    else:
+        if len(dims) > 3:
+            raise ValueError(f"OSIS 数值数组最多三维，当前 shape={dims}")
+        dims_osi = list(dims)
+        while len(dims_osi) < 3:
+            dims_osi.append(1)
+        dim_str = ",".join(map(str, dims_osi))
+        dim_cmd = f"*dim,{matrix_name},{dim_str}"
     all_cmds.append(dim_cmd)
     
     # 递归生成赋值语句
@@ -93,9 +101,11 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
             else:
                 # 其他类型尝试转为string
                 val_str = f"\"{value}\""
-            
-            # 生成OSIS赋值命令
-            idx_str = ",".join(map(str, indices))
+            idx_parts = list(indices)
+            if not is_charn:
+                while len(idx_parts) < 3:
+                    idx_parts.append(0)
+            idx_str = ",".join(map(str, idx_parts))
             assign_cmd = f"{matrix_name}[{idx_str}] = {val_str}"
             # _log(assign_cmd)
             # osis_run(assign_cmd, "stash")
@@ -105,6 +115,7 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     generate_assignments(matrix_data, [])
     # osis_run()
     # 返回拼接后的完整命令字符串
-    str_cmds = "\n".join(all_cmds)
+    # str_cmds = "\n".join(all_cmds)
+    str_cmds = ";".join(all_cmds)
     _log(str_cmds)
     return osis_run(str_cmds, "exec")
