@@ -183,7 +183,7 @@ def osis_boundary_group(strName: str, eOP: Literal["c", "a", "s", "r", "aa", "ra
     pass
 
 @REGISTRY.register("BoundaryDel")
-def osis_boundary_dle(nIndex:int)->tuple[bool, str]:
+def osis_boundary_del(nIndex:int)->tuple[bool, str]:
     """
     删除边界
     Args:

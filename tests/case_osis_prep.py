@@ -1,5 +1,11 @@
 # 本文件是前处理的示例
 from pyosis.core.all_func import *
+from pyosis.material import material_manager
+from pyosis.section import section_manager
+from pyosis.node import node_manager
+from pyosis.element import element_manager
+from pyosis.boundary import boundary_manager
+from pyosis.load import load_manager
 
 osis_clear()
 
@@ -17,33 +23,33 @@ osis_ln_srch(0)
 osis_auto_ts(0)
 osis_mod_opt(0)
 
-osis_section_circle(1, "圆形截面1", "CIRCLE", "Hollow", 0.219, 0.012)
-osis_section_circle(2, "圆形截面2", "CIRCLE", "Hollow", 0.180, 0.008)
-osis_section_circle(3, "圆形截面3", "CIRCLE", "Hollow", 0.114, 0.005)
-osis_section_circle(4, "圆形截面4", "CIRCLE", "Hollow", 0.089, 0.004)
-osis_section_circle(5, "圆形截面5", "CIRCLE", "Hollow", 0.045, 0.003)
 
-osis_material_steel(1, "钢材1", "STEEL", "JTGD64_2015", "Q345", 0.05)
+section_manager.create_circle(1, "圆形截面1", "CIRCLE", 0.219, 0.012)
+section_manager.create_circle(2, "圆形截面2", "CIRCLE", 0.180, 0.008)
+section_manager.create_circle(3, "圆形截面3", "CIRCLE", 0.114, 0.005)
+section_manager.create_circle(4, "圆形截面4", "CIRCLE", 0.089, 0.004)
+section_manager.create_circle(5, "圆形截面5", "CIRCLE", 0.045, 0.003)
+
+material_manager.create_steel(1, "钢材1", "JTGD64_2015", "Q345", 0.05)
 
 # 固定节点（x,y单位：m）
-osis_node(1, 0, 5, 0)
-osis_node(2, 15, 5, 0)
+node_manager.create(1, 0, 5, 0)
+node_manager.create(2, 15, 5, 0)
 # 荷载作用节点
-osis_node(3, 7.5, 0, 0)
-osis_node(4, 20, 0, 0)
+node_manager.create(3, 7.5, 0, 0)
+node_manager.create(4, 20, 0, 0)
 
-osis_element_beam3d(1, "BEAM3D", 1, 3, 1, 4, 4, 1, 1, 0.00, 0, 0.00, 0)
-osis_element_beam3d(2, "BEAM3D", 2, 3, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
-osis_element_beam3d(3, "BEAM3D", 2, 4, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
-osis_element_beam3d(4, "BEAM3D", 3, 4, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
+element_manager.create_beam3d(1, 1, 3, 1, 4, 4, 1, 1, 0.00, 0, 0.00, 0)
+element_manager.create_beam3d(2, 2, 3, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
+element_manager.create_beam3d(3, 2, 4, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
+element_manager.create_beam3d(4, 3, 4, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
 
+boundary_manager.create_general(1, "", 1, 1, 1, 1, 1, 1, 1)
+boundary_manager.get(1).assign("a", [1, 2])
 
-osis_boundary_general(1, "GENERAL", "", 1, 1, 1, 1, 1, 1, 1)
-osis_assign_boundary(1, "a", [1, 2])
-
-osis_loadcase("自定义工况1", "USER", 1, "施加于节点3和4的两个力")
-osis_load_nforce("NFORCE", "自定义工况1", 3, 0, -1000000, 0, 0, 0, 0)
-osis_load_nforce("NFORCE", "自定义工况1", 4, 200000, 0, 0, 0, 0, 0)
+load_manager.create("自定义工况1", "USER", 1, "施加于节点3和4的两个力")
+load_manager.get("自定义工况1").create_nforce(3, 0, -1000000, 0, 0, 0, 0)
+load_manager.get("自定义工况1").create_nforce(4, 200000, 0, 0, 0, 0, 0)
 
 osis_solve()
 
