@@ -10,6 +10,7 @@ ELSTCSPT（弹性支承）
 """
 
 from __future__ import annotations
+from typing import Literal
 
 from dataclasses import dataclass
 
@@ -19,7 +20,8 @@ from .interface import (
     osis_boundary_elstcspt,
     osis_boundary_master_slave,
     osis_boundary_release,
-    osis_boundary_dle,
+    osis_boundary_del,
+    osis_assign_boundary,
 )
 
 
@@ -60,6 +62,26 @@ class Boundary:
             is_occupied=d.get("isOccupied", False),
         )
 
+    def assign(self, eOP: Literal["a", "s", "r", "aa", "ra"]="a", param: list=[]):
+        '''
+        ## 分配边界给节点(一般支撑，节点弹性支撑)
+        pyosis.boundary.osis_assign_boundary
+        
+        Args:
+            eOP (str): 操作
+                * a = 添加
+                * s = 替换
+                * r = 移除
+                * aa = 添加全部
+                * ra = 移除全部
+            param (list): 待操作的编号，支持的格式：*，*to*，*by*（仅用于替换）。
+                例子：[2,3,5,"8to10"] ["2by3","5by6","8by10"] 重合的编号自动忽略
+        Returns:
+            tuple (bool, str): 是否成功，失败原因
+        '''
+        ok, err = osis_assign_boundary(self.no, eOP, param)
+        if not ok:
+            raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -288,7 +310,7 @@ class BoundaryManager:
         Raises:
             RuntimeError: 删除失败时抛出异常
         """
-        ok, err = osis_boundary_dle(no)
+        ok, err = osis_boundary_del(no)
         if not ok:
             raise RuntimeError(f"删除边界 {no} 失败: {err}")
         self._loaded = False

@@ -65,13 +65,176 @@ class LoadCase:
         )
 
 
+    # ── 荷载添加 ──────────────────────────────
+
+    def create_gravity(
+        self,
+        dXCoeff: float = 1.0,
+        dYCoeff: float = 1.0,
+        dZCoeff: float = 1.0,
+    ) -> None:
+        """添加自重荷载
+
+        Args:
+            dXCoeff: 全局坐标系x方向的系数
+            dYCoeff: 全局坐标系y方向的系数
+            dZCoeff: 全局坐标系z方向的系数
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_gravity("GRAVITY", self.name, dXCoeff, dYCoeff, dZCoeff)
+        if not ok:
+            raise RuntimeError(f"添加自重荷载到工况 {self.name} 失败: {err}")
+
+    def create_nforce(
+        self,
+        nEntity: int,
+        dFx: float = 100,
+        dFy: float = 0,
+        dFz: float = 0,
+        dMx: float = 0,
+        dMy: float = 0,
+        dMz: float = 0,
+    ) -> None:
+        """添加节点荷载
+
+        Args:
+            nEntity: 节点编号
+            dFx: 全局坐标系x方向的集中力
+            dFy: 全局坐标系y方向的集中力
+            dFz: 全局坐标系z方向的集中力
+            dMx: 全局坐标系x方向的集中弯矩
+            dMy: 全局坐标系y方向的集中弯矩
+            dMz: 全局坐标系z方向的集中弯矩
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_nforce("NFORCE", self.name, nEntity, dFx, dFy, dFz, dMx, dMy, dMz)
+        if not ok:
+            raise RuntimeError(f"添加节点荷载到工况 {self.name} 失败: {err}")
+
+    def create_line_load(
+        self,
+        nEntity: int,
+        dFXI: float,
+        dFYI: float,
+        dFZI: float = 0,
+        dMXI: float = 0,
+        dMYI: float = 0,
+        dMZI: float = 0,
+        dFXJ: float = None,
+        dFYJ: float = None,
+        dFZJ: float = 0,
+        dMXJ: float = 0,
+        dMYJ: float = 0,
+        dMZJ: float = 0,
+    ) -> None:
+        """添加线荷载
+
+        Args:
+            nEntity: 单元编号
+            dFXI, dFYI, dFZI: I端集中力
+            dMXI, dMYI, dMZI: I端集中弯矩
+            dFXJ, dFYJ, dFZJ: J端集中力（可缺省，等同于I端）
+            dMXJ, dMYJ, dMZJ: J端集中弯矩（可缺省，等同于I端）
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        if dFXJ is None:
+            dFXJ = dFXI
+        if dFYJ is None:
+            dFYJ = dFYI
+        ok, err = osis_load_line(
+            "LINE", self.name, nEntity, 1, 1,
+            0, 0, 0, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI,
+            0, 0, 0, dFXJ, dFYJ, dFZJ, dMXJ, dMYJ, dMZJ,
+        )
+        if not ok:
+            raise RuntimeError(f"添加线荷载到工况 {self.name} 失败: {err}")
+
+    def create_displacement(
+        self,
+        nEntity: int,
+        dDx: float = 0,
+        dDy: float = 0,
+        dDz: float = 0,
+        dRx: float = 0,
+        dRy: float = 0,
+        dRz: float = 0,
+    ) -> None:
+        """添加强迫位移
+
+        Args:
+            nEntity: 节点编号
+            dDx, dDy, dDz: 强制位移在坐标系各方向的分量
+            dRx, dRy, dRz: 绕坐标系各轴的强制旋转角度分量
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_displacement("DISPLACEMENT", self.name, nEntity, dDx, dDy, dDz, dRx, dRy, dRz)
+        if not ok:
+            raise RuntimeError(f"添加强迫位移到工况 {self.name} 失败: {err}")
+
+    def create_temperature_uniform(
+        self,
+        nEntity: int,
+        dTemp: float,
+        eDirect: str = "X",
+    ) -> None:
+        """添加均匀温度荷载
+
+        Args:
+            nEntity: 单元编号
+            dTemp: 温差值（正为升温）
+            eDirect: 作用方向，X=整体升降温，Y/Z=横向梯度温度
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_utemp("UTEMP", self.name, nEntity, eDirect, dTemp)
+        if not ok:
+            raise RuntimeError(f"添加均匀温度荷载到工况 {self.name} 失败: {err}")
+
+    # ── 荷载删除 ──────────────────────────────
+
+    def delete(
+        self,
+        eType: str,
+        entity: int | str = 1,
+    ) -> None:
+        """删除荷载
+
+        Args:
+            eType: 荷载类型
+                GRAVITY, NFORCE, LINE, DISPLACEMENT, INITIAL, UTEMP, GTEMP, PST, CFORCE
+            entity: 作用的 节点/单元/钢束形状 编号
+
+        Raises:
+            RuntimeError: 删除失败时抛出异常
+        """
+        ok, err = osis_load_del(eType, self.name, entity)
+        if not ok:
+            raise RuntimeError(f"删除荷载失败: {err}")
+        
+    # ── 荷载修改 ──────────────────────────────
+    def modify(self):
+        ...
+
+    # ── 荷载查询 ──────────────────────────────
+    def get(self):
+        ... # for myf: 建议直接返回该荷载工况的所有荷载数据
+
 # ──────────────────────────────────────────────
 # 管理类
 # ──────────────────────────────────────────────
 
 
 class LoadManager:
-    """荷载管理器
+    """荷载工况管理器
 
     统一管理荷载工况和荷载的创建、删除、修改和查询。
 
@@ -118,7 +281,7 @@ class LoadManager:
 
     # ── 荷载工况管理 ──────────────────────────────
 
-    def create_loadcase(
+    def create(
         self,
         name: str,
         load_case_type: str = "USER",
@@ -149,7 +312,7 @@ class LoadManager:
             raise RuntimeError(f"创建荷载工况 {name} 失败: {err}")
         self._loaded = False
 
-    def delete_loadcase(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """删除荷载工况
 
         Args:
@@ -178,170 +341,7 @@ class LoadManager:
             raise RuntimeError(f"重命名荷载工况 {old_name} -> {new_name} 失败: {err}")
         self._loaded = False
 
-    # ── 荷载添加 ──────────────────────────────
-
-    def add_gravity(
-        self,
-        lc_name: str,
-        dXCoeff: float = 1.0,
-        dYCoeff: float = 1.0,
-        dZCoeff: float = 1.0,
-    ) -> None:
-        """添加自重荷载
-
-        Args:
-            lc_name: 荷载工况名称
-            dXCoeff: 全局坐标系x方向的系数
-            dYCoeff: 全局坐标系y方向的系数
-            dZCoeff: 全局坐标系z方向的系数
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
-        """
-        ok, err = osis_load_gravity("GRAVITY", lc_name, dXCoeff, dYCoeff, dZCoeff)
-        if not ok:
-            raise RuntimeError(f"添加自重荷载到工况 {lc_name} 失败: {err}")
-
-    def add_nforce(
-        self,
-        lc_name: str,
-        nEntity: int,
-        dFx: float = 100,
-        dFy: float = 0,
-        dFz: float = 0,
-        dMx: float = 0,
-        dMy: float = 0,
-        dMz: float = 0,
-    ) -> None:
-        """添加节点荷载
-
-        Args:
-            lc_name: 荷载工况名称
-            nEntity: 节点编号
-            dFx: 全局坐标系x方向的集中力
-            dFy: 全局坐标系y方向的集中力
-            dFz: 全局坐标系z方向的集中力
-            dMx: 全局坐标系x方向的集中弯矩
-            dMy: 全局坐标系y方向的集中弯矩
-            dMz: 全局坐标系z方向的集中弯矩
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
-        """
-        ok, err = osis_load_nforce("NFORCE", lc_name, nEntity, dFx, dFy, dFz, dMx, dMy, dMz)
-        if not ok:
-            raise RuntimeError(f"添加节点荷载到工况 {lc_name} 失败: {err}")
-
-    def add_line_load(
-        self,
-        lc_name: str,
-        nEntity: int,
-        dFXI: float,
-        dFYI: float,
-        dFZI: float = 0,
-        dMXI: float = 0,
-        dMYI: float = 0,
-        dMZI: float = 0,
-        dFXJ: float = None,
-        dFYJ: float = None,
-        dFZJ: float = 0,
-        dMXJ: float = 0,
-        dMYJ: float = 0,
-        dMZJ: float = 0,
-    ) -> None:
-        """添加线荷载
-
-        Args:
-            lc_name: 荷载工况名称
-            nEntity: 单元编号
-            dFXI, dFYI, dFZI: I端集中力
-            dMXI, dMYI, dMZI: I端集中弯矩
-            dFXJ, dFYJ, dFZJ: J端集中力（可缺省，等同于I端）
-            dMXJ, dMYJ, dMZJ: J端集中弯矩（可缺省，等同于I端）
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
-        """
-        if dFXJ is None:
-            dFXJ = dFXI
-        if dFYJ is None:
-            dFYJ = dFYI
-        ok, err = osis_load_line(
-            "LINE", lc_name, nEntity, 1, 1,
-            0, 0, 0, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI,
-            0, 0, 0, dFXJ, dFYJ, dFZJ, dMXJ, dMYJ, dMZJ,
-        )
-        if not ok:
-            raise RuntimeError(f"添加线荷载到工况 {lc_name} 失败: {err}")
-
-    def add_displacement(
-        self,
-        lc_name: str,
-        nEntity: int,
-        dDx: float = 0,
-        dDy: float = 0,
-        dDz: float = 0,
-        dRx: float = 0,
-        dRy: float = 0,
-        dRz: float = 0,
-    ) -> None:
-        """添加强迫位移
-
-        Args:
-            lc_name: 荷载工况名称
-            nEntity: 节点编号
-            dDx, dDy, dDz: 强制位移在坐标系各方向的分量
-            dRx, dRy, dRz: 绕坐标系各轴的强制旋转角度分量
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
-        """
-        ok, err = osis_load_displacement("DISPLACEMENT", lc_name, nEntity, dDx, dDy, dDz, dRx, dRy, dRz)
-        if not ok:
-            raise RuntimeError(f"添加强迫位移到工况 {lc_name} 失败: {err}")
-
-    def add_temperature_uniform(
-        self,
-        lc_name: str,
-        nEntity: int,
-        dTemp: float,
-        eDirect: str = "X",
-    ) -> None:
-        """添加均匀温度荷载
-
-        Args:
-            lc_name: 荷载工况名称
-            nEntity: 单元编号
-            dTemp: 温差值（正为升温）
-            eDirect: 作用方向，X=整体升降温，Y/Z=横向梯度温度
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
-        """
-        ok, err = osis_load_utemp("UTEMP", lc_name, nEntity, eDirect, dTemp)
-        if not ok:
-            raise RuntimeError(f"添加均匀温度荷载到工况 {lc_name} 失败: {err}")
-
-    def delete_load(
-        self,
-        eType: str,
-        lc_name: str,
-        entity: int | str = 1,
-    ) -> None:
-        """删除荷载
-
-        Args:
-            eType: 荷载类型
-                GRAVITY, NFORCE, LINE, DISPLACEMENT, INITIAL, UTEMP, GTEMP, PST, CFORCE
-            lc_name: 荷载工况名称
-            entity: 作用的节点/单元/钢束形状
-
-        Raises:
-            RuntimeError: 删除失败时抛出异常
-        """
-        ok, err = osis_load_del(eType, lc_name, entity)
-        if not ok:
-            raise RuntimeError(f"删除荷载失败: {err}")
+    
 
     # ── 查询 ──────────────────────────────────
 
