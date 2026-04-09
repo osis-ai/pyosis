@@ -16,8 +16,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
+import shutil
 
 from ..core.client import osis_client
+from ..common import get_project_directory
+
 from .common import (
     osis_section_Lshape,
     osis_section_circle,
@@ -50,6 +53,7 @@ from .param import (
     # osis_section_mat
     osis_section_del,
     osis_section_mod,
+    osis_export_section_pic,
 )
 
 
@@ -102,9 +106,7 @@ class Section:
                 仅当offsetTypeZ为"Manual"时生效。
 
         Returns:
-            tuple (bool, str): 返回一个元组，包含：
-                - bool: 操作是否成功
-                - str: 失败原因（如果操作失败）
+            None
 
         Examples:
             >>> # 设置截面Y方向左对齐，Z方向底部对齐
@@ -133,16 +135,27 @@ class Section:
             dMeshSize (float): 网格划分尺寸，在 nMeshMethod=1 时该项起作用
 
         Returns:
-            tuple (bool, str): 返回一个元组，包含：
-                - bool: 操作是否成功
-                - str: 失败原因（如果操作失败）
+            None
             
         """
-        pass
         ok, err = osis_section_mesh(cls.no, nMeshMethod, dMeshSize)
         if not ok:
             raise RuntimeError(f"设置截面 {cls.no} 网格失败: {err}")
 
+    def export_pic(cls, path=None):
+        '''
+        生成截面图片，默认会在项目文件夹 Image/section/ 目录下生成一张名为 _{nSec}.jpg 的图片
+        若 path 非空，保存到path
+        '''
+        ok, err = osis_export_section_pic(cls.no)
+        if not ok:
+            raise RuntimeError(f"生成截面 {cls.no} 图片失败: {err}")
+        if path:
+            try:
+                default_path = get_project_directory()[1] + f"Image/section/_{cls.no}.jpg\n"  # 会默认保存到这
+                shutil.move(default_path, path)
+            except Exception as e:
+                raise RuntimeError(f"图片保存到 {path} 失败: {e}")
 # ──────────────────────────────────────────────
 # 管理类
 # ──────────────────────────────────────────────
