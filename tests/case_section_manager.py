@@ -326,9 +326,9 @@ def test_create_custom():
   from pyosis.common import osis_matrix
   contour_matrix = [
       [1, 0, 0],
-      [2, 1, 0],
-      [3, 1, 1],
-      [4, 0, 1],
+      [1, 1, 0],
+      [1, 1, 1],
+      [1, 0, 1],
   ]
   osis_matrix("ContourMatrix", contour_matrix)
   # 2. 再创建自定义截面
