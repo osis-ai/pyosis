@@ -16,8 +16,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
+import shutil
 
 from ..core.client import osis_client
+from ..common import get_project_directory
+
 from .common import (
     osis_section_Lshape,
     osis_section_circle,
@@ -45,8 +48,12 @@ from .steel import (
     osis_section_steel_custom_plate,
 )
 from .param import (
+    osis_section_offset,
+    osis_section_mesh,
+    # osis_section_mat
     osis_section_del,
     osis_section_mod,
+    osis_export_section_pic,
 )
 
 
@@ -79,7 +86,76 @@ class Section:
             section_type=d.get("sectionType", ""),
         )
 
+    def set_offset(cls, offsetTypeY: Literal["Left", "Middle", "Right", "Manual"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom", "Manual"]="Center", dOffsetValueZ: float=0.0):
+        """设置截面偏移。
 
+        Args:
+            offsetTypeY (str): Y方向偏移类型，可选值：
+                * Left: 左对齐
+                * Middle: 居中对齐
+                * Right: 右对齐
+                * Manual: 手动指定偏移值
+            dOffsetValueY (float): Y方向偏移值（单位：m）。
+                仅当offsetTypeY为"Manual"时生效。
+            offsetTypeZ (str): Z方向偏移类型，可选值：
+                * Top: 顶部对齐
+                * Center: 居中对齐
+                * Bottom: 底部对齐
+                * Manual: 手动指定偏移值
+            dOffsetValueZ (float): Z方向偏移值（单位：m）。
+                仅当offsetTypeZ为"Manual"时生效。
+
+        Returns:
+            None
+
+        Examples:
+            >>> # 设置截面Y方向左对齐，Z方向底部对齐
+            >>> result = section_offset(1, "Left", 0.0, "Bottom", 0.0)
+            >>> print(result)
+            (True, "")
+            
+            >>> # 设置截面Y方向手动偏移0.1m，Z方向居中对齐
+            >>> result = section_offset(1, "Manual", 0.1, "Center", 0.0)
+            >>> print(result)
+            (True, "")
+
+        """
+        ok, err = osis_section_offset(cls.no, offsetTypeY, dOffsetValueY, offsetTypeZ, dOffsetValueZ)
+        if not ok:
+            raise RuntimeError(f"设置截面 {cls.no} 偏移失败: {err}")
+        
+    def set_mesh(cls, nMeshMethod: Literal[0, 1]=0, dMeshSize: float=0.0):
+        """设置截面网格。
+
+        Args:
+            nSec (int): 截面编号。
+            nMeshMethod (int): Y定义截面网格划分，可选值：
+                * 0 = 自动划分
+                * 1 = 手动划分
+            dMeshSize (float): 网格划分尺寸，在 nMeshMethod=1 时该项起作用
+
+        Returns:
+            None
+            
+        """
+        ok, err = osis_section_mesh(cls.no, nMeshMethod, dMeshSize)
+        if not ok:
+            raise RuntimeError(f"设置截面 {cls.no} 网格失败: {err}")
+
+    def export_pic(cls, path=None):
+        '''
+        生成截面图片，默认会在项目文件夹 Image/section/ 目录下生成一张名为 _{nSec}.jpg 的图片
+        若 path 非空，保存到path
+        '''
+        ok, err = osis_export_section_pic(cls.no)
+        if not ok:
+            raise RuntimeError(f"生成截面 {cls.no} 图片失败: {err}")
+        if path:
+            try:
+                default_path = get_project_directory()[1] + f"Image/section/_{cls.no}.jpg\n"  # 会默认保存到这
+                shutil.move(default_path, path)
+            except Exception as e:
+                raise RuntimeError(f"图片保存到 {path} 失败: {e}")
 # ──────────────────────────────────────────────
 # 管理类
 # ──────────────────────────────────────────────
