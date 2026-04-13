@@ -63,14 +63,13 @@ class LoadCase:
             prompt=d.get("prompt", ""),
         )
 
-
     # ── 荷载添加 ──────────────────────────────
 
     def create_gravity(
-        self,
-        dXCoeff: float = 1.0,
-        dYCoeff: float = 1.0,
-        dZCoeff: float = 1.0,
+            self,
+            dXCoeff: float = 1.0,
+            dYCoeff: float = 1.0,
+            dZCoeff: float = 1.0,
     ) -> LoadCase:
         """添加自重荷载
 
@@ -88,14 +87,14 @@ class LoadCase:
         return self
 
     def create_nforce(
-        self,
-        nEntity: int,
-        dFx: float = 100,
-        dFy: float = 0,
-        dFz: float = 0,
-        dMx: float = 0,
-        dMy: float = 0,
-        dMz: float = 0,
+            self,
+            nEntity: int,
+            dFx: float = 100,
+            dFy: float = 0,
+            dFz: float = 0,
+            dMx: float = 0,
+            dMy: float = 0,
+            dMz: float = 0,
     ) -> None:
         """添加节点荷载
 
@@ -178,11 +177,12 @@ class LoadCase:
         if not ok:
             raise RuntimeError(f"添加强迫位移到工况 {self.name} 失败: {err}")
         return self
+
     def create_temperature_uniform(
-        self,
-        nEntity: int,
-        dTemp: float,
-        eDirect: str = "X",
+            self,
+            nEntity: int,
+            dTemp: float,
+            eDirect: str = "X",
     ) -> LoadCase:
         """添加均匀温度荷载
 
@@ -200,12 +200,12 @@ class LoadCase:
         return self
 
     def create_gradient_temperature(
-        self,
-        nEntity: int,
-        eDirect: str = "Y",
-        eGTempType: str = "R",
-        nNum: int = 1,
-        param: list = None,
+            self,
+            nEntity: int,
+            eDirect: str = "Y",
+            eGTempType: str = "R",
+            nNum: int = 1,
+            param: list = None,
     ) -> LoadCase:
         """添加梯度温度荷载
 
@@ -225,21 +225,22 @@ class LoadCase:
         if not ok:
             raise RuntimeError(f"添加梯度温度荷载到工况 {self.name} 失败: {err}")
         return self
+
     def create_initial_force(
-        self,
-        nEntity: int,
-        dFXI: float = 100,
-        dFYI: float = 100,
-        dFZI: float = 0,
-        dMXI: float = 0,
-        dMYI: float = 0,
-        dMZI: float = 0,
-        dFXJ: float = 0,
-        dFYJ: float = 0,
-        dFZJ: float = 0,
-        dMXJ: float = 0,
-        dMYJ: float = 0,
-        dMZJ: float = 0,
+            self,
+            nEntity: int,
+            dFXI: float = 100,
+            dFYI: float = 100,
+            dFZI: float = 0,
+            dMXI: float = 0,
+            dMYI: float = 0,
+            dMZI: float = 0,
+            dFXJ: float = 0,
+            dFYJ: float = 0,
+            dFZJ: float = 0,
+            dMXJ: float = 0,
+            dMYJ: float = 0,
+            dMZJ: float = 0,
     ) -> LoadCase:
         """添加初始内力荷载
 
@@ -273,6 +274,7 @@ class LoadCase:
         if not ok:
             raise RuntimeError(f"添加初始内力荷载到工况 {self.name} 失败: {err}")
         return self
+
     # def create_initial_force(
     #     self,
     #     nEntity: int,
@@ -299,12 +301,12 @@ class LoadCase:
     #     return self
 
     def create_prestress(
-        self,
-        strEntity: str,
-        eTensionType: str = "BOTH",
-        eTensionForceType: str = "ST",
-        dBeg: float = 100,
-        dEnd: float = 100,
+            self,
+            strEntity: str,
+            eTensionType: str = "BOTH",
+            eTensionForceType: str = "ST",
+            dBeg: float = 100,
+            dEnd: float = 100,
     ) -> LoadCase:
         """添加预应力荷载
 
@@ -324,10 +326,10 @@ class LoadCase:
         return self
 
     def create_cable_force(
-        self,
-        nEntity: int,
-        eLoadType: str = "IN",
-        dForce: float = 100,
+            self,
+            nEntity: int,
+            eLoadType: str = "IN",
+            dForce: float = 100,
     ) -> LoadCase:
         """添加索力荷载
 
@@ -345,15 +347,15 @@ class LoadCase:
         return self
 
     def create_surface_load(
-        self,
-        strEntity: str,
-        strPlanei: str = "1",
-        strDir: str = "X",
-        strGlobalI: str = "0",
-        strP1i: str = "0",
-        strP2i: str = "0",
-        strP3i: str = "0",
-        strP4i: str = "0",
+            self,
+            strEntity: str,
+            strPlanei: str = "1",
+            strDir: str = "X",
+            strGlobalI: str = "0",
+            strP1i: str = "0",
+            strP2i: str = "0",
+            strP3i: str = "0",
+            strP4i: str = "0",
     ) -> LoadCase:
         """添加单元面荷载
 
@@ -376,17 +378,17 @@ class LoadCase:
         return self
 
     def create_surface_load_vector(
-        self,
-        strEntity: str,
-        strPlanei: str = "1",
-        strDir: str = "VECTOR",
-        strXi: str = "0",
-        strYi: str = "0",
-        strZi: str = "-1",
-        strP1i: str = "0",
-        strP2i: str = "0",
-        strP3i: str = "0",
-        strP4i: str = "0",
+            self,
+            strEntity: str,
+            strPlanei: str = "1",
+            strDir: str = "VECTOR",
+            strXi: str = "0",
+            strYi: str = "0",
+            strZi: str = "-1",
+            strP1i: str = "0",
+            strP2i: str = "0",
+            strP3i: str = "0",
+            strP4i: str = "0",
     ) -> LoadCase:
         """添加单元面荷载（方向向量定义）
 
@@ -412,9 +414,9 @@ class LoadCase:
     # ── 荷载删除 ──────────────────────────────
 
     def delete(
-        self,
-        eType: str,
-        entity: int | str | None = None
+            self,
+            eType: str,
+            entity: int | str | None = None
     ) -> None:
         """删除荷载
         * ``GRAVITY``：工况级自重，无需也不使用 ``entity``（若传入会被忽略）。
@@ -430,22 +432,22 @@ class LoadCase:
         """
         t = eType.strip().upper()
         if t == "GRAVITY":
-          ok, err = osis_load_del("GRAVITY", self.name, None)
+            ok, err = osis_load_del("GRAVITY", self.name, None)
         else:
-          if entity is None:
-              raise TypeError(
-                  f"删除 {eType} 必须指定 entity=...（节点/单元/钢束等编号），禁止省略"
-              )
-          ok, err = osis_load_del(eType, self.name, entity)
+            if entity is None:
+                raise TypeError(
+                    f"删除 {eType} 必须指定 entity=...（节点/单元/钢束等编号），禁止省略"
+                )
+            ok, err = osis_load_del(eType, self.name, entity)
         if not ok:
-          raise RuntimeError(f"删除荷载失败: {err}")
-        
+            raise RuntimeError(f"删除荷载失败: {err}")
+
     # ── 荷载修改 ──────────────────────────────
     def modify(
-        self,
-        eType: str,
-        old_entity: int | str,
-        new_entity: int | str,
+            self,
+            eType: str,
+            old_entity: int | str,
+            new_entity: int | str,
     ) -> LoadCase:
         """修改工况内荷载的作用对象
 
@@ -462,6 +464,7 @@ class LoadCase:
         if not ok:
             raise RuntimeError(f"修改工况 {self.name} 中的荷载失败: {err}")
         return self
+
     # ── 荷载查询 ──────────────────────────────
     def get(self) -> dict:
         """查询当前工况下的所有荷载数据
@@ -479,6 +482,7 @@ class LoadCase:
         data = resp.get("data", {})
         return data if isinstance(data, dict) else {}
 
+
 # ──────────────────────────────────────────────
 # 管理类
 # ──────────────────────────────────────────────
@@ -491,20 +495,21 @@ class LoadCaseManager:
 
     用法:
         >>> from pyosis.load import load_manager
-        >>> loadcase1 = load_manager.create_loadcase("工况1", "USER")                        # 创建荷载工况
-        >>> load1 = loadcase1.create()
-        >>> lc = load_manager.get("工况1")                                     # 按名称查询
-        >>> all_lcs = load_manager.all()                                       # 获取全部工况
-        >>> load_manager.rename("工况1", "新工况1")                            # 重命名工况
-        >>> load_manager.delete_loadcase("新工况1")                             # 删除荷载工况
-    """
-    #     lc = load_manager.create("工况1", "USER")
-    #   if lc:
-    #       lc.create_nforce(1, 100, 0, 0, 0, 0, 0)
-    #       lc.delete(eType="NFORCE", entity=1)
-    #       lc.delete(eType="GRAVITY")
-    #   lc2 = load_manager.rename("工况1", "新工况1")
-    #   load_manager.delete("新工况1")
+        >>> lc = load_manager.create("工况1", "USER")
+        >>> lc.name
+
+        # 添加/删除自重（GRAVITY 不需要 entity=）
+        >>> _ = lc.create_gravity(1.0, 1.0, 1.0)
+        >>> lc.delete("GRAVITY")
+        
+        # 重命名/删除工况
+        >>> lc2 = load_manager.rename("工况1", "新工况1")
+        >>> lc2.name
+
+        >>> load_manager.delete("新工况1")
+
+        """
+
     def __init__(self) -> None:
         self._loadcases: list[LoadCase] = []
         self._lc_map: dict[str, LoadCase] = {}  # 按名称索引：O(1) 查询
@@ -538,11 +543,11 @@ class LoadCaseManager:
     # ── 荷载工况管理 ──────────────────────────────
 
     def create(
-        self,
-        name: str,
-        load_case_type: str = "USER",
-        scalar: float = 1.0,
-        prompt: str = None,
+            self,
+            name: str,
+            load_case_type: str = "USER",
+            scalar: float = 1.0,
+            prompt: str = None,
     ) -> LoadCase | None:
         """创建荷载工况
 
@@ -600,8 +605,6 @@ class LoadCaseManager:
         self._loaded = False
         self._load()
         return self._lc_map.get(new_name)
-
-    
 
     # ── 查询 ──────────────────────────────────
 
