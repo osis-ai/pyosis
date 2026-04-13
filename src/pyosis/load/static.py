@@ -157,44 +157,93 @@ def osis_load_surface_load_vector(eType: str, strLc: str, strEntity: str, strPla
     pass
 
 @REGISTRY.register("Load")
-def osis_load_displacement(eType: str="DISPLACEMENT", strLCName: str="自定义工况1", nEntity: int=1, dDx: float=100, dDy: float=0, dDz: float=0, dRx: float=0, dRy: float=0, dRz: float=0):
+def osis_load_displacement(
+    eType: str = "DISPLACEMENT",
+    strLCName: str = "自定义工况1",
+    nEntity: int = 1,
+    bDX: int = 1,
+    dDX: float = 0.0,
+    bDY: int = 0,
+    dDY: float = 0.0,
+    bDZ: int = 0,
+    dDZ: float = 0.0,
+    bRX: int = 0,
+    dRX: float = 0.0,
+    bRY: int = 0,
+    dRY: float = 0.0,
+    bRZ: int = 0,
+    dRZ: float = 0.0,
+):
     '''
-    创建或修改强迫位移
+    创建或修改强迫位移（与 C++ AppendDisp 一致：工况名后为 6 组 b、d）
 
     Args:
         eType (str): 荷载类型，不区分大小写。固定为 DISPLACEMENT
         strLCName (str): 荷载工况名称
         nEntity (int): 节点编号
-        dDx (float): 强制位移在坐标系x方向的分量
-        dDy (float): 强制位移在坐标系y方向的分量
-        dDz (float): 强制位移在坐标系z方向的分量
-        dRx (float): 绕坐标系x轴的强制旋转角度分量
-        dRy (float): 绕坐标系y轴的强制旋转角度分量
-        dRz (float): 绕坐标系z轴的强制旋转角度分量
+        bDX, dDX: X 向平动是否施加 (0/1)、位移值
+        bDY, dDY: Y 向平动是否施加 (0/1)、位移值
+        bDZ, dDZ: Z 向平动是否施加 (0/1)、位移值
+        bRX, dRX: 绕 X 转角是否施加 (0/1)、转角值
+        bRY, dRY: 绕 Y 转角是否施加 (0/1)、转角值
+        bRZ, dRZ: 绕 Z 转角是否施加 (0/1)、转角值
+
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''
     pass
-
 @REGISTRY.register("Load")
-def osis_load_initial(eType: str="INITIAL", strLCName: str="自定义工况1", nEntity: int=1, dFXI: float=100, dFYI: float=100, dFZI: float=0, dMXI: float=0, dMYI: float=0, dMZI: float=0):
+def osis_load_initial(
+    eType: str = "INITIAL",
+    strLCName: str = "自定义工况1",
+    nEntity: int = 1,
+    dFXI: float = 100,
+    dFYI: float = 100,
+    dFZI: float = 0,
+    dMXI: float = 0,
+    dMYI: float = 0,
+    dMZI: float = 0,
+    dFXJ: float = 0,
+    dFYJ: float = 0,
+    dFZJ: float = 0,
+    dMXJ: float = 0,
+    dMYJ: float = 0,
+    dMZJ: float = 0,
+):
     '''
-    创建或修改任初始内力
+    创建或修改初始内力（与 C++ AppendInitial 一致：I 端与 J 端各 6 个分量）
 
     Args:
-        eType (str): 荷载类型，不区分大小写。固定为 LINE
+        eType (str): 荷载类型，不区分大小写。固定为 INITIAL
         strLCName (str): 荷载工况名称
         nEntity (int): 单元编号
-        dFXI (float): I端坐标系x方向的集中力
-        dFYI (float): I端坐标系y方向的集中力
-        dFZI (float): I端坐标系z方向的集中力
-        dMXI (float): I端坐标系x方向的集中弯矩
-        dMYI (float): I端坐标系y方向的集中弯矩
-        dMZI (float): I端坐标系z方向的集中弯矩
+        dFXI, dFYI, dFZI: I 端局部坐标系 x/y/z 向轴力
+        dMXI, dMYI, dMZI: I 端绕 x/y/z 弯矩
+        dFXJ, dFYJ, dFZJ: J 端局部坐标系 x/y/z 向轴力
+        dMXJ, dMYJ, dMZJ: J 端绕 x/y/z 弯矩
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''
     pass
+# @REGISTRY.register("Load")
+# def osis_load_initial(eType: str="INITIAL", strLCName: str="自定义工况1", nEntity: int=1, dFXI: float=100, dFYI: float=100, dFZI: float=0, dMXI: float=0, dMYI: float=0, dMZI: float=0):
+#     '''
+#     创建或修改任初始内力
+#
+#     Args:
+#         eType (str): 荷载类型，不区分大小写。固定为 LINE
+#         strLCName (str): 荷载工况名称
+#         nEntity (int): 单元编号
+#         dFXI (float): I端坐标系x方向的集中力
+#         dFYI (float): I端坐标系y方向的集中力
+#         dFZI (float): I端坐标系z方向的集中力
+#         dMXI (float): I端坐标系x方向的集中弯矩
+#         dMYI (float): I端坐标系y方向的集中弯矩
+#         dMZI (float): I端坐标系z方向的集中弯矩
+#     Returns:
+#         tuple (bool, str): 是否成功，失败原因
+#     '''
+#     pass
 
 @REGISTRY.register("Load")
 def osis_load_utemp(eType: str="UTEMP", strLCName: str="自定义工况1", nEntity: int=1, eDirect: Literal["X", "Y", "Z"]="X", dTemp: float=1.0, dLength: float=None):

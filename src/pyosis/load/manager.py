@@ -41,12 +41,11 @@ from .static import (
 # 数据类
 # ──────────────────────────────────────────────
 
+@dataclass(frozen=False)
+class LoadCase:
+    """荷载工况对象（对应某一荷载工况及其下荷载操作）
 
-@dataclass(frozen=True)
-class LoadCaseManager:
-    """荷载工况对象（对应某一荷载工况及其下荷载操作面）
-
-    由 LoadManager 内部创建，用户不应直接实例化。
+    由 ``LoadCaseManager``（全局 ``load_manager``）内部创建，用户不应直接实例化。
     """
 
     name: str
@@ -55,7 +54,7 @@ class LoadCaseManager:
     prompt: str = ""
 
     @classmethod
-    def _from_dict(cls, d: dict) -> LoadCaseManager:
+    def _from_dict(cls, d: dict) -> LoadCase:
         """从接口 dict 构造 LoadCase 对象（内部使用）"""
         return cls(
             name=d.get("name", ""),
@@ -72,7 +71,7 @@ class LoadCaseManager:
         dXCoeff: float = 1.0,
         dYCoeff: float = 1.0,
         dZCoeff: float = 1.0,
-    ) -> LoadCaseManager:
+    ) -> LoadCase:
         """添加自重荷载
 
         Args:
@@ -115,34 +114,31 @@ class LoadCaseManager:
         ok, err = osis_load_nforce("NFORCE", self.name, nEntity, dFx, dFy, dFz, dMx, dMy, dMz)
         if not ok:
             raise RuntimeError(f"添加节点荷载到工况 {self.name} 失败: {err}")
-        
+
     def create_line_load(
-        self,
-        nEntity: int,
-        dFXI: float,
-        dFYI: float,
-        dFZI: float = 0,
-        dMXI: float = 0,
-        dMYI: float = 0,
-        dMZI: float = 0,
-        dFXJ: float = None,
-        dFYJ: float = None,
-        dFZJ: float = 0,
-        dMXJ: float = 0,
-        dMYJ: float = 0,
-        dMZJ: float = 0,
-    ) -> LoadCaseManager:
+            self,
+            nEntity: int,
+            dFXI: float,
+            dFYI: float,
+            dFZI: float = 0,
+            dMXI: float = 0,
+            dMYI: float = 0,
+            dMZI: float = 0,
+            dFXJ: float = None,
+            dFYJ: float = None,
+            dFZJ: float = 0,
+            dMXJ: float = 0,
+            dMYJ: float = 0,
+            dMZJ: float = 0,
+            dOffsetXI: float = 0.0,
+            dOffsetYI: float = 0.0,
+            dOffsetZI: float = 0.0,
+            dOffsetXJ: float = 1.0,  # 默认1.0，与dOffsetXI不同
+            dOffsetYJ: float = 0.0,
+            dOffsetZJ: float = 0.0,
+    ) -> LoadCase:
         """添加线荷载
-
-        Args:
-            nEntity: 单元编号
-            dFXI, dFYI, dFZI: I端集中力
-            dMXI, dMYI, dMZI: I端集中弯矩
-            dFXJ, dFYJ, dFZJ: J端集中力（可缺省，等同于I端）
-            dMXJ, dMYJ, dMZJ: J端集中弯矩（可缺省，等同于I端）
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
+        ...
         """
         if dFXJ is None:
             dFXJ = dFXI
@@ -150,33 +146,35 @@ class LoadCaseManager:
             dFYJ = dFYI
         ok, err = osis_load_line(
             "LINE", self.name, nEntity, 1, 1,
-            0, 0, 0, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI,
-            0, 0, 0, dFXJ, dFYJ, dFZJ, dMXJ, dMYJ, dMZJ,
+            dOffsetXI, dOffsetYI, dOffsetZI, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI,
+            dOffsetXJ, dOffsetYJ, dOffsetZJ, dFXJ, dFYJ, dFZJ, dMXJ, dMYJ, dMZJ,
         )
         if not ok:
             raise RuntimeError(f"添加线荷载到工况 {self.name} 失败: {err}")
         return self
+
     def create_displacement(
-        self,
-        nEntity: int,
-        dDx: float = 0,
-        dDy: float = 0,
-        dDz: float = 0,
-        dRx: float = 0,
-        dRy: float = 0,
-        dRz: float = 0,
-    ) -> None:
-        """添加强迫位移
-
-        Args:
-            nEntity: 节点编号
-            dDx, dDy, dDz: 强制位移在坐标系各方向的分量
-            dRx, dRy, dRz: 绕坐标系各轴的强制旋转角度分量
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
-        """
-        ok, err = osis_load_displacement("DISPLACEMENT", self.name, nEntity, dDx, dDy, dDz, dRx, dRy, dRz)
+            self,
+            nEntity: int,
+            dDx: float = 0,
+            dDy: float = 0,
+            dDz: float = 0,
+            dRx: float = 0,
+            dRy: float = 0,
+            dRz: float = 0,
+            eps: float = 1e-15,
+    ) -> LoadCase:
+        ok, err = osis_load_displacement(
+            "DISPLACEMENT",
+            self.name,
+            nEntity,
+            1 if abs(dDx) > eps else 0, dDx,
+            1 if abs(dDy) > eps else 0, dDy,
+            1 if abs(dDz) > eps else 0, dDz,
+            1 if abs(dRx) > eps else 0, dRx,
+            1 if abs(dRy) > eps else 0, dRy,
+            1 if abs(dRz) > eps else 0, dRz,
+        )
         if not ok:
             raise RuntimeError(f"添加强迫位移到工况 {self.name} 失败: {err}")
         return self
@@ -185,7 +183,7 @@ class LoadCaseManager:
         nEntity: int,
         dTemp: float,
         eDirect: str = "X",
-    ) -> LoadCaseManager:
+    ) -> LoadCase:
         """添加均匀温度荷载
 
         Args:
@@ -200,6 +198,217 @@ class LoadCaseManager:
         if not ok:
             raise RuntimeError(f"添加均匀温度荷载到工况 {self.name} 失败: {err}")
         return self
+
+    def create_gradient_temperature(
+        self,
+        nEntity: int,
+        eDirect: str = "Y",
+        eGTempType: str = "R",
+        nNum: int = 1,
+        param: list = None,
+    ) -> LoadCase:
+        """添加梯度温度荷载
+
+        Args:
+            nEntity: 单元编号
+            eDirect: 局部方向，Y 或 Z
+            eGTempType: 定义梁的参考位置，R/T/C/B
+            nNum: 梯度温度荷载段数
+            param: 每个梯度温度荷载段对应一组参数 [B, H1, T1, H2, T2]
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        if param is None:
+            param = ["", 10, 10, 0, 0]
+        ok, err = osis_load_gtemp("GTEMP", self.name, nEntity, eDirect, eGTempType, nNum, param)
+        if not ok:
+            raise RuntimeError(f"添加梯度温度荷载到工况 {self.name} 失败: {err}")
+        return self
+    def create_initial_force(
+        self,
+        nEntity: int,
+        dFXI: float = 100,
+        dFYI: float = 100,
+        dFZI: float = 0,
+        dMXI: float = 0,
+        dMYI: float = 0,
+        dMZI: float = 0,
+        dFXJ: float = 0,
+        dFYJ: float = 0,
+        dFZJ: float = 0,
+        dMXJ: float = 0,
+        dMYJ: float = 0,
+        dMZJ: float = 0,
+    ) -> LoadCase:
+        """添加初始内力荷载
+
+        Args:
+            nEntity: 单元编号
+            dFXI, dFYI, dFZI: I 端轴力（局部坐标）
+            dMXI, dMYI, dMZI: I 端弯矩
+            dFXJ, dFYJ, dFZJ: J 端轴力（局部坐标）
+            dMXJ, dMYJ, dMZJ: J 端弯矩
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_initial(
+            "INITIAL",
+            self.name,
+            nEntity,
+            dFXI,
+            dFYI,
+            dFZI,
+            dMXI,
+            dMYI,
+            dMZI,
+            dFXJ,
+            dFYJ,
+            dFZJ,
+            dMXJ,
+            dMYJ,
+            dMZJ,
+        )
+        if not ok:
+            raise RuntimeError(f"添加初始内力荷载到工况 {self.name} 失败: {err}")
+        return self
+    # def create_initial_force(
+    #     self,
+    #     nEntity: int,
+    #     dFXI: float = 100,
+    #     dFYI: float = 100,
+    #     dFZI: float = 0,
+    #     dMXI: float = 0,
+    #     dMYI: float = 0,
+    #     dMZI: float = 0,
+    # ) -> LoadCaseManager:
+    #     """添加初始内力荷载
+    #
+    #     Args:
+    #         nEntity: 单元编号
+    #         dFXI, dFYI, dFZI: I端集中力
+    #         dMXI, dMYI, dMZI: I端集中弯矩
+    #
+    #     Raises:
+    #         RuntimeError: 添加失败时抛出异常
+    #     """
+    #     ok, err = osis_load_initial("INITIAL", self.name, nEntity, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI)
+    #     if not ok:
+    #         raise RuntimeError(f"添加初始内力荷载到工况 {self.name} 失败: {err}")
+    #     return self
+
+    def create_prestress(
+        self,
+        strEntity: str,
+        eTensionType: str = "BOTH",
+        eTensionForceType: str = "ST",
+        dBeg: float = 100,
+        dEnd: float = 100,
+    ) -> LoadCase:
+        """添加预应力荷载
+
+        Args:
+            strEntity: 钢束形状名称
+            eTensionType: 张拉类型，BOTH/BEG/END
+            eTensionForceType: 张拉力类型，ST=应力/IF=内力
+            dBeg: 起点应力或内力
+            dEnd: 终点应力或内力
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_pst("PST", self.name, strEntity, eTensionType, eTensionForceType, dBeg, dEnd)
+        if not ok:
+            raise RuntimeError(f"添加预应力荷载到工况 {self.name} 失败: {err}")
+        return self
+
+    def create_cable_force(
+        self,
+        nEntity: int,
+        eLoadType: str = "IN",
+        dForce: float = 100,
+    ) -> LoadCase:
+        """添加索力荷载
+
+        Args:
+            nEntity: 单元编号
+            eLoadType: 施加方式，IN=体内力/EX=体外力
+            dForce: 索力数值
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_cforce("CFORCE", self.name, nEntity, eLoadType, dForce)
+        if not ok:
+            raise RuntimeError(f"添加索力荷载到工况 {self.name} 失败: {err}")
+        return self
+
+    def create_surface_load(
+        self,
+        strEntity: str,
+        strPlanei: str = "1",
+        strDir: str = "X",
+        strGlobalI: str = "0",
+        strP1i: str = "0",
+        strP2i: str = "0",
+        strP3i: str = "0",
+        strP4i: str = "0",
+    ) -> LoadCase:
+        """添加单元面荷载
+
+        Args:
+            strEntity: 单元编号
+            strPlanei: 面位置，板壳单元默认1，实体单元输入1,2,3,4,5,6
+            strDir: 方向，默认为 VECTOR
+            strGlobalI: 0=局部/1=整体/2=整体+投影
+            strP1i~strP4i: 对应角节点荷载值
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_surface_load(
+            "ESRFC", self.name, strEntity, strPlanei, strDir,
+            strGlobalI, strP1i, strP2i, strP3i, strP4i
+        )
+        if not ok:
+            raise RuntimeError(f"添加单元面荷载到工况 {self.name} 失败: {err}")
+        return self
+
+    def create_surface_load_vector(
+        self,
+        strEntity: str,
+        strPlanei: str = "1",
+        strDir: str = "VECTOR",
+        strXi: str = "0",
+        strYi: str = "0",
+        strZi: str = "-1",
+        strP1i: str = "0",
+        strP2i: str = "0",
+        strP3i: str = "0",
+        strP4i: str = "0",
+    ) -> LoadCase:
+        """添加单元面荷载（方向向量定义）
+
+        Args:
+            strEntity: 单元编号
+            strPlanei: 面位置，板壳单元默认1，实体单元输入1,2,3,4,5,6
+            strDir: 方向，默认为 VECTOR
+            strXi, strYi, strZi: VECTOR的具体值
+            strP1i~strP4i: 对应角节点荷载值
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        ok, err = osis_load_surface_load_vector(
+            "ESRFC", self.name, strEntity, strPlanei, strDir,
+            strXi, strYi, strZi, strP1i, strP2i, strP3i, strP4i
+        )
+        if not ok:
+            raise NotImplementedError(f"OSIS暂不支持添加单元面荷载到工况")
+            raise RuntimeError(f"添加单元面荷载到工况 {self.name} 失败: {err}")
+        return self
+
     # ── 荷载删除 ──────────────────────────────
 
     def delete(
@@ -237,7 +446,7 @@ class LoadCaseManager:
         eType: str,
         old_entity: int | str,
         new_entity: int | str,
-    ) -> LoadCaseManager:
+    ) -> LoadCase:
         """修改工况内荷载的作用对象
 
         Args:
@@ -263,9 +472,10 @@ class LoadCaseManager:
         Raises:
             RuntimeError: 接口调用失败时抛出异常
         """
-        resp = osis_client("GetAllLoadCaseInfo", {"loadCase": self.name})
+        load_case_name = self.name
+        resp = osis_client("GetLoadCaseDetail", {"loadCaseName": load_case_name})
         if isinstance(resp, tuple):
-            raise RuntimeError(f"查询工况 {self.name} 的荷载失败: {resp[1]}")
+            raise RuntimeError(f"查询工况 {load_case_name} 的荷载失败: {resp[1]}")
         data = resp.get("data", {})
         return data if isinstance(data, dict) else {}
 
@@ -274,16 +484,15 @@ class LoadCaseManager:
 # ──────────────────────────────────────────────
 
 
-class LoadManager:
+class LoadCaseManager:
     """荷载工况管理器
 
     统一管理荷载工况和荷载的创建、删除、修改和查询。
 
     用法:
         >>> from pyosis.load import load_manager
-        >>> load_manager.create_loadcase("工况1", "USER")                        # 创建荷载工况
-        >>> load_manager.add_gravity("工况1", 1.0, 1.0, 1.0)                   # 添加自重荷载
-        >>> load_manager.add_nforce("工况1", 1, 100, 0, 0, 0, 0, 0)            # 添加节点荷载
+        >>> loadcase1 = load_manager.create_loadcase("工况1", "USER")                        # 创建荷载工况
+        >>> load1 = loadcase1.create()
         >>> lc = load_manager.get("工况1")                                     # 按名称查询
         >>> all_lcs = load_manager.all()                                       # 获取全部工况
         >>> load_manager.rename("工况1", "新工况1")                            # 重命名工况
@@ -297,8 +506,8 @@ class LoadManager:
     #   lc2 = load_manager.rename("工况1", "新工况1")
     #   load_manager.delete("新工况1")
     def __init__(self) -> None:
-        self._loadcases: list[LoadCaseManager] = []
-        self._lc_map: dict[str, LoadCaseManager] = {}  # 按名称索引：O(1) 查询
+        self._loadcases: list[LoadCase] = []
+        self._lc_map: dict[str, LoadCase] = {}  # 按名称索引：O(1) 查询
         self._loaded: bool = False
 
     # ── 数据加载 ──────────────────────────────
@@ -311,7 +520,7 @@ class LoadManager:
         if isinstance(resp, tuple):
             raise RuntimeError(f"加载荷载工况信息失败: {resp[1]}")
         self._loadcases = [
-            LoadCaseManager._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
+            LoadCase._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
         ]
 
         # 构建索引：名称 -> 荷载工况对象 (O(1) 查询)
@@ -334,7 +543,7 @@ class LoadManager:
         load_case_type: str = "USER",
         scalar: float = 1.0,
         prompt: str = None,
-    ) -> LoadCaseManager | None:
+    ) -> LoadCase | None:
         """创建荷载工况
 
         Args:
@@ -375,7 +584,7 @@ class LoadManager:
             raise RuntimeError(f"删除荷载工况 {name} 失败: {err}")
         self._loaded = False
 
-    def rename(self, old_name: str, new_name: str)  -> LoadCaseManager | None:
+    def rename(self, old_name: str, new_name: str) -> LoadCase | None:
         """重命名荷载工况
 
         Args:
@@ -396,7 +605,7 @@ class LoadManager:
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, name: str | list[str]) -> LoadCaseManager | list[LoadCaseManager | None]:
+    def get(self, name: str | list[str]) -> list[LoadCase | None] | LoadCase | None:
         """根据名称获取单个或多个荷载工况 (O(k))
 
         Args:
@@ -413,7 +622,7 @@ class LoadManager:
         else:
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
-    def all(self) -> list[LoadCaseManager]:
+    def all(self) -> list[LoadCase]:
         """获取所有荷载工况
 
         Returns:
@@ -433,11 +642,11 @@ class LoadManager:
 
     def __repr__(self) -> str:
         self._load()
-        return f"LoadManager(count={len(self._loadcases)})"
+        return f"LoadCaseManager(count={len(self._loadcases)})"
 
 
 # ──────────────────────────────────────────────
 # 全局单例
 # ──────────────────────────────────────────────
 
-load_manager = LoadManager()
+load_manager = LoadCaseManager()
