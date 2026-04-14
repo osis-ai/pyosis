@@ -77,11 +77,12 @@ class ElementManager:
 
     用法:
         >>> from pyosis.element import element_manager
-        >>> element_manager.create_beam3d(1, 1, 2, nMat=1, nSec1=1, nSec2=1)  # 创建梁单元
-        >>> element = element_manager.get(1)                                   # 按编号查询
-        >>> all_elems = element_manager.all()                                  # 获取全部单元
-        >>> element_manager.delete(1)                                          # 删除单元
-        >>> element_manager.renumber(1, 100)                                   # 修改编号
+        >>> elem = element_manager.create_beam3d(1, 2, nMat=1, nSec1=1, nSec2=1)  # 创建梁单元（自动编号）
+        >>> elem.no                                                             # 访问编号
+        >>> elem.element_type                                                   # 访问类型
+        >>> all_elems = element_manager.all()                                   # 获取全部单元
+        >>> element_manager.delete(elem.no)                                     # 删除单元
+        >>> element_manager.renumber(elem.no, 100)                              # 修改编号
     """
 
     def __init__(self) -> None:
@@ -114,32 +115,42 @@ class ElementManager:
         self._loaded = False
         self._load()
 
+    def _next_no(self) -> int:
+        """生成下一个可用单元编号
+
+        取已有单元编号的最大值+1，如果没有单元则从1开始。
+        """
+        self._load()
+        if not self._elements:
+            return 1
+        return max(elem.no for elem in self._elements) + 1
+
     # ── 增删改 ────────────────────────────────
 
     def create_beam3d(
         self,
-        no: int,
         node1: int,
         node2: int,
         nMat: int,
         nSec1: int,
         nSec2: int,
+        no: int | None = None,
         nYTrans: Literal[1, 2, 3, 4] = 1,
         nZTrans: Literal[1, 2, 3, 4] = 1,
         dStrain: float = 0.0,
         bFlag: int = 0,
         dTheta: float = 0,
         bWarping: int = 0,
-    ) -> None:
+    ) -> Element:
         """创建梁柱单元
 
         Args:
-            no: 单元编号
             node1: 节点1编号
             node2: 节点2编号
             nMat: 材料编号
             nSec1: 截面1编号
             nSec2: 截面2编号
+            no: 单元编号，不指定时自动生成（取最大编号+1）
             nYTrans: y轴截面变化次方，可选值：1, 2, 3, 4
             nZTrans: z轴截面变化次方，可选值：1, 2, 3, 4
             dStrain: 应变值，默认为 0.0
@@ -147,9 +158,15 @@ class ElementManager:
             dTheta: 轴向转角参数
             bWarping: 翘曲效应标志，0=不考虑，1=考虑
 
+        Returns:
+            创建的单元对象
+
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_element_beam3d(
             no, "BEAM3D", node1, node2, nMat, nSec1, nSec2,
             nYTrans, nZTrans, dStrain, bFlag, dTheta, bWarping
@@ -157,41 +174,61 @@ class ElementManager:
         if not ok:
             raise RuntimeError(f"创建梁单元 {no} 失败: {err}")
         self._loaded = False
+        return Element(
+            no=no,
+            element_type="BEAM3D",
+            mat=nMat,
+            node_i=node1,
+            node_j=node2,
+        )
 
     def create_truss(
         self,
-        no: int,
         node1: int,
         node2: int,
         nMat: int,
         nSec1: int,
         nSec2: int,
+        no: int | None = None,
         dStrain: float = 0.0,
-    ) -> None:
+    ) -> Element:
         """创建桁架单元
 
         Args:
-            no: 单元编号
             node1: 节点1编号
             node2: 节点2编号
             nMat: 材料编号
             nSec1: 截面1编号
             nSec2: 截面2编号
+            no: 单元编号，不指定时自动生成（取最大编号+1）
             dStrain: 应变值，默认为 0.0
+
+        Returns:
+            创建的单元对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_element_truss(no, "TRUSS", node1, node2, nMat, nSec1, nSec2, dStrain)
         if not ok:
             raise RuntimeError(f"创建桁架单元 {no} 失败: {err}")
         self._loaded = False
+        return Element(
+            no=no,
+            element_type="TRUSS",
+            mat=nMat,
+            node_i=node1,
+            node_j=node2,
+        )
 
     def create_spring(
         self,
-        no: int,
         node1: int,
         node2: int,
+        no: int | None = None,
         bLinear: int = 1,
         dx: float = 10,
         dy: float = 10,
@@ -200,13 +237,13 @@ class ElementManager:
         ry: float = 10,
         rz: float = 10,
         dBeta: float = 0.0,
-    ) -> None:
+    ) -> Element:
         """创建弹簧单元
 
         Args:
-            no: 单元编号
             node1: 节点1编号
             node2: 节点2编号
+            no: 单元编号，不指定时自动生成（取最大编号+1）
             bLinear: 弹簧类型，1=线性，0=非线性
             dx: x方向参数（刚度或力-位移曲线编号）
             dy: y方向参数
@@ -216,79 +253,115 @@ class ElementManager:
             rz: 绕z轴旋转参数
             dBeta: 轴向转角
 
+        Returns:
+            创建的单元对象
+
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_element_spring(
             no, "SPRING", node1, node2, bLinear, dx, dy, dz, rx, ry, rz, dBeta
         )
         if not ok:
             raise RuntimeError(f"创建弹簧单元 {no} 失败: {err}")
         self._loaded = False
+        return Element(
+            no=no,
+            element_type="SPRING",
+            mat=0,
+            node_i=node1,
+            node_j=node2,
+        )
 
     def create_cable(
         self,
-        no: int,
         node1: int,
         node2: int,
         nMat: int,
         nSec: int,
+        no: int | None = None,
         eMethod: Literal["UL", "IF", "HF", "VF", "IS"] = "UL",
         dPara: float = 10.0,
-    ) -> None:
+    ) -> Element:
         """创建拉索单元
 
         Args:
-            no: 单元编号
             node1: 节点1编号
             node2: 节点2编号
             nMat: 材料编号
             nSec: 截面编号
+            no: 单元编号，不指定时自动生成（取最大编号+1）
             eMethod: 拉索参数定义方法，可选值：UL, IF, HF, VF, IS
             dPara: 拉索参数值
+
+        Returns:
+            创建的单元对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_element_cable(no, "CABLE", node1, node2, nMat, nSec, eMethod, dPara)
         if not ok:
             raise RuntimeError(f"创建拉索单元 {no} 失败: {err}")
         self._loaded = False
+        return Element(
+            no=no,
+            element_type="CABLE",
+            mat=nMat,
+            node_i=node1,
+            node_j=node2,
+        )
 
     def create_shell(
         self,
-        no: int,
         node1: int,
         node2: int,
         node3: int,
         nMat: int,
         nThk: int,
+        no: int | None = None,
         bIsThin: int = 1,
         node4: int | None = None,
-    ) -> None:
+    ) -> Element:
         """创建壳单元
 
         Args:
-            no: 单元编号
             node1: 节点1编号
             node2: 节点2编号
             node3: 节点3编号
             nMat: 材料编号
             nThk: 厚度编号
+            no: 单元编号，不指定时自动生成（取最大编号+1）
             bIsThin: 壳类型，1=薄壳，0=厚壳
             node4: 节点4编号（可选，四边形壳需要）
 
+        Returns:
+            创建的单元对象
+
         Raises:
-            RuntimeError: 创建失败时抛出异常
+            NotImplementedError: OSIS 暂不支持创建壳单元
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_element_shell(no, "SHELL", bIsThin, nMat, nThk, node1, node2, node3, node4)
         if not ok:
-            # todo 暂不支持创建壳单元
             raise NotImplementedError(
                 f"OSIS 暂不支持创建 SHELL 单元。"
             )
-            # raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
         self._loaded = False
+        return Element(
+            no=no,
+            element_type="SHELL",
+            mat=nMat,
+            node_vec=[node1, node2, node3],
+        )
 
     def delete(self, no: int) -> None:
         """删除单元
@@ -338,6 +411,8 @@ class ElementManager:
 
         if element_type is None:
             raise RuntimeError("必须提供 element_type 来指定单元类型")
+
+        kwargs["no"] = no  # 确保使用原来的编号
 
         if element_type == "BEAM3D":
             self.create_beam3d(**kwargs)
