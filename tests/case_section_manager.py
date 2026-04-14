@@ -39,16 +39,14 @@ def test_create_circle():
     cleanup_test_sections()
 
     # 实心圆
-    section_manager.create_circle("测试实心圆", eCircleType="Solid", D=0.5, Tw=0.0)
-    sec = _section_by_name("测试实心圆")
+    sec = section_manager.create_circle("测试实心圆", eCircleType="Solid", D=0.5, Tw=0.0)
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试实心圆", f"名称应为'测试实心圆'，实际'{sec.name}'"
     section_manager.delete(sec.no)
     print("✓ 创建实心圆形截面成功")
 
     # 空心圆
-    section_manager.create_circle("测试空心圆", eCircleType="Hollow", D=0.5, Tw=0.02)
-    sec = _section_by_name("测试空心圆")
+    sec = section_manager.create_circle("测试空心圆", eCircleType="Hollow", D=0.5, Tw=0.02)
     assert sec is not None
     assert sec.name == "测试空心圆"
     section_manager.delete(sec.no)
@@ -60,8 +58,7 @@ def test_create_Lshape():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_Lshape("测试L形", nDir=1, H=0.1, B=0.1, Tf1=0.016, Tf2=0.016)
-    sec = _section_by_name("测试L形")
+    sec = section_manager.create_Lshape("测试L形", nDir=1, H=0.1, B=0.1, Tf1=0.016, Tf2=0.016)
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试L形"
     section_manager.delete(sec.no)
@@ -73,8 +70,7 @@ def test_create_Tshape():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_Tshape("测试T形", nDir=0, H=0.3, B=0.2, Tf=0.016, Tw=0.016)
-    sec = _section_by_name("测试T形")
+    sec = section_manager.create_Tshape("测试T形", nDir=0, H=0.3, B=0.2, Tf=0.016, Tw=0.016)
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试T形"
     section_manager.delete(sec.no)
@@ -86,8 +82,7 @@ def test_create_Ishape():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_Ishape("测试I形", H=0.3, Bt=0.13, Bb=0.13, Tt=0.016, Tb=0.016, Tw=0.016)
-    sec = _section_by_name("测试I形")
+    sec = section_manager.create_Ishape("测试I形", H=0.3, Bt=0.13, Bb=0.13, Tt=0.016, Tb=0.016, Tw=0.016)
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试I形"
     section_manager.delete(sec.no)
@@ -99,8 +94,7 @@ def test_create_rect():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_rect("测试矩形", B=6.5, H=3.2)
-    sec = _section_by_name("测试矩形")
+    sec = section_manager.create_rect("测试矩形", B=6.5, H=3.2)
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试矩形"
     section_manager.delete(sec.no)
@@ -112,12 +106,11 @@ def test_create_steel_i():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_steel_i(
+    sec = section_manager.create_steel_i(
         "测试工字钢",
         H=0.3, Bt=0.13, Bb=0.13, Tt=0.016, Tb=0.016, Tw=0.016,
         WebRibPos="Both",
     )
-    sec = _section_by_name("测试工字钢")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试工字钢"
     section_manager.delete(sec.no)
@@ -129,9 +122,8 @@ def test_renumber():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_circle("待修改截面", D=0.5)
-    sec = _section_by_name("待修改截面")
-    assert sec is not None, f"截面应已创建，实际: {sec}"
+    sec = section_manager.create_circle("待修改截面", D=0.5)
+    assert sec is not None
     old_no = sec.no
     section_manager.renumber(old_no, 9980)
     assert section_manager.get(old_no) is None, "旧编号应不存在"
@@ -146,8 +138,7 @@ def test_delete():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_circle("待删除截面", D=0.5)
-    sec = _section_by_name("待删除截面")
+    sec = section_manager.create_circle("待删除截面", D=0.5)
     no = sec.no
     assert section_manager.get(no) is not None
     section_manager.delete(no)
@@ -160,10 +151,10 @@ def test_get_multiple():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_circle("测试圆1", D=0.5)
-    n1 = _section_by_name("测试圆1").no
-    section_manager.create_rect("测试矩形")
-    n2 = _section_by_name("测试矩形").no
+    sec1 = section_manager.create_circle("测试圆1", D=0.5)
+    n1 = sec1.no
+    sec2 = section_manager.create_rect("测试矩形")
+    n2 = sec2.no
 
     results = section_manager.get([n1, n2, 999999999])
     assert len(results) == 3, "应返回3个结果"
@@ -185,12 +176,11 @@ def test_create_smallbox():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_smallbox(
+    sec = section_manager.create_smallbox(
         "测试小箱梁",
         eGirderPos="MIDDLE", H=1.6, Bs=1.65, Bm=1.2, Bb=1.0,
         Tt=0.18, Tb=0.2, Tw=0.2,
     )
-    sec = _section_by_name("测试小箱梁")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试小箱梁"
     section_manager.delete(sec.no)
@@ -202,11 +192,10 @@ def test_create_hollowslab():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_hollowslab(
+    sec = section_manager.create_hollowslab(
         "测试空心板",
         eGirderPos="MIDDLE", H=0.95, Bs=1.0, Bm=0.57, Tt=0.12, Tb=0.12, Tw=0.16,
     )
-    sec = _section_by_name("测试空心板")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试空心板"
     section_manager.delete(sec.no)
@@ -218,11 +207,10 @@ def test_create_rounded_end():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_rounded_end(
+    sec = section_manager.create_rounded_end(
         "测试圆端形",
         eFillingType="Solid", B=7.0, H=3.0, R=2.0,
     )
-    sec = _section_by_name("测试圆端形")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试圆端形"
     section_manager.delete(sec.no)
@@ -234,12 +222,11 @@ def test_create_conventionalbox():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_conventionalbox(
+    sec = section_manager.create_conventionalbox(
         "测试常规箱梁",
         H=2.7, BtL=6.375, BtR=6.375, BbL=3.5, BbR=3.5, Bs=0.5,
         Tt=0.28, Tb=0.32, Tw1=0.5, Tw2=0.5, nCellNum=1,
     )
-    sec = _section_by_name("测试常规箱梁")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试常规箱梁"
     section_manager.delete(sec.no)
@@ -251,13 +238,12 @@ def test_create_flat_box():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_flat_box(
+    sec = section_manager.create_flat_box(
         "测试扁平箱梁",
         eSectionType="STREAMEDBOX",
         H=4.0, BtL=20.0, BtR=20.0, BbL=10.5, BbR=10.5, Bs=0.8,
         Tt=0.28, Tb1=0.27, Tb2=0.27, Tw=0.25, nCellNum=5,
     )
-    sec = _section_by_name("测试扁平箱梁")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试扁平箱梁"
     section_manager.delete(sec.no)
@@ -269,12 +255,11 @@ def test_create_double_side_box():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_double_side_box(
+    sec = section_manager.create_double_side_box(
         "测试双边箱",
         H=3.8, Bt=36.0, bt=14.8, Bs=2.1, Bb=4.4,
         tt=0.3, Tb1=0.3, Tb2=0.3, Tw=0.5, Bi=8.0,
     )
-    sec = _section_by_name("测试双边箱")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试双边箱"
     section_manager.delete(sec.no)
@@ -286,12 +271,11 @@ def test_create_ribbed_slab():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_ribbed_slab(
+    sec = section_manager.create_ribbed_slab(
         "测试肋板式",
         H=2.8, Bt=21.5, bt=17.7, Tt=0.3,
         b=0.2, h=1.25, b1=1.8, b2=0.2, x=1.5, y=0.3,
     )
-    sec = _section_by_name("测试肋板式")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试肋板式"
     section_manager.delete(sec.no)
@@ -303,13 +287,12 @@ def test_create_TGirder():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_TGirder(
+    sec = section_manager.create_TGirder(
         "测试T梁",
         eGirderPos="Middle", H=2.5, Bs=1.125, Bm=0.85, Bc=0.0,
         Tt1=0.16, Tt2=0.25, x=0.6, Tw=0.2,
         Bh=0.6, Hh=0.35, yh=0.25,
     )
-    sec = _section_by_name("测试T梁")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试T梁"
     section_manager.delete(sec.no)
@@ -317,25 +300,24 @@ def test_create_TGirder():
 
 
 def test_create_custom():
-  """测试创建自定义截面"""
-  reset()
-  cleanup_test_sections()
-  # 1. 先定义轮廓点矩阵
-  from pyosis.common import osis_matrix
-  contour_matrix = [
-      [1, 0, 0],
-      [1, 1, 0],
-      [1, 1, 1],
-      [1, 0, 1],
-  ]
-  osis_matrix("ContourMatrix", contour_matrix)
-  # 2. 再创建自定义截面
-  section_manager.create_custom("测试自定义", "ContourMatrix")
-  sec = _section_by_name("测试自定义")
-  assert sec is not None, "截面应已创建"
-  assert sec.name == "测试自定义"
-  section_manager.delete(sec.no)
-  print("✓ 创建自定义截面成功")
+    """测试创建自定义截面"""
+    reset()
+    cleanup_test_sections()
+    # 1. 先定义轮廓点矩阵
+    from pyosis.common import osis_matrix
+    contour_matrix = [
+        [1, 0, 0],
+        [1, 1, 0],
+        [1, 1, 1],
+        [1, 0, 1],
+    ]
+    osis_matrix("ContourMatrix", contour_matrix)
+    # 2. 再创建自定义截面
+    sec = section_manager.create_custom("测试自定义", "ContourMatrix")
+    assert sec is not None, "截面应已创建"
+    assert sec.name == "测试自定义"
+    section_manager.delete(sec.no)
+    print("✓ 创建自定义截面成功")
 
 
 # ──────────────────────────────────────────────
@@ -347,12 +329,11 @@ def test_create_steel_box():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_steel_box(
+    sec = section_manager.create_steel_box(
         "测试箱型钢",
         H=2.0, Bt=1.0, Bct=0.4, Bb=0.8, Bcb=0.3,
         Tt=0.02, Tb=0.02, Tw=0.015, SameLayout=1,
     )
-    sec = _section_by_name("测试箱型钢")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试箱型钢"
     section_manager.delete(sec.no)
@@ -364,14 +345,13 @@ def test_create_steel_box_three_cell():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_steel_box_three_cell(
+    sec = section_manager.create_steel_box_three_cell(
         "测试单箱三室",
         H=3.0, Bt=12.0, Bb=6.0, i=0.02, a1=1.5, a2=1.2,
         Dt=0.5, Tt1=0.03, Tt2=0.025, Tb1=0.035, Db=0.5,
         Tb2=0.03, Tb3=0.025, Tw1=0.025, Dw=3.0,
         HasWeb=1, Tw2=0.02, WebRibPos="Both",
     )
-    sec = _section_by_name("测试单箱三室")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试单箱三室"
     section_manager.delete(sec.no)
@@ -383,13 +363,12 @@ def test_create_steel_box_itf():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_steel_box_itf(
+    sec = section_manager.create_steel_box_itf(
         "测试斜顶板箱型",
         H=2.5, B=12.0, Bt=10.0, Bb=6.0, i=0.02,
         a1=10.0, a2=15.0, Dt=0.6, Tt1=0.03, Tt2=0.025, Tt3=0.02,
         Tb1=0.03, Db=0.5, Tb2=0.025, Tb3=0.02, Tw1=0.025,
     )
-    sec = _section_by_name("测试斜顶板箱型")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试斜顶板箱型"
     section_manager.delete(sec.no)
@@ -401,13 +380,12 @@ def test_create_steel_canti_box():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_steel_canti_box(
+    sec = section_manager.create_steel_canti_box(
         "测试悬臂箱型",
         H=2.8, Bt=15.0, Bb=8.0, i=0.02, a=1.5, Dt=0.5,
         Tt1=0.03, Tt2=0.025, Tb1=0.035, Tw1=0.025,
         HasWeb=1, Tw2=0.02, WebRibPos="Both", h=0.3, t=0.015,
     )
-    sec = _section_by_name("测试悬臂箱型")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试悬臂箱型"
     section_manager.delete(sec.no)
@@ -419,13 +397,12 @@ def test_create_steel_canti_box_ibf():
     reset()
     cleanup_test_sections()
 
-    section_manager.create_steel_canti_box_ibf(
+    sec = section_manager.create_steel_canti_box_ibf(
         "测试悬臂斜底板箱型",
         H=2.8, Bt=15.0, Bb=8.0, Bc=2.0, i=0.02, a=1.5, Dt=0.5,
         Tt1=0.03, Tt2=0.025, Tb1=0.035, Tb2=0.03,
         Tw1=0.025, HasWeb=1, Tw2=0.02, WebRibPos="Both", h=0.3, t=0.015,
     )
-    sec = _section_by_name("测试悬臂斜底板箱型")
     assert sec is not None, "截面应已创建"
     assert sec.name == "测试悬臂斜底板箱型"
     section_manager.delete(sec.no)
@@ -433,32 +410,31 @@ def test_create_steel_canti_box_ibf():
 
 
 def test_create_steel_custom():
-  """测试创建自定义钢梁截面"""
-  reset()
-  cleanup_test_sections()
-  # 1. 先定义点和线矩阵
-  from pyosis.common import osis_matrix
-  point_matrix = [
-      [1, 0, 0],
-      [2, 1, 0],
-      [3, 1, 1],
-      [4, 0, 1],
-  ]
-  line_matrix = [
-      [1, 2, 0.02],
-      [2, 3, 0.02],
-      [3, 4, 0.02],
-      [4, 1, 0.02],
-  ]
-  osis_matrix("PointMatrix", point_matrix)
-  osis_matrix("LineMatrix", line_matrix)
-  # 2. 再创建自定义钢截面
-  section_manager.create_steel_custom("测试自定义钢", "PointMatrix", "LineMatrix")
-  sec = _section_by_name("测试自定义钢")
-  assert sec is not None, "截面应已创建"
-  assert sec.name == "测试自定义钢"
-  section_manager.delete(sec.no)
-  print("✓ 创建自定义钢梁截面成功")
+    """测试创建自定义钢梁截面"""
+    reset()
+    cleanup_test_sections()
+    # 1. 先定义点和线矩阵
+    from pyosis.common import osis_matrix
+    point_matrix = [
+        [1, 0, 0],
+        [2, 1, 0],
+        [3, 1, 1],
+        [4, 0, 1],
+    ]
+    line_matrix = [
+        [1, 2, 0.02],
+        [2, 3, 0.02],
+        [3, 4, 0.02],
+        [4, 1, 0.02],
+    ]
+    osis_matrix("PointMatrix", point_matrix)
+    osis_matrix("LineMatrix", line_matrix)
+    # 2. 再创建自定义钢截面
+    sec = section_manager.create_steel_custom("测试自定义钢", "PointMatrix", "LineMatrix")
+    assert sec is not None, "截面应已创建"
+    assert sec.name == "测试自定义钢"
+    section_manager.delete(sec.no)
+    print("✓ 创建自定义钢梁截面成功")
 
 if __name__ == "__main__":
     print("开始测试 SectionManager...")
