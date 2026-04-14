@@ -494,8 +494,8 @@ class LoadCaseManager:
     统一管理荷载工况和荷载的创建、删除、修改和查询。
 
     用法:
-        >>> from pyosis.load import load_manager
-        >>> lc = load_manager.create("工况1", "USER")
+        >>> from pyosis.load import loadcase_manager
+        >>> lc = loadcase_manager.create("工况1", "USER")
         >>> lc.name
 
         # 添加/删除自重（GRAVITY 不需要 entity=）
@@ -503,10 +503,10 @@ class LoadCaseManager:
         >>> lc.delete("GRAVITY")
         
         # 重命名/删除工况
-        >>> lc2 = load_manager.rename("工况1", "新工况1")
+        >>> lc2 = loadcase_manager.rename("工况1", "新工况1")
         >>> lc2.name
 
-        >>> load_manager.delete("新工况1")
+        >>> loadcase_manager.delete("新工况1")
 
         """
 
@@ -652,4 +652,4 @@ class LoadCaseManager:
 # 全局单例
 # ──────────────────────────────────────────────
 
-load_manager = LoadCaseManager()
+loadcase_manager = LoadCaseManager()
