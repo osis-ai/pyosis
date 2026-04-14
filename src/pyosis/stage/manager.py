@@ -76,15 +76,18 @@ class StageManager:
 
     用法:
         >>> from pyosis.stage import stage_manager
-        >>> stage_manager.create(1, "阶段1", 3.0)                           # 创建施工阶段
-        >>> stage_manager.add_element(1, "激活", "墩", 5.0)                  # 添加单元激活
-        >>> stage_manager.add_boundary(1, "激活", "固结")                    # 添加边界激活
-        >>> stage_manager.add_loadcase(1, "激活", "", "自定义工况1")         # 添加荷载工况
-        >>> stage_manager.add_analysis(1, "激活", "MODAL")                   # 添加分析工况
-        >>> stg = stage_manager.get(1)                                     # 按编号查询
+        >>> stg = stage_manager.create("阶段1", 3.0)                        # 创建施工阶段（编号自动生成）
+        >>> stage_manager.activate_element(stg.no, "墩", 5.0)               # 激活单元
+        >>> stage_manager.deactivate_element(stg.no, "墩")                 # 钝化单元
+        >>> stage_manager.activate_boundary(stg.no, "固结")                  # 激活边界
+        >>> stage_manager.deactivate_boundary(stg.no, "固结")                # 钝化边界
+        >>> stage_manager.activate_loadcase(stg.no, "", "自定义工况1")      # 激活荷载工况
+        >>> stage_manager.deactivate_loadcase(stg.no, "", "自定义工况1")    # 钝化荷载工况
+        >>> stage_manager.activate_analysis(stg.no, "MODAL")               # 激活分析工况
+        >>> stg2 = stage_manager.get(stg.no)                                # 按编号查询
         >>> all_stgs = stage_manager.all()                                  # 获取全部阶段
-        >>> stage_manager.delete(1)                                        # 删除阶段
-        >>> stage_manager.insert(1, "后插", "新阶段", 3.0)                  # 插入阶段
+        >>> stage_manager.delete(stg.no)                                    # 删除阶段
+        >>> stg3 = stage_manager.insert(stg.no, 1, "新阶段", 3.0)         # 插入阶段
     """
 
     def __init__(self) -> None:
@@ -117,28 +120,51 @@ class StageManager:
         self._loaded = False
         self._load()
 
+    def _next_no(self) -> int:
+        """生成下一个可用施工阶段编号
+
+        取已有阶段编号的最大值+1，如果没有阶段则从1开始。
+        """
+        self._load()
+        if not self._stages:
+            return 1
+        return max(stg.no for stg in self._stages) + 1
+
     # ── 增删改 ────────────────────────────────
 
     def create(
         self,
-        no: int,
         name: str,
         duration: float,
-    ) -> None:
+        no: int | None = None,
+    ) -> Stage:
         """创建施工阶段
 
         Args:
-            no: 阶段编号（必须连续）
             name: 施工阶段名称
             duration: 持续时间（天）
+            no: 阶段编号，不指定时自动生成（取最大编号+1）
+
+        Returns:
+            创建的施工阶段对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = stage(no, name, duration)
         if not ok:
             raise RuntimeError(f"创建施工阶段 {no} 失败: {err}")
         self._loaded = False
+        return Stage(
+            no=no,
+            name=name,
+            duration=duration,
+            accumulation=0.0,
+            pre_stage_no=-1,
+        )
 
     def delete(self, no: int) -> None:
         """删除施工阶段
@@ -160,7 +186,8 @@ class StageManager:
         position: Literal[0, 1],
         name: str,
         duration: float,
-    ) -> None:
+        no: int | None = None,
+    ) -> Stage:
         """插入施工阶段
 
         Args:
@@ -168,14 +195,28 @@ class StageManager:
             position: 0=前插，1=后插
             name: 所插入的施工阶段名称
             duration: 持续时间（天）
+            no: 阶段编号，不指定时自动生成（取最大编号+1）
+
+        Returns:
+            创建的施工阶段对象
 
         Raises:
             RuntimeError: 插入失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = stage_insert(ref_no, position, name, duration)
         if not ok:
             raise RuntimeError(f"在 {ref_no} 处插入施工阶段失败: {err}")
         self._loaded = False
+        return Stage(
+            no=no,
+            name=name,
+            duration=duration,
+            accumulation=0.0,
+            pre_stage_no=ref_no,
+        )
 
     def remove(self, no: int) -> None:
         """移除插入的施工阶段
@@ -191,21 +232,19 @@ class StageManager:
             raise RuntimeError(f"移除施工阶段 {no} 失败: {err}")
         self._loaded = False
 
-    def add_element(
+    def activate_element(
         self,
         no: int,
-        operation: Literal["激活", "钝化"],
         ele_group_name: str,
         birth: float = None,
         part: Literal[0, 1, 2] = None,
     ) -> None:
-        """通过单元组激活/钝化单元
+        """通过单元组激活单元
 
         Args:
             no: 施工阶段编号
-            operation: "激活" 或 "钝化"
             ele_group_name: 单元组名称
-            birth: 龄期（钝化时设为 None）
+            birth: 龄期
             part: 组合结构分部（可缺省）
                 0 = 全部激活
                 1 = 仅钢材部分
@@ -214,65 +253,113 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        eOP = 1 if operation == "激活" else 0
-        eType = 1 if operation == "激活" else 0
-        ok, err = stage_element(no, eOP, eType, ele_group_name, birth, part)
+        ok, err = stage_element(no, 1, 1, ele_group_name, birth, part)
         if not ok:
-            raise RuntimeError(f"阶段 {no} 添加单元组 {ele_group_name} 失败: {err}")
+            raise RuntimeError(f"阶段 {no} 激活单元组 {ele_group_name} 失败: {err}")
         self._loaded = False
 
-    def add_boundary(
+    def deactivate_element(
         self,
         no: int,
-        operation: Literal["激活", "钝化"],
-        bd_group_name: str,
+        ele_group_name: str,
     ) -> None:
-        """通过边界组激活/钝化边界
+        """通过单元组钝化单元
 
         Args:
             no: 施工阶段编号
-            operation: "激活" 或 "钝化"
+            ele_group_name: 单元组名称
+
+        Raises:
+            RuntimeError: 操作失败时抛出异常
+        """
+        ok, err = stage_element(no, 0, 0, ele_group_name, None, None)
+        if not ok:
+            raise RuntimeError(f"阶段 {no} 钝化单元组 {ele_group_name} 失败: {err}")
+        self._loaded = False
+
+    def activate_boundary(
+        self,
+        no: int,
+        bd_group_name: str,
+    ) -> None:
+        """通过边界组激活边界
+
+        Args:
+            no: 施工阶段编号
             bd_group_name: 边界组名称
 
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        eOP = 1 if operation == "激活" else 0
-        eType = 1 if operation == "激活" else 0
-        ok, err = stage_boundary(no, eOP, eType, bd_group_name)
+        ok, err = stage_boundary(no, 1, 1, bd_group_name)
         if not ok:
-            raise RuntimeError(f"阶段 {no} 添加边界组 {bd_group_name} 失败: {err}")
+            raise RuntimeError(f"阶段 {no} 激活边界组 {bd_group_name} 失败: {err}")
         self._loaded = False
 
-    def add_loadcase(
+    def deactivate_boundary(
         self,
         no: int,
-        operation: Literal["激活", "钝化"],
-        ref_lc_name: str,
-        lc_name: str,
+        bd_group_name: str,
     ) -> None:
-        """激活/钝化荷载工况
+        """通过边界组钝化边界
 
         Args:
             no: 施工阶段编号
-            operation: "激活" 或 "钝化"
-            ref_lc_name: 参考当前施工阶段内的工况名称
-            lc_name: 待操作的荷载工况名称
+            bd_group_name: 边界组名称
 
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        eOP = 1 if operation == "激活" else 0
-        eType = 1 if operation == "激活" else 0
-        ok, err = stage_loadcase(no, eOP, eType, ref_lc_name, lc_name)
+        ok, err = stage_boundary(no, 0, 0, bd_group_name)
         if not ok:
-            raise RuntimeError(f"阶段 {no} 添加荷载工况 {lc_name} 失败: {err}")
+            raise RuntimeError(f"阶段 {no} 钝化边界组 {bd_group_name} 失败: {err}")
         self._loaded = False
 
-    def add_analysis(
+    def activate_loadcase(
         self,
         no: int,
-        operation: Literal["激活", "钝化"],
+        ref_lc_name: str,
+        lc_name: str,
+    ) -> None:
+        """激活荷载工况
+
+        Args:
+            no: 施工阶段编号
+            ref_lc_name: 参考当前施工阶段内的工况名称
+            lc_name: 待激活的荷载工况名称
+
+        Raises:
+            RuntimeError: 操作失败时抛出异常
+        """
+        ok, err = stage_loadcase(no, 1, 1, ref_lc_name, lc_name)
+        if not ok:
+            raise RuntimeError(f"阶段 {no} 激活荷载工况 {lc_name} 失败: {err}")
+        self._loaded = False
+
+    def deactivate_loadcase(
+        self,
+        no: int,
+        ref_lc_name: str,
+        lc_name: str,
+    ) -> None:
+        """钝化荷载工况
+
+        Args:
+            no: 施工阶段编号
+            ref_lc_name: 参考当前施工阶段内的工况名称
+            lc_name: 待钝化的荷载工况名称
+
+        Raises:
+            RuntimeError: 操作失败时抛出异常
+        """
+        ok, err = stage_loadcase(no, 0, 0, ref_lc_name, lc_name)
+        if not ok:
+            raise RuntimeError(f"阶段 {no} 钝化荷载工况 {lc_name} 失败: {err}")
+        self._loaded = False
+
+    def activate_analysis(
+        self,
+        no: int,
         eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"],
         lc_name: str = None,
     ) -> None:
@@ -280,7 +367,6 @@ class StageManager:
 
         Args:
             no: 施工阶段编号
-            operation: "激活" 或 "钝化"
             eType: 分析类型
                 MODAL = 模态分析
                 SETL = 沉降分析
@@ -292,12 +378,11 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        eOP = 1 if operation == "激活" else 0
         if lc_name is None:
             lc_name = ""
-        ok, err = stage_analysis(no, eOP, eType, lc_name)
+        ok, err = stage_analysis(no, 1, eType, lc_name)
         if not ok:
-            raise RuntimeError(f"阶段 {no} 添加分析工况 {eType} 失败: {err}")
+            raise RuntimeError(f"阶段 {no} 激活分析工况 {eType} 失败: {err}")
         self._loaded = False
 
     # ── 查询 ──────────────────────────────────
