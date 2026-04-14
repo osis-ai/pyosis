@@ -83,11 +83,11 @@ class MaterialManager:
 
     用法:
         >>> from pyosis.material import material_manager
-        >>> material_manager.create_conc(1, "C30混凝土", eCode="JTG3362_2018", eGrade="C30")  # 创建混凝土
-        >>> mat = material_manager.get(1)                                          # 按编号查询
+        >>> mat = material_manager.create_conc("C30混凝土", eCode="JTG3362_2018", eGrade="C30")  # 创建混凝土（自动编号）
+        >>> mat.no                                                               # 访问编号
         >>> all_mats = material_manager.all()                                      # 获取全部材料
-        >>> material_manager.delete(1)                                             # 删除材料
-        >>> material_manager.renumber(1, 100)                                      # 修改编号
+        >>> material_manager.delete(mat.no)                                        # 删除材料
+        >>> material_manager.renumber(mat.no, 100)                                 # 修改编号
     """
 
     def __init__(self) -> None:
@@ -120,33 +120,49 @@ class MaterialManager:
         self._loaded = False
         self._load()
 
+    def _next_no(self) -> int:
+        """生成下一个可用材料编号
+
+        取已有材料编号的最大值+1，如果没有材料则从1开始。
+        """
+        self._load()
+        if not self._materials:
+            return 1
+        return max(mat.no for mat in self._materials) + 1
+
     # ── 增删改 ────────────────────────────────
 
     def create_conc(
         self,
-        no: int,
         name: str,
         eCode: Literal["JTG3362_2018", "JTGD62_2004"],
         eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
-        nCrepShrk: int | None = "",
+        no: int | None = None,
+        nCrepShrk: int | None = None,
         dDmp: float = 0.0,
-    ) -> None:
+    ) -> Material:
         """创建混凝土材料
 
         Args:
-            no: 材料编号
             name: 材料名称
             eCode: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
             eGrade: 材料等级牌号，可选值：
                 C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             nCrepShrk: 收缩徐变特性编号，可缺省
             dDmp: 材料阻尼比
+
+        Returns:
+            创建的材料对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_material_conc(
             no, name, "CONC", eCode, eGrade,
             -1 if nCrepShrk is None else nCrepShrk, dDmp
@@ -154,46 +170,53 @@ class MaterialManager:
         if not ok:
             raise RuntimeError(f"创建混凝土材料 {no} 失败: {err}")
         self._loaded = False
+        return Material(no=no, name=name, material_type="CONC")
 
     def create_steel(
         self,
-        no: int,
         name: str,
         eCode: Literal["JTGD64_2015"],
         eGrade: Literal["Q235", "Q345", "Q390", "Q420"],
+        no: int | None = None,
         dDmp: float = 0.0,
-    ) -> None:
+    ) -> Material:
         """创建钢材
 
         Args:
-            no: 材料编号
             name: 材料名称
             eCode: 材料标准代码，可选值：
                 - JTGD64_2015
             eGrade: 材料等级牌号，可选值：
                 Q235, Q345, Q390, Q420
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             dDmp: 材料阻尼比
+
+        Returns:
+            创建的材料对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_material_steel(no, name, "STEEL", eCode, eGrade, dDmp)
         if not ok:
             raise RuntimeError(f"创建钢材 {no} 失败: {err}")
         self._loaded = False
+        return Material(no=no, name=name, material_type="STEEL")
 
     def create_prestressed(
         self,
-        no: int,
         name: str,
         eCode: Literal["JTG3362_2018", "JTGD62_2004"],
         eGrade: str,
+        no: int | None = None,
         dDmp: float = 0.0,
-    ) -> None:
+    ) -> Material:
         """创建预应力材料
 
         Args:
-            no: 材料编号
             name: 材料名称
             eCode: 材料标准代码，可选值：
                 - JTG3362_2018
@@ -202,28 +225,35 @@ class MaterialManager:
                 - JTG3362_2018: Strand1720, Strand1860, Strand1960, Wire1470, Wire1570,
                   Wire1770, Wire1860, Rebar785, Rebar930, Rebar1080
                 - JTGD62_2004: Strand1860, Wire1670, Wire1770, Rebar785, Rebar930
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             dDmp: 材料阻尼比
+
+        Returns:
+            创建的材料对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_material_prestressed(no, name, "PRESTRESSED", eCode, eGrade, dDmp)
         if not ok:
             raise RuntimeError(f"创建预应力材料 {no} 失败: {err}")
         self._loaded = False
+        return Material(no=no, name=name, material_type="PRESTRESSED")
 
     def create_rebar(
         self,
-        no: int,
         name: str,
         eCode: Literal["JTG3362_2018", "JTGD62_2004"],
         eGrade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"],
+        no: int | None = None,
         dDmp: float = 0.0,
-    ) -> None:
+    ) -> Material:
         """创建钢筋材料
 
         Args:
-            no: 材料编号
             name: 材料名称
             eCode: 材料标准代码，可选值：
                 - JTG3362_2018
@@ -231,20 +261,28 @@ class MaterialManager:
             eGrade: 材料等级牌号，根据材料标准可选：
                 - JTG3362_2018: HPB300, HRB400, HRBF400, RRB400, HRB500
                 - JTGD62_2004: R235, HRB335, HRB400, KL400
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             dDmp: 材料阻尼比
+
+        Returns:
+            创建的材料对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_material_rebar(no, name, "REBAR", eCode, eGrade, dDmp)
         if not ok:
             raise RuntimeError(f"创建钢筋材料 {no} 失败: {err}")
         self._loaded = False
+        return Material(no=no, name=name, material_type="REBAR")
 
     def create_custom(
         self,
-        no: int,
         name: str,
+        no: int | None = None,
         dE: float = 0,
         dG: float = 0,
         dMu: float = 0,
@@ -252,12 +290,12 @@ class MaterialManager:
         dUnitWeight: float = 0,
         dDensity: float = 0,
         dDmp: float = 0,
-    ) -> None:
+    ) -> Material:
         """创建自定义材料
 
         Args:
-            no: 材料编号
             name: 材料名称
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             dE: 弹性模量(Pa)
             dG: 剪切模量(Pa)
             dMu: 泊松比
@@ -266,15 +304,33 @@ class MaterialManager:
             dDensity: 质量密度(kg/m^3)
             dDmp: 材料阻尼比
 
+        Returns:
+            创建的材料对象
+
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_material_custom(
             no, name, "CUSTOM", dE, dG, dMu, dExpCoeff, dUnitWeight, dDensity, dDmp
         )
         if not ok:
             raise RuntimeError(f"创建自定义材料 {no} 失败: {err}")
         self._loaded = False
+        return Material(
+            no=no,
+            name=name,
+            material_type="CUSTOM",
+            e=dE,
+            g=dG,
+            mu=dMu,
+            exp_coeff=dExpCoeff,
+            unit_weight=dUnitWeight,
+            density=dDensity,
+            damping=dDmp,
+        )
 
     def delete(self, no: int) -> None:
         """删除材料

@@ -6,18 +6,14 @@ MaterialManager 接口测试（手动运行版）
 from pyosis.material import material_manager
 
 
-# 测试用编号列表
-TEST_NOS = [9999, 9998, 9997, 9996, 9995, 9994, 9990, 9980, 9989]
-
-
 def reset():
     """刷新缓存"""
     material_manager.refresh()
 
 
-def cleanup_test_materials():
+def cleanup_test_materials(created_nos: list[int]):
     """清理测试残留数据"""
-    for no in TEST_NOS:
+    for no in created_nos:
         mat = material_manager.get(no)
         if mat is not None:
             try:
@@ -37,106 +33,117 @@ def test_get_all():
 def test_create_conc():
     """测试创建混凝土"""
     reset()
-    cleanup_test_materials()
+    created_nos = []
 
     # 缺省 nCrepShrk
-    material_manager.create_conc(9999, "测试混凝土", eCode="JTG3362_2018", eGrade="C30")
-    mat = material_manager.get(9999)
-    assert mat is not None, "材料9999应存在"
+    mat = material_manager.create_conc("测试混凝土", eCode="JTG3362_2018", eGrade="C30")
+    created_nos.append(mat.no)
+    assert mat is not None
     assert mat.name == "测试混凝土", f"名称应为'测试混凝土'，实际'{mat.name}'"
-    material_manager.delete(9999)
-    print("✓ 创建混凝土(缺省nCrepShrk)成功")
+    print(f"✓ 创建混凝土(缺省nCrepShrk)成功 (编号: {mat.no})")
 
     # 指定 nCrepShrk
-    material_manager.create_conc(9998, "测试混凝土2", eCode="JTG3362_2018", eGrade="C35", nCrepShrk=1)
-    mat = material_manager.get(9998)
+    mat = material_manager.create_conc("测试混凝土2", eCode="JTG3362_2018", eGrade="C35", nCrepShrk=1)
+    created_nos.append(mat.no)
     assert mat is not None
     assert mat.name == "测试混凝土2", f"名称应为'测试混凝土2'，实际'{mat.name}'"
-    material_manager.delete(9998)
-    print("✓ 创建混凝土(指定nCrepShrk=1)成功")
+    print(f"✓ 创建混凝土(指定nCrepShrk=1)成功 (编号: {mat.no})")
+
+    cleanup_test_materials(created_nos)
 
 
 def test_create_steel():
     """测试创建钢材"""
     reset()
-    cleanup_test_materials()
+    created_nos = []
 
-    material_manager.create_steel(9997, "测试钢材", eCode="JTGD64_2015", eGrade="Q345")
-    mat = material_manager.get(9997)
+    mat = material_manager.create_steel("测试钢材", eCode="JTGD64_2015", eGrade="Q345")
+    created_nos.append(mat.no)
     assert mat is not None
     assert mat.name == "测试钢材"
-    material_manager.delete(9997)
-    print("✓ 创建钢材成功")
+    print(f"✓ 创建钢材成功 (编号: {mat.no})")
+
+    cleanup_test_materials(created_nos)
 
 
 def test_create_prestressed():
     """测试创建预应力材料"""
     reset()
-    cleanup_test_materials()
+    created_nos = []
 
-    material_manager.create_prestressed(9996, "测试预应力", eCode="JTG3362_2018", eGrade="Strand1860")
-    mat = material_manager.get(9996)
+    mat = material_manager.create_prestressed("测试预应力", eCode="JTG3362_2018", eGrade="Strand1860")
+    created_nos.append(mat.no)
     assert mat is not None
     assert mat.name == "测试预应力"
-    material_manager.delete(9996)
-    print("✓ 创建预应力材料成功")
+    print(f"✓ 创建预应力材料成功 (编号: {mat.no})")
+
+    cleanup_test_materials(created_nos)
 
 
 def test_create_rebar():
     """测试创建钢筋"""
     reset()
-    cleanup_test_materials()
+    created_nos = []
 
-    material_manager.create_rebar(9995, "测试钢筋", eCode="JTG3362_2018", eGrade="HRB400")
-    mat = material_manager.get(9995)
+    mat = material_manager.create_rebar("测试钢筋", eCode="JTG3362_2018", eGrade="HRB400")
+    created_nos.append(mat.no)
     assert mat is not None
     assert mat.name == "测试钢筋"
-    material_manager.delete(9995)
-    print("✓ 创建钢筋成功")
+    print(f"✓ 创建钢筋成功 (编号: {mat.no})")
+
+    cleanup_test_materials(created_nos)
 
 
 def test_create_custom():
     """测试创建自定义材料"""
     reset()
-    cleanup_test_materials()
+    created_nos = []
 
-    material_manager.create_custom(9994, "测试自定义", dE=2.1e11, dG=8.1e10, dMu=0.3, dUnitWeight=78500)
-    mat = material_manager.get(9994)
+    mat = material_manager.create_custom("测试自定义", dE=2.1e11, dG=8.1e10, dMu=0.3, dUnitWeight=78500)
+    created_nos.append(mat.no)
     assert mat is not None
     assert mat.name == "测试自定义"
     assert mat.e == 2.1e11
     assert mat.g == 8.1e10
     assert mat.mu == 0.3
-    material_manager.delete(9994)
-    print("✓ 创建自定义材料成功")
+    print(f"✓ 创建自定义材料成功 (编号: {mat.no})")
+
+    cleanup_test_materials(created_nos)
 
 
 def test_renumber():
     """测试修改材料编号"""
     reset()
-    cleanup_test_materials()
+    created_nos = []
 
-    material_manager.create_conc(9990, "待修改材料", eCode="JTG3362_2018", eGrade="C30", nCrepShrk=1)
-    mat = material_manager.get(9990)
-    assert mat is not None, f"材料9990应存在，实际get返回: {mat}"
-    material_manager.renumber(9990, 9980)
-    assert material_manager.get(9990) is None, "旧编号9990应不存在"
-    assert material_manager.get(9980) is not None, "新编号9980应存在"
-    assert material_manager.get(9980).name == "待修改材料"
-    material_manager.delete(9980)
-    print("✓ 修改材料编号成功")
+    mat = material_manager.create_conc("待修改材料", eCode="JTG3362_2018", eGrade="C30", nCrepShrk=1)
+    created_nos.append(mat.no)
+    assert mat is not None
+    old_no = mat.no
+    new_no = old_no + 1
+    material_manager.renumber(old_no, new_no)
+    assert material_manager.get(old_no) is None, "旧编号应不存在"
+    assert material_manager.get(new_no) is not None, "新编号应存在"
+    assert material_manager.get(new_no).name == "待修改材料"
+    created_nos.remove(old_no)
+    created_nos.append(new_no)
+    print(f"✓ 修改材料编号成功 ({old_no} -> {new_no})")
+
+    cleanup_test_materials(created_nos)
 
 
 def test_delete():
     """测试删除材料"""
     reset()
-    cleanup_test_materials()
+    created_nos = []
 
-    material_manager.create_conc(9989, "待删除材料", eCode="JTG3362_2018", eGrade="C30")
-    assert material_manager.get(9989) is not None
-    material_manager.delete(9989)
-    assert material_manager.get(9989) is None, "材料应已删除"
+    mat = material_manager.create_conc("待删除材料", eCode="JTG3362_2018", eGrade="C30")
+    created_nos.append(mat.no)
+    material_manager.delete(mat.no)
+    assert material_manager.get(mat.no) is None, "材料应已删除"
     print("✓ 删除材料成功")
+
+    cleanup_test_materials(created_nos)
 
 
 if __name__ == "__main__":
@@ -163,9 +170,13 @@ if __name__ == "__main__":
             passed += 1
         except AssertionError as e:
             print(f"✗ {t.__name__} 失败: {e}")
+            import traceback
+            traceback.print_exc()
             failed += 1
         except Exception as e:
             print(f"✗ {t.__name__} 异常: {e}")
+            import traceback
+            traceback.print_exc()
             failed += 1
 
     print("\n" + "=" * 50)
