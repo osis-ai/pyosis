@@ -40,15 +40,14 @@ def test_create():
     """测试创建节点"""
     reset()
 
-    no = node_manager.create(1.0, 2.0, 3.0)
-    nd = node_manager.get(no)
+    nd = node_manager.create(1.0, 2.0, 3.0)
     assert nd is not None
     assert nd.x == 1.0
     assert nd.y == 2.0
     assert nd.z == 3.0
     assert nd.coord == (1.0, 2.0, 3.0)
-    node_manager.delete(no)
-    print(f"✓ 创建节点成功 (编号: {no})")
+    node_manager.delete(nd.no)
+    print(f"✓ 创建节点成功 (编号: {nd.no})")
 
 
 def test_modify():
@@ -56,17 +55,16 @@ def test_modify():
     reset()
 
     # 先创建
-    no = node_manager.create(0.0, 0.0, 0.0)
-    nd = node_manager.get(no)
+    nd = node_manager.create(0.0, 0.0, 0.0)
     assert nd is not None
     assert nd.coord == (0.0, 0.0, 0.0)
 
     # 再修改坐标
-    node_manager.modify(no, 10.0, 20.0, 30.0)
-    nd = node_manager.get(no)
+    node_manager.modify(nd.no, 10.0, 20.0, 30.0)
+    nd = node_manager.get(nd.no)
     assert nd is not None
     assert nd.coord == (10.0, 20.0, 30.0)
-    node_manager.delete(no)
+    node_manager.delete(nd.no)
     print("✓ 修改节点坐标成功")
 
 
@@ -75,8 +73,8 @@ def test_renumber():
     reset()
 
     # 先创建
-    no_old = node_manager.create(5.0, 5.0, 5.0)
-    nd = node_manager.get(no_old)
+    nd = node_manager.create(5.0, 5.0, 5.0)
+    no_old = nd.no
     assert nd is not None
     assert nd.coord == (5.0, 5.0, 5.0)
 
@@ -96,12 +94,12 @@ def test_delete():
     reset()
 
     # 先创建
-    no = node_manager.create(1.0, 1.0, 1.0)
-    assert node_manager.get(no) is not None
+    nd = node_manager.create(1.0, 1.0, 1.0)
+    assert node_manager.get(nd.no) is not None
 
     # 再删除
-    node_manager.delete(no)
-    assert node_manager.get(no) is None, "节点应已删除"
+    node_manager.delete(nd.no)
+    assert node_manager.get(nd.no) is None, "节点应已删除"
     print("✓ 删除节点成功")
 
 

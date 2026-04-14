@@ -117,10 +117,10 @@ class NodeManager:
         if isinstance(resp, tuple):
             raise RuntimeError(f"加载节点信息失败: {resp[1]}")
         self._nodes = [Node._from_dict(d) for d in resp.get("data", []) if "no" in d]
-        
+
         # 构建索引：编号 -> 节点对象 (O(1) 查询)
         self._node_map = {node.no: node for node in self._nodes}
-        
+
         # # 构建反向索引：单元编号 -> 关联的节点列表 (O(k) 过滤)
         # self._element_map = {}
         # for node in self._nodes:
@@ -128,7 +128,7 @@ class NodeManager:
         #         if elem_no not in self._element_map:
         #             self._element_map[elem_no] = []
         #         self._element_map[elem_no].append(node)
-        
+
         self._loaded = True
 
     def refresh(self) -> None:
@@ -150,7 +150,7 @@ class NodeManager:
             return 1
         return max(node.no for node in self._nodes) + 1
 
-    def create(self, x: float, y: float, z: float, no: int | None = None) -> int:
+    def create(self, x: float, y: float, z: float, no: int | None = None) -> Node:
         """创建节点
 
         Args:
@@ -158,7 +158,7 @@ class NodeManager:
             no: 节点编号，不指定时自动生成（取最大编号+1）
 
         Returns:
-            创建的节点编号
+            创建的节点对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -170,7 +170,12 @@ class NodeManager:
         if not ok:
             raise RuntimeError(f"创建节点 {no} 失败: {err}")
         self._loaded = False  # 标记缓存失效
-        return no
+        return Node(
+            no=no,
+            x=x,
+            y=y,
+            z=z,
+        )
 
     def delete(self, no: int) -> None:
         """删除节点
