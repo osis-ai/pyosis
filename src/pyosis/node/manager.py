@@ -91,7 +91,8 @@ class NodeManager:
 
     用法:
         >>> from pyosis.node import node_manager
-        >>> node_manager.create(1, 0, 0, 0)           # 创建节点
+        >>> node_manager.create(0, 0, 0)              # 创建节点（自动生成编号）
+        >>> node_manager.create(1, 0, 0, 0)           # 创建节点（指定编号）
         >>> node = node_manager.get(1)                # 按编号查询
         >>> print(node.coord)                         # (0.0, 0.0, 0.0)
         >>> all_nodes = node_manager.all()            # 获取全部节点
@@ -140,20 +141,36 @@ class NodeManager:
 
     # ── 增删改 ────────────────────────────────
 
-    def create(self, no: int, x: float, y: float, z: float) -> None:
+    def _next_no(self) -> int:
+        """生成下一个可用节点编号
+
+        取已有节点编号的最大值+1，如果没有节点则从1开始。
+        """
+        if not self._nodes:
+            return 1
+        return max(node.no for node in self._nodes) + 1
+
+    def create(self, x: float, y: float, z: float, no: int | None = None) -> int:
         """创建节点
 
         Args:
-            no: 节点编号
             x, y, z: 节点坐标
+            no: 节点编号，不指定时自动生成（取最大编号+1）
+
+        Returns:
+            创建的节点编号
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()  # 刷新缓存，确保拿到最新节点列表
+        if no is None:
+            no = self._next_no()
         ok, err = osis_node(no, x, y, z)
         if not ok:
             raise RuntimeError(f"创建节点 {no} 失败: {err}")
         self._loaded = False  # 标记缓存失效
+        return no
 
     def delete(self, no: int) -> None:
         """删除节点
@@ -194,7 +211,7 @@ class NodeManager:
         Raises:
             RuntimeError: 修改失败时抛出异常
         """
-        self.create(no, x, y, z)  # 直接调用 create 接口，编号存在时会覆盖
+        self.create(x, y, z, no=no)  # 直接调用 create 接口，编号存在时会覆盖
 
     # ── 查询 ──────────────────────────────────
 
