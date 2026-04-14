@@ -5,7 +5,7 @@ from pyosis.section import section_manager
 from pyosis.node import node_manager
 from pyosis.element import element_manager
 from pyosis.boundary import boundary_manager
-from pyosis.load import load_manager
+from pyosis.load import loadcase_manager
 
 osis_clear()
 
@@ -24,11 +24,11 @@ osis_auto_ts(0)
 osis_mod_opt(0)
 
 
-section_manager.create_circle(1, "圆形截面1", "CIRCLE", 0.219, 0.012)
-section_manager.create_circle(2, "圆形截面2", "CIRCLE", 0.180, 0.008)
-section_manager.create_circle(3, "圆形截面3", "CIRCLE", 0.114, 0.005)
-section_manager.create_circle(4, "圆形截面4", "CIRCLE", 0.089, 0.004)
-section_manager.create_circle(5, "圆形截面5", "CIRCLE", 0.045, 0.003)
+section_manager.create_circle("圆形截面1", D=0.219, Tw=0.012, no=1)
+section_manager.create_circle("圆形截面2", D=0.180, Tw=0.008, no=2)
+section_manager.create_circle("圆形截面3", D=0.114, Tw=0.005, no=3)
+section_manager.create_circle("圆形截面4", D=0.089, Tw=0.004, no=4)
+section_manager.create_circle("圆形截面5", D=0.045, Tw=0.003, no=5)
 
 material_manager.create_steel(1, "钢材1", "JTGD64_2015", "Q345", 0.05)
 
@@ -47,9 +47,9 @@ element_manager.create_beam3d(4, 3, 4, 1, 5, 5, 1, 1, 0.00, 0, 0.00, 0)
 boundary_manager.create_general(1, "", 1, 1, 1, 1, 1, 1, 1)
 boundary_manager.get(1).assign("a", [1, 2])
 
-load_manager.create("自定义工况1", "USER", 1, "施加于节点3和4的两个力")
-load_manager.get("自定义工况1").create_nforce(3, 0, -1000000, 0, 0, 0, 0)
-load_manager.get("自定义工况1").create_nforce(4, 200000, 0, 0, 0, 0, 0)
+loadcase_manager.create("自定义工况1", "USER", 1, "施加于节点3和4的两个力")
+loadcase_manager.get("自定义工况1").create_nforce(0, -1000000, 0, 0, 0, 0, 3)
+loadcase_manager.get("自定义工况1").create_nforce(200000, 0, 0, 0, 0, 0, 4)
 
 osis_solve()
 
