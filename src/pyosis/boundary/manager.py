@@ -95,12 +95,12 @@ class BoundaryManager:
 
     用法:
         >>> from pyosis.boundary import boundary_manager
-        >>> boundary_manager.create_general(1, bX=1, bY=1, bZ=1, bRX=0, bRY=0, bRZ=0)  # 创建一般边界
-        >>> boundary_manager.create_elstcspt(2, DX=1e10, DY=1e10, DZ=1e10)              # 创建弹性支承
-        >>> boundary_manager.create_master_slave(3, nNode=1, bX=1, bY=1, bZ=1)         # 创建主从约束
+        >>> bd = boundary_manager.create_general(bX=1, bY=1, bZ=1, bRX=0, bRY=0, bRZ=0)  # 创建一般边界（编号自动生成）
+        >>> sp = boundary_manager.create_elstcspt(DX=1e10, DY=1e10, DZ=1e10)              # 创建弹性支承
+        >>> ms = boundary_manager.create_master_slave(nNode=1, bX=1, bY=1, bZ=1)         # 创建主从约束
         >>> bd = boundary_manager.get(1)                                                # 按编号查询
         >>> all_bds = boundary_manager.all()                                           # 获取全部边界
-        >>> boundary_manager.delete(1)                                                # 删除边界
+        >>> boundary_manager.delete(bd.no)                                             # 删除边界
     """
 
     def __init__(self) -> None:
@@ -133,11 +133,20 @@ class BoundaryManager:
         self._loaded = False
         self._load()
 
+    def _next_no(self) -> int:
+        """生成下一个可用边界编号
+
+        取已有边界编号的最大值+1，如果没有边界则从1开始。
+        """
+        self._load()
+        if not self._boundaries:
+            return 1
+        return max(bd.no for bd in self._boundaries) + 1
+
     # ── 增删改 ────────────────────────────────
 
     def create_general(
         self,
-        no: int,
         nCoor: int = None,
         bX: bool = 1,
         bY: bool = 1,
@@ -146,11 +155,11 @@ class BoundaryManager:
         bRY: bool = 1,
         bRZ: bool = 1,
         bRW: bool = 1,
-    ) -> None:
+        no: int | None = None,
+    ) -> Boundary:
         """创建一般边界
 
         Args:
-            no: 边界编号
             nCoor: 局部坐标系编号，"" 代表缺省
             bX: UX方向，0=释放，1=约束
             bY: UY方向，0=释放，1=约束
@@ -159,21 +168,27 @@ class BoundaryManager:
             bRY: RY方向，0=释放，1=约束
             bRZ: RZ方向，0=释放，1=约束
             bRW: RW方向，0=释放，1=约束
+            no: 边界编号，不指定时自动生成（取最大编号+1）
+
+        Returns:
+            创建的边界对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         if nCoor is None:
             nCoor = ""
         ok, err = osis_boundary_general(no, "GENERAL", nCoor, bX, bY, bZ, bRX, bRY, bRZ, bRW)
         if not ok:
             raise RuntimeError(f"创建一般边界 {no} 失败: {err}")
         self._loaded = False
+        return Boundary(no=no, name="", boundary_type="General")
 
     def create_elstcspt(
         self,
-        no: int,
-        nCoor: int = None,
         bX: bool = 1,
         DX: float = 1e13,
         bY: bool = 1,
@@ -186,12 +201,12 @@ class BoundaryManager:
         RY: float = 1e16,
         bRZ: bool = 1,
         RZ: float = 1e16,
-    ) -> None:
+        nCoor: int = None,
+        no: int | None = None,
+    ) -> Boundary:
         """创建弹簧单元弹性支承
 
         Args:
-            no: 边界编号
-            nCoor: 局部坐标系编号，固定使用""缺省
             bX: UX方向，0=弹性，1=固定
             DX: 坐标系X轴方向的弹性支承刚度
             bY: UY方向，0=弹性，1=固定
@@ -204,10 +219,18 @@ class BoundaryManager:
             RY: 绕坐标系Y轴方向的转动弹性刚度
             bRZ: RZ方向，0=弹性，1=固定
             RZ: 绕坐标系Z轴方向的转动弹性刚度
+            nCoor: 局部坐标系编号，固定使用""缺省
+            no: 边界编号，不指定时自动生成（取最大编号+1）
+
+        Returns:
+            创建的边界对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         if nCoor is None:
             nCoor = ""
         ok, err = osis_boundary_elstcspt(
@@ -216,10 +239,10 @@ class BoundaryManager:
         if not ok:
             raise RuntimeError(f"创建弹性支承 {no} 失败: {err}")
         self._loaded = False
+        return Boundary(no=no, name="", boundary_type="ElstcSpt")
 
     def create_master_slave(
         self,
-        no: int,
         nNode: int,
         bX: bool = 1,
         bY: bool = 1,
@@ -227,11 +250,11 @@ class BoundaryManager:
         bRX: bool = 1,
         bRY: bool = 1,
         bRZ: bool = 1,
-    ) -> None:
+        no: int | None = None,
+    ) -> Boundary:
         """创建主从约束
 
         Args:
-            no: 边界编号
             nNode: 主节点编号
             bX: UX方向，0=释放，1=约束
             bY: UY方向，0=释放，1=约束
@@ -239,18 +262,25 @@ class BoundaryManager:
             bRX: RX方向，0=释放，1=约束
             bRY: RY方向，0=释放，1=约束
             bRZ: RZ方向，0=释放，1=约束
+            no: 边界编号，不指定时自动生成（取最大编号+1）
+
+        Returns:
+            创建的边界对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_boundary_master_slave(no, "MSTSLV", nNode, bX, bY, bZ, bRX, bRY, bRZ)
         if not ok:
             raise RuntimeError(f"创建主从约束 {no} 失败: {err}")
         self._loaded = False
+        return Boundary(no=no, name="", boundary_type="MstSlv")
 
     def create_release(
         self,
-        no: int,
         Fxi_state: bool,
         Fyi_state: bool,
         Fzi_state: bool,
@@ -279,17 +309,24 @@ class BoundaryManager:
         Myj: float,
         Mzj: float,
         Mbj: float,
-    ) -> None:
+        no: int | None = None,
+    ) -> Boundary:
         """创建释放梁端约束
 
         Args:
-            no: 边界编号
             Fxi_state等: 端部约束状态，0=释放，1=约束
             Fxi等: 约束值，0-1之间，表示释放后残余的约束能力的百分比
+            no: 边界编号，不指定时自动生成（取最大编号+1）
+
+        Returns:
+            创建的边界对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        self.refresh()
+        if no is None:
+            no = self._next_no()
         ok, err = osis_boundary_release(
             no, "RELEASE",
             Fxi_state, Fyi_state, Fzi_state, Mxi_state, Myi_state, Mzi_state, Mbi_state,
@@ -300,6 +337,7 @@ class BoundaryManager:
         if not ok:
             raise RuntimeError(f"创建释放梁端约束 {no} 失败: {err}")
         self._loaded = False
+        return Boundary(no=no, name="", boundary_type="Release")
 
     def delete(self, no: int) -> None:
         """删除边界
