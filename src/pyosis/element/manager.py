@@ -356,11 +356,14 @@ class ElementManager:
                 f"OSIS 暂不支持创建 SHELL 单元。"
             )
         self._loaded = False
+        node_vec = [node1, node2, node3]
+        if node4 is not None:
+            node_vec.append(node4)
         return Element(
             no=no,
             element_type="SHELL",
             mat=nMat,
-            node_vec=[node1, node2, node3],
+            node_vec=node_vec,
         )
 
     def delete(self, no: int) -> None:
@@ -393,7 +396,7 @@ class ElementManager:
         self._loaded = False
 
     def modify(self, no: int, **kwargs) -> None:
-        """修改单元，编号不存在会自动创建，修改时需要提供完整参数
+        """修改单元,编号不存在会抛出异常,修改时需要提供完整参数
 
         Args:
             no: 单元编号

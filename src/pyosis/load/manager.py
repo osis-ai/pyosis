@@ -95,7 +95,7 @@ class LoadCase:
             dMx: float = 0,
             dMy: float = 0,
             dMz: float = 0,
-    ) -> None:
+    ) -> LoadCase:
         """添加节点荷载
 
         Args:
@@ -107,12 +107,16 @@ class LoadCase:
             dMy: 全局坐标系y方向的集中弯矩
             dMz: 全局坐标系z方向的集中弯矩
 
+        Returns:
+            当前荷载工况对象
+
         Raises:
             RuntimeError: 添加失败时抛出异常
         """
         ok, err = osis_load_nforce("NFORCE", self.name, nEntity, dFx, dFy, dFz, dMx, dMy, dMz)
         if not ok:
             raise RuntimeError(f"添加节点荷载到工况 {self.name} 失败: {err}")
+        return self
 
     def create_line_load(
             self,
@@ -400,6 +404,7 @@ class LoadCase:
             strP1i~strP4i: 对应角节点荷载值
 
         Raises:
+            NotImplementedError: OSIS暂不支持此功能
             RuntimeError: 添加失败时抛出异常
         """
         ok, err = osis_load_surface_load_vector(
@@ -408,7 +413,6 @@ class LoadCase:
         )
         if not ok:
             raise NotImplementedError(f"OSIS暂不支持添加单元面荷载到工况")
-            raise RuntimeError(f"添加单元面荷载到工况 {self.name} 失败: {err}")
         return self
 
     # ── 荷载删除 ──────────────────────────────
