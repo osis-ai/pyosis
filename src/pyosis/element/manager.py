@@ -345,16 +345,14 @@ class ElementManager:
             创建的单元对象
 
         Raises:
-            NotImplementedError: OSIS 暂不支持创建壳单元
+            RuntimeError: 创建失败时抛出异常，消息为服务端返回的具体原因
         """
         self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_element_shell(no, "SHELL", bIsThin, nMat, nThk, node1, node2, node3, node4)
         if not ok:
-            raise NotImplementedError(
-                f"OSIS 暂不支持创建 SHELL 单元。"
-            )
+            raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
         self._loaded = False
         node_vec = [node1, node2, node3]
         if node4 is not None:

@@ -404,15 +404,16 @@ class LoadCase:
             strP1i~strP4i: 对应角节点荷载值
 
         Raises:
-            NotImplementedError: OSIS暂不支持此功能
-            RuntimeError: 添加失败时抛出异常
+            RuntimeError: 添加失败时抛出异常，消息包含服务端返回的具体原因
         """
         ok, err = osis_load_surface_load_vector(
             "ESRFC", self.name, strEntity, strPlanei, strDir,
             strXi, strYi, strZi, strP1i, strP2i, strP3i, strP4i
         )
         if not ok:
-            raise NotImplementedError(f"OSIS暂不支持添加单元面荷载到工况")
+            raise RuntimeError(
+                f"添加单元面荷载（方向向量）到工况 {self.name} 失败: {err}"
+            )
         return self
 
     # ── 荷载删除 ──────────────────────────────
