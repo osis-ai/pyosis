@@ -468,7 +468,7 @@ class SectionManager:
             no = self._next_section_no()
         ok, err = osis_section_steel_box(no, name, "STEELBOX", H, Bt, Bct, Bb, Bcb, Tt, Tb, Tw, SameLayout)
         if not ok:
-            raise NotImplementedError(f"OSIS暂不支持创建箱型钢截面")
+            raise RuntimeError(f"创建箱型钢截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="STEELBOX")
 
@@ -588,7 +588,7 @@ class SectionManager:
             Tt1, Tt2, Tt3, Tb1, Db, Tb2, Tb3, Tw1
         )
         if not ok:
-            raise NotImplementedError(f"OSIS暂不支持创建单箱单室斜顶板截面")
+            raise RuntimeError(f"创建单箱单室斜顶板截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="STEELBOXITF")
 
@@ -731,7 +731,7 @@ class SectionManager:
             no = self._next_section_no()
         ok, err = osis_section_steel_custom(no, name, "STEELCUSTOM", point_matrix, line_matrix)
         if not ok:
-            raise NotImplementedError(f"OSIS暂不支持创建自定义钢梁截面")
+            raise RuntimeError(f"创建自定义钢梁截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="STEELCUSTOM")
 
@@ -1037,9 +1037,7 @@ class SectionManager:
             eSlopeType, i, i1, i2, i3, i4, R1, R2
         )
         if not ok:
-            raise NotImplementedError(
-                f"OSIS 暂不支持创建常规箱梁截面"
-            )
+            raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="CONVENTIONALBOX")
 
@@ -1142,7 +1140,7 @@ class SectionManager:
             eSlopeType, i, i1, i2, i3, i4, R1, R2
         )
         if not ok:
-            raise NotImplementedError(f"OSIS 暂不支持创建扁平箱梁截面")
+            raise RuntimeError(f"创建扁平箱梁截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="FLATBOX")
 
@@ -1210,7 +1208,7 @@ class SectionManager:
             xi3, yi3, xo4, Tt4, b1, eSlopeType, i, i1, i2
         )
         if not ok:
-            raise NotImplementedError(f"OSIS暂不支持创建双边箱截面")
+            raise RuntimeError(f"创建双边箱截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="DOUBLESIDEBOX")
 
@@ -1263,7 +1261,7 @@ class SectionManager:
             no, name, "RIBBEDSLAB", H, Bt, bt, Tt, b, h, b1, b2, x, y, eSlopeType, i, i1, i2
         )
         if not ok:
-            raise NotImplementedError(f"OSIS暂不支持创建肋板式截面")
+            raise RuntimeError(f"创建肋板式截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="RIBBEDSLAB")
 
@@ -1348,7 +1346,7 @@ class SectionManager:
             no = self._next_section_no()
         ok, err = osis_section_custom(no, name, "CUSTOM", contour_matrix)
         if not ok:
-            raise NotImplementedError(f"OSIS暂不支持创建自定义截面")
+            raise RuntimeError(f"创建自定义截面 {no} 失败: {err}")
         self._loaded = False
         return Section(no=no, name=name, section_type="CUSTOM")
 
