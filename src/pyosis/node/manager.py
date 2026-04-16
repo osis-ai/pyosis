@@ -109,6 +109,15 @@ class NodeManager:
 
     # ── 数据加载 ──────────────────────────────
 
+    def _reload_get(self, no: int, what: str) -> Node:
+        """创建/修改后从服务端重载并返回节点对象（内部使用）。"""
+        self._loaded = False
+        self._load()
+        nd = self._node_map.get(no)
+        if nd is None:
+            raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
+        return nd
+
     def _load(self) -> None:
         """从服务端加载所有节点信息（延迟加载，带缓存）"""
         if self._loaded:
@@ -146,6 +155,7 @@ class NodeManager:
 
         取已有节点编号的最大值+1，如果没有节点则从1开始。
         """
+        self._load()
         if not self._nodes:
             return 1
         return max(node.no for node in self._nodes) + 1
@@ -169,13 +179,7 @@ class NodeManager:
         ok, err = osis_node(no, x, y, z)
         if not ok:
             raise RuntimeError(f"创建节点 {no} 失败: {err}")
-        self._loaded = False  # 标记缓存失效
-        return Node(
-            no=no,
-            x=x,
-            y=y,
-            z=z,
-        )
+        return self._reload_get(no, "创建节点")
 
     def delete(self, no: int) -> None:
         """删除节点
