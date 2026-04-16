@@ -1,6 +1,7 @@
 from typing import Any, Dict, Literal, List, Union, Sequence
 from ..core import REGISTRY, osis_run
 from ..core.command import _log
+from ..core.client import osis_client
 
 def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     """
@@ -119,3 +120,6 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     str_cmds = ";".join(all_cmds)
     _log(str_cmds)
     return osis_run(str_cmds, "exec")
+
+def output_result_for_calc_book():
+    return osis_client("OutputResultForCalcBook", {})
