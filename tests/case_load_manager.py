@@ -7,65 +7,49 @@
 """
 from pyosis.element import element_manager
 from pyosis.load import loadcase_manager
-# 复用 case_element_manager.py 的前置条件设置
-from case_element_manager import setup_prerequisites, TEST_NODE_NOS, TEST_MAT_NO, TEST_ELEM_NOS
-from pyosis.material import material_manager
+from case_element_manager import ensure_pytest_material_no
 from pyosis.node import node_manager
 from pyosis.io.prestressed_info import TendonShapeInfo
 
-# 与面荷载测试共用的 Shell 单元号
-SHELL_ELEM_NO = 9995
 
+def _setup_shell_element_for_surface_test() -> tuple[int, list[int]]:
+    """创建 Shell 单元及节点，供单元面荷载（含方向向量）测试使用。
 
-def _setup_shell_element_for_surface_test() -> int:
-    """创建 Shell 单元及节点，供单元面荷载（含方向向量）测试使用。"""
-    for no in [99901, 99902, 99903, 99904]:
-        nd = node_manager.get(no)
-        if nd is not None:
-            try:
-                node_manager.delete(no)
-            except Exception:
-                pass
+    Returns:
+        (shell_elem_no, node_nos): 壳单元编号、四个角点节点编号列表
+    """
+    node_manager.refresh()
+    element_manager.refresh()
+    n1 = node_manager.create(0.0, 0.0, 0.0)
+    n2 = node_manager.create(1.0, 0.0, 0.0)
+    n3 = node_manager.create(1.0, 1.0, 0.0)
+    n4 = node_manager.create(0.0, 1.0, 0.0)
+    node_nos = [n1.no, n2.no, n3.no, n4.no]
 
-    node_manager.create(99901, 0.0, 0.0, 0.0)
-    node_manager.create(99902, 1.0, 0.0, 0.0)
-    node_manager.create(99903, 1.0, 1.0, 0.0)
-    node_manager.create(99904, 0.0, 1.0, 0.0)
-
-    if material_manager.get(TEST_MAT_NO) is None:
-        material_manager.create_conc(TEST_MAT_NO, "测试材料",
-                                     eCode="JTG3362_2018", eGrade="C30", nCrepShrk=1)
+    mat_no = ensure_pytest_material_no()
 
     from pyosis.thickness import osis_feature_shellthk
     osis_feature_shellthk(1, 0.2, 0.2)
 
-    old_elem = element_manager.get(SHELL_ELEM_NO)
-    if old_elem is not None:
-        try:
-            element_manager.delete(SHELL_ELEM_NO)
-        except Exception:
-            pass
-
-    element_manager.create_shell(
-        no=SHELL_ELEM_NO,
-        node1=99901,
-        node2=99902,
-        node3=99903,
-        nMat=TEST_MAT_NO,
+    shell = element_manager.create_shell(
+        node1=node_nos[0],
+        node2=node_nos[1],
+        node3=node_nos[2],
+        nMat=mat_no,
         nThk=1,
         bIsThin=1,
-        node4=99904,
+        node4=node_nos[3],
     )
-    return SHELL_ELEM_NO
+    return shell.no, node_nos
 
 
-def _teardown_shell_element_for_surface_test() -> None:
+def _teardown_shell_element_for_surface_test(shell_no: int, node_nos: list[int]) -> None:
     """删除面荷载测试用 Shell 与节点。"""
     try:
-        element_manager.delete(SHELL_ELEM_NO)
+        element_manager.delete(shell_no)
     except Exception:
         pass
-    for no in [99901, 99902, 99903, 99904]:
+    for no in node_nos:
         try:
             node_manager.delete(no)
         except Exception:
@@ -104,7 +88,7 @@ def cleanup_test_loadcases():
 
 def _lc_for_name(name: str):
     """创建指定名称的荷载工况并返回 ``LoadCase``。"""
-    loadcase_manager.create(name, "USER")
+    loadcase_manager.create(load_case_type="USER", name=name)
     lc = loadcase_manager.get(name)
     if lc is None:
         loadcase_manager.refresh()
@@ -141,12 +125,12 @@ def test_get_missing_returns_none():
 
 
 def test_create_loadcase():
-    """测试创建荷载工况"""
+    """测试创建荷载工况（显式指定名称）"""
     reset()
     cleanup_test_loadcases()
 
     name = "PyTest_LoadCase_Create"
-    lc = loadcase_manager.create(name, "USER", 1.0, "pytest")
+    lc = loadcase_manager.create(load_case_type="USER", scalar=1.0, prompt="pytest", name=name)
     if lc is None:
         loadcase_manager.refresh()
         lc = loadcase_manager.get(name)
@@ -156,6 +140,28 @@ def test_create_loadcase():
     # loadcase_manager.delete(name)
     # assert loadcase_manager.get(name) is None, "删除后应查不到该工况"
     print("✓ 创建荷载工况成功")
+
+
+def test_create_loadcase_without_name():
+    """测试创建荷载工况时不传 name（由管理器自动生成 LC_ 前缀名称）"""
+    reset()
+
+    lc = loadcase_manager.create(
+        load_case_type="USER",
+        scalar=1.0,
+        prompt="pytest_auto_name",
+    )
+    assert lc is not None, "不传 name 时应返回 LoadCase"
+    assert lc.name.startswith("LC_"), f"自动名称应以 LC_ 开头，实际: {lc.name!r}"
+    assert len(lc.name) == 15, f"LC_ + 12 位 hex 共 15 字符，实际 len={len(lc.name)}: {lc.name!r}"
+
+    again = loadcase_manager.get(lc.name)
+    assert again is not None and again.name == lc.name, "应用自动名称能再次查询到该工况"
+
+    loadcase_manager.delete(lc.name)
+    assert loadcase_manager.get(lc.name) is None, "删除后应查不到该工况"
+
+    print(f"✓ 不传 name 创建荷载工况成功: {lc.name}")
 
 
 def test_rename_loadcase():
@@ -416,25 +422,38 @@ def test_loadcase_create_cable_force():
     reset()
     cleanup_test_loadcases()
 
-    # 先创建桁架单元（参考 case_element_manager.py）
     from pyosis.element import element_manager
     from pyosis.node import node_manager
-    from pyosis.material import material_manager
 
-    # 确保节点和材料存在
-    node_manager.create(99901, 0, 0, 0)
-    node_manager.create(99902, 1, 0, 0)
-    material_manager.create_conc(99901, "测试材料", eCode="JTG3362_2018", eGrade="C30", nCrepShrk=1)
+    n1 = node_manager.create(0.0, 0.0, 0.0)
+    n2 = node_manager.create(1.0, 0.0, 0.0)
+    mat_no = ensure_pytest_material_no()
 
-    # 创建桁架单元
-    element_manager.create_truss(no=9998, node1=99901, node2=99902, nMat=99901, nSec1=1, nSec2=1)
+    truss = element_manager.create_truss(
+        node1=n1.no,
+        node2=n2.no,
+        nMat=mat_no,
+        nSec1=1,
+        nSec2=1,
+    )
 
     name = "PyTest_LoadCase_LoadOps"
     lc = _lc_for_name(name)
-    result = lc.create_cable_force(nEntity=9998, eLoadType="IN", dForce=100)
+    result = lc.create_cable_force(nEntity=truss.no, eLoadType="IN", dForce=100)
     assert result is lc, "create_cable_force 应返回 self"
-    lc.delete("CFORCE", entity=9998)
+    lc.delete("CFORCE", entity=truss.no)
     loadcase_manager.delete(name)
+
+    try:
+        element_manager.delete(truss.no)
+    except Exception:
+        pass
+    for no in (n1.no, n2.no):
+        try:
+            node_manager.delete(no)
+        except Exception:
+            pass
+
     print("✓ 添加索力荷载成功")
 
 
@@ -443,13 +462,13 @@ def test_loadcase_create_surface_load():
     reset()
     cleanup_test_loadcases()
 
-    _setup_shell_element_for_surface_test()
+    shell_no, node_nos = _setup_shell_element_for_surface_test()
 
     name = "PyTest_LoadCase_LoadOps"
     lc = _lc_for_name(name)
 
     result = lc.create_surface_load(
-        strEntity=str(SHELL_ELEM_NO),
+        strEntity=str(shell_no),
         strPlanei="1",
         strDir="X",
         strGlobalI="0",
@@ -457,8 +476,8 @@ def test_loadcase_create_surface_load():
     )
     assert result is lc, "create_surface_load 应返回 self"
 
-    lc.delete("ESRFC", entity=str(SHELL_ELEM_NO))
-    _teardown_shell_element_for_surface_test()
+    lc.delete("ESRFC", entity=str(shell_no))
+    _teardown_shell_element_for_surface_test(shell_no, node_nos)
     loadcase_manager.delete(name)
     print("✓ 添加单元面荷载成功")
 
@@ -468,17 +487,17 @@ def test_loadcase_create_surface_load_vector():
     reset()
     cleanup_test_loadcases()
 
-    _setup_shell_element_for_surface_test()
+    shell_no, node_nos = _setup_shell_element_for_surface_test()
 
     name = "PyTest_LoadCase_LoadOps"
     lc = _lc_for_name(name)
     result = lc.create_surface_load_vector(
-        strEntity=str(SHELL_ELEM_NO),
+        strEntity=str(shell_no),
         strPlanei="1",
     )
     assert result is lc, "create_surface_load_vector 应返回 self"
-    lc.delete("ESRFC", entity=str(SHELL_ELEM_NO))
-    _teardown_shell_element_for_surface_test()
+    lc.delete("ESRFC", entity=str(shell_no))
+    _teardown_shell_element_for_surface_test(shell_no, node_nos)
     loadcase_manager.delete(name)
     print("✓ 添加单元面荷载（方向向量）成功")
 
@@ -493,6 +512,7 @@ if __name__ == "__main__":
         test_count_matches_all,
         test_get_missing_returns_none,
         test_create_loadcase,
+        test_create_loadcase_without_name,
         test_rename_loadcase,
         test_delete_loadcase,
         test_get_multiple,
@@ -508,7 +528,6 @@ if __name__ == "__main__":
         test_loadcase_create_temperature_uniform,
         test_loadcase_create_gradient_temperature,
         test_loadcase_create_initial_force,
-        # todo 待完善
         test_loadcase_create_prestress,
         test_loadcase_create_cable_force,
         test_loadcase_create_surface_load,

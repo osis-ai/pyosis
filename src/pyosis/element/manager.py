@@ -4,14 +4,15 @@
 - 隐藏 HTTP 接口细节，提供原生 Python 风格 API
 - 返回数据类对象而非 HTTP 元组
 - 内部维护单元列表，通过 get 等方法查询，不暴露 HTTP 接口细节
+- 按单元类型整型 ``type`` 解析为不同子类（与 boundary.manager 一致）
 
-支持的单元类型：BEAM3D、TRUSS、SPRING、CABLE、SHELL
+GetAllElementInfo 中 ``type``：1=BEAM3D，2=TRUSS，3=SPRING，4=CABLE，5=SHELL
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
 
 from ..core.client import osis_client
 from .interface import (
@@ -25,6 +26,16 @@ from .interface import (
 )
 
 
+# 与服务端 type 字段对应（见 io/element_info）
+ELEMENT_TYPE_NAMES: dict[int, str] = {
+    1: "BEAM3D",
+    2: "TRUSS",
+    3: "SPRING",
+    4: "CABLE",
+    5: "SHELL",
+}
+
+
 # ──────────────────────────────────────────────
 # 数据类
 # ──────────────────────────────────────────────
@@ -32,13 +43,14 @@ from .interface import (
 
 @dataclass(frozen=True)
 class Element:
-    """单元对象
+    """单元基类
 
     由 ElementManager 内部创建，用户不应直接实例化。
     """
 
     no: int
-    element_type: str  # "BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"
+    raw_type: int
+    element_type: str  # BEAM3D, TRUSS, ...
     mat: int
     node_vec: list[int] = field(default_factory=list)
     node_i: int = 0
@@ -46,23 +58,65 @@ class Element:
     length: float = 0.0
     center: tuple[float, float, float] = (0.0, 0.0, 0.0)
     sec_vec: list[int] = field(default_factory=list)
-    characters: str = ""
+    characters: list[int] = field(default_factory=list)
+    loc_coor: dict[str, Any] | None = None
 
-    @classmethod
-    def _from_dict(cls, d: dict) -> Element:
-        """从接口 dict 构造 Element 对象（内部使用）"""
-        return cls(
-            no=d["no"],
-            element_type=d.get("type", "UNKNOWN"),
-            mat=d.get("mat", 0),
-            node_vec=d.get("nodeVec", []),
-            node_i=d.get("nodeI", 0),
-            node_j=d.get("nodeJ", 0),
-            length=d.get("length", 0.0),
-            center=tuple(d.get("center", [0.0, 0.0, 0.0])),
-            sec_vec=d.get("secVec", []),
-            characters=d.get("characters", ""),
-        )
+    def __repr__(self) -> str:
+        return f"Element(no={self.no}, type={self.element_type})"
+
+
+@dataclass(frozen=True)
+class Beam3dElement(Element):
+    """梁柱单元（type=1）"""
+
+    beta: float = 0.0
+    beta_flag: bool = False
+    comp_thk: float = 0.0
+    is_taper: bool = False
+    key_pt: int = -1
+    strain: float = 0.0
+    trans_vec: list[int] = field(default_factory=list)
+    warp: bool = False
+    section_details: list[dict[str, Any]] = field(default_factory=list)
+
+    def __repr__(self) -> str:
+        return f"Beam3dElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j}, mat={self.mat})"
+
+
+@dataclass(frozen=True)
+class TrussElement(Element):
+    """桁架单元（type=2）"""
+
+    def __repr__(self) -> str:
+        return f"TrussElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j})"
+
+
+@dataclass(frozen=True)
+class SpringElement(Element):
+    """弹簧单元（type=3）"""
+
+    def __repr__(self) -> str:
+        return f"SpringElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j})"
+
+
+@dataclass(frozen=True)
+class CableElement(Element):
+    """拉索单元（type=4）"""
+
+    def __repr__(self) -> str:
+        return f"CableElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j})"
+
+
+@dataclass(frozen=True)
+class ShellElement(Element):
+    """壳单元（type=5）"""
+
+    is_thin: bool = True
+    thickness: int = 0
+    node_sum: int | None = None
+
+    def __repr__(self) -> str:
+        return f"ShellElement(no={self.no}, nodeVec={self.node_vec}, mat={self.mat})"
 
 
 # ──────────────────────────────────────────────
@@ -77,20 +131,79 @@ class ElementManager:
 
     用法:
         >>> from pyosis.element import element_manager
-        >>> elem = element_manager.create_beam3d(1, 2, nMat=1, nSec1=1, nSec2=1)  # 创建梁单元（自动编号）
-        >>> elem.no                                                             # 访问编号
-        >>> elem.element_type                                                   # 访问类型
-        >>> all_elems = element_manager.all()                                   # 获取全部单元
-        >>> element_manager.delete(elem.no)                                     # 删除单元
-        >>> element_manager.renumber(elem.no, 100)                              # 修改编号
+        >>> elem = element_manager.create_beam3d(1, 2, nMat=1, nSec1=1, nSec2=1)
+        >>> elem.no
+        >>> elem.element_type
+        >>> all_elems = element_manager.all()
+        >>> element_manager.delete(elem.no)
+        >>> element_manager.renumber(elem.no, 100)
     """
 
     def __init__(self) -> None:
         self._elements: list[Element] = []
-        self._elem_map: dict[int, Element] = {}  # 按编号索引：O(1) 查询
+        self._elem_map: dict[int, Element] = {}
         self._loaded: bool = False
 
     # ── 数据加载 ──────────────────────────────
+
+    def _reload_get_as(self, no: int, expected_cls: type[Element], what: str) -> Element:
+        """创建/修改后从服务端重载并返回指定类型对象（内部使用）。"""
+        self._loaded = False
+        self._load()
+        elem = self._elem_map.get(no)
+        if elem is None:
+            raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
+        if not isinstance(elem, expected_cls):
+            raise RuntimeError(f"{what} {no} 成功但返回类型错误: {type(elem)}")
+        return elem
+
+    def _parse_element(self, d: dict) -> Element:
+        """根据 ``type`` 整型解析为对应子类。"""
+        raw = int(d.get("type", 0) or 0)
+        name = ELEMENT_TYPE_NAMES.get(raw, "UNKNOWN")
+
+        common: dict[str, Any] = dict(
+            no=int(d["no"]),
+            raw_type=raw,
+            element_type=name,
+            mat=int(d.get("mat", 0) or 0),
+            node_vec=list(d.get("nodeVec") or []),
+            node_i=int(d.get("nodeI", 0) or 0),
+            node_j=int(d.get("nodeJ", 0) or 0),
+            length=float(d.get("length", 0.0) or 0.0),
+            center=tuple(d.get("center", [0.0, 0.0, 0.0])),
+            sec_vec=list(d.get("secVec") or []),
+            characters=list(d.get("characters") or []),
+            loc_coor=d.get("locCoor"),
+        )
+
+        if raw == 1:
+            return Beam3dElement(
+                **common,
+                beta=float(d.get("beta", 0.0) or 0.0),
+                beta_flag=bool(d.get("betaFlag", False)),
+                comp_thk=float(d.get("compThk", 0.0) or 0.0),
+                is_taper=bool(d.get("isTaper", False)),
+                key_pt=int(d.get("keyPt", -1) or -1),
+                strain=float(d.get("strain", 0.0) or 0.0),
+                trans_vec=list(d.get("transVec") or []),
+                warp=bool(d.get("warp", False)),
+                section_details=list(d.get("sectionDetails") or []),
+            )
+        if raw == 2:
+            return TrussElement(**common)
+        if raw == 3:
+            return SpringElement(**common)
+        if raw == 4:
+            return CableElement(**common)
+        if raw == 5:
+            return ShellElement(
+                **common,
+                is_thin=bool(d.get("isThin", True)),
+                thickness=int(d.get("thickness", 0) or 0),
+                node_sum=None if d.get("nodeSum") in (None, "") else int(d["nodeSum"]),
+            )
+        return Element(**common)
 
     def _load(self) -> None:
         """从服务端加载所有单元信息（延迟加载，带缓存）"""
@@ -100,12 +213,9 @@ class ElementManager:
         if isinstance(resp, tuple):
             raise RuntimeError(f"加载单元信息失败: {resp[1]}")
         self._elements = [
-            Element._from_dict(d) for d in resp.get("data", []) if "no" in d
+            self._parse_element(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]
-
-        # 构建索引：编号 -> 单元对象 (O(1) 查询)
         self._elem_map = {elem.no: elem for elem in self._elements}
-
         self._loaded = True
 
     def refresh(self) -> None:
@@ -116,10 +226,7 @@ class ElementManager:
         self._load()
 
     def _next_no(self) -> int:
-        """生成下一个可用单元编号
-
-        取已有单元编号的最大值+1，如果没有单元则从1开始。
-        """
+        """生成下一个可用单元编号"""
         self._load()
         if not self._elements:
             return 1
@@ -134,36 +241,15 @@ class ElementManager:
         nMat: int,
         nSec1: int,
         nSec2: int,
-        no: int | None = None,
         nYTrans: Literal[1, 2, 3, 4] = 1,
         nZTrans: Literal[1, 2, 3, 4] = 1,
         dStrain: float = 0.0,
         bFlag: int = 0,
         dTheta: float = 0,
         bWarping: int = 0,
-    ) -> Element:
-        """创建梁柱单元
-
-        Args:
-            node1: 节点1编号
-            node2: 节点2编号
-            nMat: 材料编号
-            nSec1: 截面1编号
-            nSec2: 截面2编号
-            no: 单元编号，不指定时自动生成（取最大编号+1）
-            nYTrans: y轴截面变化次方，可选值：1, 2, 3, 4
-            nZTrans: z轴截面变化次方，可选值：1, 2, 3, 4
-            dStrain: 应变值，默认为 0.0
-            bFlag: 轴向转角定义方式，0=beta角，1=关键点
-            dTheta: 轴向转角参数
-            bWarping: 翘曲效应标志，0=不考虑，1=考虑
-
-        Returns:
-            创建的单元对象
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
+        no: int | None = None,
+    ) -> Beam3dElement:
+        """创建梁柱单元"""
         self.refresh()
         if no is None:
             no = self._next_no()
@@ -173,14 +259,7 @@ class ElementManager:
         )
         if not ok:
             raise RuntimeError(f"创建梁单元 {no} 失败: {err}")
-        self._loaded = False
-        return Element(
-            no=no,
-            element_type="BEAM3D",
-            mat=nMat,
-            node_i=node1,
-            node_j=node2,
-        )
+        return self._reload_get_as(no, Beam3dElement, "创建梁单元")  # type: ignore[return-value]
 
     def create_truss(
         self,
@@ -189,46 +268,22 @@ class ElementManager:
         nMat: int,
         nSec1: int,
         nSec2: int,
-        no: int | None = None,
         dStrain: float = 0.0,
-    ) -> Element:
-        """创建桁架单元
-
-        Args:
-            node1: 节点1编号
-            node2: 节点2编号
-            nMat: 材料编号
-            nSec1: 截面1编号
-            nSec2: 截面2编号
-            no: 单元编号，不指定时自动生成（取最大编号+1）
-            dStrain: 应变值，默认为 0.0
-
-        Returns:
-            创建的单元对象
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
+        no: int | None = None,
+    ) -> TrussElement:
+        """创建桁架单元"""
         self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_element_truss(no, "TRUSS", node1, node2, nMat, nSec1, nSec2, dStrain)
         if not ok:
             raise RuntimeError(f"创建桁架单元 {no} 失败: {err}")
-        self._loaded = False
-        return Element(
-            no=no,
-            element_type="TRUSS",
-            mat=nMat,
-            node_i=node1,
-            node_j=node2,
-        )
+        return self._reload_get_as(no, TrussElement, "创建桁架单元")  # type: ignore[return-value]
 
     def create_spring(
         self,
         node1: int,
         node2: int,
-        no: int | None = None,
         bLinear: int = 1,
         dx: float = 10,
         dy: float = 10,
@@ -237,28 +292,9 @@ class ElementManager:
         ry: float = 10,
         rz: float = 10,
         dBeta: float = 0.0,
-    ) -> Element:
-        """创建弹簧单元
-
-        Args:
-            node1: 节点1编号
-            node2: 节点2编号
-            no: 单元编号，不指定时自动生成（取最大编号+1）
-            bLinear: 弹簧类型，1=线性，0=非线性
-            dx: x方向参数（刚度或力-位移曲线编号）
-            dy: y方向参数
-            dz: z方向参数
-            rx: 绕x轴旋转参数
-            ry: 绕y轴旋转参数
-            rz: 绕z轴旋转参数
-            dBeta: 轴向转角
-
-        Returns:
-            创建的单元对象
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
+        no: int | None = None,
+    ) -> SpringElement:
+        """创建弹簧单元"""
         self.refresh()
         if no is None:
             no = self._next_no()
@@ -267,14 +303,7 @@ class ElementManager:
         )
         if not ok:
             raise RuntimeError(f"创建弹簧单元 {no} 失败: {err}")
-        self._loaded = False
-        return Element(
-            no=no,
-            element_type="SPRING",
-            mat=0,
-            node_i=node1,
-            node_j=node2,
-        )
+        return self._reload_get_as(no, SpringElement, "创建弹簧单元")  # type: ignore[return-value]
 
     def create_cable(
         self,
@@ -282,41 +311,18 @@ class ElementManager:
         node2: int,
         nMat: int,
         nSec: int,
-        no: int | None = None,
         eMethod: Literal["UL", "IF", "HF", "VF", "IS"] = "UL",
         dPara: float = 10.0,
-    ) -> Element:
-        """创建拉索单元
-
-        Args:
-            node1: 节点1编号
-            node2: 节点2编号
-            nMat: 材料编号
-            nSec: 截面编号
-            no: 单元编号，不指定时自动生成（取最大编号+1）
-            eMethod: 拉索参数定义方法，可选值：UL, IF, HF, VF, IS
-            dPara: 拉索参数值
-
-        Returns:
-            创建的单元对象
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
+        no: int | None = None,
+    ) -> CableElement:
+        """创建拉索单元"""
         self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_element_cable(no, "CABLE", node1, node2, nMat, nSec, eMethod, dPara)
         if not ok:
             raise RuntimeError(f"创建拉索单元 {no} 失败: {err}")
-        self._loaded = False
-        return Element(
-            no=no,
-            element_type="CABLE",
-            mat=nMat,
-            node_i=node1,
-            node_j=node2,
-        )
+        return self._reload_get_as(no, CableElement, "创建拉索单元")  # type: ignore[return-value]
 
     def create_shell(
         self,
@@ -325,95 +331,45 @@ class ElementManager:
         node3: int,
         nMat: int,
         nThk: int,
-        no: int | None = None,
         bIsThin: int = 1,
         node4: int | None = None,
-    ) -> Element:
-        """创建壳单元
-
-        Args:
-            node1: 节点1编号
-            node2: 节点2编号
-            node3: 节点3编号
-            nMat: 材料编号
-            nThk: 厚度编号
-            no: 单元编号，不指定时自动生成（取最大编号+1）
-            bIsThin: 壳类型，1=薄壳，0=厚壳
-            node4: 节点4编号（可选，四边形壳需要）
-
-        Returns:
-            创建的单元对象
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常，消息为服务端返回的具体原因
-        """
+        no: int | None = None,
+    ) -> ShellElement:
+        """创建壳单元"""
         self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_element_shell(no, "SHELL", bIsThin, nMat, nThk, node1, node2, node3, node4)
         if not ok:
             raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
-        self._loaded = False
-        node_vec = [node1, node2, node3]
-        if node4 is not None:
-            node_vec.append(node4)
-        return Element(
-            no=no,
-            element_type="SHELL",
-            mat=nMat,
-            node_vec=node_vec,
-        )
+        return self._reload_get_as(no, ShellElement, "创建壳单元")  # type: ignore[return-value]
 
     def delete(self, no: int) -> None:
-        """删除单元
-
-        Args:
-            no: 单元编号
-
-        Raises:
-            RuntimeError: 删除失败时抛出异常
-        """
+        """删除单元"""
         ok, err = osis_element_del(no)
         if not ok:
             raise RuntimeError(f"删除单元 {no} 失败: {err}")
         self._loaded = False
 
     def renumber(self, old_no: int, new_no: int) -> None:
-        """修改单元编号
-
-        Args:
-            old_no: 旧编号
-            new_no: 新编号
-
-        Raises:
-            RuntimeError: 修改失败时抛出异常
-        """
+        """修改单元编号"""
         ok, err = osis_element_mod(old_no, new_no)
         if not ok:
             raise RuntimeError(f"修改单元编号 {old_no} -> {new_no} 失败: {err}")
         self._loaded = False
 
     def modify(self, no: int, **kwargs) -> None:
-        """修改单元,编号不存在会抛出异常,修改时需要提供完整参数
-
-        Args:
-            no: 单元编号
-            kwargs: 完整的单元属性
-
-        Raises:
-            RuntimeError: 修改失败时抛出异常
-        """
+        """修改单元,编号不存在会抛出异常,修改时需要提供完整参数"""
         ele = self.get(no)
         if ele is None:
             raise RuntimeError(f"单元 {no} 不存在，无法修改")
 
-        # 👇 关键：先取出类型，剩下的参数才传给创建函数
         element_type = kwargs.pop("element_type", None)
 
         if element_type is None:
             raise RuntimeError("必须提供 element_type 来指定单元类型")
 
-        kwargs["no"] = no  # 确保使用原来的编号
+        kwargs["no"] = no
 
         if element_type == "BEAM3D":
             self.create_beam3d(**kwargs)
@@ -433,37 +389,21 @@ class ElementManager:
     # ── 查询 ──────────────────────────────────
 
     def get(self, no: int | list[int]) -> Element | list[Element | None]:
-        """根据编号获取单个或多个单元 (O(k))
-
-        Args:
-            no: 单元编号
-
-        Returns:
-            Element 对象或数组；单元不存在返回 None
-        """
+        """根据编号获取单个或多个单元 (O(k))"""
         self._load()
         if isinstance(no, int):
             return self._elem_map.get(no)
-        elif isinstance(no, list):
+        if isinstance(no, list):
             return [self._elem_map.get(n) for n in no]
-        else:
-            raise TypeError(f"不支持的编号类型: {type(no)}")
+        raise TypeError(f"不支持的编号类型: {type(no)}")
 
     def all(self) -> list[Element]:
-        """获取所有单元
-
-        Returns:
-            全部单元列表
-        """
+        """获取所有单元"""
         self._load()
         return list(self._elements)
 
     def count(self) -> int:
-        """获取单元总数
-
-        Returns:
-            单元数量
-        """
+        """获取单元总数"""
         self._load()
         return len(self._elements)
 
