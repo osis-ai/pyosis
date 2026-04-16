@@ -2,14 +2,21 @@
 
 """
 注意：单元创建依赖节点和材料，需先确保测试环境中有可用的节点和材料。
+编号均由各 Manager 自动生成，通过返回对象的 ``.no`` 使用。
+
+``create_*`` 返回具体子类（如 ``Beam3dElement``），``get`` / ``all`` 为基类 ``Element`` 引用（运行时为子类实例）。
 """
-from pyosis.element import element_manager
+from pyosis.element import (
+    Beam3dElement,
+    CableElement,
+    Element,
+    ShellElement,
+    SpringElement,
+    TrussElement,
+    element_manager,
+)
 from pyosis.node import node_manager
 from pyosis.material import material_manager
-
-
-# 测试用材料编号
-TEST_MAT_NO = 99901
 
 
 def reset_all():
@@ -30,31 +37,38 @@ def cleanup_test_data(created_nos: list[int]):
         if elem is not None:
             try:
                 element_manager.delete(no)
-            except:
+            except Exception:
                 pass
+
+
+def ensure_pytest_material_no() -> int:
+    """按名称复用或创建测试用混凝土材料，返回材料编号。"""
+    material_manager.refresh()
+    for m in material_manager.all():
+        if m.name == "测试材料":
+            return m.no
+    mat = material_manager.create_conc(
+        "测试材料",
+        eCode="JTG3362_2018",
+        eGrade="C30",
+        nCrepShrk=1,
+    )
+    return mat.no
 
 
 def setup_prerequisites():
     """创建单元测试所需的前置条件（节点和材料）
 
     Returns:
-        创建的节点编号列表
+        (node_nos, mat_no): 节点编号列表、材料编号
     """
     node_nos = []
     for i in range(5):
-        no = node_manager.create(float(i), float(i), float(i))
-        node_nos.append(no)
+        nd = node_manager.create(float(i), float(i), float(i))
+        node_nos.append(nd.no)
 
-    # 确保材料存在
-    if material_manager.get(TEST_MAT_NO) is None:
-        material_manager.create_conc(
-            TEST_MAT_NO, "测试材料",
-            eCode="JTG3362_2018",
-            eGrade="C30",
-            nCrepShrk=1
-        )
-
-    return node_nos
+    mat_no = ensure_pytest_material_no()
+    return node_nos, mat_no
 
 
 def test_get_all():
@@ -62,6 +76,9 @@ def test_get_all():
     reset_all()
     all_elems = element_manager.all()
     assert isinstance(all_elems, list), f"应返回list，实际{type(all_elems)}"
+    for elem in all_elems:
+        assert isinstance(elem, Element), f"应为 Element 子类，实际 {type(elem)}"
+        assert hasattr(elem, "raw_type") and hasattr(elem, "element_type")
     print(f"✓ 获取全部单元成功，共 {len(all_elems)} 个")
 
 
@@ -81,27 +98,28 @@ def test_get():
     if all_elems:
         elem = element_manager.get(all_elems[0].no)
         assert elem is not None
+        assert isinstance(elem, Element)
         assert elem.no == all_elems[0].no
-        print(f"✓ 按编号查询成功: 单元{elem.no}, 类型{elem.element_type}")
+        print(f"✓ 按编号查询成功: 单元{elem.no}, {elem.element_type}(raw_type={elem.raw_type})")
 
 
 def test_create_beam3d():
     """测试创建梁单元"""
     reset_all()
     created_elems = []
-    node_nos = setup_prerequisites()
+    node_nos, mat_no = setup_prerequisites()
 
     elem = element_manager.create_beam3d(
         node1=node_nos[0],
         node2=node_nos[1],
-        nMat=TEST_MAT_NO,
+        nMat=mat_no,
         nSec1=1,
         nSec2=1
     )
     created_elems.append(elem.no)
 
-    assert elem is not None
-    assert elem.no is not None
+    assert isinstance(elem, Beam3dElement), f"应返回 Beam3dElement，实际 {type(elem)}"
+    assert elem.element_type == "BEAM3D" and elem.raw_type == 1
     assert elem.node_i == node_nos[0]
     assert elem.node_j == node_nos[1]
     print(f"✓ 创建梁单元成功 (编号: {elem.no})")
@@ -114,19 +132,19 @@ def test_create_truss():
     """测试创建桁架单元"""
     reset_all()
     created_elems = []
-    node_nos = setup_prerequisites()
+    node_nos, mat_no = setup_prerequisites()
 
     elem = element_manager.create_truss(
         node1=node_nos[0],
         node2=node_nos[1],
-        nMat=TEST_MAT_NO,
+        nMat=mat_no,
         nSec1=1,
         nSec2=1
     )
     created_elems.append(elem.no)
 
-    assert elem is not None
-    assert elem.no is not None
+    assert isinstance(elem, TrussElement), f"应返回 TrussElement，实际 {type(elem)}"
+    assert elem.element_type == "TRUSS" and elem.raw_type == 2
     print(f"✓ 创建桁架单元成功 (编号: {elem.no})")
 
     # 清理
@@ -137,7 +155,7 @@ def test_create_spring():
     """测试创建弹簧单元"""
     reset_all()
     created_elems = []
-    node_nos = setup_prerequisites()
+    node_nos, _mat_no = setup_prerequisites()
 
     elem = element_manager.create_spring(
         node1=node_nos[0],
@@ -149,8 +167,8 @@ def test_create_spring():
     )
     created_elems.append(elem.no)
 
-    assert elem is not None
-    assert elem.no is not None
+    assert isinstance(elem, SpringElement), f"应返回 SpringElement，实际 {type(elem)}"
+    assert elem.element_type == "SPRING" and elem.raw_type == 3
     print(f"✓ 创建弹簧单元成功 (编号: {elem.no})")
 
     # 清理
@@ -161,20 +179,20 @@ def test_create_cable():
     """测试创建拉索单元"""
     reset_all()
     created_elems = []
-    node_nos = setup_prerequisites()
+    node_nos, mat_no = setup_prerequisites()
 
     elem = element_manager.create_cable(
         node1=node_nos[0],
         node2=node_nos[1],
-        nMat=TEST_MAT_NO,
+        nMat=mat_no,
         nSec=1,
         eMethod="UL",
         dPara=10.0
     )
     created_elems.append(elem.no)
 
-    assert elem is not None
-    assert elem.no is not None
+    assert isinstance(elem, CableElement), f"应返回 CableElement，实际 {type(elem)}"
+    assert elem.element_type == "CABLE" and elem.raw_type == 4
     print(f"✓ 创建拉索单元成功 (编号: {elem.no})")
 
     # 清理
@@ -182,28 +200,76 @@ def test_create_cable():
 
 
 def test_create_shell():
-    """测试创建壳单元（OSIS暂不支持，跳过）"""
-    print("⊘ 创建壳单元跳过（OSIS暂不支持）")
+    """测试创建壳单元；成功则校验 ShellElement，否则跳过。
+
+    注意：``setup_prerequisites`` 的节点在 (i,i,i) 上共线，不能作四边形壳顶点；
+    此处单独建 XY 平面矩形四角点。
+    """
+    reset_all()
+    created_elems: list[int] = []
+    shell_node_nos: list[int] = []
+    mat_no = ensure_pytest_material_no()
+    from pyosis.thickness import osis_feature_shellthk
+
+    try:
+        osis_feature_shellthk(1, 0.2, 0.2)
+    except Exception:
+        print("⊘ 创建壳单元跳过（厚度等前置未就绪）")
+        return
+
+    # 矩形四角 (Z=0)，避免共线 / 共面退化
+    for x, y, z in (
+        (0.0, 0.0, 0.0),
+        (1.0, 0.0, 0.0),
+        (1.0, 1.0, 0.0),
+        (0.0, 1.0, 0.0),
+    ):
+        nd = node_manager.create(x, y, z)
+        shell_node_nos.append(nd.no)
+
+    try:
+        elem = element_manager.create_shell(
+            node1=shell_node_nos[0],
+            node2=shell_node_nos[1],
+            node3=shell_node_nos[2],
+            nMat=mat_no,
+            nThk=1,
+            bIsThin=1,
+            node4=shell_node_nos[3],
+        )
+        created_elems.append(elem.no)
+        assert isinstance(elem, ShellElement), f"应返回 ShellElement，实际 {type(elem)}"
+        assert elem.element_type == "SHELL" and elem.raw_type == 5
+        print(f"✓ 创建壳单元成功 (编号: {elem.no})")
+    except RuntimeError as e:
+        print(f"⊘ 创建壳单元跳过: {e}")
+    finally:
+        cleanup_test_data(created_elems)
+        for no in shell_node_nos:
+            try:
+                node_manager.delete(no)
+            except Exception:
+                pass
 
 
 def test_renumber():
     """测试修改单元编号"""
     reset_all()
     created_elems = []
-    node_nos = setup_prerequisites()
+    node_nos, mat_no = setup_prerequisites()
 
     # 先创建
     elem = element_manager.create_beam3d(
         node1=node_nos[0],
         node2=node_nos[1],
-        nMat=TEST_MAT_NO,
+        nMat=mat_no,
         nSec1=1,
         nSec2=1
     )
     no_old = elem.no
     created_elems.append(no_old)
 
-    assert elem is not None
+    assert isinstance(elem, Beam3dElement)
 
     # 修改编号
     no_new = no_old + 1
@@ -211,6 +277,7 @@ def test_renumber():
     assert element_manager.get(no_old) is None, "旧编号应不存在"
     elem_new = element_manager.get(no_new)
     assert elem_new is not None, "新编号应存在"
+    assert isinstance(elem_new, Beam3dElement)
     assert elem_new.no == no_new
     created_elems.remove(no_old)
     created_elems.append(no_new)
@@ -224,13 +291,13 @@ def test_delete():
     """测试删除单元"""
     reset_all()
     created_elems = []
-    node_nos = setup_prerequisites()
+    node_nos, mat_no = setup_prerequisites()
 
     # 先创建
     elem = element_manager.create_beam3d(
         node1=node_nos[0],
         node2=node_nos[1],
-        nMat=TEST_MAT_NO,
+        nMat=mat_no,
         nSec1=1,
         nSec2=1
     )

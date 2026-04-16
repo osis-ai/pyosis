@@ -12,7 +12,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
 
 from ..core.client import osis_client
 from .loadcase import (
@@ -47,11 +48,44 @@ class LoadCase:
 
     由 ``LoadCaseManager``（全局 ``load_manager``）内部创建，用户不应直接实例化。
     """
-
+    # 基本属性
     name: str
     load_case_type: str  # "USER", "D", "DC", "DW", "DD", "CS"
     scalar: float = 1.0
     prompt: str = ""
+    
+    # ── 荷载数据（从 GetLoadCaseDetail 填充）─────────────────────────────
+    gravity: dict | None = None                    # 自重荷载
+    point_force: list[dict] = field(default_factory=list)    # 节点荷载
+    point_moment: list[dict] = field(default_factory=list)    # 节点弯矩
+    line: list[dict] = field(default_factory=list)            # 线荷载
+    element_surface: list[dict] = field(default_factory=list) # 面荷载
+    displacement: list[dict] = field(default_factory=list)    # 强迫位移
+    initial: list[dict] = field(default_factory=list)        # 初始内力
+    uniform_temp: list[dict] = field(default_factory=list)   # 均匀温度
+    gradient_temp: list[dict] = field(default_factory=list)  # 梯度温度
+    prestressed: list[dict] = field(default_factory=list)    # 预应力
+    cforce: list[dict] = field(default_factory=list)          # 索力
+
+    def _sync_from_detail(self, detail: dict) -> None:
+        """用 GetLoadCaseDetail 返回的 data 同步当前对象（内部使用）。"""
+        self.gravity = detail.get("gravity")
+        self.point_force = detail.get("pointForce", []) or []
+        self.point_moment = detail.get("pointMoment", []) or []
+        self.line = detail.get("line", []) or []
+        self.element_surface = detail.get("elementSurface", []) or []
+        self.displacement = detail.get("displacement", []) or []
+        self.initial = detail.get("initial", []) or []
+        self.uniform_temp = detail.get("uniformTemp", []) or []
+        self.gradient_temp = detail.get("gradientTemp", []) or []
+        self.prestressed = detail.get("prestressed", []) or []
+        self.cforce = detail.get("cforce", []) or []
+
+    def refresh_detail(self) -> LoadCase:
+        """刷新当前工况荷载明细并同步到对象属性。"""
+        self._sync_from_detail(self.get())
+        return self
+
 
     @classmethod
     def _from_dict(cls, d: dict) -> LoadCase:
@@ -61,6 +95,18 @@ class LoadCase:
             load_case_type=d.get("type", "USER"),
             scalar=d.get("scalar", 1.0),
             prompt=d.get("prompt", ""),
+            # 荷载数据
+            gravity=d.get("gravity"),
+            point_force=d.get("pointForce", []),
+            point_moment=d.get("pointMoment", []),
+            line=d.get("line", []),
+            element_surface=d.get("elementSurface", []),
+            displacement=d.get("displacement", []),
+            initial=d.get("initial", []),
+            uniform_temp=d.get("uniformTemp", []),
+            gradient_temp=d.get("gradientTemp", []),
+            prestressed=d.get("prestressed", []),
+            cforce=d.get("cforce", []),
         )
 
     # ── 荷载添加 ──────────────────────────────
@@ -84,7 +130,7 @@ class LoadCase:
         ok, err = osis_load_gravity("GRAVITY", self.name, dXCoeff, dYCoeff, dZCoeff)
         if not ok:
             raise RuntimeError(f"添加自重荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_nforce(
             self,
@@ -116,7 +162,7 @@ class LoadCase:
         ok, err = osis_load_nforce("NFORCE", self.name, nEntity, dFx, dFy, dFz, dMx, dMy, dMz)
         if not ok:
             raise RuntimeError(f"添加节点荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_line_load(
             self,
@@ -154,7 +200,7 @@ class LoadCase:
         )
         if not ok:
             raise RuntimeError(f"添加线荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_displacement(
             self,
@@ -180,7 +226,7 @@ class LoadCase:
         )
         if not ok:
             raise RuntimeError(f"添加强迫位移到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_temperature_uniform(
             self,
@@ -201,7 +247,7 @@ class LoadCase:
         ok, err = osis_load_utemp("UTEMP", self.name, nEntity, eDirect, dTemp)
         if not ok:
             raise RuntimeError(f"添加均匀温度荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_gradient_temperature(
             self,
@@ -228,7 +274,7 @@ class LoadCase:
         ok, err = osis_load_gtemp("GTEMP", self.name, nEntity, eDirect, eGTempType, nNum, param)
         if not ok:
             raise RuntimeError(f"添加梯度温度荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_initial_force(
             self,
@@ -277,7 +323,7 @@ class LoadCase:
         )
         if not ok:
             raise RuntimeError(f"添加初始内力荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     # def create_initial_force(
     #     self,
@@ -327,7 +373,7 @@ class LoadCase:
         ok, err = osis_load_pst("PST", self.name, strEntity, eTensionType, eTensionForceType, dBeg, dEnd)
         if not ok:
             raise RuntimeError(f"添加预应力荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_cable_force(
             self,
@@ -348,7 +394,7 @@ class LoadCase:
         ok, err = osis_load_cforce("CFORCE", self.name, nEntity, eLoadType, dForce)
         if not ok:
             raise RuntimeError(f"添加索力荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_surface_load(
             self,
@@ -379,7 +425,7 @@ class LoadCase:
         )
         if not ok:
             raise RuntimeError(f"添加单元面荷载到工况 {self.name} 失败: {err}")
-        return self
+        return self.refresh_detail()
 
     def create_surface_load_vector(
             self,
@@ -414,7 +460,7 @@ class LoadCase:
             raise RuntimeError(
                 f"添加单元面荷载（方向向量）到工况 {self.name} 失败: {err}"
             )
-        return self
+        return self.refresh_detail()
 
     # ── 荷载删除 ──────────────────────────────
 
@@ -446,6 +492,8 @@ class LoadCase:
             ok, err = osis_load_del(eType, self.name, entity)
         if not ok:
             raise RuntimeError(f"删除荷载失败: {err}")
+        # 同步：删除成功后刷新当前工况荷载明细，避免实例属性滞后
+        self.refresh_detail()
 
     # ── 荷载修改 ──────────────────────────────
     def modify(
@@ -468,7 +516,8 @@ class LoadCase:
         ok, err = osis_load_mod(eType, self.name, old_entity, new_entity)
         if not ok:
             raise RuntimeError(f"修改工况 {self.name} 中的荷载失败: {err}")
-        return self
+        # 同步：修改成功后刷新当前工况荷载明细，避免实例属性滞后
+        return self.refresh_detail()
 
     # ── 荷载查询 ──────────────────────────────
     def get(self) -> dict:
@@ -549,15 +598,14 @@ class LoadCaseManager:
 
     def create(
             self,
-            name: str,
             load_case_type: str = "USER",
             scalar: float = 1.0,
             prompt: str = None,
+            name: str = None,
     ) -> LoadCase | None:
         """创建荷载工况
 
         Args:
-            name: 荷载工况名称
             load_case_type: 荷载工况类型
                 USER = 用户定义的荷载
                 D = 桥规中的荷编号1(结构重力)
@@ -567,12 +615,13 @@ class LoadCaseManager:
                 CS = 施工阶段荷载
             scalar: 系数，默认1.0
             prompt: 说明
+            name: 荷载工况名称
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        # if prompt is None:
-        #     prompt = ""
+        if name is None:
+            name = f"LC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_loadcase(name, load_case_type, scalar, prompt)
         if not ok:
             raise RuntimeError(f"创建荷载工况 {name} 失败: {err}")
