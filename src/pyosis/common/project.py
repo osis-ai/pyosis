@@ -7,8 +7,10 @@ from typing import Tuple
 from ..core.client import osis_client
 
 def get_project_directory() -> 'str | None':
-    isok, path = osis_client("GetProjectDirectory", {})
-    return path if isok else None
+    response = osis_client("GetProjectDirectory", {})
+    if response["success"]:
+        return response["path"]
+    raise Exception(response["error"])
 
 def open_project() -> Tuple[bool, str]:
     ...

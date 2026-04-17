@@ -52,7 +52,8 @@ def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> tuple[boo
     Returns:
         tuple (bool, str): 是否成功，失败原因
     """
-    return osis_client("OSIS_Run", locals())
+    response = osis_client("OSIS_Run", locals())
+    return response['success'], response['error']
     # # 1. 配置 C++ 服务地址
     # url = "http://localhost:8080/OSIS_Run"
     
