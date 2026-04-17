@@ -6,7 +6,7 @@ from typing import Literal
 from ..core import REGISTRY
 
 @REGISTRY.register("StgEle")
-def stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEleGroupName: str, nBirth: int, ePart: Literal[0, 1, 2]=None):
+def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEleGroupName: str, nBirth: int, ePart: Literal[0, 1, 2]=None):
     """通过单元组激活单元
 
     Args:
@@ -35,7 +35,7 @@ def stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEleG
     pass
 
 @REGISTRY.register("StgBd")
-def stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEleGroupName: str):
+def osis_stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEleGroupName: str):
     """通过边界组激活/钝化边界
 
     Args:
@@ -59,7 +59,7 @@ def stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEle
     pass
 
 @REGISTRY.register("StgLc")
-def stage_loadcase(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strRefLCName: str, strLCName: str):
+def osis_stage_loadcase(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strRefLCName: str, strLCName: str):
     """激活/钝化荷载工况
 
     Args:
@@ -89,7 +89,7 @@ def stage_loadcase(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strRef
     pass
 
 @REGISTRY.register("StgAnal")
-def stage_analysis(nIndex: int, eOP: Literal[1, 0], eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"], strLCName: str):
+def osis_stage_analysis(nIndex: int, eOP: Literal[1, 0], eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"], strLCName: str):
     """激活分析工况,分析工况默认在每个施工阶段的静力工况之后，不同分析工况无先后顺序
 
     Args:
