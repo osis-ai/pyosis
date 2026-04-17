@@ -46,7 +46,7 @@ from .static import (
 class LoadCase:
     """荷载工况对象（对应某一荷载工况及其下荷载操作）
 
-    由 ``LoadCaseManager``（全局 ``load_manager``）内部创建，用户不应直接实例化。
+    由 ``LoadCaseManager``（全局 ``loadcase_manager``）内部创建，用户不应直接实例化。
     """
     # 基本属性
     name: str

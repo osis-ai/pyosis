@@ -6,6 +6,64 @@ StageManager 接口测试（手动运行版）
 import traceback
 
 from pyosis.stage import stage_manager
+from pyosis.element import osis_element_group
+from pyosis.boundary import boundary_manager
+from pyosis.load import loadcase_manager
+
+# 测试用固定名称（与 stage 测试中的字符串一致）
+_TEST_ELE_GROUP = "墩"
+_TEST_BD_GROUP = "固结"
+_TEST_LC_NAME = "自定义工况1"
+
+
+def setup_test_data():
+    """创建测试所需的前置数据。
+
+    仅把**本次实际新建成功**的资源记入 created，以便 teardown 删除；
+    若模型中已存在同名资源，则复用，不记入 created（避免误删用户数据）。
+    """
+    created = {"element_groups": [], "boundary_groups": [], "load_cases": []}
+
+    # 单元组
+    ok, err = osis_element_group(_TEST_ELE_GROUP, "c", [])
+    if ok:
+        created["element_groups"].append(_TEST_ELE_GROUP)
+    else:
+        err_s = str(err or "")
+        if "已存在" not in err_s:
+            raise RuntimeError(f"单元组创建失败: {err}")
+
+    # 边界组（group 失败时抛 RuntimeError）
+    try:
+        boundary_manager.group(_TEST_BD_GROUP, "c", [])
+        created["boundary_groups"].append(_TEST_BD_GROUP)
+    except RuntimeError as e:
+        if "已存在" not in str(e):
+            raise
+
+    # 荷载工况
+    try:
+        lc = loadcase_manager.create("USER", name=_TEST_LC_NAME)
+        if lc is not None:
+            created["load_cases"].append(_TEST_LC_NAME)
+    except RuntimeError as e:
+        if "已存在" not in str(e) and "存在" not in str(e):
+            raise
+
+    return created
+
+
+def teardown_test_data(created: dict):
+    """清理测试创建的前置数据"""
+    for name in created["element_groups"]:
+        osis_element_group(name, "d", [])
+
+    for name in created["boundary_groups"]:
+        boundary_manager.group(name, "d", [])
+
+    for name in created["load_cases"]:
+        if loadcase_manager.get(name) is not None:
+            loadcase_manager.delete(name)
 
 
 def cleanup_test_stages(created_nos: list[int]):
@@ -32,13 +90,12 @@ def test_create():
     stage_manager.refresh()
     created_nos: list[int] = []
 
-    stg = stage_manager.create("测试阶段1", 3.0)
+    stg = stage_manager.create(3.0)
     assert stg is not None, "应返回阶段对象"
     created_nos.append(stg.no)
 
     stg_check = stage_manager.get(stg.no)
     assert stg_check is not None, f"阶段{stg.no}应存在"
-    assert stg_check.name == "测试阶段1", f"名称应为'测试阶段1'，实际'{stg_check.name}'"
     assert stg_check.duration == 3.0, f"持续时间应为3.0，实际'{stg_check.duration}'"
     print(f"✓ 创建施工阶段成功, no={stg.no}")
 
@@ -50,20 +107,20 @@ def test_create_multiple():
     stage_manager.refresh()
     created_nos: list[int] = []
 
-    stg1 = stage_manager.create("测试阶段1", 3.0)
+    stg1 = stage_manager.create(3.0)
     created_nos.append(stg1.no)
-    stg2 = stage_manager.create("测试阶段2", 5.0)
+    stg2 = stage_manager.create(5.0)
     created_nos.append(stg2.no)
-    stg3 = stage_manager.create("测试阶段3", 7.0)
+    stg3 = stage_manager.create(7.0)
     created_nos.append(stg3.no)
 
     stg1_check = stage_manager.get(stg1.no)
     stg2_check = stage_manager.get(stg2.no)
     stg3_check = stage_manager.get(stg3.no)
 
-    assert stg1_check is not None and stg1_check.name == "测试阶段1"
-    assert stg2_check is not None and stg2_check.name == "测试阶段2"
-    assert stg3_check is not None and stg3_check.name == "测试阶段3"
+    assert stg1_check is not None and stg1_check.duration == 3.0
+    assert stg2_check is not None and stg2_check.duration == 5.0
+    assert stg3_check is not None and stg3_check.duration == 7.0
 
     print(f"✓ 创建多个施工阶段成功, nos={created_nos}")
 
@@ -75,7 +132,7 @@ def test_delete():
     stage_manager.refresh()
     created_nos: list[int] = []
 
-    stg = stage_manager.create("待删除阶段", 3.0)
+    stg = stage_manager.create(3.0)
     created_nos.append(stg.no)
     assert stage_manager.get(stg.no) is not None
     stage_manager.delete(stg.no)
@@ -90,15 +147,15 @@ def test_get_multiple():
     stage_manager.refresh()
     created_nos: list[int] = []
 
-    stg1 = stage_manager.create("测试阶段1", 3.0)
+    stg1 = stage_manager.create(3.0)
     created_nos.append(stg1.no)
-    stg2 = stage_manager.create("测试阶段2", 5.0)
+    stg2 = stage_manager.create(5.0)
     created_nos.append(stg2.no)
 
     results = stage_manager.get([stg1.no, stg2.no, 99999])
     assert len(results) == 3, "应返回3个结果"
-    assert results[0] is not None and results[0].name == "测试阶段1"
-    assert results[1] is not None and results[1].name == "测试阶段2"
+    assert results[0] is not None and results[0].duration == 3.0
+    assert results[1] is not None and results[1].duration == 5.0
     assert results[2] is None, "不存在的阶段应返回None"
 
     print(f"✓ 批量查询施工阶段成功")
@@ -111,19 +168,204 @@ def test_insert():
     stage_manager.refresh()
     created_nos: list[int] = []
 
-    stg1 = stage_manager.create("原阶段", 3.0)
+    stg1 = stage_manager.create(3.0)
     created_nos.append(stg1.no)
 
-    stg2 = stage_manager.insert(stg1.no, 1, "后插阶段", 5.0)
+    stg2 = stage_manager.insert(stg1.no, 1, 5.0)
     created_nos.append(stg2.no)
 
     stg1_check = stage_manager.get(stg1.no)
     assert stg1_check is not None
-    assert stg1_check.name == "原阶段"
 
     print(f"✓ 插入施工阶段成功")
 
     cleanup_test_stages(created_nos)
+
+
+def test_count():
+    """测试获取施工阶段总数"""
+    stage_manager.refresh()
+    initial_count = stage_manager.count()
+
+    stg = stage_manager.create(3.0)
+    try:
+        new_count = stage_manager.count()
+        assert new_count == initial_count + 1, f"计数应为{initial_count + 1}，实际{new_count}"
+        print(f"✓ 获取施工阶段总数成功, count={new_count}")
+    finally:
+        stage_manager.delete(stg.no)
+
+
+def test_refresh():
+    """测试刷新缓存"""
+    stage_manager.refresh()
+    all_stgs = stage_manager.all()
+    assert isinstance(all_stgs, list), "refresh后应返回列表"
+    print(f"✓ 刷新缓存成功, 共 {len(all_stgs)} 个阶段")
+
+
+def test_remove():
+    """测试移除插入的施工阶段"""
+    stage_manager.refresh()
+    created_nos: list[int] = []
+
+    stg1 = stage_manager.create(3.0)
+    created_nos.append(stg1.no)
+    stg2 = stage_manager.insert(stg1.no, 1, 5.0)
+    created_nos.append(stg2.no)
+
+    assert stage_manager.get(stg2.no) is not None, "插入的阶段应存在"
+    stage_manager.remove(stg2.no)
+    assert stage_manager.get(stg2.no) is None, "阶段应已移除"
+
+    print(f"✓ 移除施工阶段成功")
+
+    cleanup_test_stages(created_nos)
+
+
+def test_activate_element():
+    """测试激活单元"""
+    stage_manager.refresh()
+    created_stgs: list[int] = []
+    test_data = setup_test_data()
+
+    try:
+        stg = stage_manager.create(3.0)
+        created_stgs.append(stg.no)
+
+        stage_manager.activate_element(stg.no, "墩", 5.0)
+        print(f"✓ 激活单元成功")
+    finally:
+        for no in created_stgs:
+            try:
+                stage_manager.delete(no)
+            except:
+                pass
+        teardown_test_data(test_data)
+
+
+def test_deactivate_element():
+    """测试钝化单元"""
+    stage_manager.refresh()
+    created_stgs: list[int] = []
+    test_data = setup_test_data()
+
+    try:
+        stg = stage_manager.create(3.0)
+        created_stgs.append(stg.no)
+
+        stage_manager.deactivate_element(stg.no, "墩")
+        print(f"✓ 钝化单元成功")
+    finally:
+        for no in created_stgs:
+            try:
+                stage_manager.delete(no)
+            except:
+                pass
+        teardown_test_data(test_data)
+
+
+def test_activate_boundary():
+    """测试激活边界"""
+    stage_manager.refresh()
+    created_stgs: list[int] = []
+    test_data = setup_test_data()
+
+    try:
+        stg = stage_manager.create(3.0)
+        created_stgs.append(stg.no)
+
+        stage_manager.activate_boundary(stg.no, "固结")
+        print(f"✓ 激活边界成功")
+    finally:
+        for no in created_stgs:
+            try:
+                stage_manager.delete(no)
+            except:
+                pass
+        teardown_test_data(test_data)
+
+
+def test_deactivate_boundary():
+    """测试钝化边界"""
+    stage_manager.refresh()
+    created_stgs: list[int] = []
+    test_data = setup_test_data()
+
+    try:
+        stg = stage_manager.create(3.0)
+        created_stgs.append(stg.no)
+
+        stage_manager.deactivate_boundary(stg.no, "固结")
+        print(f"✓ 钝化边界成功")
+    finally:
+        for no in created_stgs:
+            try:
+                stage_manager.delete(no)
+            except:
+                pass
+        teardown_test_data(test_data)
+
+
+def test_activate_loadcase():
+    """测试激活荷载工况"""
+    stage_manager.refresh()
+    created_stgs: list[int] = []
+    test_data = setup_test_data()
+
+    try:
+        stg = stage_manager.create(3.0)
+        created_stgs.append(stg.no)
+
+        stage_manager.activate_loadcase(stg.no, "", "自定义工况1")
+        print(f"✓ 激活荷载工况成功")
+    finally:
+        for no in created_stgs:
+            try:
+                stage_manager.delete(no)
+            except:
+                pass
+        teardown_test_data(test_data)
+
+
+def test_deactivate_loadcase():
+    """测试钝化荷载工况"""
+    stage_manager.refresh()
+    created_stgs: list[int] = []
+    test_data = setup_test_data()
+
+    try:
+        stg = stage_manager.create(3.0)
+        created_stgs.append(stg.no)
+
+        stage_manager.deactivate_loadcase(stg.no, "", "自定义工况1")
+        print(f"✓ 钝化荷载工况成功")
+    finally:
+        for no in created_stgs:
+            try:
+                stage_manager.delete(no)
+            except:
+                pass
+        teardown_test_data(test_data)
+
+
+def test_activate_analysis():
+    """测试激活分析工况"""
+    stage_manager.refresh()
+    created_stgs: list[int] = []
+
+    try:
+        stg = stage_manager.create(3.0)
+        created_stgs.append(stg.no)
+
+        stage_manager.activate_analysis(stg.no, "MODAL")
+        print(f"✓ 激活分析工况成功")
+    finally:
+        for no in created_stgs:
+            try:
+                stage_manager.delete(no)
+            except:
+                pass
 
 
 if __name__ == "__main__":
@@ -137,6 +379,16 @@ if __name__ == "__main__":
         test_delete,
         test_get_multiple,
         test_insert,
+        test_count,
+        test_refresh,
+        test_remove,
+        test_activate_element,
+        test_deactivate_element,
+        test_activate_boundary,
+        test_deactivate_boundary,
+        test_activate_loadcase,
+        test_deactivate_loadcase,
+        test_activate_analysis,
     ]
 
     passed = 0
