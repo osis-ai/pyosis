@@ -17,6 +17,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 import shutil
+import uuid
 
 from ..core.client import osis_client
 from ..common import get_project_directory
@@ -76,6 +77,21 @@ class Section:
                         # "DOUBLESIDEBOX", "RIBBEDSLAB", "TGIRDER", "CUSTOM",
                         # "STEELI", "STEELBOX", "STEELBOXTHREECELL", "STEELBOXITF",
                         # "STEELCANTIBOX", "STEELCANTIBOXIBF", "STEELCUSTOM", "STEELCUSTOMPLATE"
+    # 接口返回的截面性质
+    raw_type: int = 0
+    area: float = 0.0
+    cent_y: float = 0.0
+    cent_z: float = 0.0
+    dy: float = 0.0
+    dz: float = 0.0
+    iww: float = 0.0
+    ixx: float = 0.0
+    iyy: float = 0.0
+    izz: float = 0.0
+    peri_i: float = 0.0
+    peri_o: float = 0.0
+    sy: float = 0.0
+    sz: float = 0.0
 
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
@@ -83,7 +99,21 @@ class Section:
         return cls(
             no=d.get("no", 0),
             name=d.get("name", ""),
-            section_type=d.get("sectionType", ""),
+            section_type=d.get("sectionType", "") or "",
+            raw_type=int(d.get("type", 0) or 0),
+            area=float(d.get("area", 0.0) or 0.0),
+            cent_y=float(d.get("centY", 0.0) or 0.0),
+            cent_z=float(d.get("centZ", 0.0) or 0.0),
+            dy=float(d.get("dy", 0.0) or 0.0),
+            dz=float(d.get("dz", 0.0) or 0.0),
+            iww=float(d.get("iww", 0.0) or 0.0),
+            ixx=float(d.get("ixx", 0.0) or 0.0),
+            iyy=float(d.get("iyy", 0.0) or 0.0),
+            izz=float(d.get("izz", 0.0) or 0.0),
+            peri_i=float(d.get("periI", 0.0) or 0.0),
+            peri_o=float(d.get("periO", 0.0) or 0.0),
+            sy=float(d.get("sy", 0.0) or 0.0),
+            sz=float(d.get("sz", 0.0) or 0.0),
         )
 
     def set_offset(cls, offsetTypeY: Literal["Left", "Middle", "Right", "Manual"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom", "Manual"]="Center", dOffsetValueZ: float=0.0):
@@ -168,8 +198,8 @@ class SectionManager:
 
     用法:
         >>> from pyosis.section import section_manager
-        >>> section_manager.create_circle("圆形截面", D=0.5, Tw=0.02)          # 创建圆形截面（自动编号）
-        >>> section_manager.create_rect("矩形截面", B=6.5, H=3.2)              # 创建矩形截面
+        >>> section_manager.create_circle(D=0.5, Tw=0.02)          # 创建圆形截面（自动编号）
+        >>> section_manager.create_rect(B=6.5, H=3.2)              # 创建矩形截面
         >>> sec = section_manager.get(1)                                         # 按编号查询
         >>> all_secs = section_manager.all()                                     # 获取全部截面
         >>> section_manager.delete(1)                                            # 删除截面
@@ -213,28 +243,37 @@ class SectionManager:
             return 1
         return max(sec.no for sec in self._sections) + 1
 
+    def _reload_get(self, no: int, what: str) -> Section:
+        """创建/修改后从服务端重载并返回截面对象（内部使用）。"""
+        self._loaded = False
+        self._load()
+        sec = self._sec_map.get(no)
+        if sec is None:
+            raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
+        return sec
+
     # ── 增删改 ────────────────────────────────
 
     def create_Lshape(
         self,
-        name: str,
         nDir: Literal[0, 1] = 1,
         H: float = 0.1,
         B: float = 0.1,
         Tf1: float = 0.016,
         Tf2: float = 0.016,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建L形截面
 
         Args:
-            name: 截面名称
             nDir: L形截面方向，0=左下向，1=左上向
             H: 截面总高度
             B: 截面总宽度
             Tf1: 竖肢厚度
             Tf2: 横肢厚度
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "L形截面1"）
 
         Returns:
             创建的截面对象
@@ -245,28 +284,29 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_Lshape(no, name, "LSHAPE", nDir, H, B, Tf1, Tf2)
         if not ok:
             raise RuntimeError(f"创建L形截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="LSHAPE")
+        return self._reload_get(no, "创建L形截面")
 
     def create_circle(
         self,
-        name: str,
         eCircleType: Literal["Hollow", "Solid"] = "Solid",
         D: float = 0.5,
         Tw: float = 0.02,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建圆形截面
 
         Args:
-            name: 截面名称
             eCircleType: 截面类型，Hollow=空腹截面，Solid=实腹截面
             D: 圆形截面直径
             Tw: 空腹截面的壁厚
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "圆形截面1"）
 
         Returns:
             创建的截面对象
@@ -277,32 +317,33 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_circle(no, name, "CIRCLE", eCircleType, D, Tw)
         if not ok:
             raise RuntimeError(f"创建圆形截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="CIRCLE")
+        return self._reload_get(no, "创建圆形截面")
 
     def create_Tshape(
         self,
-        name: str,
         nDir: Literal[0, 1] = 1,
         H: float = 0.3,
         B: float = 0.2,
         Tf: float = 0.016,
         Tw: float = 0.016,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建T形截面
 
         Args:
-            name: 截面名称
             nDir: 截面方向，0=T形，1=倒T形
             H: 截面总高度
             B: 翼缘宽度
             Tf: 翼缘厚度
             Tw: 腹板厚度
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "T形截面1"）
 
         Returns:
             创建的截面对象
@@ -313,15 +354,15 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_Tshape(no, name, "TSHAPE", nDir, H, B, Tf, Tw)
         if not ok:
             raise RuntimeError(f"创建T形截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="TSHAPE")
+        return self._reload_get(no, "创建T形截面")
 
     def create_Ishape(
         self,
-        name: str,
         H: float = 0.3,
         Bt: float = 0.13,
         Bb: float = 0.13,
@@ -329,11 +370,11 @@ class SectionManager:
         Tb: float = 0.016,
         Tw: float = 0.016,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建I形截面（工字形截面）
 
         Args:
-            name: 截面名称
             H: 截面总高度
             Bt: 上翼缘宽度
             Bb: 下翼缘宽度
@@ -341,6 +382,7 @@ class SectionManager:
             Tb: 下翼缘厚度
             Tw: 腹板厚度
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "I形截面1"）
 
         Returns:
             创建的截面对象
@@ -351,31 +393,32 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_Ishape(no, name, "ISHAPE", H, Bt, Bb, Tt, Tb, Tw)
         if not ok:
             raise RuntimeError(f"创建I形截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="ISHAPE")
+        return self._reload_get(no, "创建I形截面")
 
     def create_rect(
         self,
-        name: str,
         B: float = 6.5,
         H: float = 3.2,
         TransitionType: Literal["Chamfer", "Fillet"] = "Fillet",
         SecType: Literal["Solid", "Hollow"] = "Solid",
         no: int | None = None,
+        name: str | None = None,
         **kwargs,
     ) -> Section:
         """创建矩形截面
 
         Args:
-            name: 截面名称
             B: 截面宽度
             H: 截面高度
             TransitionType: 倒角类型，Chamfer=斜倒角，Fillet=圆倒角
             SecType: 截面类型，Solid=实腹截面，Hollow=空腹截面
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "矩形截面1"）
             **kwargs: 其他可选参数（xo1, yo1, R, t1, t2, xi1, yi1, HasDiaphragm,
                       tw, xi2, yi2, HasGroove, b1, b2, h）
 
@@ -388,15 +431,15 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_rect(no, name, "RECT", TransitionType, SecType, B, H, **kwargs)
         if not ok:
             raise RuntimeError(f"创建矩形截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="RECT")
+        return self._reload_get(no, "创建矩形截面")
 
     def create_steel_i(
         self,
-        name: str,
         H: float,
         Bt: float,
         Bb: float,
@@ -405,11 +448,11 @@ class SectionManager:
         Tw: float,
         WebRibPos: Literal["Left", "Right", "Both"],
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建工字形钢截面
 
         Args:
-            name: 截面名称
             H: 梁高
             Bt: 上翼缘宽度
             Bb: 下翼缘宽度
@@ -418,6 +461,7 @@ class SectionManager:
             Tw: 腹板厚度
             WebRibPos: 加劲肋位置，Left=左侧，Right=右侧，Both=两侧
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "工字形钢截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -425,15 +469,15 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_i(no, name, "STEELI", H, Bt, Bb, Tt, Tb, Tw, WebRibPos)
         if not ok:
             raise RuntimeError(f"创建工字形钢截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELI")
+        return self._reload_get(no, "创建工字形钢截面")
 
     def create_steel_box(
         self,
-        name: str,
         H: float,
         Bt: float,
         Bct: float,
@@ -444,11 +488,11 @@ class SectionManager:
         Tw: float,
         SameLayout: Literal[0, 1],
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建箱型钢截面
 
         Args:
-            name: 截面名称
             H: 梁高
             Bt: 上翼缘宽度
             Bct: 上翼缘悬出宽
@@ -459,6 +503,7 @@ class SectionManager:
             Tw: 腹板厚度
             SameLayout: 下翼缘加劲肋是否与上翼缘相同，1=相同，0=不同
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "箱型钢截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -466,15 +511,15 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_box(no, name, "STEELBOX", H, Bt, Bct, Bb, Bcb, Tt, Tb, Tw, SameLayout)
         if not ok:
             raise RuntimeError(f"创建箱型钢截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELBOX")
+        return self._reload_get(no, "创建箱型钢截面")
 
     def create_steel_box_three_cell(
         self,
-        name: str,
         H: float,
         Bt: float,
         Bb: float,
@@ -494,11 +539,11 @@ class SectionManager:
         Tw2: float,
         WebRibPos: Literal["Left", "Right", "Both"],
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建单箱单/三室钢截面
 
         Args:
-            name: 截面名称
             H: 梁高
             Bt: 上翼缘宽度
             Bb: 下翼缘宽度
@@ -518,6 +563,7 @@ class SectionManager:
             Tw2: 中腹板厚度
             WebRibPos: 加劲肋位置，Left=左侧，Right=右侧，Both=两侧
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "单箱三室钢截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -525,18 +571,18 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_box_three_cell(
             no, name, "STEELBOXTHREECELL", H, Bt, Bb, i, a1, a2, Dt,
             Tt1, Tt2, Tb1, Db, Tb2, Tb3, Tw1, Dw, HasWeb, Tw2, WebRibPos
         )
         if not ok:
             raise RuntimeError(f"创建单箱单/三室钢截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELBOXTHREECELL")
+        return self._reload_get(no, "创建三室箱型钢截面")
 
     def create_steel_box_itf(
         self,
-        name: str,
         H: float,
         B: float,
         Bt: float,
@@ -554,11 +600,11 @@ class SectionManager:
         Tb3: float,
         Tw1: float,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建单箱单室斜顶板钢截面
 
         Args:
-            name: 截面名称
             H: 梁高
             B: 梁宽
             Bt: 顶板宽度
@@ -576,6 +622,7 @@ class SectionManager:
             Tb3: 斜底板厚度2
             Tw1: 边腹板厚度
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "单箱单室斜顶板钢截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -583,18 +630,18 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_box_itf(
             no, name, "STEELBOXITF", H, B, Bt, Bb, i, a1, a2, Dt,
             Tt1, Tt2, Tt3, Tb1, Db, Tb2, Tb3, Tw1
         )
         if not ok:
             raise RuntimeError(f"创建单箱单室斜顶板截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELBOXITF")
+        return self._reload_get(no, "创建顶底腹板加劲箱型钢截面")
 
     def create_steel_canti_box(
         self,
-        name: str,
         H: float,
         Bt: float,
         Bb: float,
@@ -611,11 +658,11 @@ class SectionManager:
         h: float,
         t: float,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室钢截面
 
         Args:
-            name: 截面名称
             H: 梁高
             Bt: 顶板宽度
             Bb: 平底板宽度
@@ -632,6 +679,7 @@ class SectionManager:
             h: 悬臂端封板高
             t: 悬臂端封板厚
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "悬臂单箱单室钢截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -639,18 +687,18 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_canti_box(
             no, name, "STEELCANTIBOX", H, Bt, Bb, i, a, Dt,
             Tt1, Tt2, Tb1, Tw1, HasWeb, Tw2, WebRibPos, h, t
         )
         if not ok:
             raise RuntimeError(f"创建悬臂单箱单/双室截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELCANTIBOX")
+        return self._reload_get(no, "创建悬臂箱型钢截面")
 
     def create_steel_canti_box_ibf(
         self,
-        name: str,
         H: float,
         Bt: float,
         Bb: float,
@@ -669,11 +717,11 @@ class SectionManager:
         h: float,
         t: float,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室斜底板钢截面
 
         Args:
-            name: 截面名称
             H: 梁高
             Bt: 顶板宽度
             Bb: 平底板宽度
@@ -692,6 +740,7 @@ class SectionManager:
             h: 悬臂端封板高
             t: 悬臂端封板厚
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "悬臂单箱单室斜底板钢截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -699,29 +748,30 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_canti_box_ibf(
             no, name, "STEELCANTIBOXIBF", H, Bt, Bb, Bc, i, a, Dt,
             Tt1, Tt2, Tb1, Tb2, Tw1, HasWeb, Tw2, WebRibPos, h, t
         )
         if not ok:
             raise RuntimeError(f"创建悬臂单箱单/双室斜底板截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELCANTIBOXIBF")
+        return self._reload_get(no, "创建悬臂箱型钢截面(加劲肋)")
 
     def create_steel_custom(
         self,
-        name: str,
         point_matrix: str,
         line_matrix: str,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过点线关系输入）
 
         Args:
-            name: 截面名称
             point_matrix: 几何点矩阵名称，需先用 osis_matrix 定义
             line_matrix: 几何线矩阵名称，需先用 osis_matrix 定义
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "自定义钢梁截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -729,24 +779,25 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_custom(no, name, "STEELCUSTOM", point_matrix, line_matrix)
         if not ok:
             raise RuntimeError(f"创建自定义钢梁截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELCUSTOM")
+        return self._reload_get(no, "创建自定义钢梁截面")
 
     def create_steel_custom_plate(
         self,
-        name: str,
         plate_positions: list[str],
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过参数板输入）
 
         Args:
-            name: 截面名称
             plate_positions: 指定该截面拥有的板件列表，如 ["TopFlange", "BottomFlange", "SideWeb"]
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "自定义钢梁参数板截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -754,15 +805,15 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_steel_custom_plate(no, name, "STEELCUSTOMPLATE", plate_positions)
         if not ok:
             raise RuntimeError(f"创建自定义钢梁参数板截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="STEELCUSTOMPLATE")
+        return self._reload_get(no, "创建自定义钢梁截面(参数板)")
 
     def create_smallbox(
         self,
-        name: str,
         eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
         H: float = 1.6,
         Bs: float = 1.65,
@@ -785,11 +836,11 @@ class SectionManager:
         i2: float = 0.0,
         R: float = 0.05,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建小箱梁截面
 
         Args:
-            name: 截面名称
             eGirderPos: 截面位置，Left=左边梁，Middle=中梁，Right=右边梁
             H: 箱梁高度
             Bs: 边翼板宽
@@ -812,6 +863,7 @@ class SectionManager:
             i2: 顶右坡
             R: 底板倒角圆弧半径
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "小箱梁截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -819,18 +871,18 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_smallbox(
             no, name, "SMALLBOX", eGirderPos, H, Bs, Bm, Bc, Bb,
             Tt, Tb, Tw, i, Tc, Tc1, x, xi1, Tt1, xi2, yi2, bSlope, i1, i2, R
         )
         if not ok:
             raise RuntimeError(f"创建小箱梁截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="SMALLBOX")
+        return self._reload_get(no, "创建小箱梁截面")
 
     def create_hollowslab(
         self,
-        name: str,
         eGirderPos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
         H: float = 0.95,
         Bs: float = 1.0,
@@ -852,11 +904,11 @@ class SectionManager:
         yo4: float = 0.08,
         h1: float = 0.12,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建空心板截面
 
         Args:
-            name: 截面名称
             eGirderPos: 截面位置，Left=左边梁，Middle=中梁，Right=右边梁
             H: 板高
             Bs: 边板宽
@@ -878,6 +930,7 @@ class SectionManager:
             yo4: 倒角4高
             h1: 下端竖直段高
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "空心板截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -885,6 +938,8 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_hollowslab(
             no, name, "HOLLOWSLAB", eGirderPos, H, Bs, Bm, Bj,
             Tt, Tb, Tw, Tc, Tc1, Bc, xi1, yi1, xi2, yi2,
@@ -892,12 +947,10 @@ class SectionManager:
         )
         if not ok:
             raise RuntimeError(f"创建空心板截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="HOLLOWSLAB")
+        return self._reload_get(no, "创建空心板截面")
 
     def create_rounded_end(
         self,
-        name: str,
         eFillingType: Literal["Solid", "Hollow"] = "Solid",
         B: float = 7.0,
         H: float = 3.0,
@@ -911,11 +964,11 @@ class SectionManager:
         xi2: float = 0.5,
         yi2: float = 0.25,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建圆端形截面
 
         Args:
-            name: 截面名称
             eFillingType: 填充类型，Solid=实腹，Hollow=空腹
             B: 截面宽
             H: 截面高
@@ -929,6 +982,7 @@ class SectionManager:
             xi2: 隔板倒角宽
             yi2: 隔板倒角高
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "圆端形截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -936,18 +990,18 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_rounded_end(
             no, name, "ROUNDEDEND", eFillingType, B, H, R,
             bHasDiaphragm, b, t, xi1, yi1, tw, xi2, yi2
         )
         if not ok:
             raise RuntimeError(f"创建圆端形截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="ROUNDEDEND")
+        return self._reload_get(no, "创建圆端形截面")
 
     def create_conventionalbox(
         self,
-        name: str,
         H: float = 2.7,
         BtL: float = 6.375,
         BtR: float = 6.375,
@@ -997,11 +1051,11 @@ class SectionManager:
         R1: float = 0.0,
         R2: float = 0.0,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建常规箱梁截面
 
         Args:
-            name: 截面名称
             H: 截面高度
             BtL: 设计线左顶板宽
             BtR: 设计线右顶板宽
@@ -1022,6 +1076,7 @@ class SectionManager:
             i/i1~i4: 横坡参数
             R1/R2: 倒角圆弧半径
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "常规箱梁截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -1029,6 +1084,8 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_conventionalbox(
             no, name, "CONVENTIONALBOX", H, BtL, BtR, BbL, BbR, Bs,
             Tt, Tb, Tw1, Tw2, nCellNum, Bi1, Bi2, Bi3, Bi4,
@@ -1038,13 +1095,11 @@ class SectionManager:
         )
         if not ok:
             raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="CONVENTIONALBOX")
+        return self._reload_get(no, "创建常规箱梁截面")
 
     def create_flat_box(
         self,
-        name: str,
-        eSectionType: Literal["STREAMEDBOX"]="STREAMEDBOX",
+        eSectionType: Literal["STREAMEDBOX"] = "STREAMEDBOX",
         H: float = 4.0,
         BtL: float = 20.0,
         BtR: float = 20.0,
@@ -1097,11 +1152,12 @@ class SectionManager:
         R1: float = 0.5,
         R2: float = 0.2,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建扁平箱梁截面
 
         Args:
-            name: 截面名称
+            eSectionType: 截面类型
             H: 截面高度
             BtL: 设计线左顶板宽
             BtR: 设计线右顶板宽
@@ -1125,6 +1181,7 @@ class SectionManager:
             i/i1~i4: 横坡参数
             R1/R2: 倒角圆弧半径
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "扁平箱梁截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -1132,6 +1189,8 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_flat_box(
             no, name, eSectionType, H, BtL, BtR, BbL, BbR, Bs,
             Tt, Tb1, Tb2, Tw, Ttj, Tbj, Twj, nCellNum, Bi1, Bi2, Bi3, Bi4,
@@ -1141,12 +1200,10 @@ class SectionManager:
         )
         if not ok:
             raise RuntimeError(f"创建扁平箱梁截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="FLATBOX")
+        return self._reload_get(no, "创建扁平箱梁截面")
 
     def create_double_side_box(
         self,
-        name: str,
         H: float = 3.8,
         Bt: float = 36.0,
         bt: float = 14.8,
@@ -1173,11 +1230,11 @@ class SectionManager:
         i1: float = 0.0,
         i2: float = 0.0,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建双边箱截面
 
         Args:
-            name: 截面名称
             H: 梁高
             Bt: 顶板顶宽
             bt: 顶板底宽
@@ -1195,6 +1252,7 @@ class SectionManager:
             eSlopeType: 横坡类型
             i/i1/i2: 横坡参数
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "双边箱截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -1202,6 +1260,8 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_double_side_box(
             no, name, "DOUBLESIDEBOX", H, Bt, bt, Bs, Bb,
             tt, Tb1, Tb2, Tw, b, n, Bi, xi1, Tt1, xi2, Tt2,
@@ -1209,12 +1269,10 @@ class SectionManager:
         )
         if not ok:
             raise RuntimeError(f"创建双边箱截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="DOUBLESIDEBOX")
+        return self._reload_get(no, "创建双侧箱梁截面")
 
     def create_ribbed_slab(
         self,
-        name: str,
         H: float = 2.8,
         Bt: float = 21.5,
         bt: float = 17.7,
@@ -1230,11 +1288,11 @@ class SectionManager:
         i1: float = 0.0,
         i2: float = 0.0,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建肋板式截面
 
         Args:
-            name: 截面名称
             H: 截面高度
             Bt: 顶板顶宽
             bt: 顶板底宽
@@ -1250,6 +1308,7 @@ class SectionManager:
             i1: 顶左坡
             i2: 顶右坡
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "肋板式截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -1257,17 +1316,17 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_ribbed_slab(
             no, name, "RIBBEDSLAB", H, Bt, bt, Tt, b, h, b1, b2, x, y, eSlopeType, i, i1, i2
         )
         if not ok:
             raise RuntimeError(f"创建肋板式截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="RIBBEDSLAB")
+        return self._reload_get(no, "创建肋板截面")
 
     def create_TGirder(
         self,
-        name: str,
         eGirderPos: Literal["Left", "Middle", "Right"] = "Middle",
         H: float = 2.5,
         Bs: float = 1.125,
@@ -1285,11 +1344,11 @@ class SectionManager:
         i2: float = 0.0,
         R: float = 0.05,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建T梁截面
 
         Args:
-            name: 截面名称
             eGirderPos: 截面位置，Left=左边梁，Middle=中梁，Right=右边梁
             H: 梁高
             Bs: 边翼板宽
@@ -1307,6 +1366,7 @@ class SectionManager:
             i2: 顶右坡
             R: 顶板处倒角半径
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "T梁截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -1314,29 +1374,30 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_TGirder(
             no, name, "TGIRDER", eGirderPos, H, Bs, Bm, Bc,
             Tt1, Tt2, x, Tw, Bh, Hh, yh, bSlope, i1, i2, R
         )
         if not ok:
             raise RuntimeError(f"创建T梁截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="TGIRDER")
+        return self._reload_get(no, "创建T梁截面")
 
     def create_custom(
         self,
-        name: str,
         contour_matrix: str,
         no: int | None = None,
+        name: str | None = None,
     ) -> Section:
         """创建自定义截面
 
         Args:
-            name: 截面名称
             contour_matrix: 轮廓点矩阵名称，需先用 osis_matrix 定义
                 矩阵格式：n*3矩阵，第一列为点所在的轮廓线编号，
                 第二列为点的x坐标，第三列为点的y坐标
             no: 截面编号；省略时自动分配（已有最大编号 + 1，无截面时为 1）
+            name: 截面名称；省略时自动生成（如 "自定义截面1"）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -1344,11 +1405,12 @@ class SectionManager:
         self.refresh()
         if no is None:
             no = self._next_section_no()
+        if name is None:
+            name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_custom(no, name, "CUSTOM", contour_matrix)
         if not ok:
             raise RuntimeError(f"创建自定义截面 {no} 失败: {err}")
-        self._loaded = False
-        return Section(no=no, name=name, section_type="CUSTOM")
+        return self._reload_get(no, "创建自定义混凝土截面")
 
     def delete(self, no: int) -> None:
         """删除截面
