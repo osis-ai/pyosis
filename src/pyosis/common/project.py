@@ -6,8 +6,9 @@ from typing import Tuple
 # from .engine import OSISEngine
 from ..core.client import osis_client
 
-def get_project_directory() -> Tuple[bool, str]:
-    return osis_client("GetProjectDirectory", {})
+def get_project_directory() -> 'str | None':
+    isok, path = osis_client("GetProjectDirectory", {})
+    return path if isok else None
 
 def open_project() -> Tuple[bool, str]:
     ...

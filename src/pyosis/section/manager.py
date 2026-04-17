@@ -182,8 +182,13 @@ class Section:
             raise RuntimeError(f"生成截面 {cls.no} 图片失败: {err}")
         if path:
             try:
-                default_path = get_project_directory()[1] + f"Image/section/_{cls.no}.jpg\n"  # 会默认保存到这
-                shutil.move(default_path, path)
+                project_dir = get_project_directory() 
+                if project_dir:
+                    default_path = project_dir + f"Image/section/_{cls.no}.jpg\n"  # 会默认保存到这
+                    shutil.move(default_path, path)
+                else:
+                    raise RuntimeError(f"图片保存 {path} 失败: 无法获取项目路径")
+
             except Exception as e:
                 raise RuntimeError(f"图片保存到 {path} 失败: {e}")
 # ──────────────────────────────────────────────

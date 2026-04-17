@@ -83,8 +83,8 @@ def osis_check_result(
     # else:
     #     return isok, error, None
     # 1 获取项目目录
-    is_ok, project_path = project.get_project_directory()
-    if not is_ok:
+    project_path = project.get_project_directory()
+    if not project_path:
         return False, "获取文件夹失败", None
 
     project_path = Path(project_path)

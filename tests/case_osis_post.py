@@ -4,8 +4,8 @@ from pyosis.core.all_func import *
 
 if __name__ == '__main__':
 
-    isok, project_dir = get_project_directory()
-    if isok:
+    project_dir = get_project_directory()
+    if project_dir:
         check_path = Path(project_dir) / "Check"
         lcc_files = [f.stem for f in check_path.glob("*.lcc")]
         for filename in lcc_files:
