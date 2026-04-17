@@ -13,16 +13,16 @@ from typing import Literal
 
 from ..core.client import osis_client
 from .overall import (
-    stage,
-    stage_del,
-    stage_insert,
-    stage_remove,
+    osis_stage,
+    osis_stage_del,
+    osis_stage_insert,
+    osis_stage_remove,
 )
 from .define import (
-    stage_element,
-    stage_boundary,
-    stage_loadcase,
-    stage_analysis,
+    osis_stage_element,
+    osis_stage_boundary,
+    osis_stage_loadcase,
+    osis_stage_analysis,
 )
 
 
@@ -154,7 +154,7 @@ class StageManager:
         self.refresh()
         if no is None:
             no = self._next_no()
-        ok, err = stage(no, name, duration)
+        ok, err = osis_stage(no, name, duration)
         if not ok:
             raise RuntimeError(f"创建施工阶段 {no} 失败: {err}")
         self._loaded = False
@@ -175,7 +175,7 @@ class StageManager:
         Raises:
             RuntimeError: 删除失败时抛出异常
         """
-        ok, err = stage_del(no)
+        ok, err = osis_stage_del(no)
         if not ok:
             raise RuntimeError(f"删除施工阶段 {no} 失败: {err}")
         self._loaded = False
@@ -206,7 +206,7 @@ class StageManager:
         self.refresh()
         if no is None:
             no = self._next_no()
-        ok, err = stage_insert(ref_no, position, name, duration)
+        ok, err = osis_stage_insert(ref_no, position, name, duration)
         if not ok:
             raise RuntimeError(f"在 {ref_no} 处插入施工阶段失败: {err}")
         self._loaded = False
@@ -227,7 +227,7 @@ class StageManager:
         Raises:
             RuntimeError: 移除失败时抛出异常
         """
-        ok, err = stage_remove(no)
+        ok, err = osis_stage_remove(no)
         if not ok:
             raise RuntimeError(f"移除施工阶段 {no} 失败: {err}")
         self._loaded = False
@@ -253,7 +253,7 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = stage_element(no, 1, 1, ele_group_name, birth, part)
+        ok, err = osis_stage_element(no, 1, 1, ele_group_name, birth, part)
         if not ok:
             raise RuntimeError(f"阶段 {no} 激活单元组 {ele_group_name} 失败: {err}")
         self._loaded = False
@@ -272,7 +272,7 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = stage_element(no, 0, 0, ele_group_name, None, None)
+        ok, err = osis_stage_element(no, 0, 0, ele_group_name, None, None)
         if not ok:
             raise RuntimeError(f"阶段 {no} 钝化单元组 {ele_group_name} 失败: {err}")
         self._loaded = False
@@ -291,7 +291,7 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = stage_boundary(no, 1, 1, bd_group_name)
+        ok, err = osis_stage_boundary(no, 1, 1, bd_group_name)
         if not ok:
             raise RuntimeError(f"阶段 {no} 激活边界组 {bd_group_name} 失败: {err}")
         self._loaded = False
@@ -310,7 +310,7 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = stage_boundary(no, 0, 0, bd_group_name)
+        ok, err = osis_stage_boundary(no, 0, 0, bd_group_name)
         if not ok:
             raise RuntimeError(f"阶段 {no} 钝化边界组 {bd_group_name} 失败: {err}")
         self._loaded = False
@@ -331,7 +331,7 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = stage_loadcase(no, 1, 1, ref_lc_name, lc_name)
+        ok, err = osis_stage_loadcase(no, 1, 1, ref_lc_name, lc_name)
         if not ok:
             raise RuntimeError(f"阶段 {no} 激活荷载工况 {lc_name} 失败: {err}")
         self._loaded = False
@@ -352,7 +352,7 @@ class StageManager:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = stage_loadcase(no, 0, 0, ref_lc_name, lc_name)
+        ok, err = osis_stage_loadcase(no, 0, 0, ref_lc_name, lc_name)
         if not ok:
             raise RuntimeError(f"阶段 {no} 钝化荷载工况 {lc_name} 失败: {err}")
         self._loaded = False
@@ -380,7 +380,7 @@ class StageManager:
         """
         if lc_name is None:
             lc_name = ""
-        ok, err = stage_analysis(no, 1, eType, lc_name)
+        ok, err = osis_stage_analysis(no, 1, eType, lc_name)
         if not ok:
             raise RuntimeError(f"阶段 {no} 激活分析工况 {eType} 失败: {err}")
         self._loaded = False
