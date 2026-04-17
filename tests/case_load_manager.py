@@ -1,7 +1,7 @@
 # tests/case_load_manager.py
 
 """
-``load_manager``（``LoadCaseManager`` 单例）与 ``LoadCase`` 接口测试（手动运行版）
+``loadcase_manager``（``LoadCaseManager`` 单例）与 ``LoadCase`` 接口测试（手动运行版）
 
 说明：添加荷载前须先存在对应荷载工况；节点力相关用例假定模型中存在节点 1、2。
 """
