@@ -576,8 +576,8 @@ class LoadCaseManager:
         if self._loaded:
             return
         resp = osis_client("GetAllLoadCaseInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载荷载工况信息失败: {resp[1]}")
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
         self._loadcases = [
             LoadCase._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
         ]

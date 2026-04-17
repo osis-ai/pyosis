@@ -50,6 +50,9 @@ def osis_client(func_name: str, payload: dict) -> dict | tuple[bool, str]:
             except ValueError:
                 pass
 
+        # 接口不存在
+        if response.status_code == 404:
+            return {"success": False, "error": f"接口不存在: {func_name}"}
         # 200
         # if response.ok:
         return data if data is not None else {"success": False }

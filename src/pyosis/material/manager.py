@@ -102,8 +102,8 @@ class MaterialManager:
         if self._loaded:
             return
         resp = osis_client("GetAllMaterialInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载材料信息失败: {resp[1]}")
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
         self._materials = [
             Material._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]

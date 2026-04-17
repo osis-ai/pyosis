@@ -302,8 +302,8 @@ class BoundaryManager:
         if self._loaded:
             return
         resp = osis_client("GetAllBoundaryInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载边界信息失败: {resp[1]}")
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
 
         self._boundaries = []
         self._bd_map = {}

@@ -210,8 +210,8 @@ class ElementManager:
         if self._loaded:
             return
         resp = osis_client("GetAllElementInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载单元信息失败: {resp[1]}")
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
         self._elements = [
             self._parse_element(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]

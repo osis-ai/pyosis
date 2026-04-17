@@ -222,9 +222,9 @@ class SectionManager:
         """从服务端加载所有截面信息（延迟加载，带缓存）"""
         if self._loaded:
             return
-        resp = osis_client("GetAllSectionInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载截面信息失败: {resp[1]}")
+        resp = osis_client("GetAllSectionInfo1", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
         self._sections = [
             Section._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]

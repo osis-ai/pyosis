@@ -123,8 +123,8 @@ class NodeManager:
         if self._loaded:
             return
         resp = osis_client("GetAllNodeInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载节点信息失败: {resp[1]}")
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
         self._nodes = [Node._from_dict(d) for d in resp.get("data", []) if "no" in d]
 
         # 构建索引：编号 -> 节点对象 (O(1) 查询)

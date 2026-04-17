@@ -166,8 +166,8 @@ class StageManager:
         if self._loaded:
             return
         resp = osis_client("GetStageInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载施工阶段信息失败: {resp[1]}")
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
         self._stages = [
             Stage._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]
