@@ -51,8 +51,8 @@ def osis_client(func_name: str, payload: dict) -> dict | tuple[bool, str]:
                 pass
 
         # 200
-        if response.ok:
-            return data if data is not None else {}
+        # if response.ok:
+        return data if data is not None else {"success": False }
 
         # 500
         # # 500：[false, "命令流中……"]
@@ -60,8 +60,8 @@ def osis_client(func_name: str, payload: dict) -> dict | tuple[bool, str]:
         #     return False, str(data[1])
 
         # 无结构化 body 时退回文本 / 状态码
-        detail = response.text.strip() if response.text else ""
-        return False, detail if detail else f"HTTP {response.status_code}"
+        # detail = response.text.strip() if response.text else ""
+        # return {"success": False, "error": detail if detail else f"HTTP {response.status_code}"}# False, detail if detail else f"HTTP {response.status_code}"
 
     except requests.RequestException as e:
-        return False, f"调用失败: {str(e)}"
+        return {"success": False, "error": f"调用失败: {str(e)}"}
