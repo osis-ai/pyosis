@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal, Any
 
-from ..common import project
+from ..project import interface
 from ..core import command
 import json
 import pandas as pd
@@ -83,7 +83,7 @@ def osis_check_result(
     # else:
     #     return isok, error, None
     # 1 获取项目目录
-    project_path = project.get_project_directory()
+    project_path = interface.get_project_directory()
     if not project_path:
         return False, "获取文件夹失败", None
 

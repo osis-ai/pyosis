@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pyosis.common import project
+from pyosis.project import interface
 from pyosis.core import command
 
 _LOAD_CASE_FILE_PATH = "Temperary"
@@ -18,7 +18,7 @@ def txt_file_path(file_name, e_type, cmd) -> tuple[bool, str, str]:
         tuple (bool, str): 是否成功，失败原因，txt文件路径
     """
     # 1 获取项目目录
-    project_path = project.get_project_directory()
+    project_path = interface.get_project_directory()
     if not project_path:
         return False, "获取文件夹失败", ""
 

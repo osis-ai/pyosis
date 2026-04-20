@@ -288,7 +288,7 @@ def test_create_custom():
     reset()
     cleanup_test_sections()
     # 1. 先定义轮廓点矩阵
-    from pyosis.common import osis_matrix
+    from pyosis.control import osis_matrix
     contour_matrix = [
         [1, 0, 0],
         [1, 1, 0],
@@ -393,7 +393,7 @@ def test_create_steel_custom():
     reset()
     cleanup_test_sections()
     # 1. 先定义点和线矩阵
-    from pyosis.common import osis_matrix
+    from pyosis.control import osis_matrix
     point_matrix = [
         [1, 0, 0],
         [2, 1, 0],

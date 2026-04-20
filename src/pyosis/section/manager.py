@@ -14,7 +14,7 @@ import shutil
 import uuid
 
 from ..core.client import osis_client
-from ..common import get_project_directory
+from ..general import get_project_directory
 
 from .common import (
     osis_section_Lshape,
