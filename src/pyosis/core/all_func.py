@@ -1,7 +1,6 @@
 from ..core import *
 from ..common import *
 from ..boundary import *
-from ..control import *
 from ..element import *
 from ..live import *
 from ..load import *
@@ -14,4 +13,3 @@ from ..section import *
 from ..stage import *
 from ..geometry import *
 from ..thickness import *
-from ..io import *
