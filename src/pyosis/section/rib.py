@@ -80,6 +80,22 @@ def osis_rib_l(SecIndex: int, Type: Literal["LL", "LR"], Name: str, H: float, B:
     """
     pass
 
+@REGISTRY.register("RibMod")
+def osis_rib_mod(SecIndex: int, strOldName: str, strNewName: str):
+    """修改加劲肋名称。
+
+    Args:
+        SecIndex (int): 所属截面编号。
+        strOldName (str): 原加劲肋名称。
+        strNewName (str): 新加劲肋名称。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
 @REGISTRY.register("RibDel")
 def osis_rib_del(SecIndex: int, Name: str):
     """删除加劲肋。
@@ -179,6 +195,21 @@ def osis_rib_layout_del(
             * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
             * 无加劲肋的板件：PlateWithoutRib
         RibLayoutNo (int): 加劲肋布置信息的编号。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
+@REGISTRY.register("ClearSectionRib")
+def osis_clear_section_rib(SecNo: int):
+    """删除截面加劲肋及加劲肋布置信息
+
+    Args:
+        SecNo (int): 截面编号。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

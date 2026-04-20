@@ -1,7 +1,7 @@
 from pyosis.core import REGISTRY
 
 @REGISTRY.register("ShellThk")
-def osis_feature_shellthk(nIndex: int, dInPlane: float, dOutPlane: float) -> tuple[bool, str]:
+def osis_shell_thickness(nIndex: int, dInPlane: float, dOutPlane: float) -> tuple[bool, str]:
     """
     创建或修改板或壳的厚度特性
 
@@ -18,7 +18,7 @@ def osis_feature_shellthk(nIndex: int, dInPlane: float, dOutPlane: float) -> tup
     pass
 
 @REGISTRY.register("ShellThkDel")
-def osis_feature_shellthk_del(nIndex: int) -> tuple[bool, str]:
+def osis_shell_thickness_del(nIndex: int) -> tuple[bool, str]:
     """
     删除板或壳的厚度特性
 
@@ -33,7 +33,7 @@ def osis_feature_shellthk_del(nIndex: int) -> tuple[bool, str]:
     pass
 
 @REGISTRY.register("ShellThkMod")
-def osis_feature_shellthk_mod(nOldIndex: str, nNewIndex: str) -> tuple[bool, str]:
+def osis_shell_thickness_mod(nOldIndex: str, nNewIndex: str) -> tuple[bool, str]:
     """
     修改编号
 

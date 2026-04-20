@@ -50,6 +50,22 @@ def osis_live_analysis_mod(strOldName: str, strNewName: str):
     '''
     pass
 
+@REGISTRY.register("LiveAnalFactor")
+def osis_live_analysis_factor(strName: str, factors: list[float]):
+    '''
+    定义或修改活载工况的横向布载折减系数
+    
+    Args:
+        strName (str): 活载工况名
+        factors (list): 系数, 最少1个, 最多10个, 不足10个的按最后一个系数补齐 
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    '''
+    pass
+
 @REGISTRY.register("LiveAnalInc")
 def osis_live_analysis_inc(strName: str, eOP: Literal["a", "m"], strLiveSubName: str, strLiveGradeName: str, dFactor: int, bFlage: bool, 
                            eBridgeType: Literal['SIMPLE', "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"], param: list['int'], lane: list['str']):
@@ -107,23 +123,6 @@ def osis_live_analysis_inc_mod(strName: str, eOP: Literal["d", "mn"], strLiveSub
             * mn = 修改名称
         strLiveSubName (str): 子工况名称
         strNewName (str): 新的名称，eOP = d 时不需要
-
-    Returns:
-        tuple (bool, str): 返回一个元组，包含：
-            - bool: 操作是否成功
-            - str: 失败原因（如果操作失败）
-    '''
-    pass
-
-@REGISTRY.register("LiveAnalFactor")
-def osis_live_analysis_factor(strName: str, *factor: float):
-    '''
-    定义或修改活载工况的横向布载折减系数
-    
-    Args:
-        strName (str): 活载工况名称
-        *factor: factor_i, , factor_j, factor_k,...,系数，最少1个，最多10个
-        
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

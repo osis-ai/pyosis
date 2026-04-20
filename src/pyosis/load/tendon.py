@@ -287,13 +287,17 @@ def osis_tendon_shape_mod(strOldName: str="钢束形状1", strNewName: str="钢�
     pass
 
 @REGISTRY.register("LayoutTS")
-def osis_layout_tendons(strShapeName: str="钢束形状1", eLayoutType: Literal["ELEMENT"]="ELEMENT", nEle: int=1, nBeg: Literal[0, 1]=0, nDir: Literal[0, 1]=0, dOffsetX: float=0.0, dOffsetY: float=0.0, dOffsetZ: float=0.0):
+def osis_layout_tendons(strShapeName: str, eLayoutType: Literal["GLOBAL", "ELEMENT"], nEle: int, nBeg: Literal[0, 1], nDir: Literal[0, 1], dOffsetX: float, dOffsetY: float, dOffsetZ: float):
     '''
     修改钢束形状
 
     Args:
         strShapeName (str): 钢束形状名称
-        eLayoutType (str): 分配钢束形状的方法，ELEMENT = 参考单元分配
+        eLayoutType (str): 分配钢束形状的方法
+            * GLOBAL= 参考整体坐标系原点
+            * ELEMENT = 参考单元分配
+        
+        < 下面的参数仅当 eLayoutType = "ELEMENT" 时要填 >
         nEle (int): 参考单元编号
         nBeg (int): 起点
             * 0 = i

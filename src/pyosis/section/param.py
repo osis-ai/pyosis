@@ -67,15 +67,13 @@ def osis_section_mesh(nSec: int=1, nMeshMethod: Literal[0, 1]=0, dMeshSize: floa
     pass
 
 @REGISTRY.register('SectionMat')
-def osis_section_mat(nIndex: int,dERatio: float, dDensRatio:float, dPRSteel:float, dPRConcrete:float):
+def osis_section_mat(nIndex: int, nSteelMatNo: int, nConcMatNo: int):
     """
     定义组合截面材料，仅用于组合截面
     Args:
-        nIndex: 编号
-        dERatio: 钢材与混凝土弹性模量比值
-        dDensRatio: 钢材与混凝土重度比值
-        dPRSteel: 钢材泊松比
-        dPRConcrete: 混凝土泊松比
+        nIndex (int): 编号
+        nSteelMatNo (int): 钢材材料编号
+        nConcMatNo (int): 混凝土材料编号
 
     Returns:
         tuple (bool, str):
@@ -113,6 +111,30 @@ def osis_section_mod(nOld: int, nNew: int):
     """
     pass
 
+# StressPoint, SecIndex, PointIndex, CoordX, CoordY
+# 简介：修改截面应力点
+# SecIndex：截面编号
+# PointIndex：应力点编号
+# CoordX：应力点x坐标
+# CoordY：应力点y坐标
+# 注：
+
+@REGISTRY.register('StressPoint')
+def osis_stress_point(nSec, nPoint, dCoordX, dCoordY):
+    '''
+    修改截面应力点
+    
+    nSec (int): 截面编号
+    nPoint (int): 应力点编号
+    dCoordX (int): 应力点 x 坐标
+    dCoordY (int): 应力点 y 坐标
+    
+    Returns:
+        tuple (bool, str):
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    '''
+    pass
 
 @REGISTRY.register("ExportSecPic")
 def osis_export_section_pic(nSec: int):

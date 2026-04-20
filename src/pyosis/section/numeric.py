@@ -3,12 +3,12 @@ from ..core import REGISTRY
 
 
 @REGISTRY.register("Section")
-def osis_feature_numerical_section(nIndex: int, strName: str, eType: Literal["Numerical"], strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float, dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float, dPeriI: float) -> tuple[bool, str]:
+def osis_section_numerical(nSec: int, strName: str, eType: Literal["Numerical"], strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float, dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float, dPeriI: float) -> tuple[bool, str]:
     """
     定义或修改圆形/圆管形截面
 
     Args:
-        nIndex (int): 编号
+        nSec (int): 编号
         strName (str): 截面名
         eType (str): 数值截面类型，可选值
             * Numerical:数值截面

@@ -8,7 +8,7 @@ from typing import Literal
 from pyosis.core import REGISTRY
 
 @REGISTRY.register("CoorSys")
-def osis_property_three_point(nNo: int, eType: Literal["TRIPT"], dP1X: float, dP1Y: float, dP1Z: float, dP2X: float, dP2Y: float, dP2Z: float, dP3X: float, dP3Y: float, dP3Z: float) -> tuple[bool, str]:
+def osis_coord_sys_three_point(nNo: int, eType: Literal["TRIPT"], dP1X: float, dP1Y: float, dP1Z: float, dP2X: float, dP2Y: float, dP2Z: float, dP3X: float, dP3Y: float, dP3Z: float) -> tuple[bool, str]:
     """
     创建或修改空间坐标系
 
@@ -33,7 +33,7 @@ def osis_property_three_point(nNo: int, eType: Literal["TRIPT"], dP1X: float, dP
     pass
 
 @REGISTRY.register("CoorSys")
-def osis_property_two_point_rotation(nNo: int, eType: Literal["DBPT"], dP1X: float, dP1Y: float, dP1Z: float, dP2X: float, dP2Y: float, dP2Z: float, dAngle: float) -> tuple[bool, str]:
+def osis_coord_sys_two_point_rotation(nNo: int, eType: Literal["DBPT"], dP1X: float, dP1Y: float, dP1Z: float, dP2X: float, dP2Y: float, dP2Z: float, dAngle: float) -> tuple[bool, str]:
     """
     创建或修改空间坐标系
 
@@ -56,7 +56,7 @@ def osis_property_two_point_rotation(nNo: int, eType: Literal["DBPT"], dP1X: flo
     pass
 
 @REGISTRY.register("CoorSysDel")
-def osis_property_coorsysdel(nNo: int) -> tuple[bool, str]:
+def osis_coord_sys_del(nNo: int) -> tuple[bool, str]:
     """
     删除空间坐标系
 
@@ -71,7 +71,7 @@ def osis_property_coorsysdel(nNo: int) -> tuple[bool, str]:
     pass
 
 @REGISTRY.register("CoorSysMod")
-def osis_property_coorsysmod(strOldIndex: str, strNewIndex: str) -> tuple[bool, str]:
+def osis_coord_sys_mod(strOldIndex: str, strNewIndex: str) -> tuple[bool, str]:
     """
     修改编号
 
