@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal
-
+from enum import Enum
 from ..core.client import osis_client
 from .interface import (
     osis_material_conc,
@@ -29,6 +29,13 @@ from .interface import (
 # 数据类
 # ──────────────────────────────────────────────
 
+class MaterialType(Enum):
+    UNASSIGEND = 0   # 未定义
+    CONC = 1,        # 混凝土
+    STEEL = 2,       # 钢材
+    Prestressed = 3, # 预应力
+    Rebar = 4,       # 钢筋
+    Custom = 5       # 自定义
 
 @dataclass(frozen=True)
 class Material:
@@ -39,17 +46,17 @@ class Material:
 
     no: int
     name: str
-    material_type: str  # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
-    code: str = ""
-    grade: str = ""
-    e: float = 0.0
-    g: float = 0.0
-    mu: float = 0.0
-    exp_coeff: float = 0.0
-    unit_weight: float = 0.0
-    density: float = 0.0
-    damping: float = 0.0
-    creep_shrink_no: int = 0
+    material_type: MaterialType # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
+    code: str = ""              # 规范名
+    grade: str = ""             # 材料等级
+    e: float = 0.0              # 弹性模量(Pa)
+    g: float = 0.0              # 剪切模量(Pa)
+    mu: float = 0.0             # 泊松比
+    exp_coeff: float = 0.0      # 线膨胀系数(1 / ℃)
+    unit_weight: float = 0.0    # 容重(N / m ^ 3)
+    density: float = 0.0        # 质量密度(kg / m ^ 3)
+    damping: float = 0.0        # 阻尼比
+    creep_shrink_no: int = 0    # 收缩徐变编号
 
     @classmethod
     def _from_dict(cls, d: dict) -> Material:

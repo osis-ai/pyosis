@@ -21,7 +21,7 @@ def osis_lane_ve(strName: str, eType: Literal["VE"], dLength: float, wheel: int,
             - 1: 参照样条曲线定义车道
         param (list): 可变参数列表，长度和内容取决于 eRef：
             - **当 eRef=0 时**: param = [ESel, OffsetY, OffsetZ]
-                - ESel (str): 参照纵梁单元组名称
+                - ESel (str): 参照纵梁单元组名称（纵梁）
                 - OffsetY (float): 局部坐标系下Y方向偏移量（m），车道路径相对于单元组的横向偏移
                 - OffsetZ (float): 局部坐标系下Z方向偏移量（m），车道路径相对于单元组的竖向偏移
             - **当 eRef=1 时**: param = [SplineName]

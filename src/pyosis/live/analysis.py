@@ -114,7 +114,7 @@ def osis_live_analysis_inc(strName: str, eOP: Literal["a", "m"], strLiveSubName:
 def osis_live_analysis_inc_mod(strName: str, eOP: Literal["d", "mn"], strLiveSubName: str, strNewName: str=None):
     # Name, OP, LiveSub, LiveGrade, factor, muFlag,  bridgeType, para_i..., LaneLoad_i, LaneLoad_j, ... 
     '''
-    定义活载工况，删除或修改子工况
+    删除或修改子工况
     
     Args:
         strName (str): 活载工况名称

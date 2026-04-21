@@ -131,7 +131,7 @@ class SubLoadCase:
 
 
 @dataclass(frozen=True)
-class LiveInfo:
+class Live:
     """活载对象"""
 
     name: str
@@ -142,7 +142,7 @@ class LiveInfo:
     sub_load_cases: list[SubLoadCase]
 
     @classmethod
-    def _from_dict(cls, d: dict) -> LiveInfo:
+    def _from_dict(cls, d: dict) -> Live:
         return cls(
             name=d.get("name", ""),
             code=d.get("code", 0),
@@ -154,6 +154,111 @@ class LiveInfo:
             ],
         )
 
+    def create(
+        self,
+        sub_name: str,
+        grade_name: str,
+        scalar: float = 1.0,
+        calc_mu: bool = True,
+        bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "SIMPLE",
+        mu_params: list[float] | None = None,
+        lane_names: list[str] | None = None,
+    ) -> Live:
+        """添加活载子工况
+
+        Args:
+            sub_name: 子工况名称
+            grade_name: 活载等级名称
+            scalar: 缩放系数
+            calc_mu: 是否考虑冲击系数
+            bridge_type: 桥型（用于计算冲击系数）
+                * SIMPLE = 简支梁桥, 冲击系数: 桥长、弹模、惯性矩、质量
+                * CONTINUOUS = 连续梁桥, 冲击系数: 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
+                * ARCH = 拱桥, 冲击系数: 拱厚变化系数、拱桥矢跨比、桥长、弹模、惯性矩，质量
+                * CABLE_STAYED = 斜拉桥（无辅助墩）, 冲击系数: 计算常数、主跨跨径
+                * CABLE_STAYED_AUX = 斜拉桥（有辅助墩）, 冲击系数: 计算常数、主跨跨径
+                * SUSPENSION = 悬索桥, 冲击系数: 主跨跨径、弹模、惯性矩、主缆水平拉力、质量
+                * BRIDGE_TYPE_CUSTOM = 自定义, 冲击系数: 用户直接输入基频
+            mu_params: 冲击系数计算参数（根据桥型不同参数不同），1-5个
+            lane_names: 车道线名称列表
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        if mu_params is None:
+            mu_params = []
+        if lane_names is None:
+            lane_names = []
+
+        ok, err = osis_live_analysis_inc(
+            self.name, "a", sub_name, grade_name,
+            scalar, 1 if calc_mu else 0, bridge_type, mu_params, lane_names
+        )
+        if not ok:
+            raise RuntimeError(f"添加子工况 {sub_name} 到活载工况 {self.name} 失败: {err}")
+        self._loaded = False
+
+    def delete(self, sub_name: str) -> None:
+        """删除活载子工况
+
+        Args:
+            sub_name: 子工况名称
+
+        Raises:
+            RuntimeError: 删除失败时抛出异常
+        """
+        ok, err = osis_live_analysis_inc_mod(self.name, "d", sub_name)
+        if not ok:
+            raise RuntimeError(f"从活载工况 {self.name} 删除子工况 {sub_name} 失败: {err}")
+        self._loaded = False
+
+    def rename(self, old_sub_name: str, new_sub_name: str) -> None:
+        """重命名活载子工况
+
+        Args:
+            old_sub_name: 旧子工况名称
+            new_sub_name: 新子工况名称
+
+        Raises:
+            RuntimeError: 重命名失败时抛出异常
+        """
+        ok, err = osis_live_analysis_inc_mod(self.name, "mn", old_sub_name, new_sub_name)
+        if not ok:
+            raise RuntimeError(f"重命名子工况 {old_sub_name} -> {new_sub_name} 失败: {err}")
+        self._loaded = False
+
+    def set_trans_reduction_factors(self, factors: list[float]) -> None:
+        """设置活载工况的横向布载折减系数
+
+        Args:
+            factors: 折减系数列表，最多10个
+
+        Raises:
+            RuntimeError: 设置失败时抛出异常
+        """
+        ok, err = osis_live_analysis_factor(self.name, *factors)
+        if not ok:
+            raise RuntimeError(f"设置横向折减系数失败: {err}")
+        self._loaded = False
+
+    def set_lane_count(self, sub_name: str, min_lanes: int, max_lanes: int) -> None:
+        """设置活载子工况的加载车道数范围
+
+        Args:
+            sub_name: 子工况名称
+            min_lanes: 最少车道数
+            max_lanes: 最多车道数
+
+        Note:
+            不调用此函数则默认min = 0，max = 最多车道数
+
+        Raises:
+            RuntimeError: 设置失败时抛出异常
+        """
+        ok, err = osis_live_analysis_option(self.name, sub_name, min_lanes, max_lanes)
+        if not ok:
+            raise RuntimeError(f"设置加载车道数失败: {err}")
+        self._loaded = False
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -180,10 +285,10 @@ class LiveManager:
         self._loaded: bool = False
         self._live_grades: list[LiveGrade] = []
         self._lanes: list[Lane] = []
-        self._live_infos: list[LiveInfo] = []
+        self._lives: list[Live] = []
         self._grade_map: dict[str, LiveGrade] = {}
         self._lane_map: dict[str, Lane] = {}
-        self._live_map: dict[str, LiveInfo] = {}
+        self._live_map: dict[str, Live] = {}
 
     # ── 数据加载 ──────────────────────────────
 
@@ -209,10 +314,10 @@ class LiveManager:
         self._lane_map = {l.name: l for l in self._lanes}
 
         # 解析活载
-        self._live_infos = [
-            LiveInfo._from_dict(d) for d in data.get("liveInfos", [])
+        self._lives = [
+            Live._from_dict(d) for d in data.get("liveInfos", [])
         ]
-        self._live_map = {l.name: l for l in self._live_infos}
+        self._live_map = {l.name: l for l in self._lives}
 
         self._loaded = True
 
@@ -221,7 +326,7 @@ class LiveManager:
         self._loaded = False
         self._live_grades = []
         self._lanes = []
-        self._live_infos = []
+        self._lives = []
         self._grade_map = {}
         self._lane_map = {}
         self._live_map = {}
@@ -238,7 +343,7 @@ class LiveManager:
         name: str,
         eCode: Literal["JTGD60_2015"] = "JTGD60_2015",
         eLiveLoadType: Literal["HIGHWAY_I", "HIGHWAY_II"] = "HIGHWAY_I",
-    ) -> None:
+    ) -> LiveGrade:
         """创建公路活载等级
 
         Args:
@@ -253,12 +358,13 @@ class LiveManager:
         if not ok:
             raise RuntimeError(f"创建公路活载等级 {name} 失败: {err}")
         self._loaded = False
+        return self.get_grade(name)
 
     def create_grade_vehicle(
         self,
         name: str,
         eCode: Literal["JTGD60_2015"] = "JTGD60_2015",
-    ) -> None:
+    ) -> LiveGrade:
         """创建车辆荷载等级
 
         Args:
@@ -272,13 +378,14 @@ class LiveManager:
         if not ok:
             raise RuntimeError(f"创建车辆荷载等级 {name} 失败: {err}")
         self._loaded = False
+        return self.get_grade(name)
 
     def create_grade_crowd(
         self,
         name: str,
         eBridgeType: Literal["BRIDGE_COMMON", "BRIDGE_CROWD_WITH", "BRIDGE_CROWD_ONLY"] = "BRIDGE_COMMON",
         dPara: float = 10.0,
-    ) -> None:
+    ) -> LiveGrade:
         """创建人群荷载等级
 
         Args:
@@ -293,13 +400,14 @@ class LiveManager:
         if not ok:
             raise RuntimeError(f"创建人群荷载等级 {name} 失败: {err}")
         self._loaded = False
+        return self.get_grade(name)
 
     def create_grade_fatigue(
         self,
         name: str,
         eLiveLoadType: Literal["FATIGUE_I", "FATIGUE_II", "FATIGUE_III"] = "FATIGUE_I",
         dPara: float | None = None,
-    ) -> None:
+    ) -> LiveGrade:
         """创建疲劳荷载等级
 
         Args:
@@ -314,6 +422,7 @@ class LiveManager:
         if not ok:
             raise RuntimeError(f"创建疲劳荷载等级 {name} 失败: {err}")
         self._loaded = False
+        return self.get_grade(name)
 
     def delete_grade(self, name: str) -> None:
         """删除活载等级
@@ -353,38 +462,46 @@ class LiveManager:
         wheel: int = 1,
         eOriention: Literal[-1, 0, 1] = 0,
         eRef: Literal[0, 1] = 0,
-        ref_elems: list[str] | None = None,
         spline_name: str | None = None,
+        ref_elems: str | None = None,
         offsetY: float = 0.0,
         offsetZ: float = 0.0,
-    ) -> None:
+    ) -> Lane:
         """创建车道（车道单元法 VE）
 
         Args:
             name: 车道名称
             dLength: 桥梁跨度（m）
             wheel: 轮距（默认1）
-            eOriention: 车辆移动方向，-1=向后，0=往返，1=向前
-            eRef: 车道参照方式，0=单元组，1=样条曲线
-            ref_elems: 参照单元组名称列表（eRef=0时使用）
+            eOriention: 车辆移动方向
+                * -1=向后
+                * 0=往返
+                * 1=向前
+            eRef: 车道参照方式，
+                * 0=单元组
+                * 1=样条曲线
             spline_name: 样条曲线名称（eRef=1时使用）
-            offsetY: Y方向偏移量（m）
-            offsetZ: Z方向偏移量（m）
+            ref_elems: 参照单元组名称列表（纵梁）（eRef=0时使用）
+            offsetY: 局部坐标系下Y方向偏移量（m）（eRef=0时使用）
+            offsetZ: 局部坐标系下Z方向偏移量（m）（eRef=0时使用）
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
         if eRef == 0:
-            if ref_elems is None:
-                ref_elems = []
-            param = [*ref_elems, offsetY, offsetZ]
+            if not ref_elems:
+                raise RuntimeError(f"参照单元组名称 ref_elems 不能为空")
+            param = [ref_elems, offsetY, offsetZ]
         else:
-            param = [spline_name] if spline_name else []
+            if not spline_name:
+                raise RuntimeError(f"样条曲线名称 spline_name 不能为空")
+            param = [spline_name]
 
         ok, err = osis_lane_ve(name, "VE", dLength, wheel, eOriention, eRef, param)
-        if not ok:
+        if not ok:  
             raise RuntimeError(f"创建车道 {name} 失败: {err}")
         self._loaded = False
+        return self.get_lane(name)
 
     def create_lane_tcb(
         self,
@@ -394,11 +511,11 @@ class LiveManager:
         wheel: int = 1,
         eOriention: Literal[-1, 0, 1] = 0,
         eRef: Literal[0, 1] = 0,
-        ref_elems: str = "",
+        spline_name: str | None = None,
+        ref_elems: str | None = None,
         offsetY: float = 0.0,
         offsetZ: float = 0.0,
-        spline_name: str | None = None,
-    ) -> None:
+    ) -> Lane:
         """创建车道（横向联系梁法 TCB）
 
         Args:
@@ -417,14 +534,19 @@ class LiveManager:
             RuntimeError: 创建失败时抛出异常
         """
         if eRef == 0:
+            if not ref_elems:
+                raise RuntimeError(f"参照单元组名称 ref_elems 不能为空")
             param = [ref_elems, offsetY, offsetZ]
         else:
-            param = [spline_name] if spline_name else []
+            if not spline_name:
+                raise RuntimeError(f"样条曲线名称 spline_name 不能为空")
+            param = [spline_name]
 
         ok, err = osis_lane_tcb(name, "TCB", crossbeam_elems, dLength, wheel, eOriention, eRef, param)
         if not ok:
             raise RuntimeError(f"创建车道 {name} 失败: {err}")
         self._loaded = False
+        return self.get_lane(name)
 
     def delete_lane(self, name: str) -> None:
         """删除车道
@@ -462,7 +584,7 @@ class LiveManager:
         name: str,
         code: Literal["JTGD60_2015"] = "JTGD60_2015",
         sub_cmb_type: Literal[0, 1] = 1,
-    ) -> None:
+    ) -> Live:
         """创建活载工况
 
         Args:
@@ -477,108 +599,7 @@ class LiveManager:
         if not ok:
             raise RuntimeError(f"创建活载工况 {name} 失败: {err}")
         self._loaded = False
-
-    def add_sub_load_case(
-        self,
-        live_name: str,
-        sub_name: str,
-        grade_name: str,
-        scalar: float = 1.0,
-        calc_mu: bool = True,
-        bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "SIMPLE",
-        mu_params: list[float] | None = None,
-        lane_names: list[str] | None = None,
-    ) -> None:
-        """添加活载子工况
-
-        Args:
-            live_name: 活载工况名称
-            sub_name: 子工况名称
-            grade_name: 活载等级名称
-            scalar: 缩放系数
-            calc_mu: 是否考虑冲击系数
-            bridge_type: 桥型（用于计算冲击系数）
-            mu_params: 冲击系数计算参数（根据桥型不同参数不同）
-            lane_names: 车道名称列表
-
-        Raises:
-            RuntimeError: 添加失败时抛出异常
-        """
-        if mu_params is None:
-            mu_params = []
-        if lane_names is None:
-            lane_names = []
-
-        ok, err = osis_live_analysis_inc(
-            live_name, "a", sub_name, grade_name,
-            scalar, 1 if calc_mu else 0, bridge_type, mu_params, lane_names
-        )
-        if not ok:
-            raise RuntimeError(f"添加子工况 {sub_name} 到活载工况 {live_name} 失败: {err}")
-        self._loaded = False
-
-    def remove_sub_load_case(self, live_name: str, sub_name: str) -> None:
-        """删除活载子工况
-
-        Args:
-            live_name: 活载工况名称
-            sub_name: 子工况名称
-
-        Raises:
-            RuntimeError: 删除失败时抛出异常
-        """
-        ok, err = osis_live_analysis_inc_mod(live_name, "d", sub_name)
-        if not ok:
-            raise RuntimeError(f"从活载工况 {live_name} 删除子工况 {sub_name} 失败: {err}")
-        self._loaded = False
-
-    def rename_sub_load_case(self, live_name: str, old_sub_name: str, new_sub_name: str) -> None:
-        """重命名活载子工况
-
-        Args:
-            live_name: 活载工况名称
-            old_sub_name: 旧子工况名称
-            new_sub_name: 新子工况名称
-
-        Raises:
-            RuntimeError: 重命名失败时抛出异常
-        """
-        ok, err = osis_live_analysis_inc_mod(live_name, "mn", old_sub_name, new_sub_name)
-        if not ok:
-            raise RuntimeError(f"重命名子工况 {old_sub_name} -> {new_sub_name} 失败: {err}")
-        self._loaded = False
-
-    def set_trans_reduction_factors(self, live_name: str, factors: list[float]) -> None:
-        """设置活载工况的横向布载折减系数
-
-        Args:
-            live_name: 活载工况名称
-            factors: 折减系数列表，最多10个
-
-        Raises:
-            RuntimeError: 设置失败时抛出异常
-        """
-        ok, err = osis_live_analysis_factor(live_name, *factors)
-        if not ok:
-            raise RuntimeError(f"设置横向折减系数失败: {err}")
-        self._loaded = False
-
-    def set_lane_count(self, live_name: str, sub_name: str, min_lanes: int, max_lanes: int) -> None:
-        """设置活载子工况的加载车道数范围
-
-        Args:
-            live_name: 活载工况名称
-            sub_name: 子工况名称
-            min_lanes: 最少车道数
-            max_lanes: 最多车道数
-
-        Raises:
-            RuntimeError: 设置失败时抛出异常
-        """
-        ok, err = osis_live_analysis_option(live_name, sub_name, min_lanes, max_lanes)
-        if not ok:
-            raise RuntimeError(f"设置加载车道数失败: {err}")
-        self._loaded = False
+        return self.get_live(name)
 
     def delete_live(self, name: str) -> None:
         """删除活载工况
@@ -621,10 +642,10 @@ class LiveManager:
         self._load()
         return list(self._lanes)
 
-    def all_lives(self) -> list[LiveInfo]:
+    def all_lives(self) -> list[Live]:
         """获取所有活载"""
         self._load()
-        return list(self._live_infos)
+        return list(self._lives)
 
     def get_grade(self, name: str) -> Optional[LiveGrade]:
         """根据名称获取活载等级"""
@@ -636,7 +657,7 @@ class LiveManager:
         self._load()
         return self._lane_map.get(name)
 
-    def get_live(self, name: str) -> Optional[LiveInfo]:
+    def get_live(self, name: str) -> Optional[Live]:
         """根据名称获取活载"""
         self._load()
         return self._live_map.get(name)
@@ -654,11 +675,11 @@ class LiveManager:
     def count_lives(self) -> int:
         """获取活载数量"""
         self._load()
-        return len(self._live_infos)
+        return len(self._lives)
 
     def __repr__(self) -> str:
         self._load()
-        return f"LiveManager(grades={len(self._live_grades)}, lanes={len(self._lanes)}, lives={len(self._live_infos)})"
+        return f"LiveManager(grades={len(self._live_grades)}, lanes={len(self._lanes)}, lives={len(self._lives)})"
 
 
 # ──────────────────────────────────────────────
