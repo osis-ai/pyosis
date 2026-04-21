@@ -70,6 +70,7 @@ class LoadCase:
     
     # ── 荷载数据（从 GetLoadCaseDetail 填充）─────────────────────────────
     gravity: dict | None = None                    # 自重荷载
+    nforce: list[dict] = field(default_factory=list)    # 节点力
     point_force: list[dict] = field(default_factory=list)    # 节点荷载
     point_moment: list[dict] = field(default_factory=list)    # 节点弯矩
     line: list[dict] = field(default_factory=list)            # 线荷载
@@ -80,20 +81,27 @@ class LoadCase:
     gradient_temp: list[dict] = field(default_factory=list)  # 梯度温度
     prestressed: list[dict] = field(default_factory=list)    # 预应力
     cforce: list[dict] = field(default_factory=list)          # 索力
+    related_stages: list[str] = field(default_factory=list)  # 关联施工阶段
 
     def _sync_from_detail(self, detail: dict) -> None:
         """用 GetLoadCaseDetail 返回的 data 同步当前对象（内部使用）。"""
+        self.cforce = detail.get("cforce", []) or []
+        self.displacement = detail.get("displacement", []) or []
+        self.element_surface = detail.get("elementSurface", []) or []
+        self.gradient_temp = detail.get("gradientTemp", []) or []
         self.gravity = detail.get("gravity")
+        self.initial = detail.get("initial", []) or []
+        self.line = detail.get("line", []) or []
+        self.name = detail.get("name", "")
+        self.nforce = detail.get("nforce", [])
         self.point_force = detail.get("pointForce", []) or []
         self.point_moment = detail.get("pointMoment", []) or []
-        self.line = detail.get("line", []) or []
-        self.element_surface = detail.get("elementSurface", []) or []
-        self.displacement = detail.get("displacement", []) or []
-        self.initial = detail.get("initial", []) or []
-        self.uniform_temp = detail.get("uniformTemp", []) or []
-        self.gradient_temp = detail.get("gradientTemp", []) or []
         self.prestressed = detail.get("prestressed", []) or []
-        self.cforce = detail.get("cforce", []) or []
+        self.prompt = detail.get("prompt", "")
+        self.related_stages = detail.get("relatedStages", [])
+        self.scalar = detail.get("scalar", 0.0)
+        self.load_case_type = detail.get("type", "USER")
+        self.uniform_temp  = detail.get("uniformTemp", [])
 
     def refresh_detail(self) -> LoadCase:
         """刷新当前工况荷载明细并同步到对象属性。"""
@@ -109,18 +117,6 @@ class LoadCase:
             load_case_type=d.get("type", "USER"),
             scalar=d.get("scalar", 1.0),
             prompt=d.get("prompt", ""),
-            # 荷载数据
-            gravity=d.get("gravity"),
-            point_force=d.get("pointForce", []),
-            point_moment=d.get("pointMoment", []),
-            line=d.get("line", []),
-            element_surface=d.get("elementSurface", []),
-            displacement=d.get("displacement", []),
-            initial=d.get("initial", []),
-            uniform_temp=d.get("uniformTemp", []),
-            gradient_temp=d.get("gradientTemp", []),
-            prestressed=d.get("prestressed", []),
-            cforce=d.get("cforce", []),
         )
 
     # ── 荷载添加 ──────────────────────────────
@@ -1019,10 +1015,6 @@ class LoadCaseManager:
         """
         self._load()
         return len(self._loadcases)
-
-    def __repr__(self) -> str:
-        self._load()
-        return f"LoadCaseManager(count={len(self._loadcases)})"
 
 
 # ──────────────────────────────────────────────
