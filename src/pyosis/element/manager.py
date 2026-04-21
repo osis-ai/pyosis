@@ -23,6 +23,7 @@ from .interface import (
     osis_element_shell,
     osis_element_del,
     osis_element_mod,
+    osis_element_group,
 )
 
 
@@ -349,6 +350,30 @@ class ElementManager:
         ok, err = osis_element_del(no)
         if not ok:
             raise RuntimeError(f"删除单元 {no} 失败: {err}")
+        self._loaded = False
+
+    def group(self, strName: str, eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], param: list):     # todo: 检查单元组在osis内的存储形式，需要一个单元组管理器
+        '''
+        添加或移除单元
+        
+        Args:
+            strName (str): 单元组名
+            eOP (str): 操作
+                * c = 创建
+                * a = 添加
+                * s = 替换
+                * r = 移除
+                * aa = 添加全部
+                * ra = 移除全部
+                * m = 修改组名
+                * d = 删除
+            param (list): 待操作的编号，支持的格式：*，*to*；*by*，仅用于替换。例子：[2,3,5,8to10] [2by3,5by6,8by10] 重合的编号自动忽略
+        Returns:
+            tuple (bool, str): 是否成功，失败原因
+        '''
+        ok, err = osis_element_group(strName, eOP, param)
+        if not ok:
+            raise RuntimeError(f"添加单元组 {strName} 失败: {err}")
         self._loaded = False
 
     def renumber(self, old_no: int, new_no: int) -> None:

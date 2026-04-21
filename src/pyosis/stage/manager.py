@@ -115,6 +115,124 @@ class Stage:
             analysis_cases=analysis_cases,
         )
 
+    def define_element(
+        self,
+        eOP: Literal[1, 0], 
+        eType: Literal[1, 0], 
+        strGroupName: str, 
+        nBirth: int | None = None, 
+        ePart: Literal[0, 1, 2]=None
+    ) -> None:
+        """通过单元组激活/钝化单元
+
+        Args:
+            nIndex (int): 施工阶段编号
+            eOP (int): 操作
+                * 1 = 添加
+                * 0 = 移除
+            eType (int): 
+                * 1 = 激活
+                * 0 = 钝化
+            strGroupName (str): 待操作的单元组名称
+            nBirth (int): 龄期。eOP = 0 时需要设置为 None
+            ePart (int): 组合结构的分部，可缺省（None）
+                * 0 = 全部激活
+                * 1 = 仅钢材部分
+                * 2 = 仅混凝土部分
+
+        Raises:
+            RuntimeError: 操作失败时抛出异常
+
+        """
+        ok, err = osis_stage_element(self.no, eOP, eType, strGroupName)
+
+        if not ok:
+            raise RuntimeError(f"阶段 {self.no} 定义单元组 {strGroupName} 失败: {err}")
+
+    def define_boundary(
+        self,
+        eOP: Literal[1, 0], 
+        eType: Literal[1, 0], 
+        strGroupName: str
+    ) -> None:
+        """通过单元组激活/钝化单元
+
+        Args:
+            eOP (int): 操作
+                * 1 = 添加
+                * 0 = 移除
+            eType (int): 
+                * 1 = 激活
+                * 0 = 钝化
+            strGroupName (str): 待操作的边界组名称
+            
+        Raises:
+            RuntimeError: 操作失败时抛出异常
+
+        Notes:
+            施工阶段将按照编号顺序升序排列
+        """
+        ok, err = osis_stage_boundary(self.no, eOP, eType, strGroupName)
+
+        if not ok:
+            raise RuntimeError(f"阶段 {self.no} 定义边界组 {strGroupName} 失败: {err}")
+
+    def define_loadcase(
+        self,
+        eOP: Literal[1, 0], 
+        eType: Literal[1, 0], 
+        ref_lc_name: str, 
+        lc_name: str
+    ) -> None:
+        """激活/钝化荷载工况
+
+        Args:
+            eOP (int): 操作
+                * 1 = 添加
+                * 0 = 移除
+            eType (int): 
+                * 1 = 激活
+                * 0 = 钝化
+            ref_lc_name (str): 参考当前施工阶段内的工况名称
+            lc_name (str): 待操作的荷载工况名称
+            
+        Raises:
+            RuntimeError: 操作失败时抛出异常
+
+        """
+        ok, err = osis_stage_loadcase(self.no, eOP, eType, ref_lc_name, lc_name)
+
+        if not ok:
+            raise RuntimeError(f"阶段 {self.no} 激活荷载工况 {lc_name} 失败: {err}")
+
+    def define_analysis(
+        self,
+        eOP: Literal[1, 0], 
+        eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"],
+        lc_name: str,
+    ) -> None:
+        """激活分析工况,分析工况默认在每个施工阶段的静力工况之后，不同分析工况无先后顺序
+
+        Args:
+            eOP (int): 操作
+                * 1 = 添加
+                * 0 = 移除
+            eType: 分析类型
+                MODAL = 模态分析
+                SETL = 沉降分析
+                RSPEC = 反应谱
+                LIVE = 活载分析
+                BUCKLE = 屈曲分析
+            lc_name: 荷载工况名称（部分分析类型需要）
+
+        Raises:
+            RuntimeError: 操作失败时抛出异常
+        """
+        ok, err = osis_stage_analysis(self.no, eOP, eType, lc_name)
+        if not ok:
+            raise RuntimeError(f"阶段 {self.no} 激活分析工况 {eType} 失败: {err}")
+        self._loaded = False
+
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -184,31 +302,31 @@ class StageManager:
         self._loaded = False
         self._load()
 
-    def _next_no(self) -> int:
-        """生成下一个可用施工阶段编号
+    # def _next_no(self) -> int:
+    #     """生成下一个可用施工阶段编号
 
-        取已有阶段编号的最大值+1，如果没有阶段则从1开始。
-        """
-        self._load()
-        if not self._stages:
-            return 1
-        return max(stg.no for stg in self._stages) + 1
+    #     取已有阶段编号的最大值+1，如果没有阶段则从1开始。
+    #     """
+    #     self._load()
+    #     if not self._stages:
+    #         return 1
+    #     return max(stg.no for stg in self._stages) + 1
 
     # ── 增删改 ────────────────────────────────
 
-    def create(
+    def create(     
         self,
+        no: int,        # 施工阶段编号必须连续，此处不允许自动编号
+        name: str,
         duration: int,
-        no: int | None = None,
-        name: str | None = None,
     ) -> Stage:
         """创建施工阶段
 
         Args:
+            no: 阶段编号
             name: 施工阶段名称
             duration: 持续时间（天）
-            no: 阶段编号，不指定时自动生成（取最大编号+1）
-            name: 施工阶段名称，不指定时自动生成（格式为"ST_{uuid}"）
+            name: 施工阶段名称
 
         Returns:
             创建的施工阶段对象
@@ -217,14 +335,12 @@ class StageManager:
             RuntimeError: 创建失败时抛出异常
         """
         self.refresh()
-        if no is None:
-            no = self._next_no()
-        if name is None:
-            name = f"ST_{uuid.uuid4().hex[:12]}"
+        # if no is None:
+        #     no = self._next_no()
         ok, err = osis_stage(no, name, duration)
         if not ok:
             raise RuntimeError(f"创建施工阶段 {no} 失败: {err}")
-        return self._reload_get_as(no, Stage, "创建施工阶段")
+        return self.get(no)
 
     def delete(self, no: int) -> None:
         """删除施工阶段
@@ -242,20 +358,18 @@ class StageManager:
 
     def insert(
         self,
+        name: str,
         ref_no: int,
         position: Literal[0, 1],
         duration: float,
-        no: int | None = None,
-        name: str | None = None,
     ) -> Stage:
         """插入施工阶段
 
         Args:
             ref_no: 参考位置编号
             position: 0=前插，1=后插
+            name: 所插入的施工阶段名称
             duration: 持续时间（天）
-            no: 阶段编号，不指定时自动生成（取最大编号+1）
-            name: 所插入的施工阶段名称，不指定时自动生成（格式为"ST_{uuid}"）
 
         Returns:
             创建的施工阶段对象
@@ -264,14 +378,12 @@ class StageManager:
             RuntimeError: 插入失败时抛出异常
         """
         self.refresh()
-        if no is None:
-            no = self._next_no()
-        if name is None:
-            name = f"ST_{uuid.uuid4().hex[:12]}"
+        # if no is None:
+        #     no = self._next_no()
         ok, err = osis_stage_insert(ref_no, position, name, duration)
         if not ok:
             raise RuntimeError(f"在 {ref_no} 处插入施工阶段失败: {err}")
-        return self._reload_get_as(no, Stage, "插入施工阶段")
+        return self.get(ref_no + position)
 
     def remove(self, no: int) -> None:
         """移除插入的施工阶段
@@ -285,161 +397,6 @@ class StageManager:
         ok, err = osis_stage_remove(no)
         if not ok:
             raise RuntimeError(f"移除施工阶段 {no} 失败: {err}")
-        self._loaded = False
-
-    def activate_element(
-        self,
-        no: int,
-        ele_group_name: str,
-        birth: float = None,
-        part: Literal[0, 1, 2] = None,
-    ) -> None:
-        """通过单元组激活单元
-
-        Args:
-            no: 施工阶段编号
-            ele_group_name: 单元组名称
-            birth: 龄期
-            part: 组合结构分部；缺省为 0
-                0 = 全部激活
-                1 = 仅钢材部分
-                2 = 仅混凝土部分
-
-        Raises:
-            RuntimeError: 操作失败时抛出异常
-        """
-        if part is None:
-            part = 0
-        ok, err = osis_stage_element(no, 1, 1, ele_group_name, birth, part)
-        if not ok:
-            raise RuntimeError(f"阶段 {no} 激活单元组 {ele_group_name} 失败: {err}")
-        self._loaded = False
-
-    def deactivate_element(
-        self,
-        no: int,
-        ele_group_name: str,
-    ) -> None:
-        """通过单元组钝化单元
-
-        Args:
-            no: 施工阶段编号
-            ele_group_name: 单元组名称
-
-        Raises:
-            RuntimeError: 操作失败时抛出异常
-        """
-        ok, err = osis_stage_element(no, 0, 0, ele_group_name, None, None)
-        if not ok:
-            raise RuntimeError(f"阶段 {no} 钝化单元组 {ele_group_name} 失败: {err}")
-        self._loaded = False
-
-    def activate_boundary(
-        self,
-        no: int,
-        bd_group_name: str,
-    ) -> None:
-        """通过边界组激活边界
-
-        Args:
-            no: 施工阶段编号
-            bd_group_name: 边界组名称
-
-        Raises:
-            RuntimeError: 操作失败时抛出异常
-        """
-        ok, err = osis_stage_boundary(no, 1, 1, bd_group_name)
-        if not ok:
-            raise RuntimeError(f"阶段 {no} 激活边界组 {bd_group_name} 失败: {err}")
-        self._loaded = False
-
-    def deactivate_boundary(
-        self,
-        no: int,
-        bd_group_name: str,
-    ) -> None:
-        """通过边界组钝化边界
-
-        Args:
-            no: 施工阶段编号
-            bd_group_name: 边界组名称
-
-        Raises:
-            RuntimeError: 操作失败时抛出异常
-        """
-        ok, err = osis_stage_boundary(no, 0, 0, bd_group_name)
-        if not ok:
-            raise RuntimeError(f"阶段 {no} 钝化边界组 {bd_group_name} 失败: {err}")
-        self._loaded = False
-
-    def activate_loadcase(
-        self,
-        no: int,
-        ref_lc_name: str,
-        lc_name: str,
-    ) -> None:
-        """激活荷载工况
-
-        Args:
-            no: 施工阶段编号
-            ref_lc_name: 参考当前施工阶段内的工况名称
-            lc_name: 待激活的荷载工况名称
-
-        Raises:
-            RuntimeError: 操作失败时抛出异常
-        """
-        ok, err = osis_stage_loadcase(no, 1, 1, ref_lc_name, lc_name)
-        if not ok:
-            raise RuntimeError(f"阶段 {no} 激活荷载工况 {lc_name} 失败: {err}")
-        self._loaded = False
-
-    def deactivate_loadcase(
-        self,
-        no: int,
-        ref_lc_name: str,
-        lc_name: str,
-    ) -> None:
-        """钝化荷载工况
-
-        Args:
-            no: 施工阶段编号
-            ref_lc_name: 参考当前施工阶段内的工况名称
-            lc_name: 待钝化的荷载工况名称
-
-        Raises:
-            RuntimeError: 操作失败时抛出异常
-        """
-        ok, err = osis_stage_loadcase(no, 0, 0, ref_lc_name, lc_name)
-        if not ok:
-            raise RuntimeError(f"阶段 {no} 钝化荷载工况 {lc_name} 失败: {err}")
-        self._loaded = False
-
-    def activate_analysis(
-        self,
-        no: int,
-        eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"],
-        lc_name: str = None,
-    ) -> None:
-        """激活分析工况
-
-        Args:
-            no: 施工阶段编号
-            eType: 分析类型
-                MODAL = 模态分析
-                SETL = 沉降分析
-                RSPEC = 反应谱
-                LIVE = 活载分析
-                BUCKLE = 屈曲分析
-            lc_name: 荷载工况名称（部分分析类型需要）
-
-        Raises:
-            RuntimeError: 操作失败时抛出异常
-        """
-        if lc_name is None:
-            lc_name = ""
-        ok, err = osis_stage_analysis(no, 1, eType, lc_name)
-        if not ok:
-            raise RuntimeError(f"阶段 {no} 激活分析工况 {eType} 失败: {err}")
         self._loaded = False
 
     # ── 查询 ──────────────────────────────────

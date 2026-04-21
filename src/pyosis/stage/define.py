@@ -6,7 +6,7 @@ from typing import Literal
 from ..core import REGISTRY
 
 @REGISTRY.register("StgEle")
-def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEleGroupName: str, nBirth: int, ePart: Literal[0, 1, 2]=None):
+def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strGroupName: str, nBirth: int, ePart: Literal[0, 1, 2]=None):
     """通过单元组激活单元
 
     Args:
@@ -17,7 +17,7 @@ def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], st
         eType (int): 
             * 1 = 激活
             * 0 = 钝化
-        strEleGroupName (str): 待操作的单元组名称
+        strGroupName (str): 待操作的单元组名称
         nBirth (int): 龄期。eOP = 0 时需要设置为 None
         ePart (int): 组合结构的分部，可缺省（None）
             * 0 = 全部激活
@@ -35,7 +35,7 @@ def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], st
     pass
 
 @REGISTRY.register("StgBd")
-def osis_stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strEleGroupName: str):
+def osis_stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strGroupName: str):
     """通过边界组激活/钝化边界
 
     Args:
@@ -46,7 +46,7 @@ def osis_stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], s
         eType (int): 
             * 1 = 激活
             * 0 = 钝化
-        strEleGroupName (str): 待操作的单元组名称
+        strGroupName (str): 待操作的边界组名称
         
     Returns:
         tuple (bool, str): 返回一个元组，包含：
@@ -79,11 +79,11 @@ def osis_stage_loadcase(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], s
             - str: 失败原因（如果操作失败）
     
     Example:
-        >>> stage(1,"阶段1",3.0)
-        >>> stage_element(1,1,1,"墩",5.0,0)
-        >>> stage_boundary(1,1,1,"固结")
-        >>> stage_loadcase(1,1,1,"","自定义工况1")
-        >>> result = stage_loadcase(1,1,1,"自定义工况1","自定义工况2")  # 在 自定义工况1 之后插入一个激活的 自定义工况2
+        >>> osis_stage(1,"阶段1",3.0)
+        >>> osis_stage_element(1,1,1,"墩",5.0,0)
+        >>> osis_stage_boundary(1,1,1,"固结")
+        >>> osis_stage_loadcase(1,1,1,"","自定义工况1")
+        >>> result = osis_stage_loadcase(1,1,1,"自定义工况1","自定义工况2")  # 在 自定义工况1 之后插入一个激活的 自定义工况2
         >>> (True, "")
     """
     pass
@@ -111,13 +111,13 @@ def osis_stage_analysis(nIndex: int, eOP: Literal[1, 0], eType: Literal["MODAL",
             - str: 失败原因（如果操作失败）
     
     Example:
-        >>> stage(1,"阶段1",3.0)
-        >>> stage_element(1,1,1,"墩",5.0,0)
-        >>> stage_boundary(1,1,1,"固结")
-        >>> stage_analysis(1,1,"MODAL")
-        >>> stage_analysis(1,1,"RSPEC","反应谱1")
-        >>> stage_analysis(1,1,"SETL","沉降分析")
-        >>> result = stage_analysis(1,1,"LIVE","活载分析")
+        >>> osis_stage(1,"阶段1",3.0)
+        >>> osis_stage_element(1,1,1,"墩",5.0,0)
+        >>> osis_stage_boundary(1,1,1,"固结")
+        >>> osis_stage_analysis(1,1,"MODAL")
+        >>> osis_stage_analysis(1,1,"RSPEC","反应谱1")
+        >>> osis_stage_analysis(1,1,"SETL","沉降分析")
+        >>> result = osis_stage_analysis(1,1,"LIVE","活载分析")
         >>> (True, "")
     """
     pass
