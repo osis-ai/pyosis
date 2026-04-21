@@ -3,14 +3,14 @@ from pyosis.core import REGISTRY
 
 
 @REGISTRY.register("AsgnCompThk")
-def osis_assign_component_thickness(dThickness: float, strOp: Literal['a', 's', 'r'], strElem: str) -> tuple[bool, str]:
+def osis_assign_component_thickness(dThickness: float, strOp: Literal['a', 's', 'r'], strElem: str | list) -> tuple[bool, str]:
     """
     分配或重置单个单元的理论厚度，用于定义收缩徐变特性
 
     Args:
         dThickness (float): 构件理论厚度
         strOp (str): 操作；a = 添加，s = 替换，r = 移除；
-        strElem (str): 待分配单元的编号。注：定义、修改、删除 elem支持的格式：*to*
+        strElem (str | list): 待分配单元的编号。注：定义、修改、删除 elem支持的格式：*to*
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

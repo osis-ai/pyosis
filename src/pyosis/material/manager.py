@@ -137,9 +137,9 @@ class MaterialManager:
         name: str,
         eCode: Literal["JTG3362_2018", "JTGD62_2004"],
         eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
-        no: int | None = None,
         nCrepShrk: int | None = None,
         dDmp: float = 0.0,
+        no: int | None = None,
     ) -> Material:
         """创建混凝土材料
 
@@ -177,8 +177,8 @@ class MaterialManager:
         name: str,
         eCode: Literal["JTGD64_2015"],
         eGrade: Literal["Q235", "Q345", "Q390", "Q420"],
-        no: int | None = None,
         dDmp: float = 0.0,
+        no: int | None = None,
     ) -> Material:
         """创建钢材
 
@@ -211,8 +211,8 @@ class MaterialManager:
         name: str,
         eCode: Literal["JTG3362_2018", "JTGD62_2004"],
         eGrade: str,
-        no: int | None = None,
         dDmp: float = 0.0,
+        no: int | None = None,
     ) -> Material:
         """创建预应力材料
 
@@ -248,8 +248,8 @@ class MaterialManager:
         name: str,
         eCode: Literal["JTG3362_2018", "JTGD62_2004"],
         eGrade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"],
-        no: int | None = None,
         dDmp: float = 0.0,
+        no: int | None = None,
     ) -> Material:
         """创建钢筋材料
 

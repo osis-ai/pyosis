@@ -136,7 +136,7 @@ class OSISEngine:
         return self._geometry
 
     @property
-    def property(self) -> PropertyManager:
+    def prop(self) -> PropertyManager:
         """属性管理器（坐标系、收缩徐变、阻尼等）"""
         return self._property
 

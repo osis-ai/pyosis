@@ -621,13 +621,13 @@ class SectionManager:
 
     def create_Lshape(
         self,
+        name: str | None,
         n_dir: Literal[0, 1] = 1,
         h: float = 0.1,
         b: float = 0.1,
         tf1: float = 0.016,
         tf2: float = 0.016,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建L形截面"""
         self._invalidate()
@@ -642,11 +642,11 @@ class SectionManager:
 
     def create_circle(
         self,
+        name: str | None,
         e_circle_type: Literal["Hollow", "Solid"] = "Solid",
         d: float = 0.5,
         tw: float = 0.02,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建圆形截面"""
         self._invalidate()
@@ -661,13 +661,13 @@ class SectionManager:
 
     def create_Tshape(
         self,
+        name: str | None,
         n_dir: Literal[0, 1] = 1,
         h: float = 0.3,
         b: float = 0.2,
         tf: float = 0.016,
         tw: float = 0.016,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建T形截面"""
         self._invalidate()
@@ -682,6 +682,7 @@ class SectionManager:
 
     def create_Ishape(
         self,
+        name: str | None,
         h: float = 0.3,
         bt: float = 0.13,
         bb: float = 0.13,
@@ -689,7 +690,6 @@ class SectionManager:
         tb: float = 0.016,
         tw: float = 0.016,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建I形截面（工字形截面）"""
         self._invalidate()
@@ -704,12 +704,12 @@ class SectionManager:
 
     def create_rect(
         self,
+        name: str | None,
         b: float = 6.5,
         h: float = 3.2,
         transition_type: Literal["Chamfer", "Fillet"] = "Fillet",
         sec_type: Literal["Solid", "Hollow"] = "Solid",
         no: int | None = None,
-        name: str | None = None,
         **kwargs,
     ) -> Section:
         """创建矩形截面"""
@@ -725,6 +725,7 @@ class SectionManager:
 
     def create_steel_i(
         self,
+        name: str | None,
         h: float,
         bt: float,
         bb: float,
@@ -733,7 +734,6 @@ class SectionManager:
         tw: float,
         web_rib_pos: Literal["Left", "Right", "Both"],
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建工字形钢截面"""
         self._invalidate()
@@ -748,6 +748,7 @@ class SectionManager:
 
     def create_steel_box(
         self,
+        name: str | None,
         h: float,
         bt: float,
         bct: float,
@@ -758,7 +759,6 @@ class SectionManager:
         tw: float,
         same_layout: Literal[0, 1],
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建箱型钢截面"""
         self._invalidate()
@@ -773,6 +773,7 @@ class SectionManager:
 
     def create_steel_box_three_cell(
         self,
+        name: str | None,
         h: float,
         bt: float,
         bb: float,
@@ -792,7 +793,6 @@ class SectionManager:
         tw2: float,
         web_rib_pos: Literal["Left", "Right", "Both"],
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建单箱单/三室钢截面"""
         self._invalidate()
@@ -810,6 +810,7 @@ class SectionManager:
 
     def create_steel_box_itf(
         self,
+        name: str | None,
         h: float,
         b: float,
         bt: float,
@@ -827,7 +828,6 @@ class SectionManager:
         tb3: float,
         tw1: float,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建单箱单室斜顶板钢截面"""
         self._invalidate()
@@ -845,6 +845,7 @@ class SectionManager:
 
     def create_steel_canti_box(
         self,
+        name: str | None,
         h: float,
         bt: float,
         bb: float,
@@ -861,7 +862,6 @@ class SectionManager:
         eh: float,
         et: float,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室钢截面"""
         self._invalidate()
@@ -879,6 +879,7 @@ class SectionManager:
 
     def create_steel_canti_box_ibf(
         self,
+        name: str | None,
         h: float,
         bt: float,
         bb: float,
@@ -897,7 +898,6 @@ class SectionManager:
         eh: float,
         et: float,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室斜底板钢截面"""
         self._invalidate()
@@ -913,12 +913,12 @@ class SectionManager:
             raise RuntimeError(f"创建悬臂箱型钢截面(加劲肋) {no} 失败: {err}")
         return self._reload_get(no, "创建悬臂箱型钢截面(加劲肋)")
 
-    def create_steel_custom(
+    def create_steel_custom(        # todo 支持直接传list
         self,
+        name: str | None,
         point_matrix: str,
         line_matrix: str,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过点线关系输入）"""
         self._invalidate()
@@ -933,9 +933,9 @@ class SectionManager:
 
     def create_steel_custom_plate(
         self,
+        name: str | None,
         plate_positions: list[str],
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过参数板输入）"""
         self._invalidate()
@@ -950,6 +950,7 @@ class SectionManager:
 
     def create_smallbox(
         self,
+        name: str | None = None,
         e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
         h: float = 1.6,
         bs: float = 1.65,
@@ -972,7 +973,6 @@ class SectionManager:
         i2: float = 0.0,
         r: float = 0.05,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建小箱梁截面"""
         self._invalidate()
@@ -990,6 +990,7 @@ class SectionManager:
 
     def create_hollowslab(
         self,
+        name: str | None = None,
         e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
         h: float = 0.95,
         bs: float = 1.0,
@@ -1011,7 +1012,6 @@ class SectionManager:
         yo4: float = 0.08,
         h1: float = 0.12,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建空心板截面"""
         self._invalidate()
@@ -1030,6 +1030,7 @@ class SectionManager:
 
     def create_rounded_end(
         self,
+        name: str | None = None,
         e_filling_type: Literal["Solid", "Hollow"] = "Solid",
         b: float = 7.0,
         h: float = 3.0,
@@ -1043,7 +1044,6 @@ class SectionManager:
         xi2: float = 0.5,
         yi2: float = 0.25,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建圆端形截面"""
         self._invalidate()
@@ -1061,6 +1061,7 @@ class SectionManager:
 
     def create_conventionalbox(
         self,
+        name: str | None = None,
         h: float = 2.7,
         bt_l: float = 6.375,
         bt_r: float = 6.375,
@@ -1110,7 +1111,6 @@ class SectionManager:
         r1: float = 0.0,
         r2: float = 0.0,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建常规箱梁截面"""
         self._invalidate()
@@ -1131,7 +1131,7 @@ class SectionManager:
 
     def create_flat_box(
         self,
-        e_section_type: Literal["STREAMEDBOX"] = "STREAMEDBOX",
+        name: str | None = None,
         h: float = 4.0,
         bt_l: float = 20.0,
         bt_r: float = 20.0,
@@ -1184,7 +1184,6 @@ class SectionManager:
         r1: float = 0.5,
         r2: float = 0.2,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建扁平箱梁截面"""
         self._invalidate()
@@ -1193,7 +1192,7 @@ class SectionManager:
         if name is None:
             name = f"SEC_{uuid.uuid4().hex[:12]}"
         ok, err = osis_section_flat_box(
-            no, name, e_section_type, h, bt_l, bt_r, bb_l, bb_r, bs,
+            no, name, "FLATBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
             tt, tb1, tb2, tw, ttj, tbj, twj, n_cell_num, bi1, bi2, bi3, bi4,
             xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
             bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
@@ -1205,6 +1204,7 @@ class SectionManager:
 
     def create_double_side_box(
         self,
+        name: str | None = None,
         h: float = 3.8,
         bt: float = 36.0,
         bt_sub: float = 14.8,
@@ -1231,7 +1231,6 @@ class SectionManager:
         i1: float = 0.0,
         i2: float = 0.0,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建双边箱截面"""
         self._invalidate()
@@ -1250,6 +1249,7 @@ class SectionManager:
 
     def create_ribbed_slab(
         self,
+        name: str | None = None,
         h: float = 2.8,
         bt: float = 21.5,
         bt_sub: float = 17.7,
@@ -1265,7 +1265,6 @@ class SectionManager:
         i1: float = 0.0,
         i2: float = 0.0,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建肋板式截面"""
         self._invalidate()
@@ -1282,6 +1281,7 @@ class SectionManager:
 
     def create_TGirder(
         self,
+        name: str | None = None,
         e_girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
         h: float = 2.5,
         bs: float = 1.125,
@@ -1299,7 +1299,6 @@ class SectionManager:
         i2: float = 0.0,
         r: float = 0.05,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建T梁截面"""
         self._invalidate()
@@ -1317,9 +1316,9 @@ class SectionManager:
 
     def create_custom(
         self,
+        name: str | None,
         contour_matrix: str,
         no: int | None = None,
-        name: str | None = None,
     ) -> Section:
         """创建自定义截面"""
         self._invalidate()
