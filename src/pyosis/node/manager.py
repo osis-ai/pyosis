@@ -57,10 +57,6 @@ class Node:
     @classmethod
     def _from_dict(cls, d: dict) -> Node:
         """从接口 dict 构造 Node 对象（内部使用）"""
-        loads = [
-            Load(load_case=li["loadCase"], load_type=li["loadType"])
-            for li in (d.get("relatedLoads") or [])
-        ]
         return cls(
             no=d["no"],
             x=d["x"],
@@ -68,10 +64,10 @@ class Node:
             z=d["z"],
             precision=d.get("precision", 0),
             hash_value=d.get("hashValue", 0),
-            related_elements=d.get("relatedElements") or [],
-            related_boundaries=d.get("relatedBoundaries") or [],
-            related_loads=loads,
-            related_setl_grps=d.get("relatedSetlGrps") or [],
+            related_elements=d.get("relatedElements",[]) or [],
+            related_boundaries=d.get("relatedBoundaries",[]) or [],
+            related_loads=d.get("relatedLoads",[]) or [],
+            related_setl_grps=d.get("relatedSetlGrps",[]) or [],
             is_selected=d.get("isSelected", False),
             is_plotted=d.get("isPloted", False),
             is_free=d.get("isFree", False),
