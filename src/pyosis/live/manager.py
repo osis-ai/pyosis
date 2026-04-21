@@ -196,7 +196,6 @@ class Live:
         )
         if not ok:
             raise RuntimeError(f"添加子工况 {sub_name} 到活载工况 {self.name} 失败: {err}")
-        self._loaded = False
 
     def delete(self, sub_name: str) -> None:
         """删除活载子工况
@@ -210,7 +209,6 @@ class Live:
         ok, err = osis_live_analysis_inc_mod(self.name, "d", sub_name)
         if not ok:
             raise RuntimeError(f"从活载工况 {self.name} 删除子工况 {sub_name} 失败: {err}")
-        self._loaded = False
 
     def rename(self, old_sub_name: str, new_sub_name: str) -> None:
         """重命名活载子工况
@@ -225,7 +223,6 @@ class Live:
         ok, err = osis_live_analysis_inc_mod(self.name, "mn", old_sub_name, new_sub_name)
         if not ok:
             raise RuntimeError(f"重命名子工况 {old_sub_name} -> {new_sub_name} 失败: {err}")
-        self._loaded = False
 
     def set_trans_reduction_factors(self, factors: list[float]) -> None:
         """设置活载工况的横向布载折减系数
@@ -239,7 +236,6 @@ class Live:
         ok, err = osis_live_analysis_factor(self.name, *factors)
         if not ok:
             raise RuntimeError(f"设置横向折减系数失败: {err}")
-        self._loaded = False
 
     def set_lane_count(self, sub_name: str, min_lanes: int, max_lanes: int) -> None:
         """设置活载子工况的加载车道数范围
@@ -258,7 +254,6 @@ class Live:
         ok, err = osis_live_analysis_option(self.name, sub_name, min_lanes, max_lanes)
         if not ok:
             raise RuntimeError(f"设置加载车道数失败: {err}")
-        self._loaded = False
 
 # ──────────────────────────────────────────────
 # 管理类
