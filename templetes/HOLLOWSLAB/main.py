@@ -18,7 +18,7 @@ from modules._5_node import build_nodes
 from modules._6_element import build_elements
 from modules._7_boundary import build_boundaries
 from modules._8_loadcase import build_loadcases
-from modules._9_analysis import build_live_analysis
+from modules._9_analysis import build_settle_analysis, build_live_analysis
 from modules._10_stage import build_stages
 
 
@@ -28,6 +28,11 @@ def build_model(run_analysis: bool = False):
     Args:
         run_analysis: 是否自动运行分析，默认False（只建模）
     """
+
+    print("清空项目...")
+    engine.clear()
+    engine.clc()
+
     print("=" * 50)
     print("开始建模：简支空心板桥梁")
     print("=" * 50)
@@ -42,44 +47,39 @@ def build_model(run_analysis: bool = False):
     
     # 3. 材料（无依赖）
     print("[3/10] 创建材料...")
-    mat_no = build_materials(engine)
+    mat_nos = build_materials(engine)
     
     # 4. 截面（无依赖）
     print("[4/10] 创建截面...")
-    sec_no = build_sections(engine)
+    sec_nos = build_sections(engine)
     
     # 5. 节点（无依赖）
     print("[5/10] 创建节点...")
-    node_no = build_nodes(engine)
+    node_nos = build_nodes(engine)
     
     # 6. 单元（依赖 mat, sec, node）
     print("[6/10] 创建单元...")
-    elem_no = build_elements(engine, mat_no, sec_no, node_no)
+    elem_nos, elem_group_names = build_elements(engine, mat_nos, sec_nos, node_nos)
     
     # 7. 边界（依赖 node）
     print("[7/10] 创建边界条件...")
-    build_boundaries(engine, node_no)
+    boundary_group_name = build_boundaries(engine, node_nos)
     
     # 8. 荷载工况（依赖 mat, elem）
     print("[8/10] 创建荷载工况和钢束...")
-    lc_names = build_loadcases(engine, mat_no, elem_no)
+    loadcase_names = build_loadcases(engine, mat_nos, elem_nos)
     
     # 9. 活载分析
-    print("[9/10] 创建活载分析...")
-    build_live_analysis(engine)
+    print("[9/10] 创建分析...")
+    settle_analysis_names = build_settle_analysis(engine)
+    live_analysis_names = build_live_analysis(engine)
     
-    # 10. 施工阶段（依赖荷载工况名）
+    # 10. 施工阶段（依赖单元组、边界组、荷载工况、沉降分析、移动荷载分析）
     print("[10/10] 创建施工阶段...")
-    build_stages(engine, lc_names)
+    build_stages(engine, elem_group_names, boundary_group_name, loadcase_names, settle_analysis_names, live_analysis_names)
     
     print("\n" + "=" * 50)
     print("建模完成！")
-    # print(f"  - 材料数: {engine.material.count()}")
-    # print(f"  - 截面数: {engine.section.count()}")
-    # print(f"  - 节点数: {engine.node.count()}")
-    # print(f"  - 单元数: {engine.element.count()}")
-    # print(f"  - 边界数: {engine.boundary.count()}")
-    # print(f"  - 荷载工况数: {engine.load.count()}")
     print("=" * 50)
     
     if run_analysis:

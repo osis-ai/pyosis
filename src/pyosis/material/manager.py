@@ -30,12 +30,12 @@ from .interface import (
 # ──────────────────────────────────────────────
 
 class MaterialType(Enum):
-    UNASSIGEND = 0   # 未定义
-    CONC = 1,        # 混凝土
-    STEEL = 2,       # 钢材
-    Prestressed = 3, # 预应力
-    Rebar = 4,       # 钢筋
-    Custom = 5       # 自定义
+    UNASSIGEND = 0      # 未定义
+    CONC = 1            # 混凝土
+    STEEL = 2           # 钢材
+    Prestressed = 3     # 预应力
+    Rebar = 4           # 钢筋
+    Custom = 5          # 自定义
 
 @dataclass(frozen=True)
 class Material:
@@ -98,44 +98,43 @@ class MaterialManager:
     """
 
     def __init__(self) -> None:
-        self._materials: list[Material] = []
-        self._mat_map: dict[int, Material] = {}  # 按编号索引：O(1) 查询
-        self._loaded: bool = False
+        # self._materials: list[Material] = []
+        # self._mat_map: dict[int, Material] = {}  # 按编号索引：O(1) 查询
+        # self._loaded: bool = False
+        ...
 
     # ── 数据加载 ──────────────────────────────
 
-    def _load(self) -> None:
-        """从服务端加载所有材料信息（延迟加载，带缓存）"""
-        if self._loaded:
-            return
+    def _load(self) -> list[Material]:
+        """从服务端加载所有材料信息"""
         resp = osis_client("GetAllMaterialInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        self._materials = [
+        materials = [
             Material._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]
 
         # 构建索引：编号 -> 材料对象 (O(1) 查询)
-        self._mat_map = {mat.no: mat for mat in self._materials}
+        # self._mat_map = {mat.no: mat for mat in self._materials}
 
-        self._loaded = True
+        # self._loaded = True
+        return materials
 
-    def refresh(self) -> None:
-        """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
-        self._materials = []
-        self._mat_map = {}
-        self._loaded = False
-        self._load()
+    # def refresh(self) -> None:
+    #     """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
+    #     self._materials = []
+    #     self._mat_map = {}
+    #     self._loaded = False
+    #     self._load()
 
     def _next_no(self) -> int:
         """生成下一个可用材料编号
 
         取已有材料编号的最大值+1，如果没有材料则从1开始。
         """
-        self._load()
-        if not self._materials:
-            return 1
-        return max(mat.no for mat in self._materials) + 1
+        materials = self._load()
+        mat_no = [mat.no for mat in materials]
+        return max(mat_no) + 1
 
     # ── 增删改 ────────────────────────────────
 
@@ -167,7 +166,6 @@ class MaterialManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_material_conc(
@@ -176,8 +174,7 @@ class MaterialManager:
         )
         if not ok:
             raise RuntimeError(f"创建混凝土材料 {no} 失败: {err}")
-        self._loaded = False
-        return Material(no=no, name=name, material_type="CONC")
+        return self.get(no)
 
     def create_steel(
         self,
@@ -204,14 +201,12 @@ class MaterialManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_material_steel(no, name, "STEEL", eCode, eGrade, dDmp)
         if not ok:
             raise RuntimeError(f"创建钢材 {no} 失败: {err}")
-        self._loaded = False
-        return Material(no=no, name=name, material_type="STEEL")
+        return self.get(no)
 
     def create_prestressed(
         self,
@@ -241,14 +236,12 @@ class MaterialManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_material_prestressed(no, name, "PRESTRESSED", eCode, eGrade, dDmp)
         if not ok:
             raise RuntimeError(f"创建预应力材料 {no} 失败: {err}")
-        self._loaded = False
-        return Material(no=no, name=name, material_type="PRESTRESSED")
+        return self.get(no)
 
     def create_rebar(
         self,
@@ -277,14 +270,12 @@ class MaterialManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_material_rebar(no, name, "REBAR", eCode, eGrade, dDmp)
         if not ok:
             raise RuntimeError(f"创建钢筋材料 {no} 失败: {err}")
-        self._loaded = False
-        return Material(no=no, name=name, material_type="REBAR")
+        return self.get(no)
 
     def create_custom(
         self,
@@ -317,7 +308,6 @@ class MaterialManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        self.refresh()
         if no is None:
             no = self._next_no()
         ok, err = osis_material_custom(
@@ -325,19 +315,7 @@ class MaterialManager:
         )
         if not ok:
             raise RuntimeError(f"创建自定义材料 {no} 失败: {err}")
-        self._loaded = False
-        return Material(
-            no=no,
-            name=name,
-            material_type="CUSTOM",
-            e=dE,
-            g=dG,
-            mu=dMu,
-            exp_coeff=dExpCoeff,
-            unit_weight=dUnitWeight,
-            density=dDensity,
-            damping=dDmp,
-        )
+        return self.get(no)
 
     def delete(self, no: int) -> None:
         """删除材料
@@ -351,7 +329,6 @@ class MaterialManager:
         ok, err = osis_material_del(no)
         if not ok:
             raise RuntimeError(f"删除材料 {no} 失败: {err}")
-        self._loaded = False
 
     def renumber(self, old_no: int, new_no: int) -> None:
         """修改材料编号
@@ -366,11 +343,11 @@ class MaterialManager:
         ok, err = osis_material_mod(old_no, new_no)
         if not ok:
             raise RuntimeError(f"修改材料编号 {old_no} -> {new_no} 失败: {err}")
-        self._loaded = False
+        return self.get(new_no)
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int]) -> Material | list[Material | None]:
+    def get(self, no: int | list[int]) -> Material | list[Material | None]:     # todo: rewrite
         """根据编号获取单个或多个材料 (O(k))
 
         Args:
@@ -379,11 +356,11 @@ class MaterialManager:
         Returns:
             Material 对象或数组；材料不存在返回 None
         """
-        self._load()
+        materials = self._load()
         if isinstance(no, int):
-            return self._mat_map.get(no)
-        elif isinstance(no, list):
-            return [self._mat_map.get(n) for n in no]
+            return next((obj for obj in materials if obj.no == no), None)
+        if isinstance(no, list):
+            return [next((obj for obj in materials if obj.no == it), None) for it in no]
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
 
@@ -393,8 +370,8 @@ class MaterialManager:
         Returns:
             全部材料列表
         """
-        self._load()
-        return list(self._materials)
+        materials = self._load()
+        return materials
 
     def count(self) -> int:
         """获取材料总数
@@ -402,12 +379,12 @@ class MaterialManager:
         Returns:
             材料数量
         """
-        self._load()
-        return len(self._materials)
+        materials = self._load()
+        return len(materials)
 
     def __repr__(self) -> str:
-        self._load()
-        return f"MaterialManager(count={len(self._materials)})"
+        # self._load()
+        return f"MaterialManager()"
 
 
 # ──────────────────────────────────────────────

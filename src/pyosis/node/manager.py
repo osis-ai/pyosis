@@ -49,10 +49,10 @@ class Node:
     is_plotted: bool = False
     is_free: bool = False
 
-    @property
-    def coord(self) -> tuple[float, float, float]:
-        """节点坐标 (x, y, z)"""
-        return (self.x, self.y, self.z)
+    # @property
+    # def coord(self) -> tuple[float, float, float]:
+    #     """节点坐标 (x, y, z)"""
+    #     return (self.x, self.y, self.z)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Node:
@@ -102,33 +102,34 @@ class NodeManager:
     """
 
     def __init__(self) -> None:
-        self._nodes: list[Node] = []
-        self._node_map: dict[int, Node] = {}  # 按编号索引：O(1) 查询
+        # self._nodes: list[Node] = []
+        # self._node_map: dict[int, Node] = {}  # 按编号索引：O(1) 查询
         # self._element_map: dict[int, list[Node]] = {}  # 按单元反向索引
-        self._loaded: bool = False
+        # self._loaded: bool = False
+        ...
 
     # ── 数据加载 ──────────────────────────────
 
-    def _reload_get(self, no: int, what: str) -> Node:
-        """创建/修改后从服务端重载并返回节点对象（内部使用）。"""
-        self._loaded = False
-        self._load()
-        nd = self._node_map.get(no)
-        if nd is None:
-            raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
-        return nd
+    # def _reload_get(self, no: int, what: str) -> Node:
+    #     """创建/修改后从服务端重载并返回节点对象（内部使用）。"""
+    #     self._loaded = False
+    #     self._load()
+    #     nd = self._node_map.get(no)
+    #     if nd is None:
+    #         raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
+    #     return nd
 
-    def _load(self) -> None:
+    def _load(self) -> list[Node]:
         """从服务端加载所有节点信息（延迟加载，带缓存）"""
         if self._loaded:
             return
         resp = osis_client("GetAllNodeInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        self._nodes = [Node._from_dict(d) for d in resp.get("data", []) if "no" in d]
-
+        nodes = [Node._from_dict(d) for d in resp.get("data", []) if "no" in d]
+        return nodes
         # 构建索引：编号 -> 节点对象 (O(1) 查询)
-        self._node_map = {node.no: node for node in self._nodes}
+        # self._node_map = {node.no: node for node in self._nodes}
 
         # # 构建反向索引：单元编号 -> 关联的节点列表 (O(k) 过滤)
         # self._element_map = {}
@@ -138,15 +139,15 @@ class NodeManager:
         #             self._element_map[elem_no] = []
         #         self._element_map[elem_no].append(node)
 
-        self._loaded = True
+        # self._loaded = True
 
-    def refresh(self) -> None:
-        """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
-        self._nodes = []
-        self._node_map = {}
-        # self._element_map = {}
-        self._loaded = False
-        self._load()
+    # def refresh(self) -> None:
+    #     """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
+    #     self._nodes = []
+    #     self._node_map = {}
+    #     # self._element_map = {}
+    #     self._loaded = False
+    #     self._load()
 
     # ── 增删改 ────────────────────────────────
 
@@ -155,10 +156,11 @@ class NodeManager:
 
         取已有节点编号的最大值+1，如果没有节点则从1开始。
         """
-        self._load()
-        if not self._nodes:
-            return 1
-        return max(node.no for node in self._nodes) + 1
+        nodes = self._load()
+        node_no = [n.no for n in nodes]
+        # if not self._nodes:
+        #     return 1
+        return max(node_no) + 1
 
     def create(self, x: float, y: float, z: float, no: int | None = None) -> Node:
         """创建节点
@@ -173,13 +175,12 @@ class NodeManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        self.refresh()  # 刷新缓存，确保拿到最新节点列表
         if no is None:
             no = self._next_no()
         ok, err = osis_node(no, x, y, z)
         if not ok:
             raise RuntimeError(f"创建节点 {no} 失败: {err}")
-        return self._reload_get(no, "创建节点")
+        return self.get(no)
 
     def delete(self, no: int) -> None:
         """删除节点
@@ -233,11 +234,11 @@ class NodeManager:
         Returns:
             Node 对象；节点不存在返回 None
         """
-        self._load()
+        nodes = self._load()
         if isinstance(no, int):
-            return self._node_map.get(no)
-        elif isinstance(no, list):
-            return [self._node_map.get(n) for n in no if n in self._node_map]
+            return next((obj for obj in nodes if obj.no == no), None)
+        if isinstance(no, list):
+            return [next((obj for obj in nodes if obj.no == it), None) for it in no]
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
 
@@ -247,8 +248,8 @@ class NodeManager:
         Returns:
             全部节点列表
         """
-        self._load()
-        return list(self._nodes)
+        nodes = self._load()
+        return nodes
 
     def count(self) -> int:
         """获取节点总数
@@ -256,12 +257,12 @@ class NodeManager:
         Returns:
             节点数量
         """
-        self._load()
-        return len(self._nodes)
+        nodes = self._load()
+        return len(nodes)
 
     def __repr__(self) -> str:
-        self._load()
-        return f"NodeManager(count={len(self._nodes)})"
+        # self._load()
+        return f"NodeManager()"
 
 
 # ──────────────────────────────────────────────

@@ -9,4 +9,5 @@ def build_materials(engine: OSISEngine) -> list[int]:
     mat2 = material.create_rebar("HRB400", "JTG3362_2018", "HRB400", 0.050)
     mat3 = material.create_prestressed("钢绞线-1860", "JTG3362_2018","Strand1860", 0.050)
     
-    return [mat1.no, mat2.no, mat3.no]
+    mat_nos = [mat1.no, mat2.no, mat3.no]
+    return mat_nos

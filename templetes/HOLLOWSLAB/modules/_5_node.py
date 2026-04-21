@@ -20,4 +20,5 @@ def build_nodes(engine: OSISEngine) -> list[int]:
     ns.append(node.create(15.5400,0.0000,0.0000))
     ns.append(node.create(15.9700,0.0000,0.0000))
     
-    return [it.no for it in ns]
+    node_nos = [it.no for it in ns]
+    return node_nos

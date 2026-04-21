@@ -326,7 +326,6 @@ class StageManager:
             no: 阶段编号
             name: 施工阶段名称
             duration: 持续时间（天）
-            name: 施工阶段名称
 
         Returns:
             创建的施工阶段对象

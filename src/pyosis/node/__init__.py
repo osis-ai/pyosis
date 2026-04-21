@@ -1,2 +1,2 @@
 from .interface import *
-from .manager import node_manager
+from .manager import NodeManager, node_manager
