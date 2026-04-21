@@ -30,14 +30,14 @@ def test_create_circle():
     cleanup_test_sections()
 
     # 实心圆
-    sec = section_manager.create_circle(eCircleType="Solid", D=0.5, Tw=0.0)
+    sec = section_manager.create_circle(e_circle_type="Solid", d=0.5, tw=0.0)
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_"), f"名称应以'SEC_'开头，实际'{sec.name}'"
     section_manager.delete(sec.no)
     print("✓ 创建实心圆形截面成功")
 
     # 空心圆
-    sec = section_manager.create_circle(eCircleType="Hollow", D=0.5, Tw=0.02)
+    sec = section_manager.create_circle(e_circle_type="Hollow", d=0.5, tw=0.02)
     assert sec is not None
     assert sec.name.startswith("SEC_")
     section_manager.delete(sec.no)
@@ -49,7 +49,7 @@ def test_create_Lshape():
     reset()
     cleanup_test_sections()
 
-    sec = section_manager.create_Lshape(nDir=1, H=0.1, B=0.1, Tf1=0.016, Tf2=0.016)
+    sec = section_manager.create_Lshape(n_dir=1, h=0.1, b=0.1, tf1=0.016, tf2=0.016)
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
     section_manager.delete(sec.no)
@@ -61,7 +61,7 @@ def test_create_Tshape():
     reset()
     cleanup_test_sections()
 
-    sec = section_manager.create_Tshape(nDir=0, H=0.3, B=0.2, Tf=0.016, Tw=0.016)
+    sec = section_manager.create_Tshape(n_dir=0, h=0.3, b=0.2, tf=0.016, tw=0.016)
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
     section_manager.delete(sec.no)
@@ -73,7 +73,7 @@ def test_create_Ishape():
     reset()
     cleanup_test_sections()
 
-    sec = section_manager.create_Ishape(H=0.3, Bt=0.13, Bb=0.13, Tt=0.016, Tb=0.016, Tw=0.016)
+    sec = section_manager.create_Ishape(h=0.3, bt=0.13, bb=0.13, tt=0.016, tb=0.016, tw=0.016)
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
     section_manager.delete(sec.no)
@@ -85,7 +85,7 @@ def test_create_rect():
     reset()
     cleanup_test_sections()
 
-    sec = section_manager.create_rect(B=6.5, H=3.2)
+    sec = section_manager.create_rect(b=6.5, h=3.2)
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
     section_manager.delete(sec.no)
@@ -98,8 +98,8 @@ def test_create_steel_i():
     cleanup_test_sections()
 
     sec = section_manager.create_steel_i(
-        H=0.3, Bt=0.13, Bb=0.13, Tt=0.016, Tb=0.016, Tw=0.016,
-        WebRibPos="Both",
+        h=0.3, bt=0.13, bb=0.13, tt=0.016, tb=0.016, tw=0.016,
+        web_rib_pos="Both",
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -112,7 +112,7 @@ def test_renumber():
     reset()
     cleanup_test_sections()
 
-    sec = section_manager.create_circle(D=0.5)
+    sec = section_manager.create_circle(d=0.5)
     assert sec is not None
     old_no = sec.no
     section_manager.renumber(old_no, 9980)
@@ -128,7 +128,7 @@ def test_delete():
     reset()
     cleanup_test_sections()
 
-    sec = section_manager.create_circle(D=0.5)
+    sec = section_manager.create_circle(d=0.5)
     no = sec.no
     assert section_manager.get(no) is not None
     section_manager.delete(no)
@@ -141,10 +141,10 @@ def test_get_multiple():
     reset()
     cleanup_test_sections()
 
-    sec1 = section_manager.create_circle(D=0.5)
+    sec1 = section_manager.create_circle(d=0.5)
     n1 = sec1.no
     name1 = sec1.name
-    sec2 = section_manager.create_rect(B=6.5, H=3.2)
+    sec2 = section_manager.create_rect(b=6.5, h=3.2)
     n2 = sec2.no
     name2 = sec2.name
 
@@ -169,8 +169,8 @@ def test_create_smallbox():
     cleanup_test_sections()
 
     sec = section_manager.create_smallbox(
-        eGirderPos="MIDDLE", H=1.6, Bs=1.65, Bm=1.2, Bb=1.0,
-        Tt=0.18, Tb=0.2, Tw=0.2,
+        e_girder_pos="MIDDLE", h=1.6, bs=1.65, bm=1.2, bb=1.0,
+        tt=0.18, tb=0.2, tw=0.2,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -184,7 +184,7 @@ def test_create_hollowslab():
     cleanup_test_sections()
 
     sec = section_manager.create_hollowslab(
-        eGirderPos="MIDDLE", H=0.95, Bs=1.0, Bm=0.57, Tt=0.12, Tb=0.12, Tw=0.16,
+        e_girder_pos="MIDDLE", h=0.95, bs=1.0, bm=0.57, tt=0.12, tb=0.12, tw=0.16,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -198,7 +198,7 @@ def test_create_rounded_end():
     cleanup_test_sections()
 
     sec = section_manager.create_rounded_end(
-        eFillingType="Solid", B=7.0, H=3.0, R=2.0,
+        e_filling_type="Solid", b=7.0, h=3.0, r=2.0,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -212,8 +212,8 @@ def test_create_conventionalbox():
     cleanup_test_sections()
 
     sec = section_manager.create_conventionalbox(
-        H=2.7, BtL=6.375, BtR=6.375, BbL=3.5, BbR=3.5, Bs=0.5,
-        Tt=0.28, Tb=0.32, Tw1=0.5, Tw2=0.5, nCellNum=1,
+        h=2.7, bt_l=6.375, bt_r=6.375, bb_l=3.5, bb_r=3.5, bs=0.5,
+        tt=0.28, tb=0.32, tw1=0.5, tw2=0.5, n_cell_num=1,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -227,9 +227,8 @@ def test_create_flat_box():
     cleanup_test_sections()
 
     sec = section_manager.create_flat_box(
-        eSectionType="STREAMEDBOX",
-        H=4.0, BtL=20.0, BtR=20.0, BbL=10.5, BbR=10.5, Bs=0.8,
-        Tt=0.28, Tb1=0.27, Tb2=0.27, Tw=0.25, nCellNum=5,
+        h=4.0, bt_l=20.0, bt_r=20.0, bb_l=10.5, bb_r=10.5, bs=0.8,
+        tt=0.28, tb1=0.27, tb2=0.27, tw=0.25, n_cell_num=5,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -243,8 +242,8 @@ def test_create_double_side_box():
     cleanup_test_sections()
 
     sec = section_manager.create_double_side_box(
-        H=3.8, Bt=36.0, bt=14.8, Bs=2.1, Bb=4.4,
-        tt=0.3, Tb1=0.3, Tb2=0.3, Tw=0.5, Bi=8.0,
+        h=3.8, bt=36.0, bt_sub=14.8, bs=2.1, bb=4.4,
+        tt=0.3, tb1=0.3, tb2=0.3, tw=0.5, bi=8.0,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -258,8 +257,8 @@ def test_create_ribbed_slab():
     cleanup_test_sections()
 
     sec = section_manager.create_ribbed_slab(
-        H=2.8, Bt=21.5, bt=17.7, Tt=0.3,
-        b=0.2, h=1.25, b1=1.8, b2=0.2, x=1.5, y=0.3,
+        h=2.8, bt=21.5, bt_sub=17.7, tt=0.3,
+        b=0.2, eh=1.25, b1=1.8, b2=0.2, x=1.5, y=0.3,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -273,9 +272,9 @@ def test_create_TGirder():
     cleanup_test_sections()
 
     sec = section_manager.create_TGirder(
-        eGirderPos="Middle", H=2.5, Bs=1.125, Bm=0.85, Bc=0.0,
-        Tt1=0.16, Tt2=0.25, x=0.6, Tw=0.2,
-        Bh=0.6, Hh=0.35, yh=0.25,
+        e_girder_pos="Middle", h=2.5, bs=1.125, bm=0.85, bc=0.0,
+        tt1=0.16, tt2=0.25, x=0.6, tw=0.2,
+        bh=0.6, hh=0.35, yh=0.25,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -314,8 +313,8 @@ def test_create_steel_box():
     cleanup_test_sections()
 
     sec = section_manager.create_steel_box(
-        H=2.0, Bt=1.0, Bct=0.4, Bb=0.8, Bcb=0.3,
-        Tt=0.02, Tb=0.02, Tw=0.015, SameLayout=1,
+        h=2.0, bt=1.0, bct=0.4, bb=0.8, bcb=0.3,
+        tt=0.02, tb=0.02, tw=0.015, same_layout=1,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -329,10 +328,10 @@ def test_create_steel_box_three_cell():
     cleanup_test_sections()
 
     sec = section_manager.create_steel_box_three_cell(
-        H=3.0, Bt=12.0, Bb=6.0, i=0.02, a1=1.5, a2=1.2,
-        Dt=0.5, Tt1=0.03, Tt2=0.025, Tb1=0.035, Db=0.5,
-        Tb2=0.03, Tb3=0.025, Tw1=0.025, Dw=3.0,
-        HasWeb=1, Tw2=0.02, WebRibPos="Both",
+        h=3.0, bt=12.0, bb=6.0, i=0.02, a1=1.5, a2=1.2,
+        dt=0.5, tt1=0.03, tt2=0.025, tb1=0.035, db=0.5,
+        tb2=0.03, tb3=0.025, tw1=0.025, dw=3.0,
+        has_web=1, tw2=0.02, web_rib_pos="Both",
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -346,9 +345,9 @@ def test_create_steel_box_itf():
     cleanup_test_sections()
 
     sec = section_manager.create_steel_box_itf(
-        H=2.5, B=12.0, Bt=10.0, Bb=6.0, i=0.02,
-        a1=10.0, a2=15.0, Dt=0.6, Tt1=0.03, Tt2=0.025, Tt3=0.02,
-        Tb1=0.03, Db=0.5, Tb2=0.025, Tb3=0.02, Tw1=0.025,
+        h=2.5, b=12.0, bt=10.0, bb=6.0, i=0.02,
+        a1=10.0, a2=15.0, dt=0.6, tt1=0.03, tt2=0.025, tt3=0.02,
+        tb1=0.03, db=0.5, tb2=0.025, tb3=0.02, tw1=0.025,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -362,9 +361,9 @@ def test_create_steel_canti_box():
     cleanup_test_sections()
 
     sec = section_manager.create_steel_canti_box(
-        H=2.8, Bt=15.0, Bb=8.0, i=0.02, a=1.5, Dt=0.5,
-        Tt1=0.03, Tt2=0.025, Tb1=0.035, Tw1=0.025,
-        HasWeb=1, Tw2=0.02, WebRibPos="Both", h=0.3, t=0.015,
+        h=2.8, bt=15.0, bb=8.0, i=0.02, a=1.5, dt=0.5,
+        tt1=0.03, tt2=0.025, tb1=0.035, tw1=0.025,
+        has_web=1, tw2=0.02, web_rib_pos="Both", eh=0.3, et=0.015,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")
@@ -378,9 +377,9 @@ def test_create_steel_canti_box_ibf():
     cleanup_test_sections()
 
     sec = section_manager.create_steel_canti_box_ibf(
-        H=2.8, Bt=15.0, Bb=8.0, Bc=2.0, i=0.02, a=1.5, Dt=0.5,
-        Tt1=0.03, Tt2=0.025, Tb1=0.035, Tb2=0.03,
-        Tw1=0.025, HasWeb=1, Tw2=0.02, WebRibPos="Both", h=0.3, t=0.015,
+        h=2.8, bt=15.0, bb=8.0, bc=2.0, i=0.02, a=1.5, dt=0.5,
+        tt1=0.03, tt2=0.025, tb1=0.035, tb2=0.03,
+        tw1=0.025, has_web=1, tw2=0.02, web_rib_pos="Both", eh=0.3, et=0.015,
     )
     assert sec is not None, "截面应已创建"
     assert sec.name.startswith("SEC_")

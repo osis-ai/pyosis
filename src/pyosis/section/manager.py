@@ -10,11 +10,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Literal
-import shutil
 import uuid
 
 from ..core.client import osis_client
-from ..general import get_project_directory
 
 from .common import (
     osis_section_Lshape,
@@ -174,204 +172,6 @@ class SectionStressPoint:
 
 
 # ──────────────────────────────────────────────
-# Definition 子类
-# ──────────────────────────────────────────────
-
-
-@dataclass(frozen=True)
-class BoxDefinition:
-    """箱梁定义（type=10）"""
-
-    cell_num: int = 0
-    cell1_width: float = 0.0
-    cell2_width: float = 0.0
-    cell3_width: float = 0.0
-    cell4_width: float = 0.0
-    tt1: float = 0.0
-    tt2: float = 0.0
-    tt3: float = 0.0
-    tt5: float = 0.0
-    tt6: float = 0.0
-    xi1: float = 0.0
-    xi2: float = 0.0
-    xi3: float = 0.0
-    xi4: float = 0.0
-    xi5: float = 0.0
-    xi6: float = 0.0
-    xi7: float = 0.0
-    yi4: float = 0.0
-    yi7: float = 0.0
-
-    @classmethod
-    def _from_dict(cls, d: dict | None) -> "BoxDefinition | None":
-        if not isinstance(d, dict):
-            return None
-        return cls(
-            cell_num=d.get("CellNum", 0),
-            cell1_width=d.get("Cell1Width", 0.0),
-            cell2_width=d.get("Cell2Width", 0.0),
-            cell3_width=d.get("Cell3Width", 0.0),
-            cell4_width=d.get("Cell4Width", 0.0),
-            tt1=d.get("Tt1", 0.0),
-            tt2=d.get("Tt2", 0.0),
-            tt3=d.get("Tt3", 0.0),
-            tt5=d.get("Tt5", 0.0),
-            tt6=d.get("Tt6", 0.0),
-            xi1=d.get("xi1", 0.0),
-            xi2=d.get("xi2", 0.0),
-            xi3=d.get("xi3", 0.0),
-            xi4=d.get("xi4", 0.0),
-            xi5=d.get("xi5", 0.0),
-            xi6=d.get("xi6", 0.0),
-            xi7=d.get("xi7", 0.0),
-            yi4=d.get("yi4", 0.0),
-            yi7=d.get("yi7", 0.0),
-        )
-
-
-@dataclass(frozen=True)
-class CantileverDefinition:
-    """悬臂定义"""
-
-    bc_l: float = 0.0
-    bc_r: float = 0.0
-    tc_l: float = 0.0
-    tc_r: float = 0.0
-    bc1_l: float = 0.0
-    bc1_r: float = 0.0
-    tc1_l: float = 0.0
-    tc1_r: float = 0.0
-    tc2_l: float = 0.0
-    tc2_r: float = 0.0
-    cantilever_symmetry: bool = False
-
-    @classmethod
-    def _from_dict(cls, d: dict | None) -> "CantileverDefinition | None":
-        if not isinstance(d, dict):
-            return None
-        return cls(
-            bc_l=d.get("BcL", 0.0),
-            bc_r=d.get("BcR", 0.0),
-            tc_l=d.get("TcL", 0.0),
-            tc_r=d.get("TcR", 0.0),
-            bc1_l=d.get("Bc1L", 0.0),
-            bc1_r=d.get("Bc1R", 0.0),
-            tc1_l=d.get("Tc1L", 0.0),
-            tc1_r=d.get("Tc1R", 0.0),
-            tc2_l=d.get("Tc2L", 0.0),
-            tc2_r=d.get("Tc2R", 0.0),
-            cantilever_symmetry=bool(d.get("CantileverSymmetry")),
-        )
-
-
-@dataclass(frozen=True)
-class RectDefinition:
-    """矩形定义"""
-
-    b: float = 0.0
-    h: float = 0.0
-    r: float = 0.0
-    xo1: float = 0.0
-    yo1: float = 0.0
-    edge_transition: int = 0
-    filling_type: int = 0
-
-    @classmethod
-    def _from_dict(cls, d: dict | None) -> "RectDefinition | None":
-        if not isinstance(d, dict):
-            return None
-        return cls(
-            b=d.get("B", 0.0),
-            h=d.get("H", 0.0),
-            r=d.get("R", 0.0),
-            xo1=d.get("xo1", 0.0),
-            yo1=d.get("yo1", 0.0),
-            edge_transition=d.get("EdgeTransition", 0),
-            filling_type=d.get("FillingType", 0),
-        )
-
-
-@dataclass(frozen=True)
-class HollowDefinition:
-    """空腹矩形内部挖空定义"""
-
-    t1: float = 0.0
-    t2: float = 0.0
-    xi1: float = 0.0
-    yi1: float = 0.0
-
-    @classmethod
-    def _from_dict(cls, d: dict | None) -> "HollowDefinition | None":
-        if not isinstance(d, dict):
-            return None
-        return cls(
-            t1=d.get("t1", 0.0),
-            t2=d.get("t2", 0.0),
-            xi1=d.get("xi1", 0.0),
-            yi1=d.get("yi1", 0.0),
-        )
-
-
-@dataclass(frozen=True)
-class DiaphragmDefinition:
-    """隔板定义"""
-
-    has_diaphragm: bool = False
-    tw: float = 0.0
-    xi2: float = 0.0
-    yi2: float = 0.0
-
-    @classmethod
-    def _from_dict(cls, d: dict | None) -> "DiaphragmDefinition | None":
-        if not isinstance(d, dict):
-            return None
-        return cls(
-            has_diaphragm=bool(d.get("HasDiaphragm")),
-            tw=d.get("tw", 0.0),
-            xi2=d.get("xi2", 0.0),
-            yi2=d.get("yi2", 0.0),
-        )
-
-
-@dataclass(frozen=True)
-class GrooveDefinition:
-    """凹槽定义"""
-
-    has_groove: bool = False
-    b1: float = 0.0
-    b2: float = 0.0
-    h: float = 0.0
-
-    @classmethod
-    def _from_dict(cls, d: dict | None) -> "GrooveDefinition | None":
-        if not isinstance(d, dict):
-            return None
-        return cls(
-            has_groove=bool(d.get("HasGroove")),
-            b1=d.get("b1", 0.0),
-            b2=d.get("b2", 0.0),
-            h=d.get("h", 0.0),
-        )
-
-
-@dataclass(frozen=True)
-class FilletDefinition:
-    """倒角定义"""
-
-    r1: float = 0.0
-    r2: float = 0.0
-
-    @classmethod
-    def _from_dict(cls, d: dict | None) -> "FilletDefinition | None":
-        if not isinstance(d, dict):
-            return None
-        return cls(
-            r1=d.get("R1", 0.0),
-            r2=d.get("R2", 0.0),
-        )
-
-
-# ──────────────────────────────────────────────
 # Section 基类
 # ──────────────────────────────────────────────
 
@@ -389,7 +189,7 @@ class Section:
 
     no: int
     name: str
-    type: int
+    type_: int
     height: float = 0.0
     modeling_point_x: float = 0.0
     modeling_point_y: float = 0.0
@@ -435,25 +235,6 @@ class Section:
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 网格失败: {err}")
 
-    def export_pic(self, path: str | None = None) -> str:
-        """生成截面图片并保存。"""
-        ok, err = osis_export_section_pic(self.no)
-        if not ok:
-            raise RuntimeError(f"生成截面 {self.no} 图片失败: {err}")
-
-        if path:
-            try:
-                project_dir = get_project_directory()
-                if not project_dir:
-                    raise RuntimeError("无法获取项目路径")
-                default_path = project_dir + f"Image/section/_{self.no}.jpg"
-                shutil.move(default_path, path)
-                return path
-            except Exception as e:
-                raise RuntimeError(f"图片保存到 {path} 失败: {e}")
-
-        return ""
-
 
 # ──────────────────────────────────────────────
 # Section 子类
@@ -466,14 +247,22 @@ class ConventionalBoxSection(Section):
 
     definition 包含：Box, Cantilever, Fillet, Total
     """
-
-    box: BoxDefinition | None = None
-    cantilever: CantileverDefinition | None = None
-    fillet: FilletDefinition | None = None
+    box: dict = field(default_factory=dict)
+    cantilever: dict = field(default_factory=dict)
+    fillet: dict = field(default_factory=dict)
 
     @property
     def boundary_type(self) -> str:
         return "ConventionalBox"
+    
+    def get_box(self) -> dict:
+        return self.box
+    
+    def get_cantilever(self) -> dict:
+        return self.cantilever
+    
+    def get_fillet(self) -> dict:
+        return self.fillet
 
 
 @dataclass(frozen=True)
@@ -482,16 +271,26 @@ class RectSection(Section):
 
     definition 包含：Diaphragm, Groove, Hollow, Fillet, Total
     """
-
-    diaphragm: DiaphragmDefinition | None = None
-    groove: GrooveDefinition | None = None
-    hollow: HollowDefinition | None = None
-    fillet: FilletDefinition | None = None
+    diaphragm: dict = field(default_factory=dict)
+    groove: dict = field(default_factory=dict)
+    hollow: dict = field(default_factory=dict)
+    fillet: dict = field(default_factory=dict)
 
     @property
     def boundary_type(self) -> str:
         return "Rect"
 
+    def get_diaphragm(self) -> dict:
+        return self.diaphragm
+
+    def get_groove(self) -> dict:
+        return self.groove
+
+    def get_hollow(self) -> dict:
+        return self.hollow
+
+    def get_fillet(self) -> dict:
+        return self.fillet
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -528,64 +327,53 @@ class SectionManager:
         if not resp["success"]:
             raise RuntimeError(resp["error"])
 
-        self._sections = [
-            self._parse_section(d)
-            for d in resp.get("data", [])
-            if isinstance(d, dict) and "no" in d
-        ]
+        data = resp.get("data", [])
+        self._sections = [self._parse_section(d) for d in data if isinstance(d, dict) and "no" in d]
+
         self._sec_map = {sec.no: sec for sec in self._sections}
         self._loaded = True
 
     def _parse_section(self, d: dict) -> Section:
         """根据 raw_type 解析并返回对应子类型的截面对象。"""
         raw_type = d.get("type")
-        def_dict = d.get("definition") if isinstance(d.get("definition"), dict) else {}
-
-        # 解析通用嵌套对象
-        boundary = SectionBBox._from_dict(d.get("boundary"))
-        offset = SectionOffset._from_dict(d.get("offset"))
-        prop = SectionProp._from_dict(d.get("prop"))
-        prop_factor = SectionPropFactor._from_dict(d.get("propFactor"))
-
-        # 解析应力点
-        stress_points = [
-            sp
-            for sp in (d.get("stressPoints") or [])
-            if isinstance(sp, dict)
-        ]
 
         # 通用参数
         common = dict(
             no=d.get("no", 0),
             name=d.get("name", ""),
-            type=raw_type,
+            type_=raw_type,
             height=d.get("height", 0.0),
-            modeling_point_x=d.get("modelingPointX"),
-            modeling_point_y=d.get("modelingPointY"),
-            boundary=boundary,
-            offset=offset,
-            prop=prop,
-            prop_factor=prop_factor,
+            modeling_point_x=d.get("modelingPointX", 0.0),
+            modeling_point_y=d.get("modelingPointY", 0.0),
+            boundary=d.get("boundary", {}),
+            offset=d.get("offset", {}),
+            prop=d.get("prop", {}),
+            prop_factor=d.get("propFactor", {}),
             related_elements=list(d.get("relatedElements") or []),
-            stress_points=[SectionStressPoint._from_dict(sp) for sp in stress_points],
-            definition=def_dict,
+            stress_points=list(d.get("stressPoints") or []),
+            definition={},
         )
 
         if raw_type == 10:  # ConventionalBox
             return ConventionalBoxSection(
                 **common,
-                box=BoxDefinition._from_dict(def_dict.get("Box")),
-                cantilever=CantileverDefinition._from_dict(def_dict.get("Cantilever")),
-                fillet=FilletDefinition._from_dict(def_dict.get("Fillet")),
+                definition = {
+                    "box": dict(d.get("Box", {}) or {}),
+                    "cantilever": dict(d.get("Cantilever", {}) or {}),
+                    "fillet": dict(d.get("Fillet", {}) or {}),
+                    "total": dict(d.get("Total", {}) or {})
+                },
             )
 
         if raw_type == 5:  # Rect
             return RectSection(
                 **common,
-                diaphragm=DiaphragmDefinition._from_dict(def_dict.get("Diaphragm")),
-                groove=GrooveDefinition._from_dict(def_dict.get("Groove")),
-                hollow=HollowDefinition._from_dict(def_dict.get("Hollow")),
-                fillet=FilletDefinition._from_dict(def_dict.get("Fillet")),
+                definition = {
+                    "diaphragm": dict(d.get("Diaphragm", {}) or {}),
+                    "groove": dict(d.get("Groove", {}) or {}),
+                    "hollow": dict(d.get("Hollow", {})),
+                    "fillet": dict(d.get("Total", {}) or {}),
+                },
             )
 
         return Section(**common)
