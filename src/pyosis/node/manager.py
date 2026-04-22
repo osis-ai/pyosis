@@ -51,9 +51,12 @@ class Node:
         """从接口 dict 构造 Node 对象（内部使用）"""
         return cls(
             no=d["no"],
-            x=d.get("coordinate")["x"],
-            y=d.get("coordinate")["y"],
-            z=d.get("coordinate")["z"],
+            # x=d.get("coordinate")["x"],
+            # y=d.get("coordinate")["y"],
+            # z=d.get("coordinate")["z"],
+            x=d.get("x"),
+            y=d.get("y"),
+            z=d.get("z"),
             precision=d.get("precision"),
             hash_value=d.get("hashValue"),
             related_elements=d.get("relatedElements"),
