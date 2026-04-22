@@ -55,7 +55,7 @@ def osis_client(func_name: str, payload: dict) -> dict | tuple[bool, str]:
             return {"success": False, "error": f"接口不存在: {func_name}"}
         # 200
         # if response.ok:
-        return data if data is not None else {"success": False }
+        return data if data is not None else {"success": False, "error": f"接口不存在: {func_name}" }
 
         # 500
         # # 500：[false, "命令流中……"]

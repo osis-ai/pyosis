@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
+from typing import Literal
 
 from ..core.client import osis_client
 from .loadcase import (
@@ -22,8 +23,11 @@ from .loadcase import (
     osis_loadcase_mod,
 )
 from .tendon import (
+    osis_tendon_prop_in_area0,
     osis_tendon_prop_in_area1,
+    osis_tendon_prop_ex_area0,
     osis_tendon_prop_ex_area1,
+    osis_tendon_prop_pre_area0,
     osis_tendon_prop_pre_area1,
     osis_tendon_prop_del,
     osis_tendon_prop_mod,
@@ -242,7 +246,7 @@ class LoadCase:
             self,
             nEntity: int,
             dTemp: float,
-            eDirect: str = "X",
+            eDirect: Literal["X", "Y", "Z"] = "X",
     ) -> LoadCase:
         """添加均匀温度荷载
 
@@ -571,7 +575,6 @@ class TendonManager:
         e_code: str,
         diameter: float,
         n_num: int,
-        d_delta_t: float,
         d_pipe: float,
         d_friction_coeff: float = 1.0,
         d_deviation_coeff: float = 1.0,
@@ -590,7 +593,6 @@ class TendonManager:
                 * GBT20065_2016
             diameter (float): 公称直径
             n_num (int): 每束钢束根数
-            d_delta_t (float): 与台座温差
             d_pipe (float): 管道直径
             d_friction_coeff (float): 摩擦系数
             d_deviation_coeff (float): 偏差系数
@@ -600,9 +602,44 @@ class TendonManager:
             d_relaxation_coeff (float): 松弛系数
         """
         ok, err = osis_tendon_prop_in_area1(
-            name, "IN", n_mat, 1, e_code, diameter, n_num,
-            d_delta_t, d_pipe, d_friction_coeff, d_deviation_coeff,
-            d_starting_deform, d_end_deform, d_tensioning_coeff, d_relaxation_coeff,
+            name, "IN", n_mat, 1, e_code, diameter, n_num, d_pipe,
+            d_friction_coeff, d_deviation_coeff, d_starting_deform,
+            d_end_deform, d_tensioning_coeff, d_relaxation_coeff,
+        )
+        if not ok:
+            raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
+
+    def create_prop_in_custom(
+        self,
+        name: str,
+        n_mat: int,
+        d_val: float,
+        d_pipe: float,
+        d_friction_coeff: float = 1.0,
+        d_deviation_coeff: float = 1.0,
+        d_starting_deform: float = 0.0,
+        d_end_deform: float = 0.0,
+        d_tensioning_coeff: float = 1.0,
+        d_relaxation_coeff: float = 1.0,
+    ) -> None:
+        """创建体内钢束特性（用户输入面积）
+        
+        Args:
+            name (str): 钢束特性名称
+            n_mat (int): 材料编号
+            d_val (float): 用户输入的钢束面积
+            d_pipe (float): 管道直径
+            d_friction_coeff (float): 摩擦系数
+            d_deviation_coeff (float): 偏差系数
+            d_starting_deform (float): 起点变形
+            d_end_deform (float): 终点变形
+            d_tensioning_coeff (float): 张拉系数
+            d_relaxation_coeff (float): 松弛系数
+        """
+        ok, err = osis_tendon_prop_in_area0(
+            name, "IN", n_mat, 0, d_val, d_pipe,
+            d_friction_coeff, d_deviation_coeff, d_starting_deform,
+            d_end_deform, d_tensioning_coeff, d_relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -614,7 +651,6 @@ class TendonManager:
         e_code: str,
         diameter: float,
         n_num: int,
-        d_delta_t: float,
         d_pipe: float,
         d_friction_coeff: float = 1.0,
         d_starting_deform: float = 0.0,
@@ -632,7 +668,6 @@ class TendonManager:
                 * GBT20065_2016
             diameter (float): 公称直径
             n_num (int): 每束钢束根数
-            d_delta_t (float): 与台座温差
             d_pipe (float): 管道直径
             d_friction_coeff (float): 摩擦系数
             d_starting_deform (float): 起点变形
@@ -641,9 +676,42 @@ class TendonManager:
             d_relaxation_coeff (float): 松弛系数
         """
         ok, err = osis_tendon_prop_ex_area1(
-            name, "EX", n_mat, 1, e_code, diameter, n_num,
-            d_delta_t, d_pipe, d_friction_coeff, d_starting_deform,
-            d_end_deform, d_tensioning_coeff, d_relaxation_coeff,
+            name, "EX", n_mat, 1, e_code, diameter, n_num, d_pipe,
+            d_friction_coeff, d_starting_deform, d_end_deform,
+            d_tensioning_coeff, d_relaxation_coeff,
+        )
+        if not ok:
+            raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
+
+    def create_prop_ex_custom(
+        self,
+        name: str,
+        n_mat: int,
+        d_val: float,
+        d_pipe: float,
+        d_friction_coeff: float = 1.0,
+        d_starting_deform: float = 0.0,
+        d_end_deform: float = 0.0,
+        d_tensioning_coeff: float = 1.0,
+        d_relaxation_coeff: float = 1.0,
+    ) -> None:
+        """创建体外钢束特性（用户输入面积）
+        
+        Args:
+            name (str): 钢束特性名称
+            n_mat (int): 材料编号
+            d_val (float): 用户输入的钢束面积
+            d_pipe (float): 管道直径
+            d_friction_coeff (float): 摩擦系数
+            d_starting_deform (float): 起点变形
+            d_end_deform (float): 终点变形
+            d_tensioning_coeff (float): 张拉系数
+            d_relaxation_coeff (float): 松弛系数
+        """
+        ok, err = osis_tendon_prop_ex_area0(
+            name, "EX", n_mat, 0, d_val, d_pipe,
+            d_friction_coeff, d_starting_deform, d_end_deform,
+            d_tensioning_coeff, d_relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -655,8 +723,7 @@ class TendonManager:
         e_code: str,
         diameter: float,
         n_num: int,
-        d_delta_t: float = 0.0,
-        d_pipe: float = 0.0,
+        d_delta_t: float = 10.0,
         d_tensioning_coeff: float = 1.0,
         d_relaxation_coeff: float = 1.0,
     ) -> None:
@@ -671,13 +738,38 @@ class TendonManager:
             diameter (float): 公称直径
             n_num (int): 每束钢束根数
             d_delta_t (float): 与台座温差
-            d_pipe (float): 管道直径
             d_tensioning_coeff (float): 张拉系数
             d_relaxation_coeff (float): 松弛系数
         """
         ok, err = osis_tendon_prop_pre_area1(
             name, "PRE", n_mat, 1, e_code, diameter, n_num,
-            d_delta_t, d_pipe, d_tensioning_coeff, d_relaxation_coeff,
+            d_delta_t, d_tensioning_coeff, d_relaxation_coeff,
+        )
+        if not ok:
+            raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
+
+    def create_prop_pre_custom(
+        self,
+        name: str,
+        n_mat: int,
+        d_val: float,
+        d_delta_t: float = 10.0,
+        d_tensioning_coeff: float = 1.0,
+        d_relaxation_coeff: float = 1.0,
+    ) -> None:
+        """创建先张法钢束特性（用户输入面积）
+        
+        Args:
+            name (str): 钢束特性名称
+            n_mat (int): 材料编号
+            d_val (float): 用户输入的钢束面积
+            d_delta_t (float): 与台座温差
+            d_tensioning_coeff (float): 张拉系数
+            d_relaxation_coeff (float): 松弛系数
+        """
+        ok, err = osis_tendon_prop_pre_area0(
+            name, "PRE", n_mat, 0, d_val,
+            d_delta_t, d_tensioning_coeff, d_relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -806,7 +898,7 @@ class TendonManager:
     def layout(
         self,
         name: str,
-        layout_type: str,
+        layout_type: Literal['GLOBAL', "ELEMENT"],
         n_ele: int,
         n_beg: int,
         n_dir: int,
@@ -917,11 +1009,11 @@ class LoadCaseManager:
 
     def create(
             self,
+            name: str = None,
             load_case_type: str = "USER",
             scalar: float = 1.0,
             prompt: str = None,
-            name: str = None,
-    ) -> LoadCase | None:
+    ) -> LoadCase:
         """创建荷载工况
 
         Args:
@@ -945,8 +1037,8 @@ class LoadCaseManager:
         if not ok:
             raise RuntimeError(f"创建荷载工况 {name} 失败: {err}")
         self._loaded = False
-        self._load()
-        return self._lc_map.get(name)
+        # self._load()
+        return self.get(name)
 
     def delete(self, name: str) -> None:
         """删除荷载工况
@@ -962,7 +1054,7 @@ class LoadCaseManager:
             raise RuntimeError(f"删除荷载工况 {name} 失败: {err}")
         self._loaded = False
 
-    def rename(self, old_name: str, new_name: str) -> LoadCase | None:
+    def rename(self, old_name: str, new_name: str) -> LoadCase:
         """重命名荷载工况
 
         Args:
@@ -976,12 +1068,12 @@ class LoadCaseManager:
         if not ok:
             raise RuntimeError(f"重命名荷载工况 {old_name} -> {new_name} 失败: {err}")
         self._loaded = False
-        self._load()
-        return self._lc_map.get(new_name)
+        # self._load()
+        return self.get(new_name)
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, name: str | list[str]) -> list[LoadCase | None] | LoadCase | None:
+    def get(self, name: str | list[str]) -> list[LoadCase] | LoadCase:
         """根据名称获取单个或多个荷载工况 (O(k))
 
         Args:

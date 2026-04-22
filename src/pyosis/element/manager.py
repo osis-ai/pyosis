@@ -72,7 +72,7 @@ class Element:
     def _from_dict(cls, d: dict) -> Element:
         """从接口 dict 构造 Material 对象（内部使用）"""
         return cls(
-            no=d.get(["no"]),
+            no=d.get("no"),
             element_type=d.get("type", ""),
             mat=d.get("mat", 0),
             node_vec=d.get("nodeVec"),
@@ -245,8 +245,8 @@ class ElementManager:
 
     def _load(self) -> list[Element]:
         """从服务端加载所有单元信息"""
-        if self._loaded:
-            return
+        # if self._loaded:
+        #     return
         resp = osis_client("GetAllElementInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -265,7 +265,9 @@ class ElementManager:
     def _next_no(self) -> int:      # todo: 优化效率，如C++内实现或者load不构造对象
         """生成下一个可用单元编号"""
         # self._load()
-        elements = self._load()
+        elements = self._load()        
+        if len(elements) == 0:
+            return 1
         ele_no = [ele.no for ele in elements]
         return max(ele_no) + 1
 
@@ -383,7 +385,7 @@ class ElementManager:
             raise RuntimeError(f"删除单元 {no} 失败: {err}")
         self._loaded = False
 
-    def group(self, name: str, operation: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], param: list):     # todo: 检查单元组在osis内的存储形式，需要一个单元组管理器
+    def group(self, name: str, operation: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], param: list=None):     # todo: 检查单元组在osis内的存储形式，需要一个单元组管理器
         '''
         创建/删除 单元组，添加或移除单元
         

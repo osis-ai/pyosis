@@ -117,8 +117,6 @@ class NodeManager:
 
     def _load(self) -> list[Node]:
         """从服务端加载所有节点信息（延迟加载，带缓存）"""
-        if self._loaded:
-            return
         resp = osis_client("GetAllNodeInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -154,8 +152,8 @@ class NodeManager:
         """
         nodes = self._load()
         node_no = [n.no for n in nodes]
-        # if not self._nodes:
-        #     return 1
+        if len(node_no) == 0:
+            return 1
         return max(node_no) + 1
 
     def create(self, x: float, y: float, z: float, no: int | None = None) -> Node:
@@ -190,7 +188,7 @@ class NodeManager:
         ok, err = osis_node_del(no)
         if not ok:
             raise RuntimeError(f"删除节点 {no} 失败: {err}")
-        self._loaded = False
+        # self._loaded = False
 
     def renumber(self, old_no: int, new_no: int) -> None:
         """修改节点编号
@@ -205,7 +203,7 @@ class NodeManager:
         ok, err = osis_node_mod(old_no, new_no)
         if not ok:
             raise RuntimeError(f"修改节点编号 {old_no} -> {new_no} 失败: {err}")
-        self._loaded = False
+        # self._loaded = False
 
     def modify(self, no: int, x: float, y: float, z: float) -> None:
         """修改节点，编号不存在会自动创建

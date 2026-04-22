@@ -11,7 +11,9 @@ from typing import Literal
 from ..core import REGISTRY
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_pre_area0(strName: str="钢束特性1", eType: str="PRE", nMat: int=1, bArea: Literal[0]=0, dVal: float=10, dDeltaT: float=10, dPipe: float=10, dTensioningCoeff: float=1.0, dRelaxationCoeff: float=1.0):
+def osis_tendon_prop_pre_area0(strName: str="钢束特性1", eType: Literal["PRE"]="PRE", nMat: int=1, 
+                               bArea: Literal[0]=0, dVal: float=10,  
+                               dDeltaT: float=10, dTensioningCoeff: float=1.0, dRelaxationCoeff: float=1.0):
     '''
     钢束特性-先张法-用户输入面积
     
@@ -22,7 +24,6 @@ def osis_tendon_prop_pre_area0(strName: str="钢束特性1", eType: str="PRE", n
         bArea (int): 0 = 用户输入，固定为0
         dVal (float): 用户输入的钢束面积
         dDeltaT (float): 与台座温差
-        dPipe (float): 管道直径
         dTensioningCoeff (float): 张拉系数
         dTelaxationCoeff (float): 松弛系数
 
@@ -32,8 +33,9 @@ def osis_tendon_prop_pre_area0(strName: str="钢束特性1", eType: str="PRE", n
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_pre_area1(strName: str="钢束特性1", eType: str="PRE", nMat: int=1, bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", 
-                               dDiameter: float=1, nNum: int=10, dDeltaT: float=10, dPipe: float=10, dTensioningCoeff: float=1.0, dRelaxationCoeff: float=1.0):
+def osis_tendon_prop_pre_area1(strName: str="钢束特性1", eType: Literal["PRE"]="PRE", nMat: int=1, 
+                               bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", dDiameter: float=1, nNum: int=10, 
+                               dDeltaT: float=10, dTensioningCoeff: float=1.0, dRelaxationCoeff: float=1.0):
     '''
     钢束特性-先张法-按规范输入面积
     
@@ -48,7 +50,6 @@ def osis_tendon_prop_pre_area1(strName: str="钢束特性1", eType: str="PRE", n
         dDiameter (float): 公称直径
         nNum (int)：每束钢束根数
         dDeltaT (float): 与台座温差
-        dPipe (float): 管道直径
         dTensioningCoeff (float): 张拉系数
         dTelaxationCoeff (float): 松弛系数
 
@@ -58,11 +59,11 @@ def osis_tendon_prop_pre_area1(strName: str="钢束特性1", eType: str="PRE", n
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_in_area0(strName: str="钢束特性1", eType: str="IN", nMat: int=1, bArea: Literal[0]=0, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", 
-                               dDiameter: float=1, nNum: int=10, dDeltaT: float=10, dPipe: float=10, 
-                               dFrictionCoeff: float=1.0, dDeviationCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
+def osis_tendon_prop_in_area0(strName: str="钢束特性1", eType: Literal["IN"]="IN", nMat: int=1, 
+                               bArea: int=0, dVal: float=10, 
+                               dPipe: float=10, dFrictionCoeff: float=1.0, dDeviationCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
-    钢束特性-先张法-用户输入
+    钢束特性-后张法-体内-用户输入
     
     Args:
         strName (str): 钢束特性名称 
@@ -71,10 +72,10 @@ def osis_tendon_prop_in_area0(strName: str="钢束特性1", eType: str="IN", nMa
         bArea (int): 0 = 用户输入，固定为0
         dVal (float): 用户输入的钢束面积
         dPipe (float): 管道直径
-        frictionCoeff (float): 摩擦系数
-        deviationCoeff (float): 偏差系数
-        startingDefor (float): 起点变形
-        endDefor (float): 终点变形
+        dFrictionCoeff (float): 摩擦系数
+        dDeviationCoeff (float): 偏差系数
+        dStartingDefor (float): 起点变形
+        dEndDefor (float): 终点变形
         dTensioningCoeff (float): 张拉系数
         dTelaxationCoeff (float): 松弛系数
 
@@ -84,11 +85,11 @@ def osis_tendon_prop_in_area0(strName: str="钢束特性1", eType: str="IN", nMa
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_in_area1(strName: str="钢束特性1", eType: str="IN", nMat: int=1, bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", 
-                               dDiameter: float=1, nNum: int=10, dDeltaT: float=10, dPipe: float=10, 
-                               dFrictionCoeff: float=1.0, dDeviationCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
+def osis_tendon_prop_in_area1(strName: str="钢束特性1", eType: Literal["IN"]="IN", nMat: int=1, 
+                              bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", dDiameter: float=1, nNum: int=10, 
+                              dPipe: float=10, dFrictionCoeff: float=1.0, dDeviationCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
-    钢束特性-先张法-按规范输入面积
+    钢束特性-后张法-体内-按规范输入面积
     
     Args:
         strName (str): 钢束特性名称 
@@ -114,11 +115,11 @@ def osis_tendon_prop_in_area1(strName: str="钢束特性1", eType: str="IN", nMa
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_ex_area0(strName: str="钢束特性1", eType: str="EX", nMat: int=1, bArea: Literal[0]=0, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", 
-                               dDiameter: float=1, nNum: int=10, dDeltaT: float=10, dPipe: float=10, 
-                               dFrictionCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
+def osis_tendon_prop_ex_area0(strName: str="钢束特性1", eType: Literal["EX"]="EX", nMat: int=1, 
+                              bArea: Literal[0]=0, dVal: float=1, 
+                              dPipe: float=10, dFrictionCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
-    钢束特性-后张法体外-用户输入
+    钢束特性-后张法-体外-用户输入
     
     Args:
         strName (str): 钢束特性名称 
@@ -127,9 +128,9 @@ def osis_tendon_prop_ex_area0(strName: str="钢束特性1", eType: str="EX", nMa
         bArea (int): 0 = 用户输入，固定为0
         dVal (float): 用户输入的钢束面积
         dPipe (float): 管道直径
-        frictionCoeff (float): 摩擦系数
-        startingDefor (float): 起点变形
-        endDefor (float): 终点变形
+        dFrictionCoeff (float): 摩擦系数
+        dStartingDefor (float): 起点变形
+        dEndDefor (float): 终点变形
         dTensioningCoeff (float): 张拉系数
         dTelaxationCoeff (float): 松弛系数
 
@@ -139,11 +140,11 @@ def osis_tendon_prop_ex_area0(strName: str="钢束特性1", eType: str="EX", nMa
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_ex_area1(strName: str="钢束特性1", eType: str="EX", nMat: int=1, bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", 
-                               dDiameter: float=1, nNum: int=10, dDeltaT: float=10, dPipe: float=10, 
-                               dFrictionCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
+def osis_tendon_prop_ex_area1(strName: str="钢束特性1", eType: Literal["EX"]="EX", nMat: int=1, 
+                              bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", dDiameter: float=1, nNum: int=10,
+                              dPipe: float=10, dFrictionCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
-    钢束特性-后张法体外-按规范输入面积
+    钢束特性-后张法-体外-按规范输入面积
     
     Args:
         strName (str): 钢束特性名称 
@@ -156,9 +157,9 @@ def osis_tendon_prop_ex_area1(strName: str="钢束特性1", eType: str="EX", nMa
         dDiameter (float): 公称直径
         nNum (int)：每束钢束根数
         dPipe (float): 管道直径
-        frictionCoeff (float): 摩擦系数
-        startingDefor (float): 起点变形
-        endDefor (float): 终点变形
+        dFrictionCoeff (float): 摩擦系数
+        dStartingDefor (float): 起点变形
+        dEndDefor (float): 终点变形
         dTensioningCoeff (float): 张拉系数
         dTelaxationCoeff (float): 松弛系数
 

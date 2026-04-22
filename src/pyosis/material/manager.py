@@ -134,6 +134,8 @@ class MaterialManager:
         """
         materials = self._load()
         mat_no = [mat.no for mat in materials]
+        if len(mat_no) == 0:
+            return 1
         return max(mat_no) + 1
 
     # ── 增删改 ────────────────────────────────

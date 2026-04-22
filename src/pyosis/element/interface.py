@@ -197,7 +197,7 @@ def osis_element_mod(nOld: int=1, nNew: int=2):
     pass
 
 @REGISTRY.register("EleGrp")
-def osis_element_group(strName: str="单元组1", eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"]='a', param: list=[1]):
+def osis_element_group(strName: str="单元组1", eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"]='a', param: list=None):
     '''
     添加或移除单元
     

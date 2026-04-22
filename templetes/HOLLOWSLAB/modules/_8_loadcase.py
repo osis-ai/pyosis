@@ -21,7 +21,7 @@ def build_loadcases(engine: OSISEngine, mat_nos: list[int], elem_nos: list[int])
     for name, nNum, dPipe, dFriction, dDeviation, dStart, dEnd, dTension, dRelax in tendon_props:
         tendon.create_prop_in(
             name, mat_nos[2], "GBT5224_2014", 15.2, nNum,
-            0, dPipe, dFriction, dDeviation, dStart, dEnd, dTension, dRelax,
+            dPipe, dFriction, dDeviation, dStart, dEnd, dTension, dRelax,
         )
     
     # 钢束形状
