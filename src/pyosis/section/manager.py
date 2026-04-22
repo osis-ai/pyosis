@@ -189,49 +189,68 @@ class Section:
 
     no: int
     name: str
-    type_: int
-    height: float = 0.0
-    modeling_point_x: float = 0.0
-    modeling_point_y: float = 0.0
-    boundary: SectionBBox | None = None
-    offset: SectionOffset | None = None
-    prop: SectionProp | None = None
-    prop_factor: SectionPropFactor | None = None
+    type: int
+    prop: dict | None
+    prop_factor: dict | None
+    height: float
+    modeling_point_x: float
+    modeling_point_y: float
+    boundary: SectionBBox | None
+    offset_type_y: int
+    offset_type_z: int
+    offset_value_y: float
+    offset_value_z: float
     related_elements: list[int] = field(default_factory=list)
-    stress_points: list[SectionStressPoint] = field(default_factory=list)
+    stress_points: list[dict] = field(default_factory=list)
     definition: dict = field(default_factory=dict)
 
-    @property
-    def boundary_type(self) -> str:
-        """截面边界类型名称"""
-        return "Unknown"
+    @classmethod
+    def _from_dict(cls, d: dict) -> Section:    # todo: 没写完
+        """从接口 dict 构造 Material 对象（内部使用）"""
+        return cls(
+            no=d.get("no"),
+            name=d.get("name"),
+            type=d.get("type"),
+            prop=d.get("prop"),
+            prop_factor=d.get("propFactor"),
+            offset_type_y=d.get("offsetTypeY"),
+            offset_type_z=d.get("offsetTypeZ"),
+            offset_value_y=d.get("offsetValueY"),
+            offset_value_z=d.get("offsetValueZ"),
+            height=d.get("height", 0.0),
+            modeling_point_x=d.get("modelingPointX", 0.0),
+            modeling_point_y=d.get("modelingPointY", 0.0),
+            boundary=d.get("boundary", {}),
+            related_elements=list(d.get("relatedElements") or []),
+            stress_points=d.get("stressPoints"),
+        )
 
     def __repr__(self) -> str:
-        return f"Section(no={self.no}, type={self.boundary_type}, raw_type={self.type})"
+        return f"Section(no={self.no}, name={self.name}, type={self.type})"
 
     # ── 实例方法 ──────────────────────────────
 
     def set_offset(
         self,
         offset_type_y: Literal["Left", "Middle", "Right", "Manual"] = "Middle",
-        d_offset_value_y: float = 0.0,
+        offset_value_y: float = 0.0,
         offset_type_z: Literal["Top", "Center", "Bottom", "Manual"] = "Center",
-        d_offset_value_z: float = 0.0,
+        offset_value_z: float = 0.0,
     ) -> None:
         """设置截面偏移。"""
         ok, err = osis_section_offset(
-            self.no, offset_type_y, d_offset_value_y, offset_type_z, d_offset_value_z
+            self.no, offset_type_y, offset_value_y, offset_type_z, offset_value_z
         )
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 偏移失败: {err}")
 
     def set_mesh(
         self,
-        n_mesh_method: Literal[0, 1] = 0,
-        d_mesh_size: float = 0.0,
+        mesh_method: Literal[0, 1] = 0,
+        mesh_size: float = 0.0,
     ) -> None:
         """设置截面网格。"""
-        ok, err = osis_section_mesh(self.no, n_mesh_method, d_mesh_size)
+        ok, err = osis_section_mesh(self.no, mesh_method, mesh_size)
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 网格失败: {err}")
 
@@ -320,7 +339,7 @@ class SectionManager:
     # ── 数据加载 ──────────────────────────────
 
     def _load(self) -> None:
-        """从服务端加载所有截面信息（延迟加载，带缓存）"""
+        """从服务端加载所有截面信息"""
         if self._loaded:
             return
         resp = osis_client("GetAllSectionInfo", {})
@@ -328,7 +347,7 @@ class SectionManager:
             raise RuntimeError(resp["error"])
 
         data = resp.get("data", [])
-        self._sections = [self._parse_section(d) for d in data if isinstance(d, dict) and "no" in d]
+        self._sections = [Section._from_dict(d) for d in data if isinstance(d, dict) and "no" in d]
 
         self._sec_map = {sec.no: sec for sec in self._sections}
         self._loaded = True
@@ -341,12 +360,11 @@ class SectionManager:
         common = dict(
             no=d.get("no", 0),
             name=d.get("name", ""),
-            type_=raw_type,
+            type=raw_type,
             height=d.get("height", 0.0),
             modeling_point_x=d.get("modelingPointX", 0.0),
             modeling_point_y=d.get("modelingPointY", 0.0),
             boundary=d.get("boundary", {}),
-            offset=d.get("offset", {}),
             prop=d.get("prop", {}),
             prop_factor=d.get("propFactor", {}),
             related_elements=list(d.get("relatedElements") or []),

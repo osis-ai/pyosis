@@ -57,36 +57,47 @@ class Element:
     """
 
     no: int
-    element_type: ElementType  # BEAM3D, TRUSS, ...
+    type: ElementType  # BEAM3D, TRUSS, ...
     mat: int
     node_vec: list[int] = field(default_factory=list)   # 实际上就是 node_i 和 node_j
     node_i: int = 0
     node_j: int = 0
-    length: float = 0.0
     center: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    length: float = 0.0
     sec_vec: list[int] = field(default_factory=list)
     characters: list[int] = field(default_factory=list)
     loc_coor: dict[str, Any] | None = None
+    weight: dict[str, Any] | None = None
+    related_boundaries: list[int] = field(default_factory=list)
+    related_loads: list[str] = field(default_factory=list)
+    related_taper_eles: list[str] = field(default_factory=list)
+    selected: bool = False
+    plotted: bool = False
 
     @classmethod
     def _from_dict(cls, d: dict) -> Element:
         """从接口 dict 构造 Material 对象（内部使用）"""
         return cls(
             no=d.get("no"),
-            element_type=d.get("type", ""),
-            mat=d.get("mat", 0),
+            type=d.get("type"),
+            mat=d.get("mat"),
             node_vec=d.get("nodeVec"),
-            node_i=d.get("nodeI", 0),
-            node_j=d.get("nodeJ", 0),
-            length=d.get("length", 0.0),
-            center=d.get("center", [0.0, 0.0, 0.0]),
+            node_i=d.get("nodeI"),
+            node_j=d.get("nodeJ"),
+            center=d.get("centerCoorPoint"),
+            length=d.get("length"),
             sec_vec=d.get("secVec"),
             characters=d.get("characters"),
             loc_coor=d.get("locCoor"),
+            related_boundaries=d.get("relatedBoundary"),
+            related_loads=d.get("relatedLoad"),
+            related_taper_eles=d.get("relatedTaperEles"),
+            selected=d.get("selected"),
+            plotted=d.get("ploted")
         )
 
     def __repr__(self) -> str:
-        return f"Element(no={self.no}, type={self.element_type}, mat={self.mat}, nodes={self.node_vec})"
+        return f"Element(no={self.no}, type={self.type}, mat={self.mat}, nodes={self.node_vec})"
 
 # @dataclass(frozen=True)
 # class Beam3dElement(Element):
@@ -446,14 +457,24 @@ class ElementManager:
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int]) -> Element | list[Element | None]:   # todo: 重写
+    def get(self, no: int | list[int]) -> Element | list[Element | None] | None:
         """根据编号获取单个或多个单元 (O(k))"""
-        elements = self._load()
         if isinstance(no, int):
-            return next((obj for obj in elements if obj.no == no), None)
-        if isinstance(no, list):
-            return [next((obj for obj in elements if obj.no == it), None) for it in no]
-        raise TypeError(f"不支持的编号类型: {type(no)}")
+            no = [no]
+        elif isinstance(no, list):
+            ...
+        else:
+            raise TypeError(f"不支持的编号类型: {type(no)}")
+        resp = osis_client("GetElementInfoByNos", {"no": no})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        eles = [Element._from_dict(d) if d else None for d in resp.get("data", [])]
+
+        if len(eles) == 0:     # 有问题
+            return None
+        elif len(eles) == 1:   # 只查了一个
+            return eles[0]
+        return eles
     
     def get_group(self, name: str | list[str]) -> ElementGroup | list[ElementGroup | None]: # todo: 重写
         """

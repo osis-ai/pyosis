@@ -21,14 +21,6 @@ from .interface import osis_node, osis_node_del, osis_node_mod
 
 
 @dataclass(frozen=True)
-class Load:
-    """节点上的荷载"""
-
-    load_case: str
-    load_type: int
-
-
-@dataclass(frozen=True)
 class Node:
     """节点对象
 
@@ -43,11 +35,11 @@ class Node:
     hash_value: int = 0
     related_elements: list[int] = field(default_factory=list)
     related_boundaries: list[int] = field(default_factory=list)
-    related_loads: list[Load] = field(default_factory=list)
+    related_loads: list[str] = field(default_factory=list)
     related_setl_grps: list[str] = field(default_factory=list)
-    is_selected: bool = False
-    is_plotted: bool = False
-    is_free: bool = False
+    selected: bool = False
+    plotted: bool = False
+    free: bool = False
 
     # @property
     # def coord(self) -> tuple[float, float, float]:
@@ -59,18 +51,18 @@ class Node:
         """从接口 dict 构造 Node 对象（内部使用）"""
         return cls(
             no=d["no"],
-            x=d["x"],
-            y=d["y"],
-            z=d["z"],
-            precision=d.get("precision", 0),
-            hash_value=d.get("hashValue", 0),
-            related_elements=d.get("relatedElements",[]) or [],
-            related_boundaries=d.get("relatedBoundaries",[]) or [],
-            related_loads=d.get("relatedLoads",[]) or [],
-            related_setl_grps=d.get("relatedSetlGrps",[]) or [],
-            is_selected=d.get("isSelected", False),
-            is_plotted=d.get("isPloted", False),
-            is_free=d.get("isFree", False),
+            x=d.get("coordinate")["x"],
+            y=d.get("coordinate")["y"],
+            z=d.get("coordinate")["z"],
+            precision=d.get("precision"),
+            hash_value=d.get("hashValue"),
+            related_elements=d.get("relatedElements"),
+            related_boundaries=d.get("relatedBoundaries"),
+            related_loads=d.get("relatedLoads"),
+            related_setl_grps=d.get("relatedSetlGrps"),
+            selected=d.get("selected"),
+            plotted=d.get("ploted"),
+            free=d.get("free"),
         )
 
 
@@ -98,23 +90,10 @@ class NodeManager:
     """
 
     def __init__(self) -> None:
-        # self._nodes: list[Node] = []
-        # self._node_map: dict[int, Node] = {}  # 按编号索引：O(1) 查询
-        # self._element_map: dict[int, list[Node]] = {}  # 按单元反向索引
-        # self._loaded: bool = False
         ...
 
     # ── 数据加载 ──────────────────────────────
-
-    # def _reload_get(self, no: int, what: str) -> Node:
-    #     """创建/修改后从服务端重载并返回节点对象（内部使用）。"""
-    #     self._loaded = False
-    #     self._load()
-    #     nd = self._node_map.get(no)
-    #     if nd is None:
-    #         raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
-    #     return nd
-
+    
     def _load(self) -> list[Node]:
         """从服务端加载所有节点信息（延迟加载，带缓存）"""
         resp = osis_client("GetAllNodeInfo", {})
@@ -122,27 +101,7 @@ class NodeManager:
             raise RuntimeError(f"{resp['error']}")
         nodes = [Node._from_dict(d) for d in resp.get("data", []) if "no" in d]
         return nodes
-        # 构建索引：编号 -> 节点对象 (O(1) 查询)
-        # self._node_map = {node.no: node for node in self._nodes}
-
-        # # 构建反向索引：单元编号 -> 关联的节点列表 (O(k) 过滤)
-        # self._element_map = {}
-        # for node in self._nodes:
-        #     for elem_no in node.related_elements:
-        #         if elem_no not in self._element_map:
-        #             self._element_map[elem_no] = []
-        #         self._element_map[elem_no].append(node)
-
-        # self._loaded = True
-
-    # def refresh(self) -> None:
-    #     """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
-    #     self._nodes = []
-    #     self._node_map = {}
-    #     # self._element_map = {}
-    #     self._loaded = False
-    #     self._load()
-
+    
     # ── 增删改 ────────────────────────────────
 
     def _next_no(self) -> int:
@@ -188,7 +147,6 @@ class NodeManager:
         ok, err = osis_node_del(no)
         if not ok:
             raise RuntimeError(f"删除节点 {no} 失败: {err}")
-        # self._loaded = False
 
     def renumber(self, old_no: int, new_no: int) -> None:
         """修改节点编号
@@ -220,7 +178,7 @@ class NodeManager:
     # ── 查询 ──────────────────────────────────
 
     def get(self, no: int | list[int]) -> Node | list[Node] | None:
-        """根据编号获取单个节点 (O(1))
+        """根据编号获取 N 个节点 (O(N))
 
         Args:
             no: 节点编号
@@ -228,13 +186,21 @@ class NodeManager:
         Returns:
             Node 对象；节点不存在返回 None
         """
-        nodes = self._load()
         if isinstance(no, int):
-            return next((obj for obj in nodes if obj.no == no), None)
-        if isinstance(no, list):
-            return [next((obj for obj in nodes if obj.no == it), None) for it in no]
+            no = [no]
+        elif isinstance(no, list):
+            ...
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        resp = osis_client("GetNodeInfoByNos", {"no": no})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        nodes = [Node._from_dict(d) if d else None for d in resp.get("data", [])]
+        if len(nodes) == 0:     # 有问题
+            return None
+        elif len(nodes) == 1:   # 只查了一个
+            return nodes[0]
+        return nodes
 
     def all(self) -> list[Node]:
         """获取所有节点
