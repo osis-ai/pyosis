@@ -40,7 +40,7 @@ def osis_client(func_name: str, payload: dict) -> dict | tuple[bool, str]:
             url,
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={"Content-Type": "application/json; charset=utf-8"},
-            timeout=30,
+            timeout=300,
         )
 
         data = None

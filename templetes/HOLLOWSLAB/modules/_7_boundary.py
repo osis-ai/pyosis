@@ -1,6 +1,7 @@
 from pyosis.core.engine import OSISEngine
+from typing import Tuple
 
-def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> list[int]:
+def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int], list[str]]:
     """创建边界条件，返回边界编号列表 [bd1, bd2]"""
     boundary = engine.boundary
     

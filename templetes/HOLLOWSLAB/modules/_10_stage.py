@@ -36,7 +36,7 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     stg3.define_loadcase(1, 1, "", lc_barrier)
     
     # Stage 4: 徐变十年
-    stage.create(4, 3650.0, no=4, name="CS4_徐变十年")
+    stage.create(no=4, name="CS4_徐变十年", duration=3650.0)
     
     # Stage 5: 运营阶段
     stg5 = stage.create(no=5, name="CS5_运营阶段", duration=0.0)
@@ -44,4 +44,9 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     stg5.define_loadcase(1, 1, "", lc_temp_drop)
     stg5.define_loadcase(1, 1, "", lc_pos_temp)
     stg5.define_loadcase(1, 1, "", lc_neg_temp)
-    stg5.define_analysis(1, 1, "LIVE", la_lane)
+    stg5.define_analysis(1, "LIVE", la_lane)
+
+if __name__ == "__main__":
+    stage = OSISEngine().stage
+    stg1 = stage.create(no=1, name="CS1_主梁预制、张拉预应力", duration=7.0)
+    print(stg1)

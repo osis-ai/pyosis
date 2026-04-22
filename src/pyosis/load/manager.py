@@ -181,34 +181,61 @@ class LoadCase:
     def create_line_load(
             self,
             nEntity: int,
-            dFXI: float,
-            dFYI: float,
+            eCoordSystem: Literal[0, 1] = 1,
+            eLoadType: Literal[0, 1] = 1,
+            dOffsetXI: float = 0.0,
+            dOffsetYI: float = 0.0,
+            dOffsetZI: float = 0.0,
+            dFXI: float = 100,
+            dFYI: float = 100,
             dFZI: float = 0,
             dMXI: float = 0,
             dMYI: float = 0,
             dMZI: float = 0,
-            dFXJ: float = None,
-            dFYJ: float = None,
+            dOffsetXJ: float = 0.0,
+            dOffsetYJ: float = 0.0,
+            dOffsetZJ: float = 0.0,
+            dFXJ: float = 100,
+            dFYJ: float = 100,
             dFZJ: float = 0,
             dMXJ: float = 0,
             dMYJ: float = 0,
             dMZJ: float = 0,
-            dOffsetXI: float = 0.0,
-            dOffsetYI: float = 0.0,
-            dOffsetZI: float = 0.0,
-            dOffsetXJ: float = 1.0,  # 默认1.0，与dOffsetXI不同
-            dOffsetYJ: float = 0.0,
-            dOffsetZJ: float = 0.0,
     ) -> LoadCase:
         """添加线荷载
-        ...
+
+        对应底层命令: Load,LINE,strLCName,nEntity,eCoordSystem,eLoadType,
+                      dOffsetXI,dOffsetYI,dOffsetZI,dFXI,dFYI,dFZI,dMXI,dMYI,dMZI,
+                      dOffsetXJ,dOffsetYJ,dOffsetZJ,dFXJ,dFYJ,dFZJ,dMXJ,dMYJ,dMZJ;
+
+        Args:
+            nEntity: 单元编号
+            eCoordSystem: 坐标系，0=单元坐标系，1=整体坐标系
+            eLoadType: 荷载类型，0=连续荷载，1=离散荷载
+            dOffsetXI: I端偏移量X/L，输入范围[0,1]
+            dOffsetYI: I端Y轴偏移量
+            dOffsetZI: I端Z轴偏移量
+            dFXI: I端x方向集中力
+            dFYI: I端y方向集中力
+            dFZI: I端z方向集中力
+            dMXI: I端绕x轴集中弯矩
+            dMYI: I端绕y轴集中弯矩
+            dMZI: I端绕z轴集中弯矩
+            dOffsetXJ: J端偏移量X/L，输入范围[0,1]
+            dOffsetYJ: J端Y轴偏移量
+            dOffsetZJ: J端Z轴偏移量
+            dFXJ: J端x方向集中力
+            dFYJ: J端y方向集中力
+            dFZJ: J端z方向集中力
+            dMXJ: J端绕x轴集中弯矩
+            dMYJ: J端绕y轴集中弯矩
+            dMZJ: J端绕z轴集中弯矩
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
         """
-        if dFXJ is None:
-            dFXJ = dFXI
-        if dFYJ is None:
-            dFYJ = dFYI
         ok, err = osis_load_line(
-            "LINE", self.name, nEntity, 1, 1,
+            "LINE", self.name, nEntity, eCoordSystem, eLoadType,
             dOffsetXI, dOffsetYI, dOffsetZI, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI,
             dOffsetXJ, dOffsetYJ, dOffsetZJ, dFXJ, dFYJ, dFZJ, dMXJ, dMYJ, dMZJ,
         )
@@ -219,24 +246,52 @@ class LoadCase:
     def create_displacement(
             self,
             nEntity: int,
-            dDx: float = 0,
-            dDy: float = 0,
-            dDz: float = 0,
-            dRx: float = 0,
-            dRy: float = 0,
-            dRz: float = 0,
-            eps: float = 1e-15,
+            bDX: int = 1,
+            dDX: float = 0.0,
+            bDY: int = 0,
+            dDY: float = 0.0,
+            bDZ: int = 0,
+            dDZ: float = 0.0,
+            bRX: int = 0,
+            dRX: float = 0.0,
+            bRY: int = 0,
+            dRY: float = 0.0,
+            bRZ: int = 0,
+            dRZ: float = 0.0,
     ) -> LoadCase:
+        """添加强迫位移
+
+        对应底层命令: Load,DISPLACEMENT,strLCName,nEntity,
+                      bDX,dDX,bDY,dDY,bDZ,dDZ,bRX,dRX,bRY,dRY,bRZ,dRZ;
+
+        Args:
+            nEntity: 节点编号
+            bDX: X向平动是否施加，0=否，1=是
+            dDX: X向平动位移值
+            bDY: Y向平动是否施加，0=否，1=是
+            dDY: Y向平动位移值
+            bDZ: Z向平动是否施加，0=否，1=是
+            dDZ: Z向平动位移值
+            bRX: 绕X轴转角是否施加，0=否，1=是
+            dRX: 绕X轴转角值
+            bRY: 绕Y轴转角是否施加，0=否，1=是
+            dRY: 绕Y轴转角值
+            bRZ: 绕Z轴转角是否施加，0=否，1=是
+            dRZ: 绕Z轴转角值
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
         ok, err = osis_load_displacement(
             "DISPLACEMENT",
             self.name,
             nEntity,
-            1 if abs(dDx) > eps else 0, dDx,
-            1 if abs(dDy) > eps else 0, dDy,
-            1 if abs(dDz) > eps else 0, dDz,
-            1 if abs(dRx) > eps else 0, dRx,
-            1 if abs(dRy) > eps else 0, dRy,
-            1 if abs(dRz) > eps else 0, dRz,
+            bDX, dDX,
+            bDY, dDY,
+            bDZ, dDZ,
+            bRX, dRX,
+            bRY, dRY,
+            bRZ, dRZ,
         )
         if not ok:
             raise RuntimeError(f"添加强迫位移到工况 {self.name} 失败: {err}")
@@ -245,20 +300,27 @@ class LoadCase:
     def create_uniform_temperature(
             self,
             nEntity: int,
-            dTemp: float,
             eDirect: Literal["X", "Y", "Z"] = "X",
+            dTemp: float = 1.0,
+            dLength: float = None,
     ) -> LoadCase:
         """添加均匀温度荷载
 
+        对应底层命令: Load,UTEMP,strLCName,nEntity,eDirect,dTemp,dLength;
+
         Args:
             nEntity: 单元编号
+            eDirect: 作用方向
+                * X: 整体升降温
+                * Y: 横向梯度温度
+                * Z: 横向梯度温度
             dTemp: 温差值（正为升温）
-            eDirect: 作用方向，X=整体升降温，Y/Z=横向梯度温度
+            dLength: Y/Z方向的长度，None则自动通过截面计算
 
         Raises:
             RuntimeError: 添加失败时抛出异常
         """
-        ok, err = osis_load_utemp("UTEMP", self.name, nEntity, eDirect, dTemp)
+        ok, err = osis_load_utemp("UTEMP", self.name, nEntity, eDirect, dTemp, dLength)
         if not ok:
             raise RuntimeError(f"添加均匀温度荷载到工况 {self.name} 失败: {err}")
         return self.refresh_detail()
@@ -266,10 +328,10 @@ class LoadCase:
     def create_gradient_temperature(
             self,
             nEntity: int,
-            eDirect: str = "Y",
-            eGTempType: str = "R",
+            eDirect: Literal["Y", "Z"] = "Y",
+            eGTempType: Literal["R", "T", "C", "B"] = "R",
             nNum: int = 1,
-            param: list = ["", 10, 10, 0, 0],
+            param: list = None,
     ) -> LoadCase:
         """添加梯度温度荷载
 
@@ -284,11 +346,19 @@ class LoadCase:
                 * C = 从截面中心到温度变化点的距离
                 * B = 从梁底到温度变化点的距离
             nNum: 梯度温度荷载段数
-            param: 每个梯度温度荷载段对应一组参数 [B, H1, T1, H2, T2]
+            param: 每个梯度温度荷载段对应一组参数，多组参数按顺序填入
+                每组参数包含：[B, H1, T1, H2, T2]
+                - B (float): 考虑温度变化的宽度，可设置为空""
+                - H1 (float): 参考位置至定义温度间距离
+                - T1 (float): H1处对应温度
+                - H2 (float): 参考位置至定义温度间距离
+                - T2 (float): H2处对应温度
 
         Raises:
             RuntimeError: 添加失败时抛出异常
         """
+        if param is None:
+            param = ["", 10, 10, 0, 0]
         ok, err = osis_load_gtemp("GTEMP", self.name, nEntity, eDirect, eGTempType, nNum, param)
         if not ok:
             raise RuntimeError(f"添加梯度温度荷载到工况 {self.name} 失败: {err}")
@@ -312,12 +382,22 @@ class LoadCase:
     ) -> LoadCase:
         """添加初始内力荷载
 
+        在单元 I 端和 J 端分别施加局部坐标系下的轴力和弯矩。
+
         Args:
             nEntity: 单元编号
-            dFXI, dFYI, dFZI: I 端轴力（局部坐标）
-            dMXI, dMYI, dMZI: I 端弯矩
-            dFXJ, dFYJ, dFZJ: J 端轴力（局部坐标）
-            dMXJ, dMYJ, dMZJ: J 端弯矩
+            dFXI: I端局部x向轴力
+            dFYI: I端局部y向轴力
+            dFZI: I端局部z向轴力
+            dMXI: I端绕x轴弯矩
+            dMYI: I端绕y轴弯矩
+            dMZI: I端绕z轴弯矩
+            dFXJ: J端局部x向轴力
+            dFYJ: J端局部y向轴力
+            dFZJ: J端局部z向轴力
+            dMXJ: J端绕x轴弯矩
+            dMYJ: J端绕y轴弯矩
+            dMZJ: J端绕z轴弯矩
 
         Raises:
             RuntimeError: 添加失败时抛出异常
@@ -342,31 +422,6 @@ class LoadCase:
         if not ok:
             raise RuntimeError(f"添加初始内力荷载到工况 {self.name} 失败: {err}")
         return self.refresh_detail()
-
-    # def create_initial_force(
-    #     self,
-    #     nEntity: int,
-    #     dFXI: float = 100,
-    #     dFYI: float = 100,
-    #     dFZI: float = 0,
-    #     dMXI: float = 0,
-    #     dMYI: float = 0,
-    #     dMZI: float = 0,
-    # ) -> LoadCaseManager:
-    #     """添加初始内力荷载
-    #
-    #     Args:
-    #         nEntity: 单元编号
-    #         dFXI, dFYI, dFZI: I端集中力
-    #         dMXI, dMYI, dMZI: I端集中弯矩
-    #
-    #     Raises:
-    #         RuntimeError: 添加失败时抛出异常
-    #     """
-    #     ok, err = osis_load_initial("INITIAL", self.name, nEntity, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI)
-    #     if not ok:
-    #         raise RuntimeError(f"添加初始内力荷载到工况 {self.name} 失败: {err}")
-    #     return self
 
     def create_prestress(
             self,

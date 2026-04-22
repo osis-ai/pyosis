@@ -63,7 +63,7 @@ def build_model(run_analysis: bool = False):
     
     # 7. 边界（依赖 node）
     print("[7/10] 创建边界条件...")
-    boundary_group_name = build_boundaries(engine, node_nos)
+    boundary_nos, boundary_group_name = build_boundaries(engine, node_nos)
     
     # 8. 荷载工况（依赖 mat, elem）
     print("[8/10] 创建荷载工况和钢束...")
@@ -71,8 +71,8 @@ def build_model(run_analysis: bool = False):
     
     # 9. 活载分析
     print("[9/10] 创建分析...")
-    settle_analysis_names = build_settle_analysis(engine)
-    live_analysis_names = build_live_analysis(engine)
+    settle_analysis_names = build_settle_analysis(engine, node_nos)
+    live_analysis_names = build_live_analysis(engine, elem_group_names)
     
     # 10. 施工阶段（依赖单元组、边界组、荷载工况、沉降分析、移动荷载分析）
     print("[10/10] 创建施工阶段...")

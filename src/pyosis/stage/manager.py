@@ -144,7 +144,7 @@ class Stage:
             RuntimeError: 操作失败时抛出异常
 
         """
-        ok, err = osis_stage_element(self.no, eOP, eType, strGroupName)
+        ok, err = osis_stage_element(self.no, eOP, eType, strGroupName, nBirth, ePart)
 
         if not ok:
             raise RuntimeError(f"阶段 {self.no} 定义单元组 {strGroupName} 失败: {err}")
@@ -231,7 +231,6 @@ class Stage:
         ok, err = osis_stage_analysis(self.no, eOP, eType, lc_name)
         if not ok:
             raise RuntimeError(f"阶段 {self.no} 激活分析工况 {eType} 失败: {err}")
-        self._loaded = False
 
 
 # ──────────────────────────────────────────────
@@ -333,12 +332,13 @@ class StageManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        self.refresh()
+        # self.refresh()
         # if no is None:
         #     no = self._next_no()
         ok, err = osis_stage(no, name, duration)
         if not ok:
             raise RuntimeError(f"创建施工阶段 {no} 失败: {err}")
+        self._loaded = False
         return self.get(no)
 
     def delete(self, no: int) -> None:

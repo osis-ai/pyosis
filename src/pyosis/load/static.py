@@ -65,7 +65,7 @@ def osis_load_nforce(eType: str="NFORCE", strLCName: str="自定义工况1", nEn
     pass
 
 @REGISTRY.register("Load")
-def osis_load_line(eType: str="LINE", strLCName: str="自定义工况1", nEntity: int=1, eCoordSystem: Literal[0, 1]=1, eLoadType: Literal[0, 1]=1, 
+def osis_load_line(eType: Literal['LINE'], strLCName: str, nEntity: int, eCoordSystem: Literal[0, 1], eLoadType: Literal[0, 1], 
                    dOffsetXI: float=0, dOffsetYI: float=0, dOffsetZI: float=0, dFXI: float=100, dFYI: float=100, dFZI: float=0, dMXI: float=0, dMYI: float=0, dMZI: float=0,
                    dOffsetXJ: float=0, dOffsetYJ: float=0, dOffsetZJ: float=0, dFXJ: float=100, dFYJ: float=100, dFZJ: float=0, dMXJ: float=0, dMYJ: float=0, dMZJ: float=0):
     '''

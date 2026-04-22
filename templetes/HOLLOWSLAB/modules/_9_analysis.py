@@ -1,19 +1,20 @@
 from pyosis.core.engine import OSISEngine
 
-def build_settle_analysis(engine: OSISEngine):
+def build_settle_analysis(engine: OSISEngine, node_nos: list[int]):
     """创建沉降分析"""
     settle_analysis_names = []
     
     return settle_analysis_names
 
 
-def build_live_analysis(engine: OSISEngine):
+def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     """创建活载分析（活载等级、车道、工况）"""
     live = engine.live
     
     # 活载等级
     grade1 = live.create_grade_highway("简支空心板移动荷载", "JTGD60_2015", "HIGHWAY_I")
     
+    eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
     # 车道
     lane1 = live.create_lane_ve(
         name="车道",
@@ -21,7 +22,7 @@ def build_live_analysis(engine: OSISEngine):
         wheel=1.80,
         eOriention=1,
         eRef=0,
-        ref_elems=["主梁单元"],
+        ref_elems=eg_main_beam,
         offsetY=0.0,
         offsetZ=0.0,
     )

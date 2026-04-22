@@ -233,7 +233,7 @@ class Live:
         Raises:
             RuntimeError: 设置失败时抛出异常
         """
-        ok, err = osis_live_analysis_factor(self.name, *factors)
+        ok, err = osis_live_analysis_factor(self.name, factors)
         if not ok:
             raise RuntimeError(f"设置横向折减系数失败: {err}")
 
