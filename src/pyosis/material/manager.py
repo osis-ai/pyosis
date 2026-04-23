@@ -47,34 +47,36 @@ class Material:
     no: int
     name: str
     material_type: MaterialType # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
-    code: str = ""              # 规范名
-    grade: str = ""             # 材料等级
-    e: float = 0.0              # 弹性模量(Pa)
-    g: float = 0.0              # 剪切模量(Pa)
-    mu: float = 0.0             # 泊松比
-    exp_coeff: float = 0.0      # 线膨胀系数(1 / ℃)
-    unit_weight: float = 0.0    # 容重(N / m ^ 3)
-    density: float = 0.0        # 质量密度(kg / m ^ 3)
-    damping: float = 0.0        # 阻尼比
-    creep_shrink_no: int = 0    # 收缩徐变编号
+    code: str                   # 规范名
+    grade: str                  # 材料等级
+    e: float                    # 弹性模量(Pa)
+    g: float                    # 剪切模量(Pa)
+    mu: float                   # 泊松比
+    exp_coeff: float            # 线膨胀系数(1 / ℃)
+    unit_weight: float          # 容重(N / m ^ 3)
+    density: float              # 质量密度(kg / m ^ 3)
+    damping: float              # 阻尼比
+    creep_shrink_no: int        # 收缩徐变编号
 
     @classmethod
     def _from_dict(cls, d: dict) -> Material:
         """从接口 dict 构造 Material 对象（内部使用）"""
         return cls(
-            no=d.get("no", 0),
-            name=d.get("name", ""),
-            material_type=d.get("materialType", "UNKNOWN"),
-            code=d.get("code", ""),
-            grade=d.get("grade", ""),
-            e=d.get("e", 0.0),
-            g=d.get("g", 0.0),
-            mu=d.get("mu", 0.0),
-            exp_coeff=d.get("expCoeff", 0.0),
-            unit_weight=d.get("unitWeight", 0.0),
-            density=d.get("density", 0.0),
-            damping=d.get("damping", 0.0),
-            creep_shrink_no=d.get("creepShrinkNo", 0),
+            no=d.get("no"),
+            name=d.get("name"),
+            material_type=d.get("materialType"),
+            code=d.get("code"),
+            grade=d.get("grade"),
+            e=d.get("e"),
+            g=d.get("g"),
+            mu=d.get("mu"),
+            exp_coeff=d.get("expCoeff"),
+            unit_weight=d.get("unitWeight"),
+            density=d.get("density"),
+            damping=d.get("damping"),
+
+            # 临时使用
+            creep_shrink_no=d.get("creepShrinkNo"),
         )
 
 
@@ -98,9 +100,6 @@ class MaterialManager:
     """
 
     def __init__(self) -> None:
-        # self._materials: list[Material] = []
-        # self._mat_map: dict[int, Material] = {}  # 按编号索引：O(1) 查询
-        # self._loaded: bool = False
         ...
 
     # ── 数据加载 ──────────────────────────────
@@ -114,18 +113,7 @@ class MaterialManager:
             Material._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]
 
-        # 构建索引：编号 -> 材料对象 (O(1) 查询)
-        # self._mat_map = {mat.no: mat for mat in self._materials}
-
-        # self._loaded = True
         return materials
-
-    # def refresh(self) -> None:
-    #     """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
-    #     self._materials = []
-    #     self._mat_map = {}
-    #     self._loaded = False
-    #     self._load()
 
     def _next_no(self) -> int:
         """生成下一个可用材料编号
@@ -349,7 +337,7 @@ class MaterialManager:
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int]) -> Material | list[Material | None]:     # todo: rewrite
+    def get(self, no: int | list[int], expected_cls: type[Material]=Material) -> Material | list[Material | None]:     # todo: rewrite
         """根据编号获取单个或多个材料 (O(k))
 
         Args:
@@ -358,13 +346,21 @@ class MaterialManager:
         Returns:
             Material 对象或数组；材料不存在返回 None
         """
-        materials = self._load()
         if isinstance(no, int):
-            return next((obj for obj in materials if obj.no == no), None)
-        if isinstance(no, list):
-            return [next((obj for obj in materials if obj.no == it), None) for it in no]
+            no = [no]
+        elif isinstance(no, list):
+            ...
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        resp = osis_client("GetMaterialInfoByNos", {"no": no})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        mats = [expected_cls._from_dict(d) if d else None for d in resp.get("data", [])]
+        if len(mats) == 0:     # 有问题
+            return None
+        elif len(mats) == 1:   # 只查了一个
+            return mats[0]
+        return mats
 
     def all(self) -> list[Material]:
         """获取所有材料
@@ -385,7 +381,6 @@ class MaterialManager:
         return len(materials)
 
     def __repr__(self) -> str:
-        # self._load()
         return f"MaterialManager()"
 
 
