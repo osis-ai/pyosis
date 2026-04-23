@@ -46,7 +46,7 @@ class Material:
 
     no: int
     name: str
-    material_type: MaterialType # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
+    type: MaterialType # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
     code: str                   # 规范名
     grade: str                  # 材料等级
     e: float                    # 弹性模量(Pa)
@@ -64,7 +64,7 @@ class Material:
         return cls(
             no=d.get("no"),
             name=d.get("name"),
-            material_type=d.get("materialType"),
+            type=d.get("materialType"),
             code=d.get("code"),
             grade=d.get("grade"),
             e=d.get("e"),
@@ -79,6 +79,8 @@ class Material:
             creep_shrink_no=d.get("creepShrinkNo"),
         )
 
+    # def __repr__(self) -> str:
+    #     return f"Material(no={self.no}, name={self.name!r}, type={self.type})"
 
 # ──────────────────────────────────────────────
 # 管理类

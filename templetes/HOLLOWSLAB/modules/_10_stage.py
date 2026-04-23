@@ -57,18 +57,23 @@ if __name__ == "__main__":
     from _0_engine import engine
     
     ele_groups = engine.element.group.all()
+    print("element groups", ele_groups)
     elem_group_names = [g.name for g in ele_groups]
     bd_groups = engine.boundary.group.all()
+    print("boundary groups", ele_groups)
     bd_group_names = [g.name for g in bd_groups]
     
     loadcases = engine.load.all()
+    print("loadcases", loadcases)
     lc_names = [lc.name for lc in loadcases]
 
-    settle = engine.settlement.all()
-    settle_analysis = [sa.name for sa in settle]
+    settles = engine.settlement.all()
+    print("settlements", settles)
+    settle_analysis = [sa.name for sa in settles]
 
     lives = engine.live.all_lives()
-    live_analysis = [l.name for l in lives]
+    print("lives", settles)
+    live_analysis = [la.name for la in lives]
     
     build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_analysis, live_analysis)
     print("施工阶段创建完成")

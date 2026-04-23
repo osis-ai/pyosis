@@ -67,6 +67,9 @@ class Node:
             plotted=d.get("ploted"),
             free=d.get("free"),
         )
+    
+    def __repr__(self) -> str:
+        return f"Node(no={self.no}, x={self.x}, y={self.y}, z={self.z})"
 
 
 # ──────────────────────────────────────────────

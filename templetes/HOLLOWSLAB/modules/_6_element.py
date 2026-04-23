@@ -61,12 +61,15 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
 if __name__ == "__main__":
     from _0_engine import engine
     mats = engine.material.all()
+    print("materials: ", mats)
     mat_nos = [m.no for m in mats]
-    secs = engine.material.all()
+    secs = engine.section.all()
+    print("sections: ", secs)
     sec_nos = [s.no for s in secs]
     nodes = engine.node.all()
+    print("nodes: ", nodes)
     node_nos = [n.no for n in nodes]
-    
+
     elem_nos, elem_groups = build_elements(engine, mat_nos, sec_nos, node_nos)
     print(elem_nos)
     print(elem_groups)

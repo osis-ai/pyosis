@@ -59,6 +59,7 @@ if __name__ == "__main__":
     from _0_engine import engine
     
     ele_groups = engine.element.group.all()
+    print("element groups", ele_groups)
     elem_group_names = [g.name for g in ele_groups]
     
     live_names = build_live_analysis(engine, elem_group_names)

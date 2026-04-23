@@ -132,9 +132,13 @@ if __name__ == "__main__":
     
     # 从 engine 获取已有数据
     mats = engine.material.all()
+    print("materials: ", mats)
     mat_nos = [m.no for m in mats]
     elems = engine.element.all()
+    print("elements: ", elems)
     elem_nos = [e.no for e in elems]
+    
+    # print("geometrys: ", geoms)
     geo_names = ["钢束-1-N1", "钢束-2-N2"]  # 几何名称固定
     
     lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos)
