@@ -7,7 +7,7 @@ from typing import Literal
 from ..core import REGISTRY
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('Code')
 def osis_code(eRowType: Literal["Code"], ePara: Literal["JTG", "JTG18", "JTGD64"]):
     """设置验算规范（仅能设置一个；软件侧若未下发本命令则默认为 JTG18）。
 
@@ -28,18 +28,15 @@ def osis_code(eRowType: Literal["Code"], ePara: Literal["JTG", "JTG18", "JTGD64"
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CdEleSel')
 def osis_cd_ele_sel(
-    eRowType: Literal["CdEleSel"],
     eOP: Literal["All", "None", "Inve", "S", "A", "U", "R"],
     *paras: str | int,
 ):
     """后处理选择单元。
 
-    命令列顺序：Cd,CdEleSel,OP,para_i,...
 
     Args:
-        eRowType (str): 固定为 CdEleSel
         eOP (str): 操作，不区分大小写。可选值：
             * All — 全选
             * None — 全不选
@@ -58,15 +55,12 @@ def osis_cd_ele_sel(
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CdEleAct')
 def osis_cd_ele_act(
-    eRowType: Literal["CdEleAct"],
     eOP: Literal["All", "Inve", "S", "A", "U", "R"],
     *paras: str | int,
 ):
-    """后处理激活单元。
-
-    命令列顺序：Cd,CdEleAct,OP,para_i,...
+    """后处理激活单元
 
     Args:
         eRowType (str): 固定为 CdEleAct
@@ -87,14 +81,11 @@ def osis_cd_ele_act(
     pass
 
 
-@REGISTRY.register('Cd')
-def osis_cd_dl(eRowType: Literal["CdDL"], nLevel: Literal[1, 2, 3] = 1):
+@REGISTRY.register('CdDL')
+def osis_cd_dl( nLevel: Literal[1, 2, 3] = 1):
     """设置设计安全等级（需先选中单元；软件侧若未设置则默认为一级）。
 
-    命令列顺序：Cd,CdDL,Level
-
     Args:
-        eRowType (str): 固定为 CdDL
         nLevel (int): 等级，可选值 1、2、3，分别对应一级、二级、三级
 
     Returns:
@@ -105,19 +96,15 @@ def osis_cd_dl(eRowType: Literal["CdDL"], nLevel: Literal[1, 2, 3] = 1):
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CdPC')
 def osis_cd_pc(
-    eRowType: Literal["CdPC"],
     eMemberType: Literal["EPC", "APC", "BPC", "RC", "PierCap"] | None = None,
     eConstructType: Literal["Pre", "Cast"] | None = None,
     ePCTensioningType: Literal["Pre", "Post"] | None = None,
 ):
     """设置构件类型、PC 构件施工方式及张拉方式（需先选中单元）。
 
-    命令列顺序：Cd,CdPC,MemberType,ConstructType,PCTensioningType
-
     Args:
-        eRowType (str): 固定为 CdPC
         eMemberType (str): 构件类型；为 None 时不输出本列及后续列（不修改相关设置）。可选值：
             * EPC — 全预应力
             * APC — A 类预应力
@@ -138,14 +125,11 @@ def osis_cd_pc(
     pass
 
 
-@REGISTRY.register('Cd')
-def osis_cd_prs_ratio(eRowType: Literal["CdPRSRatio"], dRatio: float = 1.0):
+@REGISTRY.register('CdPRSRatio')
+def osis_cd_prs_ratio(dRatio: float = 1.0):
     """设置基于截面底缘起算多少倍 h 范围内预应力弯起钢筋参与抗剪验算（需先选中单元）。
 
-    命令列顺序：Cd,CdPRSRatio,Ratio
-
     Args:
-        eRowType (str): 固定为 CdPRSRatio
         dRatio (float): 倍数，取值范围 [0.0, 1.0]；软件侧默认 1.0
 
     Returns:
@@ -156,11 +140,9 @@ def osis_cd_prs_ratio(eRowType: Literal["CdPRSRatio"], dRatio: float = 1.0):
     pass
 
 
-@REGISTRY.register('Cd')
-def osis_cd_csc_ratio(eRowType: Literal["CdCSCRatio"], dRatio: float = 0.8):
+@REGISTRY.register('CdCSCRatio')
+def osis_cd_csc_ratio(dRatio: float = 0.8):
     """设置施工阶段混凝土强度折减系数（需先选中单元）。
-
-    命令列顺序：Cd,CdCSCRatio,Ratio
 
     Args:
         eRowType (str): 固定为 CdCSCRatio
@@ -174,18 +156,14 @@ def osis_cd_csc_ratio(eRowType: Literal["CdCSCRatio"], dRatio: float = 0.8):
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CdE')
 def osis_cd_e(
-    eRowType: Literal["CdE"],
     nType: Literal[1, 2, 3, 4, 5, 6, 7] | None = None,
     strGrade: Literal["A", "B", "C", "D", "E", "E/F", "D/E/F"] | None = None,
 ):
     """设置环境类别和环境等级（需先选中单元；软件侧默认一般环境、等级 A）。
 
-    命令列顺序：Cd,CdE,Type,Grade
-
     Args:
-        eRowType (str): 固定为 CdE
         nType (int): 环境类别，可选值 1～7：
             * 1 — 一般环境
             * 2 — 冻融环境
@@ -207,9 +185,8 @@ def osis_cd_e(
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CdCrack')
 def osis_cd_crack(
-    eRowType: Literal["CdCrack"],
     dC1: float | str | None = None,
     dC2: float | str | None = None,
     dC3: float | str | None = None,
@@ -217,10 +194,7 @@ def osis_cd_crack(
 ):
     """设置裂缝计算参数（需先选中单元）。
 
-    命令列顺序：Cd,CdCrack,C1,C2,C3,Cover
-
     Args:
-        eRowType (str): 固定为 CdCrack
         dC1 (float): 参数 C1，须大于 0；软件侧默认 1.0
         dC2 (float): 参数 C2，须大于 0；软件侧默认 1.5
         dC3 (float): 参数 C3，须大于 0；软件侧默认 1.0
@@ -237,11 +211,9 @@ def osis_cd_crack(
     pass
 
 
-@REGISTRY.register('Cd')
-def osis_cd_auto_c2(eRowType: Literal["CdAutoC2"], strPara: Literal["My", "Mz", "Nx"]):
+@REGISTRY.register('CdAutoC2')
+def osis_cd_auto_c2(strPara: Literal["My", "Mz", "Nx"]):
     """自动计算裂缝参数 C2（长期效应影响系数）（需先选中单元）。
-
-    命令列顺序：Cd,CdAutoC2,Para
 
     Args:
         eRowType (str): 固定为 CdAutoC2
@@ -256,18 +228,14 @@ def osis_cd_auto_c2(eRowType: Literal["CdAutoC2"], strPara: Literal["My", "Mz", 
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CdCrackWeld')
 def osis_cd_crack_weld(
-    eRowType: Literal["CdCrackWeld"],
-    nPara: Literal[0, 1] | None = None,
-    dFactor: float | None = None,
+    nPara: Literal[0, 1],
+    dFactor: float = 1.3,
 ):
     """设置焊接钢筋骨架系数（需先选中单元）。
 
-    命令列顺序：Cd,CdCrackWeld,Para,Factor
-
     Args:
-        eRowType (str): 固定为 CdCrackWeld
         nPara (int): 0 — 无焊接钢筋骨架（默认）；1 — 有焊接钢筋骨架
         dFactor (float): 焊接钢筋骨架系数，须大于 0；软件侧默认 1.3，仅在 nPara 为 1 时生效
 
@@ -282,13 +250,12 @@ def osis_cd_crack_weld(
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CdGeoLCo')
 def osis_cd_geo_lco(
-    eRowType: Literal["CdGeoLCo"],
-    dLy: float | str | None = None,
-    dKy: float | str | None = None,
-    dLz: float | str | None = None,
-    dKz: float | str | None = None,
+    dLy: float,
+    dKy: float,
+    dLz: float,
+    dKz: float,
 ):
     """设置构件几何长度及计算长度系数（需先选中单元）。
 
@@ -312,11 +279,9 @@ def osis_cd_geo_lco(
     pass
 
 
-@REGISTRY.register('Cd')
-def osis_cd_check(eRowType: Literal["CdCheck"], strPara: Literal["All", "all", "None", "none"] | str):
+@REGISTRY.register('CdCheck')
+def osis_cd_check(strPara: Literal["All", "None"] | str):
     """设置验算项开关（需先选中单元）。
-
-    命令列顺序：Cd,CdCheck,Para
 
     Args:
         eRowType (str): 固定为 CdCheck
@@ -332,9 +297,8 @@ def osis_cd_check(eRowType: Literal["CdCheck"], strPara: Literal["All", "all", "
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('Check')
 def osis_check_add(
-    eRowType: Literal["Check"],
     eItem: Literal[
         "UltM", "UltN", "Shear", "CrackS", "CrackL", "CrackWeb", "CrackWidth",
         "SSNC", "SSPC", "CSNC", "CSNT",
@@ -343,10 +307,7 @@ def osis_check_add(
 ):
     """添加验算作用。
 
-    命令列顺序：Cd,Check,Item,CombineName
-
     Args:
-        eRowType (str): 固定为 Check
         eItem (str): 验算项代号，如 UltM、UltN、Shear、CrackS、CrackL、CrackWeb、CrackWidth、
             SSNC、SSPC、CSNC、CSNT（与荷载组合类型匹配关系见规范说明）
         strCombineName (str): 荷载组合名称（可为工况或包络）
@@ -359,14 +320,9 @@ def osis_check_add(
     pass
 
 
-@REGISTRY.register('Cd')
-def osis_check_solve(eRowType: Literal["CheckSolve"] = "CheckSolve"):
+@REGISTRY.register('CheckSolve')
+def osis_check_solve():
     """计算验算作用。
-
-    命令列顺序：Cd,CheckSolve
-
-    Args:
-        eRowType (str): 固定为 CheckSolve，可缺省
 
     Returns:
         tuple (bool, str):
@@ -376,9 +332,8 @@ def osis_check_solve(eRowType: Literal["CheckSolve"] = "CheckSolve"):
     pass
 
 
-@REGISTRY.register('Cd')
+@REGISTRY.register('CheckDel')
 def osis_check_del(
-    eRowType: Literal["CheckDel"],
     strItem: (
         Literal[
             "UltM", "UltN", "Shear", "CrackS", "CrackL", "CrackWeb", "CrackWidth",
@@ -391,10 +346,7 @@ def osis_check_del(
 ):
     """删除验算作用。
 
-    命令列顺序：Cd,CheckDel,Item,CombineName
-
     Args:
-        eRowType (str): 固定为 CheckDel
         strItem (str): All / all — 删除所有验算；具体验算项代号同 Check；
             传空字符串 \"\" 表示 Item 缺省 — 删除该荷载组合名称下的全部验算作用
         strCombineName (str): 荷载组合名称；在 strItem 为 All / all 时通常可省略（为 None 时不输出该列）

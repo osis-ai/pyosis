@@ -37,13 +37,13 @@ def build_model(run_analysis: bool = False):
     print("开始建模：简支空心板桥梁")
     print("=" * 50)
     
-    # 1. 全局设置
+    # 1. 全局设置（无依赖）
     print("\n[1/10] 设置全局控制参数...")
     setup_control(engine)
     
-    # 2. 几何属性
+    # 2. 几何属性（无依赖）
     print("[2/10] 设置几何属性（钢束线型）...")
-    setup_property(engine)
+    geo_names = setup_property(engine)
     
     # 3. 材料（无依赖）
     print("[3/10] 创建材料...")
@@ -65,11 +65,11 @@ def build_model(run_analysis: bool = False):
     print("[7/10] 创建边界条件...")
     boundary_nos, boundary_group_name = build_boundaries(engine, node_nos)
     
-    # 8. 荷载工况（依赖 mat, elem）
+    # 8. 荷载工况（依赖 geo, mat, elem）
     print("[8/10] 创建荷载工况和钢束...")
-    loadcase_names = build_loadcases(engine, mat_nos, elem_nos)
+    loadcase_names = build_loadcases(engine, geo_names, mat_nos, elem_nos)
     
-    # 9. 活载分析
+    # 9. 活载分析（依赖 node, elem）
     print("[9/10] 创建分析...")
     settle_analysis_names = build_settle_analysis(engine, node_nos)
     live_analysis_names = build_live_analysis(engine, elem_group_names)

@@ -57,15 +57,15 @@ def osis_NSUBST(NLS: int, NSBMX: int):
     '''
     pass
 
-@REGISTRY.register("ModOpt")        # 暂时先放在这
-def osis_mod_opt(nMod: int=1):
-    '''
-    定义模态分析所需的特征值最大数目
+# @REGISTRY.register("ModOpt")        # 暂时先放在这
+# def osis_mod_opt(nMod: int=1):
+#     '''
+#     定义模态分析所需的特征值最大数目
     
-    Args:
-        nMod (int): 需要计算的特征值最大数目（缺省值：1）
+#     Args:
+#         nMod (int): 需要计算的特征值最大数目（缺省值：1）
 
-    Returns:
-        tuple (bool, str): 是否成功，失败原因
-    '''
-    pass
+#     Returns:
+#         tuple (bool, str): 是否成功，失败原因
+#     '''
+#     pass

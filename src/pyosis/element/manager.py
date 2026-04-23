@@ -457,7 +457,7 @@ class ElementManager:
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int]) -> Element | list[Element | None] | None:
+    def get(self, no: int | list[int], expected_cls: type[Element]=Element) -> Element | list[Element | None] | None:
         """根据编号获取单个或多个单元 (O(k))"""
         if isinstance(no, int):
             no = [no]
@@ -468,7 +468,7 @@ class ElementManager:
         resp = osis_client("GetElementInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        eles = [Element._from_dict(d) if d else None for d in resp.get("data", [])]
+        eles = [expected_cls._from_dict(d) if d else None for d in resp.get("data", [])]
 
         if len(eles) == 0:     # 有问题
             return None

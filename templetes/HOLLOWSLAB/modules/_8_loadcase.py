@@ -1,6 +1,6 @@
 from pyosis.core.engine import OSISEngine
 
-def build_loadcases(engine: OSISEngine, mat_nos: list[int], elem_nos: list[int]) -> list[str]:
+def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int], elem_nos: list[int]) -> list[str]:
     """创建荷载工况和钢束，返回荷载工况名称列表"""
     tendon = engine.load.tendon
     loadcase = engine.load
@@ -15,9 +15,10 @@ def build_loadcases(engine: OSISEngine, mat_nos: list[int], elem_nos: list[int])
     tendon.create_prop_in("15-8",  mat_nos[2], "GBT5224_2014", 15.2, 8,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     tendon.create_prop_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     
+    tendon_geo1, tendon_geo2 = geo_names
     # 钢束形状
-    tendon.create_shape_arc3d("N1", 2, "15-4", "钢束-1-N1线型单元", "钢束-1-N1")
-    tendon.create_shape_arc3d("N2", 2, "15-4", "钢束-2-N2线型单元", "钢束-2-N2")
+    tendon.create_shape_arc3d("N1", 2, "15-4", "钢束-1-N1线型单元", tendon_geo1)
+    tendon.create_shape_arc3d("N2", 2, "15-4", "钢束-2-N2线型单元", tendon_geo2)
     
     # 布置钢束
     tendon.layout("N1", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
@@ -37,11 +38,13 @@ def build_loadcases(engine: OSISEngine, mat_nos: list[int], elem_nos: list[int])
     # 封端混凝土工况（CS）
     lc_end_conc = loadcase.create("封端混凝土工况", "CS")
     lc_end_conc.create_line_load(
-        elem_nos[0], 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
+        elem_nos[0], 0, 0, 
+        0.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
         1.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
     )
     lc_end_conc.create_line_load(
-        elem_nos[13], 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
+        elem_nos[13], 0, 0, 
+        0.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
         1.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
     )
     

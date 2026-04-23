@@ -25,5 +25,6 @@ def build_nodes(engine: OSISEngine) -> list[int]:
 
 if __name__ == "__main__":
     from _0_engine import engine
-    build_nodes(engine)
+    node_nos = build_nodes(engine)
+    print(node_nos)
     print(engine.node.all())

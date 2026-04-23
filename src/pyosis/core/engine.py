@@ -34,6 +34,9 @@ from ..project.manager import ProjectManager, project_manager
 from ..geometry.manager import GeometryManager, geometry_manager
 from ..property.manager import PropertyManager, property_manager
 from ..thickness.manager import ThicknessManager, thickness_manager
+from ..settlement.manager import SettlementManager, settlement_manager
+from ..stability.manager import StabilityManager, stability_manager
+from ..dynamic.manager import DynamicManager, dynamic_manager
 from ..general.interface import (
     osis_matrix,
     output_result_for_calc_book,
@@ -64,6 +67,9 @@ class OSISEngine:
         - thickness: 厚度管理器（壳厚度特性）
         - control:   控制管理器（全局参数、分析设置）
         - project:   项目管理器（创建、打开、保存项目）
+        - settlement: 沉降分析管理器
+        - stability: 稳定分析管理器（屈曲分析）
+        - dynamic:   动力分析管理器（荷载转换质量、模态、反应谱）
 
     通用操作可直接通过 engine 调用：
         - run(), solve(), replot(), clear(), clc()
@@ -85,6 +91,9 @@ class OSISEngine:
         self._geometry = geometry_manager
         self._property = property_manager
         self._thickness = thickness_manager
+        self._settlement = settlement_manager
+        self._stability = stability_manager
+        self._dynamic = dynamic_manager
 
     # ──────────────────────────────────────────
     # 子管理器属性
@@ -154,6 +163,21 @@ class OSISEngine:
     def project(self) -> ProjectManager:
         """项目管理器（创建、打开、保存项目）"""
         return self._project
+
+    @property
+    def settlement(self) -> SettlementManager:
+        """沉降分析管理器"""
+        return self._settlement
+
+    @property
+    def stability(self) -> StabilityManager:
+        """稳定分析管理器（屈曲分析）"""
+        return self._stability
+
+    @property
+    def dynamic(self) -> DynamicManager:
+        """动力分析管理器（荷载转换质量、模态、反应谱）"""
+        return self._dynamic
 
     # ──────────────────────────────────────────
     # 通用操作（直接暴露 general 和 core 的函数）

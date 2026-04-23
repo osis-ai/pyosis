@@ -34,8 +34,8 @@ from .nonlinear import (
     osis_ln_srch,
     osis_auto_ts,
     osis_NSUBST,
-    osis_mod_opt,
 )
+from ..dynamic.modal import osis_mod_opt
 # from ..general.project import (
 #     osis_new_project,
 #     osis_open_project,

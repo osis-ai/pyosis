@@ -49,3 +49,9 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     
     elem_groups_names = ["封端混凝土单元", "钢束-1-N1线型单元", "钢束-2-N2线型单元", "主梁单元"]      # group相关功能未完成，先这样临时替代
     return elem_nos, elem_groups_names
+
+# if __name__ == "__main__":
+#     from _0_engine import engine
+#     elem_nos = build_elements(engine)
+#     print(elem_nos)
+#     print(engine.elem_nos.all())

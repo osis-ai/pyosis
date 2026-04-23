@@ -11,3 +11,9 @@ def build_materials(engine: OSISEngine) -> list[int]:
     
     mat_nos = [mat1.no, mat2.no, mat3.no]
     return mat_nos
+
+if __name__ == "__main__":
+    from _0_engine import engine
+    mat_nos = build_materials(engine)
+    print(mat_nos)
+    print(engine.material.all())

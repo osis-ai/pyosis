@@ -24,4 +24,11 @@ def build_sections(engine: OSISEngine) -> list[int]:
     sec5.set_offset("Middle",0.0000,"Top",0.0000)
     sec5.set_mesh(0, 0.1000)
     
-    return [sec1.no, sec2.no, sec3.no, sec4.no, sec5.no]
+    sec_nos = [sec1.no, sec2.no, sec3.no, sec4.no, sec5.no]
+    return sec_nos
+
+if __name__ == "__main__":
+    from _0_engine import engine
+    sec_nos = build_sections(engine)
+    print(sec_nos)
+    print(engine.section.all())
