@@ -99,79 +99,226 @@ class Element:
     def __repr__(self) -> str:
         return f"Element(no={self.no}, type={self.type}, mat={self.mat}, nodes={self.node_vec})"
 
-# @dataclass(frozen=True)
-# class Beam3dElement(Element):
-#     """梁柱单元（type=1）"""
-
-#     beta: float = 0.0
-#     beta_flag: bool = False
-#     comp_thk: float = 0.0
-#     is_taper: bool = False
-#     key_pt: int = -1
-#     strain: float = 0.0
-#     trans_vec: list[int] = field(default_factory=list)
-#     warp: bool = False
-#     section_details: list[dict[str, Any]] = field(default_factory=list)
-
-#     def __repr__(self) -> str:
-#         return f"Beam3dElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j}, mat={self.mat})"
-
-
-# @dataclass(frozen=True)
-# class TrussElement(Element):
-#     """桁架单元（type=2）"""
-
-#     def __repr__(self) -> str:
-#         return f"TrussElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j})"
-
-
-# @dataclass(frozen=True)
-# class SpringElement(Element):
-#     """弹簧单元（type=3）"""
-
-#     def __repr__(self) -> str:
-#         return f"SpringElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j})"
-
-
-# @dataclass(frozen=True)
-# class CableElement(Element):
-#     """拉索单元（type=4）"""
-
-#     def __repr__(self) -> str:
-#         return f"CableElement(no={self.no}, nodeI={self.node_i}, nodeJ={self.node_j})"
-
-
-# @dataclass(frozen=True)
-# class ShellElement(Element):
-#     """壳单元（type=5）"""
-
-#     is_thin: bool = True
-#     thickness: int = 0
-#     node_sum: int | None = None
-
-#     def __repr__(self) -> str:
-#         return f"ShellElement(no={self.no}, nodeVec={self.node_vec}, mat={self.mat})"
 
 @dataclass(frozen=True)
-class ElementGroup():
+class ElementGroup:
+    """单元组对象
+
+    由 ElementGroupManager 内部创建，用户不应直接实例化。
+    字段与 HTTP 接口 GetAllElementGroupInfo 返回的 JSON 一一对应。
     """
-    单元组对象
-    """
-    name: str
-    indexs: list[int]
+    name: str                                    # 组名
+    elements: list[int] = field(default_factory=list)      # 组内单元列表
+    element_count: int = 0                       # 单元数量
+    related_tendon_shapes: list[str] = field(default_factory=list)  # 关联的钢束形状
+    related_tendon_shape_count: int = 0          # 关联钢束形状数量
+    related_lanes: list[str] = field(default_factory=list)          # 关联的车道
+    related_lane_count: int = 0                  # 关联车道数量
+    related_stages: list[int] = field(default_factory=list)         # 关联的施工阶段
+    related_stage_count: int = 0                 # 关联施工阶段数量
 
     @classmethod
     def _from_dict(cls, d: dict) -> ElementGroup:
+        """从接口 dict 构造 ElementGroup 对象（内部使用）"""
         return cls(
-            name=d.get(["name"]),
-            indexs=d.get("indexs", [])
+            name=d.get("groupName"),
+            elements=list(d.get("elements")),
+            element_count=d.get("elementCount"),
+            related_tendon_shapes=list(d.get("relatedTendonShapes")),
+            related_tendon_shape_count=d.get("relatedTendonShapeCount"),
+            related_lanes=list(d.get("relatedLanes")),
+            related_lane_count=d.get("relatedLaneCount"),
+            related_stages=list(d.get("relatedStages")),
+            related_stage_count=d.get("relatedStageCount"),
         )
 
     def __repr__(self) -> str:
-        return f"ElementGroup(name={self.name}, indexs={self.indexs})"
-    
+        return f"ElementGroup(name={self.name!r}, elements={self.elements}, count={self.element_count})"
+
+
 # ──────────────────────────────────────────────
-# 管理类
+# ElementGroup 管理类
+# ──────────────────────────────────────────────
+
+
+class ElementGroupManager:
+    """单元组管理器
+
+    统一管理单元组的增删改查。由 ElementManager 持有，不单独导出。
+
+    用法:
+        >>> from pyosis.element import element_manager
+        >>> # 创建单元组
+        >>> element_manager.group.create("主梁单元")
+        >>> element_manager.group.add("主梁单元", [1, 2, 3])
+        >>> # 查询
+        >>> eg = element_manager.group.get("主梁单元")
+        >>> print(eg.elements)              # 组内单元
+        >>> print(eg.related_tendon_shapes) # 关联钢束
+        >>> print(eg.related_stages)        # 关联施工阶段
+    """
+
+    def __init__(self) -> None:
+        ...
+
+    # ── 内部方法 ──────────────────────────────
+
+    def _execute(self, name: str, operation: str, param: list | None = None) -> None:
+        """执行单元组底层操作"""
+        ok, err = osis_element_group(name, operation, param)
+        if not ok:
+            raise RuntimeError(f"单元组操作 {name} ({operation}) 失败: {err}")
+
+    def _load(self) -> list[ElementGroup]:
+        """从服务端加载所有单元组信息"""
+        resp = osis_client("GetAllElementGroupInfo", {})
+        if not resp["success"]:
+            raise RuntimeError(resp["error"])
+        
+        groups = [
+            ElementGroup._from_dict(d) 
+            for d in resp.get("data", []) 
+            if isinstance(d, dict) and "groupName" in d
+        ]
+        return groups
+
+    # ── 增删改 ────────────────────────────────
+
+    def create(self, name: str) -> ElementGroup:
+        """创建单元组
+
+        Args:
+            name: 单元组名称
+
+        Returns:
+            ElementGroup: 创建的单元组对象
+        """
+        self._execute(name, "c")
+        return self.get(name)
+
+    def add(self, name: str, elements: list[int]) -> ElementGroup:
+        """向单元组添加单元
+
+        Args:
+            name: 单元组名称
+            elements: 单元编号列表
+
+        Returns:
+            ElementGroup: 更新后的单元组对象
+        """
+        self._execute(name, "a", elements)
+        return self.get(name)
+
+    def remove(self, name: str, elements: list[int]) -> ElementGroup:
+        """从单元组移除单元
+
+        Args:
+            name: 单元组名称
+            elements: 单元编号列表
+
+        Returns:
+            ElementGroup: 更新后的单元组对象
+        """
+        self._execute(name, "r", elements)
+        return self.get(name)
+
+    def replace(self, name: str, elements: list[int]) -> ElementGroup:
+        """替换单元组内单元
+
+        Args:
+            name: 单元组名称
+            elements: 新的单元编号列表
+
+        Returns:
+            ElementGroup: 更新后的单元组对象
+        """
+        self._execute(name, "s", elements)
+        return self.get(name)
+
+    def add_all(self, name: str) -> ElementGroup:
+        """添加全部单元到组
+
+        Args:
+            name: 单元组名称
+
+        Returns:
+            ElementGroup: 更新后的单元组对象
+        """
+        self._execute(name, "aa")
+        return self.get(name)
+
+    def remove_all(self, name: str) -> ElementGroup:
+        """从组移除全部单元
+
+        Args:
+            name: 单元组名称
+
+        Returns:
+            ElementGroup: 更新后的单元组对象
+        """
+        self._execute(name, "ra")
+        return self.get(name)
+
+    def rename(self, old_name: str, new_name: str) -> ElementGroup:
+        """修改单元组名称
+
+        Args:
+            old_name: 旧名称
+            new_name: 新名称
+
+        Returns:
+            ElementGroup: 更新后的单元组对象
+        """
+        self._execute(old_name, "m", [new_name])
+        return self.get(new_name)
+
+    def delete(self, name: str) -> None:
+        """删除单元组
+
+        Args:
+            name: 单元组名称
+        """
+        self._execute(name, "d")
+
+    # ── 查询 ──────────────────────────────────
+
+    def get(self, name: str) -> ElementGroup | None:
+        """根据名称获取单元组
+
+        Args:
+            name: 单元组名称
+
+        Returns:
+            ElementGroup 对象；不存在返回 None
+        """
+        groups = self._load()
+        for g in groups:
+            if g.name == name:
+                return g
+        return None
+
+    def all(self) -> list[ElementGroup]:
+        """获取所有单元组
+
+        Returns:
+            全部单元组列表
+        """
+        return self._load()
+
+    def count(self) -> int:
+        """获取单元组总数
+
+        Returns:
+            单元组数量
+        """
+        return len(self._load())
+
+    def __repr__(self) -> str:
+        return f"ElementGroupManager(count={self.count()})"
+
+
+# ──────────────────────────────────────────────
+# 单元管理类
 # ──────────────────────────────────────────────
 
 
@@ -188,76 +335,20 @@ class ElementManager:
         >>> all_elems = element_manager.all()
         >>> element_manager.delete(elem.no)
         >>> element_manager.renumber(elem.no, 100)
+        >>> 
+        >>> # 单元组操作
+        >>> element_manager.group.create("主梁单元")
+        >>> element_manager.group.add("主梁单元", [1, 2, 3])
+        >>> eg = element_manager.group.get("主梁单元")
     """
 
     def __init__(self) -> None:
-        ...
+        self._element_manager = ElementGroupManager()
 
     # ── 数据加载 ──────────────────────────────
 
-    # def _reload_get_as(self, no: int, expected_cls: type[Element], what: str) -> Element:
-    #     """创建/修改后从服务端重载并返回指定类型对象（内部使用）。"""
-    #     self._loaded = False
-    #     self._load()
-    #     elem = self._elem_map.get(no)
-    #     if elem is None:
-    #         raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
-    #     if not isinstance(elem, expected_cls):
-    #         raise RuntimeError(f"{what} {no} 成功但返回类型错误: {type(elem)}")
-    #     return elem
-
-    # def _parse_element(self, d: dict) -> Element:
-    #     """根据 ``type`` 整型解析为对应子类。"""
-    #     raw = int(d.get("type", 0) or 0)
-    #     name = ELEMENT_TYPE_NAMES.get(raw, "UNKNOWN")
-
-    #     common: dict[str, Any] = dict(
-    #         no=int(d["no"]),
-    #         raw_type=int(d.get("type", 0) or 0),
-    #         element_type=d.get("name", ""),
-    #         mat=int(d.get("mat", 0) or 0),
-    #         node_vec=list(d.get("nodeVec") or []),
-    #         node_i=int(d.get("nodeI", 0) or 0),
-    #         node_j=int(d.get("nodeJ", 0) or 0),
-    #         length=float(d.get("length", 0.0) or 0.0),
-    #         center=tuple(d.get("center", [0.0, 0.0, 0.0])),
-    #         sec_vec=list(d.get("secVec") or []),
-    #         characters=list(d.get("characters") or []),
-    #         loc_coor=d.get("locCoor"),
-    #     )
-
-    #     if raw == 1:
-    #         return Beam3dElement(
-    #             **common,
-    #             beta=float(d.get("beta", 0.0) or 0.0),
-    #             beta_flag=bool(d.get("betaFlag", False)),
-    #             comp_thk=float(d.get("compThk", 0.0) or 0.0),
-    #             is_taper=bool(d.get("isTaper", False)),
-    #             key_pt=int(d.get("keyPt", -1) or -1),
-    #             strain=float(d.get("strain", 0.0) or 0.0),
-    #             trans_vec=list(d.get("transVec") or []),
-    #             warp=bool(d.get("warp", False)),
-    #             section_details=list(d.get("sectionDetails") or []),
-    #         )
-    #     if raw == 2:
-    #         return TrussElement(**common)
-    #     if raw == 3:
-    #         return SpringElement(**common)
-    #     if raw == 4:
-    #         return CableElement(**common)
-    #     if raw == 5:
-    #         return ShellElement(
-    #             **common,
-    #             is_thin=bool(d.get("isThin", True)),
-    #             thickness=int(d.get("thickness", 0) or 0),
-    #             node_sum=None if d.get("nodeSum") in (None, "") else int(d["nodeSum"]),
-    #         )
-    #     return Element(**common)
-
     def _load(self) -> list[Element]:
         """从服务端加载所有单元信息"""
-        # if self._loaded:
-        #     return
         resp = osis_client("GetAllElementInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -266,16 +357,8 @@ class ElementManager:
         ]
         return elements
 
-    # def refresh(self) -> None:
-    #     """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
-    #     self._elements = []
-    #     self._elem_map = {}
-    #     self._loaded = False
-    #     self._load()
-
-    def _next_no(self) -> int:      # todo: 优化效率，如C++内实现或者load不构造对象
+    def _next_no(self) -> int:
         """生成下一个可用单元编号"""
-        # self._load()
         elements = self._load()        
         if len(elements) == 0:
             return 1
@@ -394,31 +477,6 @@ class ElementManager:
         ok, err = osis_element_del(no)
         if not ok:
             raise RuntimeError(f"删除单元 {no} 失败: {err}")
-        self._loaded = False
-
-    def group(self, name: str, operation: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], param: list=None):     # todo: 检查单元组在osis内的存储形式，需要一个单元组管理器
-        '''
-        创建/删除 单元组，添加或移除单元
-        
-        Args:
-            name (str): 单元组名
-            operation (str): 操作
-                * c = 创建
-                * a = 添加
-                * s = 替换
-                * r = 移除
-                * aa = 添加全部
-                * ra = 移除全部
-                * m = 修改组名
-                * d = 删除
-            param (list): 待操作的编号，支持的格式：*，*to*；*by*，仅用于替换。例子：[2,3,5,8to10] [2by3,5by6,8by10] 重合的编号自动忽略
-        Returns:
-            tuple (bool, str): 是否成功，失败原因
-        '''
-        ok, err = osis_element_group(name, operation, param)
-        if not ok:
-            raise RuntimeError(f"添加单元组 {name} 失败: {err}")
-        return self.get_group(name)
 
     def renumber(self, old_no: int, new_no: int) -> None:
         """修改单元编号"""
@@ -476,15 +534,6 @@ class ElementManager:
             return eles[0]
         return eles
     
-    def get_group(self, name: str | list[str]) -> ElementGroup | list[ElementGroup | None]: # todo: 重写
-        """
-        根据name获取单元组
-
-        Args:
-            name: 单元组名称
-        """
-        ...
-
     def all(self) -> list[Element]:
         """获取所有单元"""
         elements  = self._load()
@@ -495,7 +544,23 @@ class ElementManager:
         elements = self._load()
         return len(elements)
 
-    def __repr__(self) -> str:                 # todo: 重写
+
+    # ── 子管理器 ──────────────────────────────
+
+    @property
+    def group(self) -> ElementGroupManager:
+        """边界组管理器
+
+        提供边界组的增删改查功能。
+
+        用法:
+            >>> element_manager.group.create("主梁1")
+            >>> element_manager.group.add("主梁1", [1, 2])
+            >>> element_manager.group.get("主梁1")
+        """
+        return self._element_manager
+
+    def __repr__(self) -> str:
         return f"ElementManager()"
 
 

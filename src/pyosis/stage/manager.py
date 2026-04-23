@@ -3,12 +3,11 @@
 设计理念：
 - 隐藏 HTTP 接口细节，提供原生 Python 风格 API
 - 返回数据类对象而非 HTTP 元组
-- 内部维护施工阶段列表，通过 get 等方法查询，不暴露 HTTP 接口细节
+- 无状态设计，每次从服务端加载（与 element/boundary manager 一致）
+- 单元组、边界组、荷载工况、分析工况列表仅保留名称
 """
 
 from __future__ import annotations
-
-import uuid
 
 from dataclasses import dataclass, field
 from typing import Literal
@@ -34,81 +33,52 @@ from .define import (
 
 
 @dataclass(frozen=True)
-class ElementGroup:
-    """单元组"""
-    name: str = ""
-    birth: float = 0.0
-    part: int = 0
-
-
-@dataclass(frozen=True)
-class BoundaryGroup:
-    """边界组"""
-    name: str = ""
-    position: str = ""
-
-
-@dataclass(frozen=True)
-class LoadCase:
-    """荷载工况"""
-    name: str = ""
-
-
-@dataclass(frozen=True)
-class AnalysisCase:
-    """分析工况"""
-    name: str = ""
-
-
-@dataclass(frozen=True)
 class Stage:
     """施工阶段对象
 
     由 StageManager 内部创建，用户不应直接实例化。
+    单元组、边界组、荷载工况、分析工况列表仅保留名称。
     """
 
     no: int
-    name: str = ""
-    duration: float = 0.0
-    accumulation: float = 0.0
-    pre_stage_no: int = -1
-    element_groups: list[ElementGroup] = field(default_factory=list)
-    boundary_groups: list[BoundaryGroup] = field(default_factory=list)
-    load_cases: list[LoadCase] = field(default_factory=list)
-    analysis_cases: list[AnalysisCase] = field(default_factory=list)
+    name: str
+    duration: float
+    accumulation: float
+    pre_stage_no: int
+    element_groups: list[str] = field(default_factory=list)
+    boundary_groups: list[str] = field(default_factory=list)
+    load_cases: list[str] = field(default_factory=list)
+    analysis_cases: list[str] = field(default_factory=list)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Stage:
         """从接口 dict 构造 Stage 对象（内部使用）"""
         element_groups = [
-            ElementGroup(
-                name=e.get("name", ""),
-                birth=e.get("birth", 0.0),
-                part=e.get("part", 0),
-            )
-            for e in d.get("elementGroups", []) if isinstance(e, dict)
+            e.get("name")
+            for e in d.get("elementGroups", [])
+            if isinstance(e, dict) and "name" in e
         ]
         boundary_groups = [
-            BoundaryGroup(
-                name=b.get("name", ""),
-                position=b.get("position", ""),
-            )
-            for b in d.get("boundaryGroups", []) if isinstance(b, dict)
+            b.get("name")
+            for b in d.get("boundaryGroups", [])
+            if isinstance(b, dict) and "name" in b
         ]
         load_cases = [
-            LoadCase(name=lc.get("name", ""))
-            for lc in d.get("loadCases", []) if isinstance(lc, dict)
+            lc.get("lcName")
+            for lc in d.get("loadCases", [])
+            if isinstance(lc, dict) and "lcName" in lc
         ]
         analysis_cases = [
-            AnalysisCase(name=a.get("name", ""))
-            for a in d.get("analysisCases", []) if isinstance(a, dict)
+            a.get("analName")
+            for a in d.get("analysisCases", [])
+            if isinstance(a, dict) and "analName" in a
         ]
         return cls(
-            no=d.get("no", 0),
-            name=d.get("name", ""),
-            duration=d.get("duration", 0.0),
-            accumulation=d.get("accumulation", 0.0),
-            pre_stage_no=d.get("preStageNo", -1),
+            no=d.get("no"),
+            name=d.get("name"),
+            duration=d.get("duration"),
+            accumulation=d.get("accumulation"),
+            pre_stage_no=d.get("preStageNo"),
             element_groups=element_groups,
             boundary_groups=boundary_groups,
             load_cases=load_cases,
@@ -126,7 +96,6 @@ class Stage:
         """通过单元组激活/钝化单元
 
         Args:
-            nIndex (int): 施工阶段编号
             eOP (int): 操作
                 * 1 = 添加
                 * 0 = 移除
@@ -142,10 +111,8 @@ class Stage:
 
         Raises:
             RuntimeError: 操作失败时抛出异常
-
         """
         ok, err = osis_stage_element(self.no, eOP, eType, strGroupName, nBirth, ePart)
-
         if not ok:
             raise RuntimeError(f"阶段 {self.no} 定义单元组 {strGroupName} 失败: {err}")
 
@@ -155,7 +122,7 @@ class Stage:
         eType: Literal[1, 0], 
         strGroupName: str
     ) -> None:
-        """通过单元组激活/钝化单元
+        """通过边界组激活/钝化边界
 
         Args:
             eOP (int): 操作
@@ -168,12 +135,8 @@ class Stage:
             
         Raises:
             RuntimeError: 操作失败时抛出异常
-
-        Notes:
-            施工阶段将按照编号顺序升序排列
         """
         ok, err = osis_stage_boundary(self.no, eOP, eType, strGroupName)
-
         if not ok:
             raise RuntimeError(f"阶段 {self.no} 定义边界组 {strGroupName} 失败: {err}")
 
@@ -198,10 +161,8 @@ class Stage:
             
         Raises:
             RuntimeError: 操作失败时抛出异常
-
         """
         ok, err = osis_stage_loadcase(self.no, eOP, eType, ref_lc_name, lc_name)
-
         if not ok:
             raise RuntimeError(f"阶段 {self.no} 激活荷载工况 {lc_name} 失败: {err}")
 
@@ -245,77 +206,32 @@ class StageManager:
 
     用法:
         >>> from pyosis.stage import stage_manager
-        >>> stg = stage_manager.create(3.0)                                 # 创建施工阶段（编号名称自动生成）
-        >>> stg = stage_manager.create(3.0, name="墩身施工")                 # 创建施工阶段（指定名称）
-        >>> stage_manager.activate_element(stg.no, "墩", 5.0)               # 激活单元
-        >>> stage_manager.deactivate_element(stg.no, "墩")                 # 钝化单元
-        >>> stage_manager.activate_boundary(stg.no, "固结")                  # 激活边界
-        >>> stage_manager.deactivate_boundary(stg.no, "固结")                # 钝化边界
-        >>> stage_manager.activate_loadcase(stg.no, "", "自定义工况1")      # 激活荷载工况
-        >>> stage_manager.deactivate_loadcase(stg.no, "", "自定义工况1")    # 钝化荷载工况
-        >>> stage_manager.activate_analysis(stg.no, "MODAL")               # 激活分析工况
-        >>> stg2 = stage_manager.get(stg.no)                                # 按编号查询
+        >>> stg = stage_manager.create(1, "阶段1", 3)                       # 创建施工阶段
+        >>> stg = stage_manager.get(1)                                      # 按编号查询
         >>> all_stgs = stage_manager.all()                                  # 获取全部阶段
-        >>> stage_manager.delete(stg.no)                                    # 删除阶段
-        >>> stg3 = stage_manager.insert(stg.no, 1, "新阶段", 3.0)         # 插入阶段
+        >>> stage_manager.delete(1)                                         # 删除阶段
     """
 
     def __init__(self) -> None:
-        self._stages: list[Stage] = []
-        self._stage_map: dict[int, Stage] = {}  # 按编号索引：O(1) 查询
-        self._loaded: bool = False
-
-    def _reload_get_as(self, no: int, expected_cls: type[Stage], what: str) -> Stage:
-        """创建/修改后从服务端重载并返回指定类型对象（内部使用）。"""
-        self._loaded = False
-        self._load()
-        stg = self._stage_map.get(no)
-        if stg is None:
-            raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
-        if not isinstance(stg, expected_cls):
-            raise RuntimeError(f"{what} {no} 成功但返回类型错误: {type(stg)}")
-        return stg
+        pass
 
     # ── 数据加载 ──────────────────────────────
 
-    def _load(self) -> None:
-        """从服务端加载所有施工阶段信息（延迟加载，带缓存）"""
-        if self._loaded:
-            return
+    def _load(self) -> list[Stage]:
+        """从服务端加载所有施工阶段信息（无缓存）"""
         resp = osis_client("GetStageInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        self._stages = [
+        stages = [
             Stage._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "no" in d
         ]
-
-        # 构建索引：编号 -> 施工阶段对象 (O(1) 查询)
-        self._stage_map = {stg.no: stg for stg in self._stages}
-
-        self._loaded = True
-
-    def refresh(self) -> None:
-        """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
-        self._stages = []
-        self._stage_map = {}
-        self._loaded = False
-        self._load()
-
-    # def _next_no(self) -> int:
-    #     """生成下一个可用施工阶段编号
-
-    #     取已有阶段编号的最大值+1，如果没有阶段则从1开始。
-    #     """
-    #     self._load()
-    #     if not self._stages:
-    #         return 1
-    #     return max(stg.no for stg in self._stages) + 1
+        return stages
 
     # ── 增删改 ────────────────────────────────
 
     def create(     
         self,
-        no: int,        # 施工阶段编号必须连续，此处不允许自动编号
+        no: int,
         name: str,
         duration: int,
     ) -> Stage:
@@ -332,13 +248,9 @@ class StageManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        # self.refresh()
-        # if no is None:
-        #     no = self._next_no()
         ok, err = osis_stage(no, name, duration)
         if not ok:
             raise RuntimeError(f"创建施工阶段 {no} 失败: {err}")
-        self._loaded = False
         return self.get(no)
 
     def delete(self, no: int) -> None:
@@ -353,7 +265,6 @@ class StageManager:
         ok, err = osis_stage_del(no)
         if not ok:
             raise RuntimeError(f"删除施工阶段 {no} 失败: {err}")
-        self._loaded = False
 
     def insert(
         self,
@@ -376,9 +287,6 @@ class StageManager:
         Raises:
             RuntimeError: 插入失败时抛出异常
         """
-        self.refresh()
-        # if no is None:
-        #     no = self._next_no()
         ok, err = osis_stage_insert(ref_no, position, name, duration)
         if not ok:
             raise RuntimeError(f"在 {ref_no} 处插入施工阶段失败: {err}")
@@ -396,12 +304,11 @@ class StageManager:
         ok, err = osis_stage_remove(no)
         if not ok:
             raise RuntimeError(f"移除施工阶段 {no} 失败: {err}")
-        self._loaded = False
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int]) -> Stage | list[Stage | None]:
-        """根据编号获取单个或多个施工阶段 (O(k))
+    def get(self, no: int | list[int]) -> Stage | list[Stage | None] | None:
+        """根据编号获取单个或多个施工阶段
 
         Args:
             no: 施工阶段编号
@@ -409,13 +316,22 @@ class StageManager:
         Returns:
             Stage 对象或数组；阶段不存在返回 None
         """
-        self._load()
         if isinstance(no, int):
-            return self._stage_map.get(no)
-        elif isinstance(no, list):
-            return [self._stage_map.get(n) for n in no]
-        else:
+            no = [no]
+        elif not isinstance(no, list):
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        
+        resp = osis_client("GetStageInfoByNos", {"no": no})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        
+        stages = [Stage._from_dict(d) if d else None for d in resp.get("data", [])]
+        
+        if len(stages) == 0:
+            return None
+        elif len(stages) == 1:
+            return stages[0]
+        return stages
 
     def all(self) -> list[Stage]:
         """获取所有施工阶段
@@ -423,8 +339,7 @@ class StageManager:
         Returns:
             全部阶段列表
         """
-        self._load()
-        return list(self._stages)
+        return self._load()
 
     def count(self) -> int:
         """获取施工阶段总数
@@ -432,12 +347,10 @@ class StageManager:
         Returns:
             阶段数量
         """
-        self._load()
-        return len(self._stages)
+        return len(self._load())
 
     def __repr__(self) -> str:
-        self._load()
-        return f"StageManager(count={len(self._stages)})"
+        return f"StageManager(count={self.count()})"
 
 
 # ──────────────────────────────────────────────

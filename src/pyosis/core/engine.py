@@ -285,14 +285,8 @@ class OSISEngine:
         }
 
     def refresh_all(self) -> None:
-        """强制刷新所有管理器的缓存"""
-        self._material.refresh()
-        self._section.refresh()
-        self._node.refresh()
-        self._element.refresh()
-        self._boundary.refresh()
+        """强制刷新有状态管理器的缓存"""
         self._load.refresh()
-        self._stage.refresh()
         self._live.refresh()
 
     def __repr__(self) -> str:

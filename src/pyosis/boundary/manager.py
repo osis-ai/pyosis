@@ -3,17 +3,22 @@
 设计理念：
 - 隐藏 HTTP 接口细节，提供原生 Python 风格 API
 - 返回数据类对象而非 HTTP 元组
-- 内部维护边界列表，通过 get 等方法查询，不暴露 HTTP 接口细节
-- 按边界类型分化数据结构，create_* 返回具体子类型
+- 按边界类型分化数据结构
+- 无状态设计，每次从服务端加载（与 element.manager 一致）
 
-支持的边界类型：GENERAL（一般边界）、MSTSLV（主从约束）、RELEASE（释放梁端约束）、
-ELSTCSPT（弹性支承）
+支持的边界类型：
+- GENERAL（一般边界，type=1）
+- MSTSLV（主从约束，type=2）
+- RELEASE（释放梁端约束，type=4）
+- ELSTCSPT（弹性支承，type=5）
+- GENERALELSTCSPT（一般弹性支承，type=6）
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Any, Literal
+from enum import Enum, IntEnum
 
 from ..core.client import osis_client
 from .interface import (
@@ -27,37 +32,23 @@ from .interface import (
 )
 
 
-def _assign_boundary_to_nodes(
-    no: int,
-    eOP: Literal["a", "s", "r", "aa", "ra"],
-    param: list,
-) -> None:
-    """分配边界给节点（一般支撑、节点弹性支撑），内部实现。"""
-    ok, err = osis_assign_boundary(no, eOP, param)
-    if not ok:
-        raise RuntimeError(f"分配边界 {no} 到节点 {param} 失败: {err}")
+# ──────────────────────────────────────────────
+# 枚举类型
+# ──────────────────────────────────────────────
 
-
-def _dict_looks_like_elstcspt(d: dict) -> bool:
-    """区分 type=4 时实为弹性支承还是梁端释放（部分服务端误将弹性支承标为 4）。
-
-    参见 ``io.boundary_info``：弹性支承含 ``k`` / ``elasticK``；释放约束含 ``endIState`` / ``endJState``。
-    """
-    if d.get("elasticK") is not None:
-        return True
-    k = d.get("k")
-    if isinstance(k, list) and len(k) > 0:
-        return True
-    if d.get("endIState") is not None or d.get("endJState") is not None:
-        return False
-    c = d.get("constraints") or []
-    if isinstance(c, list) and len(c) == 7:
-        return True
-    return False
+class BoundaryType(IntEnum):
+    """边界类型枚举"""
+    UNASSIGNED = 0
+    GENERAL = 1				    # 一般支撑
+    MSTSLV = 2				    # 主从约束
+    RELEASE = 3				    # 释放梁端约束
+    ELSTCSPT = 4				# 节点弹性支承
+    GENERALELSTCSPT = 5		    # 一般弹性支承
+    RIGID = 6				    # 刚性连接
 
 
 # ──────────────────────────────────────────────
-# Boundary 基类
+# 数据类
 # ──────────────────────────────────────────────
 
 
@@ -66,41 +57,75 @@ class Boundary:
     """边界基类
 
     由 BoundaryManager 内部创建，用户不应直接实例化。
-    get() / all() 返回此类型。
     """
-
     no: int
     name: str = ""
-    boundary_type: str = ""
-    raw_type: int = 0
+    boundary_type: BoundaryType = BoundaryType.GENERAL
     entity_vec: list[int] = field(default_factory=list)
     is_occupied: bool = False
-    is_ploted: bool = False
     is_selected: bool = False
+    is_ploted: bool = False
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> Boundary:
+        """从接口 dict 构造 Boundary 对象（内部使用）"""
+        raw_type = int(d.get("type"))
+        
+        # 根据类型创建具体子类
+        if raw_type == BoundaryType.GENERAL:
+            return GeneralBoundary._from_dict(d)
+        elif raw_type == BoundaryType.MSTSLV:
+            return MstSlvBoundary._from_dict(d)
+        elif raw_type == BoundaryType.RELEASE:
+            return ReleaseBoundary._from_dict(d)
+        elif raw_type == BoundaryType.ELSTCSPT:
+            return ElstcSptBoundary._from_dict(d)
+        elif raw_type == BoundaryType.GENERALELSTCSPT:
+            return GeneralElstcSptBoundary._from_dict(d)
+        else:
+            # 未知类型返回基类
+            return cls(
+                no=d.get("no"),
+                name=d.get("name"),
+                boundary_type=BoundaryType(raw_type) if raw_type in [t.value for t in BoundaryType] else BoundaryType.GENERAL,
+                entity_vec=list(d.get("entityVec")),
+                is_occupied=d.get("isOccupied"),
+                is_selected=d.get("isSelected"),
+                is_ploted=d.get("isPloted"),
+            )
 
     def __repr__(self) -> str:
-        return f"Boundary(no={self.no}, type={self.boundary_type})"
-
-
-# ──────────────────────────────────────────────
-# General 边界
-# ──────────────────────────────────────────────
+        return f"Boundary(no={self.no}, type={self.boundary_type.name})"
 
 
 @dataclass(frozen=True)
 class GeneralBoundary(Boundary):
     """一般边界
-
+    
     constraints[7]: [UX, UY, UZ, RX, RY, RZ, RW]
         0 = 释放，1 = 约束
-    coor_no: 局部坐标系编号，None 表示无局部坐标系
+    coor_no: 局部坐标系编号
     """
-
-    constraints: list[int] = field(default_factory=list)  # 固定7个
+    constraints: list[int] = field(default_factory=list)  # 7个约束
     coor_no: int | None = None
 
+    @classmethod
+    def _from_dict(cls, d: dict) -> GeneralBoundary:
+        """从接口 dict 构造 GeneralBoundary 对象"""
+        return cls(
+            no=d.get("no"),
+            name=d.get("name"),
+            boundary_type=BoundaryType.GENERAL,
+            entity_vec=list(d.get("entityVec")),
+            is_occupied=d.get("isOccupied"),
+            is_selected=d.get("isSelected"),
+            is_ploted=d.get("isPloted"),
+            constraints=list(d.get("constraints")),
+            coor_no=d.get("coorNO"),
+        )
+
     def __repr__(self) -> str:
-        return f"GeneralBoundary(no={self.no}, constraints={self.constraints}, coor_no={self.coor_no})"
+        return f"GeneralBoundary(no={self.no}, constraints={self.constraints})"
 
     @property
     def ux(self) -> int:
@@ -135,109 +160,105 @@ class GeneralBoundary(Boundary):
         eOP: Literal["a", "s", "r", "aa", "ra"] = "a",
         param: list | None = None,
     ) -> None:
-        """分配边界给节点（一般支撑）。
-
-        对应 ``pyosis.boundary.osis_assign_boundary``。
-
-        Args:
-            eOP: 操作 — a=添加，s=替换，r=移除，aa=添加全部，ra=移除全部
-            param: 待操作的编号，支持 ``*``、``*to*``、``*by*``（仅用于替换）。
-                例：``[2, 3, 5, "8to10"]``、``["2by3", "5by6", "8by10"]``；重合编号自动忽略。
-        """
-        _assign_boundary_to_nodes(self.no, eOP, param if param is not None else [])
-
-
-# ──────────────────────────────────────────────
-# MstSlv 边界（主从约束）
-# ──────────────────────────────────────────────
+        """分配边界给节点"""
+        ok, err = osis_assign_boundary(self.no, eOP, param if param is not None else [])
+        if not ok:
+            raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
 
 
 @dataclass(frozen=True)
 class MstSlvBoundary(Boundary):
     """主从约束
-
+    
     constraints[6]: [UX, UY, UZ, RX, RY, RZ]
         0 = 释放，1 = 约束
     master_no: 主节点编号
     """
-
-    constraints: list[int] = field(default_factory=list)  # 固定6个
+    constraints: list[int] = field(default_factory=list)  # 6个约束
     master_no: int | None = None
 
+    @classmethod
+    def _from_dict(cls, d: dict) -> MstSlvBoundary:
+        """从接口 dict 构造 MstSlvBoundary 对象"""
+        return cls(
+            no=d.get("no"),
+            name=d.get("name"),
+            boundary_type=BoundaryType.MSTSLV,
+            entity_vec=list(d.get("entityVec")),
+            is_occupied=d.get("isOccupied"),
+            is_selected=d.get("isSelected"),
+            is_ploted=d.get("isPloted"),
+            constraints=list(d.get("constraints")),
+            master_no=d.get("masterNO"),
+        )
+
     def __repr__(self) -> str:
-        return f"MstSlvBoundary(no={self.no}, master_no={self.master_no}, constraints={self.constraints})"
-
-    @property
-    def ux(self) -> int:
-        return self.constraints[0] if len(self.constraints) > 0 else 0
-
-    @property
-    def uy(self) -> int:
-        return self.constraints[1] if len(self.constraints) > 1 else 0
-
-    @property
-    def uz(self) -> int:
-        return self.constraints[2] if len(self.constraints) > 2 else 0
-
-    @property
-    def rx(self) -> int:
-        return self.constraints[3] if len(self.constraints) > 3 else 0
-
-    @property
-    def ry(self) -> int:
-        return self.constraints[4] if len(self.constraints) > 4 else 0
-
-    @property
-    def rz(self) -> int:
-        return self.constraints[5] if len(self.constraints) > 5 else 0
-
-
-# ──────────────────────────────────────────────
-# Release 边界（释放梁端约束）
-# ──────────────────────────────────────────────
+        return f"MstSlvBoundary(no={self.no}, master_no={self.master_no})"
 
 
 @dataclass(frozen=True)
 class ReleaseBoundary(Boundary):
     """释放梁端约束
-
+    
     I端(7) + J端(7) = 14个约束状态/值
     state: 0 = 释放，1 = 约束
     value: 0-1 表示释放后残余约束能力的百分比
     """
-
     i_state: list[int] = field(default_factory=list)   # I端约束状态 [7]
     i_values: list[float] = field(default_factory=list)  # I端约束值 [7]
     j_state: list[int] = field(default_factory=list)   # J端约束状态 [7]
     j_values: list[float] = field(default_factory=list)  # J端约束值 [7]
 
+    @classmethod
+    def _from_dict(cls, d: dict) -> ReleaseBoundary:
+        """从接口 dict 构造 ReleaseBoundary 对象"""
+        return cls(
+            no=d.get("no"),
+            name=d.get("name"),
+            boundary_type=BoundaryType.RELEASE,
+            entity_vec=list(d.get("entityVec")),
+            is_occupied=d.get("isOccupied"),
+            is_selected=d.get("isSelected"),
+            is_ploted=d.get("isPloted"),
+            i_state=list(d.get("endIState")),
+            i_values=list(d.get("endI")),
+            j_state=list(d.get("endJState")),
+            j_values=list(d.get("endJ")),
+        )
+
     def __repr__(self) -> str:
         return f"ReleaseBoundary(no={self.no})"
 
 
-# ──────────────────────────────────────────────
-# ElstcSpt 边界（弹性支承）
-# ──────────────────────────────────────────────
-
-
 @dataclass(frozen=True)
 class ElstcSptBoundary(Boundary):
-    """弹性支承（弹簧单元）
-
+    """弹性支承
+    
     constraints[7]: [UX, UY, UZ, RX, RY, RZ, RW]
         0 = 弹性，1 = 固定
-    stiffness: 各方向的弹性刚度值
+    k[7]: 各方向的弹性刚度值
     """
-
-    constraints: list[int] = field(default_factory=list)  # 固定7个
+    constraints: list[int] = field(default_factory=list)  # 7个
     coor_no: int | None = None
-    # 弹性刚度值（从接口填充）
-    DX: float | None = None
-    DY: float | None = None
-    DZ: float | None = None
-    RX: float | None = None
-    RY: float | None = None
-    RZ: float | None = None
+    k_values: list[float] = field(default_factory=list)  # 7个刚度值
+    elastic_k: list[dict] = field(default_factory=list)  # 弹性刚度详细信息
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> ElstcSptBoundary:
+        """从接口 dict 构造 ElstcSptBoundary 对象"""
+        return cls(
+            no=d.get("no"),
+            name=d.get("name"),
+            boundary_type=BoundaryType.ELSTCSPT,
+            entity_vec=list(d.get("entityVec")),
+            is_occupied=d.get("isOccupied"),
+            is_selected=d.get("isSelected"),
+            is_ploted=d.get("isPloted"),
+            constraints=list(d.get("constraints")),
+            coor_no=d.get("coorNO"),
+            k_values=list(d.get("k")),
+            elastic_k=list(d.get("elasticK")),
+        )
 
     def __repr__(self) -> str:
         return f"ElstcSptBoundary(no={self.no}, constraints={self.constraints})"
@@ -247,304 +268,266 @@ class ElstcSptBoundary(Boundary):
         eOP: Literal["a", "s", "r", "aa", "ra"] = "a",
         param: list | None = None,
     ) -> None:
-        """分配边界给节点（节点弹性支撑）。
+        """分配边界给节点（节点弹性支撑）"""
+        ok, err = osis_assign_boundary(self.no, eOP, param if param is not None else [])
+        if not ok:
+            raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
 
-        对应 ``pyosis.boundary.osis_assign_boundary``。
 
-        Args:
-            eOP: 操作 — a=添加，s=替换，r=移除，aa=添加全部，ra=移除全部
-            param: 待操作的编号，支持 ``*``、``*to*``、``*by*``（仅用于替换）。
-                例：``[2, 3, 5, "8to10"]``、``["2by3", "5by6", "8by10"]``；重合编号自动忽略。
-        """
-        _assign_boundary_to_nodes(self.no, eOP, param if param is not None else [])
+@dataclass(frozen=True)
+class GeneralElstcSptBoundary(Boundary):
+    """一般弹性支承
+    
+    6x6 刚度矩阵
+    flagM: 是否有质量矩阵
+    flagC: 是否有阻尼矩阵
+    """
+    coor_no: int | None = None
+    flag_m: bool = False
+    flag_c: bool = False
+    stiffness_matrix: list[list[float]] = field(default_factory=list)  # 6x6
+    mass_matrix: list[list[float]] = field(default_factory=list)      # 6x6，可选
+    damping_matrix: list[list[float]] = field(default_factory=list)   # 6x6，可选
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> GeneralElstcSptBoundary:
+        """从接口 dict 构造 GeneralElstcSptBoundary 对象"""
+        return cls(
+            no=d.get("no"),
+            name=d.get("name"),
+            boundary_type=BoundaryType.GENERALELSTCSPT,
+            entity_vec=list(d.get("entityVec")),
+            is_occupied=d.get("isOccupied"),
+            is_selected=d.get("isSelected"),
+            is_ploted=d.get("isPloted"),
+            coor_no=d.get("coorNO"),
+            flag_m=d.get("flagM"),
+            flag_c=d.get("flagC"),
+            stiffness_matrix=list(d.get("stiffnessMatrix")),
+            mass_matrix=list(d.get("massMatrix")),
+            damping_matrix=list(d.get("dampingMatrix")),
+        )
+
+    def __repr__(self) -> str:
+        return f"GeneralElstcSptBoundary(no={self.no})"
+
+
+@dataclass(frozen=True)
+class BoundaryGroup:
+    """边界组对象
+
+    由 BoundaryGroupManager 内部创建，用户不应直接实例化。
+    """
+    name: str
+    boundary_nos: list[int] = field(default_factory=list)
+    boundary_count: int = 0
+    related_stages: list[int] = field(default_factory=list)
+    related_stage_count: int = 0
+    relied_nodes: list[int] = field(default_factory=list)
+    relied_elements: list[int] = field(default_factory=list)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> BoundaryGroup:
+        """从接口 dict 构造 BoundaryGroup 对象"""
+        return cls(
+            name=d.get("groupName"),
+            boundary_nos=list(d.get("boundaryNos")),
+            boundary_count=d.get("boundaryCount"),
+            related_stages=list(d.get("relatedStages")),
+            related_stage_count=d.get("relatedStageCount"),
+            relied_nodes=list(d.get("reliedNodes")),
+            relied_elements=list(d.get("reliedElements")),
+        )
+
+    def __repr__(self) -> str:
+        return f"BoundaryGroup(name={self.name!r}, boundaries={self.boundary_nos})"
 
 
 # ──────────────────────────────────────────────
-# 管理类
+# BoundaryGroup 管理类
+# ──────────────────────────────────────────────
+
+
+class BoundaryGroupManager:
+    """边界组管理器
+
+    统一管理边界组的增删改查。由 BoundaryManager 持有，不单独导出。
+
+    用法:
+        >>> from pyosis.boundary import boundary_manager
+        >>> boundary_manager.group.create("桥台1")
+        >>> boundary_manager.group.add("桥台1", [1, 2])
+        >>> bg = boundary_manager.group.get("桥台1")
+    """
+
+    def __init__(self) -> None:
+        ...
+
+    def _execute(self, name: str, operation: str, param: list | None = None) -> None:
+        """执行边界组底层操作"""
+        ok, err = osis_boundary_group(name, operation, param)
+        if not ok:
+            raise RuntimeError(f"边界组操作 {name} ({operation}) 失败: {err}")
+
+    def _load(self) -> list[BoundaryGroup]:
+        """从服务端加载所有边界组信息"""
+        resp = osis_client("GetAllBoundaryGroupInfo", {})
+        if not resp["success"]:
+            raise RuntimeError(resp["error"])
+        
+        groups = [
+            BoundaryGroup._from_dict(d) 
+            for d in resp.get("data", []) 
+            if isinstance(d, dict) and "groupName" in d
+        ]
+        return groups
+
+    # ── 增删改 ────────────────────────────────
+
+    def create(self, name: str) -> BoundaryGroup:
+        """创建边界组"""
+        self._execute(name, "c")
+        return self.get(name)
+
+    def add(self, name: str, boundaries: list[int]) -> BoundaryGroup:
+        """向边界组添加边界"""
+        self._execute(name, "a", boundaries)
+        return self.get(name)
+
+    def remove(self, name: str, boundaries: list[int]) -> BoundaryGroup:
+        """从边界组移除边界"""
+        self._execute(name, "r", boundaries)
+        return self.get(name)
+
+    def replace(self, name: str, boundaries: list[int]) -> BoundaryGroup:
+        """替换边界组内边界"""
+        self._execute(name, "s", boundaries)
+        return self.get(name)
+
+    def add_all(self, name: str) -> BoundaryGroup:
+        """添加全部边界到组"""
+        self._execute(name, "aa")
+        return self.get(name)
+
+    def remove_all(self, name: str) -> BoundaryGroup:
+        """从组移除全部边界"""
+        self._execute(name, "ra")
+        return self.get(name)
+
+    def rename(self, old_name: str, new_name: str) -> BoundaryGroup:
+        """修改边界组名称"""
+        self._execute(old_name, "m", [new_name])
+        return self.get(new_name)
+
+    def delete(self, name: str) -> None:
+        """删除边界组"""
+        self._execute(name, "d")
+
+    # ── 查询 ──────────────────────────────────
+
+    def get(self, name: str) -> BoundaryGroup | None:
+        """根据名称获取边界组"""
+        groups = self._load()
+        for g in groups:
+            if g.name == name:
+                return g
+        return None
+
+    def all(self) -> list[BoundaryGroup]:
+        """获取所有边界组"""
+        return self._load()
+
+    def count(self) -> int:
+        """获取边界组总数"""
+        return len(self._load())
+
+    def __repr__(self) -> str:
+        return f"BoundaryGroupManager(count={self.count()})"
+
+
+# ──────────────────────────────────────────────
+# 边界管理类
 # ──────────────────────────────────────────────
 
 
 class BoundaryManager:
     """边界管理器
 
-    统一管理边界的创建、删除和查询。
+    统一管理边界的创建、删除、修改和查询。
 
     用法:
         >>> from pyosis.boundary import boundary_manager
-        >>> bd = boundary_manager.create_general(bX=1, bY=1, bZ=1, bRX=0, bRY=0, bRZ=0)  # 返回 GeneralBoundary
-        >>> sp = boundary_manager.create_elstcspt(DX=1e10, DY=1e10, DZ=1e10)              # 返回 ElstcSptBoundary
-        >>> ms = boundary_manager.create_master_slave(nNode=1, bX=1, bY=1, bZ=1)          # 返回 MstSlvBoundary
-        >>> bd = boundary_manager.get(1)                                                   # 返回基类 Boundary
-        >>> all_bds = boundary_manager.all()                                                # 返回基类 Boundary 列表
-        >>> boundary_manager.delete(bd.no)                                                 # 删除边界
+        >>> bd = boundary_manager.create_general(bX=1, bY=1, bZ=1, no=1)
+        >>> bd = boundary_manager.get(1)
+        >>> all_bds = boundary_manager.all()
+        >>> boundary_manager.group.create("桥台1")
     """
 
     def __init__(self) -> None:
-        self._boundaries: list[Boundary] = []  # 基类引用
-        self._bd_map: dict[int, Boundary] = {}  # 按编号索引
-        self._loaded: bool = False
+        self._group_manager = BoundaryGroupManager()
 
     # ── 数据加载 ──────────────────────────────
 
-    def _reload_get_as(self, no: int, expected_cls: type[Boundary], what: str) -> Boundary:
-        """创建/修改后从服务端重载并返回指定类型对象（内部使用）。"""
-        self._loaded = False
-        self._load()
-        bd = self._bd_map.get(no)
-        if bd is None:
-            raise RuntimeError(f"{what} {no} 成功但无法从服务端获取完整信息")
-        if not isinstance(bd, expected_cls):
-            raise RuntimeError(f"{what} {no} 成功但返回类型错误: {type(bd)}")
-        return bd
-
-    def _load(self) -> None:
-        """从服务端加载所有边界信息（延迟加载，带缓存）"""
-        if self._loaded:
-            return
+    def _load(self) -> list[Boundary]:
+        """从服务端加载所有边界信息（无缓存）"""
         resp = osis_client("GetAllBoundaryInfo", {})
-        if not resp['success']:
+        if not resp["success"]:
             raise RuntimeError(f"{resp['error']}")
-
-        self._boundaries = []
-        self._bd_map = {}
-
-        for d in resp.get("data", []):
-            if not isinstance(d, dict) or "no" not in d:
-                continue
-            bd = self._parse_boundary(d)
-            self._boundaries.append(bd)
-            self._bd_map[bd.no] = bd
-
-        self._loaded = True
-
-    def _parse_boundary(self, d: dict) -> Boundary:
-        """根据 raw_type 解析并返回对应子类型的边界对象"""
-        raw_type = int(d.get("type", 0) or 0)
-
-        coor_raw = d.get("coorNO", None)
-        coor_no = None if coor_raw in (None, -1, "-1", "") else int(coor_raw)
-
-        master_raw = d.get("masterNO", None)
-        master_no = None if master_raw in (None, -1, "-1", "") else int(master_raw)
-
-        common = dict(
-            no=int(d.get("no", 0) or 0),
-            name=str(d.get("name", "") or ""),
-            raw_type=raw_type,
-            entity_vec=list(d.get("entityVec", []) or []),
-            is_occupied=bool(d.get("isOccupied", False)),
-            is_ploted=bool(d.get("isPloted", False)),
-            is_selected=bool(d.get("isSelected", False)),
-        )
-
-        if raw_type == 1:  # General
-            constraints = list(d.get("constraints", []) or [])
-            return GeneralBoundary(
-                **common,
-                boundary_type="General",
-                constraints=constraints,
-                coor_no=coor_no,
-            )
-
-        elif raw_type == 2:  # MstSlv
-            constraints = list(d.get("constraints", []) or [])
-            return MstSlvBoundary(
-                **common,
-                boundary_type="MstSlv",
-                constraints=constraints,
-                master_no=master_no,
-            )
-
-        elif raw_type == 4:
-            constraints = list(d.get("constraints", []) or [])
-            # type=4 在部分后端中与弹性支承混用，按 payload 字段区分
-            if _dict_looks_like_elstcspt(d):
-                return ElstcSptBoundary(
-                    **common,
-                    boundary_type="ElstcSpt",
-                    constraints=constraints,
-                    coor_no=coor_no,
-                )
-            # Release（梁端释放）
-            i_state = constraints[:7] if len(constraints) >= 7 else constraints + [0] * (7 - len(constraints))
-            j_state = constraints[7:14] if len(constraints) >= 14 else [0] * max(0, 14 - len(constraints))
-            return ReleaseBoundary(
-                **common,
-                boundary_type="Release",
-                i_state=i_state,
-                i_values=[],  # Release 的 value 数据需另行获取
-                j_state=j_state,
-                j_values=[],
-            )
-
-        elif raw_type == 5:  # ElstcSpt
-            constraints = list(d.get("constraints", []) or [])
-            return ElstcSptBoundary(
-                **common,
-                boundary_type="ElstcSpt",
-                constraints=constraints,
-                coor_no=coor_no,
-            )
-
-        elif raw_type == 6:  # GeneralElstcSpt
-            constraints = list(d.get("constraints", []) or [])
-            return ElstcSptBoundary(
-                **common,
-                boundary_type="GeneralElstcSpt",
-                constraints=constraints,
-                coor_no=coor_no,
-            )
-
-        else:
-            # 未知类型，返回基类
-            return Boundary(**common, boundary_type="Unknown")
-
-    def refresh(self) -> None:
-        """强制刷新缓存（模型变更后自动调用，也可手动调用）"""
-        self._boundaries = []
-        self._bd_map = {}
-        self._loaded = False
-        self._load()
+        
+        boundaries = [
+            Boundary._from_dict(d) 
+            for d in resp.get("data", []) 
+            if isinstance(d, dict) and "no" in d
+        ]
+        return boundaries
 
     def _next_no(self) -> int:
-        """生成下一个可用边界编号
-
-        取已有边界编号的最大值+1，如果没有边界则从1开始。
-        """
-        self._load()
-        if not self._boundaries:
+        """生成下一个可用边界编号"""
+        boundaries = self._load()
+        if not boundaries:
             return 1
-        return max(bd.no for bd in self._boundaries) + 1
+        return max(bd.no for bd in boundaries) + 1
 
     # ── 增删改 ────────────────────────────────
 
     def create_general(
         self,
-        nCoor: int = None,
-        bX: bool = 1,
-        bY: bool = 1,
-        bZ: bool = 1,
-        bRX: bool = 1,
-        bRY: bool = 1,
-        bRZ: bool = 1,
-        bRW: bool = 1,
+        bX: Literal[0, 1] = 1,
+        bY: Literal[0, 1] = 1,
+        bZ: Literal[0, 1] = 1,
+        bRX: Literal[0, 1] = 1,
+        bRY: Literal[0, 1] = 1,
+        bRZ: Literal[0, 1] = 1,
+        bRW: Literal[0, 1] = 1,
+        nCoor: int | None = None,
         no: int | None = None,
     ) -> GeneralBoundary:
-        """创建一般边界
-
-        Args:
-            nCoor: 局部坐标系编号，"" 代表缺省
-            bX: UX方向，0=释放，1=约束
-            bY: UY方向，0=释放，1=约束
-            bZ: UZ方向，0=释放，1=约束
-            bRX: RX方向，0=释放，1=约束
-            bRY: RY方向，0=释放，1=约束
-            bRZ: RZ方向，0=释放，1=约束
-            bRW: RW方向，0=释放，1=约束
-            no: 边界编号，不指定时自动生成（取最大编号+1）
-
-        Returns:
-            GeneralBoundary 对象（包含完整的 constraints 和 coor_no）
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
+        """创建一般边界"""
         if no is None:
             no = self._next_no()
-        if nCoor is None:
-            nCoor = ""
-        ok, err = osis_boundary_general(no, "GENERAL", nCoor, bX, bY, bZ, bRX, bRY, bRZ, bRW)
+        ok, err = osis_boundary_general(no, "GENERAL", nCoor or "", bX, bY, bZ, bRX, bRY, bRZ, bRW)
         if not ok:
             raise RuntimeError(f"创建一般边界 {no} 失败: {err}")
-        return self._reload_get_as(no, GeneralBoundary, "创建一般边界")  # type: ignore[return-value]
-
-    def create_elstcspt(
-        self,
-        bX: bool = 1,
-        DX: float = 1e13,
-        bY: bool = 1,
-        DY: float = 1e13,
-        bZ: bool = 1,
-        DZ: float = 1e13,
-        bRX: bool = 1,
-        RX: float = 1e16,
-        bRY: bool = 1,
-        RY: float = 1e16,
-        bRZ: bool = 1,
-        RZ: float = 1e16,
-        nCoor: int = None,
-        no: int | None = None,
-    ) -> ElstcSptBoundary:
-        """创建弹簧单元弹性支承
-
-        Args:
-            bX: UX方向，0=弹性，1=固定
-            DX: 坐标系X轴方向的弹性支承刚度
-            bY: UY方向，0=弹性，1=固定
-            DY: 坐标系Y轴方向的弹性支承刚度
-            bZ: UZ方向，0=弹性，1=固定
-            DZ: 坐标系Z轴方向的弹性支承刚度
-            bRX: RX方向，0=弹性，1=固定
-            RX: 绕坐标系X轴方向的转动弹性刚度
-            bRY: RY方向，0=弹性，1=固定
-            RY: 绕坐标系Y轴方向的转动弹性刚度
-            bRZ: RZ方向，0=弹性，1=固定
-            RZ: 绕坐标系Z轴方向的转动弹性刚度
-            nCoor: 局部坐标系编号，固定使用""缺省
-            no: 边界编号，不指定时自动生成（取最大编号+1）
-
-        Returns:
-            ElstcSptBoundary 对象
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
-        if no is None:
-            no = self._next_no()
-        if nCoor is None:
-            nCoor = ""
-        ok, err = osis_boundary_elstcspt(
-            no, "ELSTCSPT", nCoor, bX, DX, bY, DY, bZ, DZ, bRX, RX, bRY, RY, bRZ, RZ
-        )
-        if not ok:
-            raise RuntimeError(f"创建弹性支承 {no} 失败: {err}")
-        return self._reload_get_as(no, ElstcSptBoundary, "创建弹性支承")  # type: ignore[return-value]
+        return self.get(no)  # type: ignore[return-value]
 
     def create_master_slave(
         self,
         nNode: int,
-        bX: bool = 1,
-        bY: bool = 1,
-        bZ: bool = 1,
-        bRX: bool = 1,
-        bRY: bool = 1,
-        bRZ: bool = 1,
+        bX: Literal[0, 1] = 1,
+        bY: Literal[0, 1] = 1,
+        bZ: Literal[0, 1] = 1,
+        bRX: Literal[0, 1] = 1,
+        bRY: Literal[0, 1] = 1,
+        bRZ: Literal[0, 1] = 1,
         no: int | None = None,
     ) -> MstSlvBoundary:
-        """创建主从约束
-
-        Args:
-            nNode: 主节点编号
-            bX: UX方向，0=释放，1=约束
-            bY: UY方向，0=释放，1=约束
-            bZ: UZ方向，0=释放，1=约束
-            bRX: RX方向，0=释放，1=约束
-            bRY: RY方向，0=释放，1=约束
-            bRZ: RZ方向，0=释放，1=约束
-            no: 边界编号，不指定时自动生成（取最大编号+1）
-
-        Returns:
-            MstSlvBoundary 对象（包含 master_no 和 constraints）
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
+        """创建主从约束"""
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_master_slave(no, "MSTSLV", nNode, bX, bY, bZ, bRX, bRY, bRZ)
         if not ok:
             raise RuntimeError(f"创建主从约束 {no} 失败: {err}")
-        return self._reload_get_as(no, MstSlvBoundary, "创建主从约束")  # type: ignore[return-value]
+        return self.get(no)  # type: ignore[return-value]
 
     def create_release(
         self,
@@ -578,20 +561,7 @@ class BoundaryManager:
         Mbj: float,
         no: int | None = None,
     ) -> ReleaseBoundary:
-        """创建释放梁端约束
-
-        Args:
-            Fxi_state等: 端部约束状态，0=释放，1=约束
-            Fxi等: 约束值，0-1之间，表示释放后残余的约束能力的百分比
-            no: 边界编号，不指定时自动生成（取最大编号+1）
-
-        Returns:
-            ReleaseBoundary 对象
-
-        Raises:
-            RuntimeError: 创建失败时抛出异常
-        """
-
+        """创建释放梁端约束"""
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_release(
@@ -603,93 +573,90 @@ class BoundaryManager:
         )
         if not ok:
             raise RuntimeError(f"创建释放梁端约束 {no} 失败: {err}")
-        return self._reload_get_as(no, ReleaseBoundary, "创建释放梁端约束")  # type: ignore[return-value]
+        return self.get(no)  # type: ignore[return-value]
+
+    def create_elstcspt(
+        self,
+        bX: Literal[0, 1] = 1,
+        DX: float = 1e13,
+        bY: Literal[0, 1] = 1,
+        DY: float = 1e13,
+        bZ: Literal[0, 1] = 1,
+        DZ: float = 1e13,
+        bRX: Literal[0, 1] = 1,
+        RX: float = 1e16,
+        bRY: Literal[0, 1] = 1,
+        RY: float = 1e16,
+        bRZ: Literal[0, 1] = 1,
+        RZ: float = 1e16,
+        nCoor: int | None = None,
+        no: int | None = None,
+    ) -> ElstcSptBoundary:
+        """创建弹性支承"""
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_boundary_elstcspt(
+            no, "ELSTCSPT", nCoor or "", bX, DX, bY, DY, bZ, DZ, bRX, RX, bRY, RY, bRZ, RZ
+        )
+        if not ok:
+            raise RuntimeError(f"创建弹性支承 {no} 失败: {err}")
+        return self.get(no)  # type: ignore[return-value]
 
     def delete(self, no: int) -> None:
-        """删除边界
-
-        Args:
-            no: 边界编号
-
-        Raises:
-            RuntimeError: 删除失败时抛出异常
-        """
+        """删除边界"""
         ok, err = osis_boundary_del(no)
         if not ok:
             raise RuntimeError(f"删除边界 {no} 失败: {err}")
-        self._loaded = False
-
-    # ── 边界组 ─────────────────────────────────
-
-    def group(
-        self,
-        name: str,
-        eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"],
-        param: list = [],
-    ) -> None:
-        """边界组操作封装
-
-        对应 `pyosis.boundary.osis_boundary_group`。
-
-        Args:
-            name: 边界组名
-            eOP: 操作
-                - c: 创建
-                - a: 添加
-                - s: 替换
-                - r: 移除
-                - aa: 添加全部
-                - ra: 移除全部
-                - m: 修改组名（param 里给新名字）
-                - d: 删除
-            param: 参数列表（编号列表，或区间表达式等；m 操作时放新组名）
-        """
-        ok, err = osis_boundary_group(name, eOP, param)
-        if not ok:
-            raise RuntimeError(f"边界组操作失败 name={name} eOP={eOP} param={param}: {err}")
-        # 组操作不改变边界本体，但为了保险（有些实现会影响可见性/占用），使缓存失效
-        self._loaded = False
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int]) -> Boundary | list[Boundary | None]:
+    def get(self, no: int | list[int]) -> Boundary | list[Boundary | None] | None:
         """根据编号获取单个或多个边界 (O(k))
-
-        Args:
-            no: 边界编号
-
-        Returns:
-            Boundary 对象或数组；边界不存在返回 None
+        
+        接口：GetBoundaryInfoByNos
         """
-        self._load()
         if isinstance(no, int):
-            return self._bd_map.get(no)
-        elif isinstance(no, list):
-            return [self._bd_map.get(n) for n in no]
-        else:
+            no = [no]
+        elif not isinstance(no, list):
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        
+        resp = osis_client("GetBoundaryInfoByNos", {"no": no})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        
+        boundaries = [Boundary._from_dict(d) if d else None for d in resp.get("data", [])]
+        
+        if len(boundaries) == 0:
+            return None
+        elif len(boundaries) == 1:
+            return boundaries[0]
+        return boundaries
 
     def all(self) -> list[Boundary]:
-        """获取所有边界
-
-        Returns:
-            全部边界列表
-        """
-        self._load()
-        return list(self._boundaries)
+        """获取所有边界"""
+        return self._load()
 
     def count(self) -> int:
-        """获取边界总数
+        """获取边界总数"""
+        return len(self._load())
 
-        Returns:
-            边界数量
+    # ── 子管理器 ──────────────────────────────
+
+    @property
+    def group(self) -> BoundaryGroupManager:
+        """边界组管理器
+
+        提供边界组的增删改查功能。
+
+        用法:
+            >>> boundary_manager.group.create("桥台1")
+            >>> boundary_manager.group.add("桥台1", [1, 2])
+            >>> boundary_manager.group.get("桥台1")
         """
-        self._load()
-        return len(self._boundaries)
+        return self._group_manager
 
     def __repr__(self) -> str:
-        self._load()
-        return f"BoundaryManager(count={len(self._boundaries)})"
+        return f"BoundaryManager()"
 
 
 # ──────────────────────────────────────────────

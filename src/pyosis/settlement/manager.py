@@ -193,6 +193,9 @@ class SettlementManager:
         if not ok:
             raise RuntimeError(f"修改沉降荷载工况编号 {old_no} -> {new_no} 失败: {err}")
 
+    def all(self) -> list[Settlement]:
+        return []
+
     def __repr__(self) -> str:
         return f"SettlementManager()"
 
