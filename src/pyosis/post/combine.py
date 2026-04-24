@@ -141,5 +141,5 @@ def osis_combine_del(
 #     pass
 
 
-# 兼容旧函数名
-osis_post = osis_combine_post
+# # 兼容旧函数名
+# osis_post = osis_combine_post

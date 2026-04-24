@@ -27,7 +27,7 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
     return [bd1.no, bd2.no], boundary_group_name
 
 if __name__ == "__main__":
-    from _0_engine import engine
+    from ._0_engine import engine
     nodes = engine.node.all()
     print("nodes: ", nodes)
     node_nos = [n.no for n in nodes]

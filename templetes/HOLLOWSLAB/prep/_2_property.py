@@ -15,6 +15,6 @@ def setup_property(engine: OSISEngine) -> list[str]:
     return geo_names
 
 if __name__ == "__main__":
-    from _0_engine import engine
+    from ._0_engine import engine
     geo_names = setup_property(engine)
     print(geo_names)

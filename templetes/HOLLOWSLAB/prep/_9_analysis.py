@@ -56,7 +56,7 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     return live_analysis_names
 
 if __name__ == "__main__":
-    from _0_engine import engine
+    from ._0_engine import engine
     
     ele_groups = engine.element.group.all()
     print("element groups", ele_groups)

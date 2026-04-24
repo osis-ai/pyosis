@@ -539,7 +539,7 @@ class BoundaryGroupManager:
         return len(self._load())
 
     def __repr__(self) -> str:
-        return f"BoundaryGroupManager(count={self.count()})"
+        return f"BoundaryGroupManager()"
 
 
 # ──────────────────────────────────────────────

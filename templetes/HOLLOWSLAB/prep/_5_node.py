@@ -29,7 +29,7 @@ def build_nodes(engine: OSISEngine) -> list[int]:
             n8.no, n9.no, n10.no, n11.no, n12.no, n13.no, n14.no, n15.no]
 
 if __name__ == "__main__":
-    from _0_engine import engine
+    from ._0_engine import engine
     node_nos = build_nodes(engine)
     print(node_nos)
     print(engine.node.all())

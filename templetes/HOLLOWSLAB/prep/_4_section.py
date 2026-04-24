@@ -75,7 +75,7 @@ def build_sections(engine: OSISEngine) -> list[int]:
     return [sec1.no, sec2.no, sec3.no, sec4.no, sec5.no]
 
 if __name__ == "__main__":
-    from _0_engine import engine
+    from ._0_engine import engine
     sec_nos = build_sections(engine)
     print(sec_nos)
     print(engine.section.all())

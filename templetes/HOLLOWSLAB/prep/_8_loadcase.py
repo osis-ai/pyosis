@@ -129,7 +129,7 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     ]
 
 if __name__ == "__main__":
-    from _0_engine import engine
+    from ._0_engine import engine
     
     # 从 engine 获取已有数据
     mats = engine.material.all()

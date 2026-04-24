@@ -557,7 +557,7 @@ class LiveGradeManager:
         return len(self._load())
 
     def __repr__(self) -> str:
-        return f"LiveGradeManager(count={self.count()})"
+        return f"LiveGradeManager()"
 
 
 class LaneManager:
@@ -762,7 +762,7 @@ class LaneManager:
         return len(self._load())
 
     def __repr__(self) -> str:
-        return f"LaneManager(count={self.count()})"
+        return f"LaneManager()"
 
 
 class LiveCaseManager:
@@ -887,7 +887,7 @@ class LiveCaseManager:
         return len(self._load())
 
     def __repr__(self) -> str:
-        return f"LiveCaseManager(count={self.count()})"
+        return f"LiveCaseManager()"
 
 
 # ──────────────────────────────────────────────
@@ -979,7 +979,7 @@ class LiveManager:
         return self._case_manager
 
     def __repr__(self) -> str:
-        return f"LiveManager(grades={self.grade.count()}, lanes={self.lane.count()}, cases={self.case.count()})"
+        return f"LiveManager()"
 
 
 # ──────────────────────────────────────────────

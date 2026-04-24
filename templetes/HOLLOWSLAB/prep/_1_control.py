@@ -19,5 +19,5 @@ def setup_control(engine: OSISEngine) -> None:
     control.set_modal_opt(0)
 
 if __name__ == "__main__":
-    from _0_engine import engine
+    from ._0_engine import engine
     setup_control(engine)

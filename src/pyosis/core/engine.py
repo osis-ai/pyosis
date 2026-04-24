@@ -37,6 +37,7 @@ from ..thickness.manager import ThicknessManager, thickness_manager
 from ..settlement.manager import SettlementManager, settlement_manager
 from ..stability.manager import StabilityManager, stability_manager
 from ..dynamic.manager import DynamicManager, dynamic_manager
+from ..post.manager import PostManager, post_manager
 from ..general.interface import (
     osis_matrix,
     output_result_for_calc_book,
@@ -71,6 +72,7 @@ class OSISEngine:
         - settlement: 沉降分析管理器
         - stability: 稳定分析管理器（屈曲分析）
         - dynamic:   动力分析管理器（荷载转换质量、模态、反应谱）
+        - post:      后处理管理器（荷载组合、规范验算、结果显示）
 
     通用操作可直接通过 engine 调用：
         - run(), solve(), replot(), clear(), clc()
@@ -96,6 +98,7 @@ class OSISEngine:
         self._settlement = settlement_manager
         self._stability = stability_manager
         self._dynamic = dynamic_manager
+        self._post = post_manager
 
     # ──────────────────────────────────────────
     # 子管理器属性
@@ -185,6 +188,11 @@ class OSISEngine:
     def dynamic(self) -> DynamicManager:
         """动力分析管理器（荷载转换质量、模态、反应谱）"""
         return self._dynamic
+
+    @property
+    def post(self) -> PostManager:
+        """后处理管理器（荷载组合、规范验算、结果显示）"""
+        return self._post
 
     # ──────────────────────────────────────────
     # 通用操作（直接暴露 general 和 core 的函数）

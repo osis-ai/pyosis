@@ -329,7 +329,7 @@ class ElementGroupManager:
         return len(self._load())
 
     def __repr__(self) -> str:
-        return f"ElementGroupManager(count={self.count()})"
+        return f"ElementGroupManager()"
 
 
 # ──────────────────────────────────────────────

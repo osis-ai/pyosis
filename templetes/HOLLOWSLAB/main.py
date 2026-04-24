@@ -12,17 +12,17 @@
 
 import argparse
 
-from modules._0_engine import engine
-from modules._1_control import setup_control
-from modules._2_property import setup_property
-from modules._3_material import build_materials
-from modules._4_section import build_sections
-from modules._5_node import build_nodes
-from modules._6_element import build_elements
-from modules._7_boundary import build_boundaries
-from modules._8_loadcase import build_loadcases
-from modules._9_analysis import build_settle_analysis, build_live_analysis
-from modules._10_stage import build_stages
+from prep._0_engine import engine
+from prep._1_control import setup_control
+from prep._2_property import setup_property
+from prep._3_material import build_materials
+from prep._4_section import build_sections
+from prep._5_node import build_nodes
+from prep._6_element import build_elements
+from prep._7_boundary import build_boundaries
+from prep._8_loadcase import build_loadcases
+from prep._9_analysis import build_settle_analysis, build_live_analysis
+from prep._10_stage import build_stages
 
 
 def build_model(incremental: bool = False, run_analysis: bool = False):
