@@ -48,40 +48,40 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     
     # 2. 几何属性（无依赖）
     print("[2/10] 设置几何属性（钢束线型）...")
-    setup_property(engine)
+    geo_names = setup_property(engine)
     
     # 3. 材料（无依赖）
     print("[3/10] 创建材料...")
-    build_materials(engine)
+    mat_nos = build_materials(engine)
     
     # 4. 截面（无依赖）
     print("[4/10] 创建截面...")
-    build_sections(engine)
+    sec_nos = build_sections(engine)
     
     # 5. 节点（无依赖）
     print("[5/10] 创建节点...")
-    build_nodes(engine)
+    node_nos = build_nodes(engine)
     
-    # 6. 单元（从engine获取node/section/material）
+    # 6. 单元（获取node/section/material）
     print("[6/10] 创建单元...")
-    build_elements(engine)
+    elem_nos, elem_group_names = build_elements(engine, mat_nos, sec_nos, node_nos)
     
-    # 7. 边界（从engine获取node）
+    # 7. 边界（获取node）
     print("[7/10] 创建边界条件...")
-    build_boundaries(engine)
+    bd_nos, bd_group_names = build_boundaries(engine, node_nos)
     
-    # 8. 荷载工况（从engine获取geo/mat/elem）
+    # 8. 荷载工况（获取geo/mat/elem）
     print("[8/10] 创建荷载工况和钢束...")
-    build_loadcases(engine)
+    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos)
     
-    # 9. 活载分析（从engine获取elem）
+    # 9. 活载分析（获取elem）
     print("[9/10] 创建分析...")
-    build_settle_analysis(engine)
-    build_live_analysis(engine)
+    settle_names = build_settle_analysis(engine, node_nos)
+    live_names = build_live_analysis(engine, elem_group_names)
     
-    # 10. 施工阶段（从engine获取所有组）
+    # 10. 施工阶段（获取所有组）
     print("[10/10] 创建施工阶段...")
-    build_stages(engine)
+    # build_stages(engine, elem_groups, bd_group_names, lc_names, settle_names, live_names)
     
     print("\n" + "=" * 50)
     print("建模完成！")

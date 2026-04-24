@@ -3,7 +3,7 @@ from pyosis.core.engine import OSISEngine
 def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int], elem_nos: list[int]) -> list[str]:
     """创建荷载工况和钢束，返回荷载工况名称列表
     
-    荷载工况名称（名称标识，幂等执行）：
+    荷载工况名称：
     - "防撞护栏工况": 防撞护栏（CS）
     - "封端混凝土工况": 封端混凝土（CS）
     - "负温度梯度": 负温度梯度（TG）
@@ -17,7 +17,7 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     tendon = engine.load.tendon
     loadcase = engine.load
     
-    # ── 钢束特性（名称标识，幂等执行）──
+    # ── 钢束特性──
     tendon.create_prop_in("15-10", mat_nos[2], "GBT5224_2014", 15.2, 10, 9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     tendon.create_prop_in("15-3",  mat_nos[2], "GBT5224_2014", 15.2, 3,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     tendon.create_prop_in("15-4",  mat_nos[2], "GBT5224_2014", 15.2, 4,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
@@ -37,7 +37,7 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     tendon.layout("N2", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
     
     
-    # ── 荷载工况（名称标识，幂等执行）──
+    # ── 荷载工况──
     # 1: 防撞护栏工况（CS）
     lc_barrier = loadcase.create("防撞护栏工况", "CS")
     for e in elem_nos:
@@ -143,3 +143,4 @@ if __name__ == "__main__":
     
     lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos)
     print(lc_names)
+    print(engine.load.all())

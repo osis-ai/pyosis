@@ -1,20 +1,20 @@
-"""活载管理器 - 统一管理活载等级、车道和活载的查询
+"""活载管理器 - 统一管理活载等级、车道和活载工况的增删改查
 
 设计理念：
 - 隐藏 HTTP 接口细节，提供原生 Python 风格 API
 - 返回数据类对象而非 HTTP 元组
-- 内部维护活载列表，通过 get 等方法查询，不暴露 HTTP 接口细节
+- 无状态设计，每次从服务端加载（与 element/boundary manager 一致）
 
-支持的活载类型：
-- 活载等级（LiveGrade）：公路I级、公路II级、车辆荷载、疲劳荷载、人群荷载等
-- 车道（Lane）：车道几何信息
-- 活载（Live）：活载工况组合，包含多个子工况
+子管理器：
+- grade: LiveGradeManager - 活载等级
+- lane: LaneManager - 车道
+- case: LiveCaseManager - 活载工况
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal, Optional
+from dataclasses import dataclass, field
+from typing import Literal
 
 from ..core.client import osis_client
 from .grade import (
@@ -49,112 +49,199 @@ from .lane import (
 
 @dataclass(frozen=True)
 class LiveGrade:
-    """活载等级对象"""
-
-    name: str
-    code: int
-    grade: int
-    crowd_bridge_type: int = 0
-    crowd_width: float = 0.0
-    fatigue_ii_veichle_center_dis: float = 0.0
-    related_live_anal: list[str] = ""
+    """活载等级对象
+    
+    对应接口 GetAllLiveGradeInfo / GetGradeInfoByNames 返回的数据。
+    活载等级定义了车辆荷载、人群荷载、疲劳荷载等的规范参数。
+    """
+    no: int                              # 编号
+    name: str                            # 名称
+    code: int                            # 规范代码
+    grade: int                           # 等级代码（如 HIGHWAY_I=1, HIGHWAY_II=2）
+    crowd_bridge_type: int               # 人群荷载桥型
+    crowd_width: float                   # 人群横向宽度（m）
+    fatigue_ii_veichle_center_dis: float # 疲劳II模型车辆中心间距（m）
+    related_live_anal: list[str] = field(default_factory=list)  # 关联的活载分析名称列表
+    related_stages: list[int] = field(default_factory=list)     # 关联的施工阶段编号列表
+    custom_layout: list[list[float]] = field(default_factory=list)  # 自定义布载矩阵
+    code_data_qk_pk5_pk50: dict = field(default_factory=dict)       # 公路荷载规范数据 {qk, pk_5, pk_50}
+    code_data_vehicle_5x2: list[list[float]] = field(default_factory=list)  # 车辆荷载 5x2 矩阵
+    code_data_crowd_w50_w150: dict = field(default_factory=dict)    # 人群荷载规范数据 {w_50, w_150}
+    code_data_fatigueII_6x2: list[list[float]] = field(default_factory=list)  # 疲劳II模型 6x2 矩阵
+    code_data_fatigueIII_4x2: list[list[float]] = field(default_factory=list)  # 疲劳III模型 4x2 矩阵
 
     @classmethod
     def _from_dict(cls, d: dict) -> LiveGrade:
+        """从接口 dict 构造 LiveGrade 对象（内部使用）"""
         return cls(
-            name=d.get("name", ""),
-            code=d.get("code", 0),
-            grade=d.get("grade", 0),
-            crowd_bridge_type=d.get("crowdBridgeType", 0),
-            crowd_width=d.get("crowdWidth", 0.0),
-            fatigue_ii_veichle_center_dis=d.get("fatigueIIVeichleCenterDis", 0.0),
-            related_live_anal=d.get("relatedLiveAnal", []),
+            no=d.get("no"),
+            name=d.get("name"),
+            code=d.get("code"),
+            grade=d.get("grade"),
+            crowd_bridge_type=d.get("crowdBridgeType"),
+            crowd_width=d.get("crowdWidth"),
+            fatigue_ii_veichle_center_dis=d.get("fatigueIIVeichleCenterDis"),
+            related_live_anal=d.get("relatedLiveAnal") or [],
+            related_stages=d.get("relatedStages") or [],
+            custom_layout=d.get("customLayout") or [],
+            code_data_qk_pk5_pk50=d.get("codeData_qk_pk5_pk50") or {},
+            code_data_vehicle_5x2=d.get("codeData_vehicle_5x2") or [],
+            code_data_crowd_w50_w150=d.get("codeData_crowd_w50_w150") or {},
+            code_data_fatigueII_6x2=d.get("codeData_fatigueII_6x2") or [],
+            code_data_fatigueIII_4x2=d.get("codeData_fatigueIII_4x2") or [],
         )
+
+    def __repr__(self) -> str:
+        return f"LiveGrade(name={self.name!r}, code={self.code}, grade={self.grade})"
 
 
 @dataclass(frozen=True)
 class Lane:
-    """车道对象"""
-
-    name: str
-    length: float
-    wheel_width: float
-    veh_ori: int
-    lane_def_method: bool
-    ref_long_ele_grp: str
-    spline_3d_name: str
-    offset: list[float]
-    related_anal: list[str]
+    """车道对象
+    
+    对应接口 GetAllLaneInfo / GetLaneInfoByNames 返回的数据。
+    车道定义了车辆移动的路径和影响线计算方法。
+    """
+    no: int                              # 编号
+    name: str                            # 名称
+    length: float                        # 桥梁跨度（m）
+    wheel_width: float                   # 轮距（m）
+    veh_ori: int                         # 车辆移动方向：-1=向后, 0=往返, 1=向前
+    infl_algo_type: int                  # 影响线算法类型
+    lane_def_method: bool                # 车道定义方法：True=样条曲线, False=单元组
+    ref_long_ele_grp: str                # 参照纵梁单元组名称（lane_def_method=False 时）
+    spline_3d_name: str                  # 3D样条曲线名称（lane_def_method=True 时）
+    offset: list[float] = field(default_factory=list)     # 偏移量 [X, Y, Z]（m）
+    related_anal: list[str] = field(default_factory=list) # 关联的分析名称列表
+    related_stages: list[int] = field(default_factory=list)  # 关联的施工阶段编号列表
 
     @classmethod
     def _from_dict(cls, d: dict) -> Lane:
+        """从接口 dict 构造 Lane 对象（内部使用）"""
         return cls(
-            name=d.get("name", ""),
-            length=d.get("length", 0.0),
-            wheel_width=d.get("wheelWidth", 0.0),
-            veh_ori=d.get("vehOri", 0),
-            lane_def_method=d.get("laneDefMethod", False),
-            ref_long_ele_grp=d.get("refLongEleGrp", ""),
-            spline_3d_name=d.get("spline3DName", ""),
-            offset=d.get("offset", [0.0, 0.0, 0.0]),
-            related_anal=d.get("relatedAnal", []),
+            no=d.get("no"),
+            name=d.get("name"),
+            length=d.get("length"),
+            wheel_width=d.get("wheelWidth"),
+            veh_ori=d.get("vehOri"),
+            infl_algo_type=d.get("inflAlgoType"),
+            lane_def_method=d.get("laneDefMethod"),
+            ref_long_ele_grp=d.get("refLongEleGrp"),
+            spline_3d_name=d.get("spline3DName"),
+            offset=d.get("offset") or [],
+            related_anal=d.get("relatedAnal") or [],
+            related_stages=d.get("relatedStages") or [],
         )
+
+    def __repr__(self) -> str:
+        return f"Lane(name={self.name!r}, length={self.length})"
 
 
 @dataclass(frozen=True)
 class SubLoadCase:
-    """活载子工况"""
-
-    name: str
-    live_grade: str
-    min_lanes: int
-    max_lanes: int
-    scalar: float
-    is_calc_mu: bool
-    mu_bridge_type: int
-    lane_vkt: list[str]
-    master_live_anal: str
+    """活载子工况
+    
+    属于 LiveCase 的组成部分，定义了具体的加载方案。
+    包含活载等级、车道分配、冲击系数等参数。
+    """
+    name: str                            # 子工况名称
+    live_grade: str                      # 活载等级名称
+    live_grade_enum: int                 # 活载等级枚举值
+    min_lanes: int                       # 最少加载车道数
+    max_lanes: int                       # 最多加载车道数
+    master_live_anal: str                # 主活载分析名称
+    freq: float                          # 频率（Hz）
+    lane_vkt: list[str] = field(default_factory=list)  # 车道名称列表
+    scalar: float = 1.0                  # 缩放系数
+    is_calc_mu: bool = False             # 是否计算冲击系数
+    mu_bridge_type: int = 0              # 冲击系数桥型
+    mu_paras: list[float] = field(default_factory=list)  # 冲击系数计算参数
 
     @classmethod
     def _from_dict(cls, d: dict) -> SubLoadCase:
+        """从接口 dict 构造 SubLoadCase 对象（内部使用）"""
         return cls(
-            name=d.get("name", ""),
-            live_grade=d.get("liveGrade", ""),
-            min_lanes=d.get("minLanes", 0),
-            max_lanes=d.get("maxLanes", 0),
-            scalar=d.get("scalar", 1.0),
-            is_calc_mu=d.get("isCalcMu", False),
-            mu_bridge_type=d.get("muBridgeType", 0),
-            lane_vkt=d.get("laneVkt", []),
-            master_live_anal=d.get("masterLiveAnal", ""),
+            name=d.get("name"),
+            live_grade=d.get("liveGrade"),
+            live_grade_enum=d.get("liveGradeEnum"),
+            min_lanes=d.get("minLanes"),
+            max_lanes=d.get("maxLanes"),
+            master_live_anal=d.get("masterLiveAnal"),
+            freq=d.get("freq"),
+            lane_vkt=d.get("laneVkt") or [],
+            scalar=d.get("scalar"),
+            is_calc_mu=d.get("isCalcMu"),
+            mu_bridge_type=d.get("muBridgeType"),
+            mu_paras=d.get("muParas") or [],
         )
 
 
-@dataclass(frozen=True)
-class Live:
-    """活载对象"""
-
-    name: str
-    code: int
-    cmb_type: bool
-    max_lanes_allowed: int
-    trans_reduction_factors: list[float]
-    sub_load_cases: list[SubLoadCase]
+@dataclass(frozen=False)
+class LiveCase:
+    """活载工况对象
+    
+    对应接口 GetAllLiveInfo / GetLiveInfoByNames 返回的数据。
+    活载工况由多个子工况组成，可设置横向折减系数和加载车道范围。
+    
+    属性:
+        no: 工况编号
+        name: 工况名称
+        code: 规范代码
+        cmb_type: 子工况组合类型，True=单独（包络），False=组合（相加）
+        max_lanes_allowed: 允许的最大车道数
+        trans_reduction_factors: 横向布载折减系数列表，最多10个
+        sub_load_cases: 子工况列表
+        related_stages: 关联的施工阶段编号列表
+    """
+    no: int                              # 编号
+    name: str                            # 名称
+    code: int                            # 规范代码
+    cmb_type: bool                       # 组合类型：True=包络, False=相加
+    max_lanes_allowed: int               # 允许的最大车道数
+    trans_reduction_factors: list[float] = field(default_factory=list)  # 横向折减系数
+    sub_load_cases: list[SubLoadCase] = field(default_factory=list)     # 子工况列表
+    related_stages: list[int] = field(default_factory=list)             # 关联的施工阶段
 
     @classmethod
-    def _from_dict(cls, d: dict) -> Live:
+    def _from_dict(cls, d: dict) -> LiveCase:
+        """从接口 dict 构造 LiveCase 对象（内部使用）"""
         return cls(
-            name=d.get("name", ""),
-            code=d.get("code", 0),
-            cmb_type=d.get("cmbType", False),
-            max_lanes_allowed=d.get("maxLanesAllowed", 0),
-            trans_reduction_factors=d.get("transReductionFactors", []),
-            sub_load_cases=[
-                SubLoadCase._from_dict(s) for s in d.get("subLoadCases", [])
-            ],
+            no=d.get("no"),
+            name=d.get("name"),
+            code=d.get("code"),
+            cmb_type=d.get("cmbType"),
+            max_lanes_allowed=d.get("maxLanesAllowed"),
+            trans_reduction_factors=d.get("transReductionFactors") or [],
+            sub_load_cases=[SubLoadCase._from_dict(s) for s in d.get("subLoadCases", []) if isinstance(s, dict)],
+            related_stages=d.get("relatedStages") or [],
         )
 
-    def create(
+    def _sync_from_dict(self, d: dict) -> None:
+        """用 dict 同步当前对象属性（内部使用）"""
+        self.no = d.get("no")
+        self.name = d.get("name")
+        self.code = d.get("code")
+        self.cmb_type = d.get("cmbType")
+        self.max_lanes_allowed = d.get("maxLanesAllowed")
+        self.trans_reduction_factors = d.get("transReductionFactors") or []
+        self.sub_load_cases = [SubLoadCase._from_dict(s) for s in d.get("subLoadCases", []) if isinstance(s, dict)]
+        self.related_stages = d.get("relatedStages") or []
+
+    def refresh(self) -> LiveCase:
+        """从服务端刷新当前活载工况数据并同步到对象属性
+        
+        Returns:
+            刷新后的 LiveCase 对象
+        """
+        resp = osis_client("GetLiveInfoByNames", {"name": [self.name]})
+        if not resp['success']:
+            raise RuntimeError(f"刷新活载工况 {self.name} 失败: {resp['error']}")
+        data = resp.get("data", [])
+        if data and data[0]:
+            self._sync_from_dict(data[0])
+        return self
+
+    def create_sub(
         self,
         sub_name: str,
         grade_name: str,
@@ -163,24 +250,27 @@ class Live:
         bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "SIMPLE",
         mu_params: list[float] | None = None,
         lane_names: list[str] | None = None,
-    ) -> Live:
+    ) -> LiveCase:
         """添加活载子工况
 
         Args:
             sub_name: 子工况名称
             grade_name: 活载等级名称
-            scalar: 缩放系数
-            calc_mu: 是否考虑冲击系数
+            scalar: 缩放系数，默认 1.0
+            calc_mu: 是否计算冲击系数，默认 True
             bridge_type: 桥型（用于计算冲击系数）
-                * SIMPLE = 简支梁桥, 冲击系数: 桥长、弹模、惯性矩、质量
-                * CONTINUOUS = 连续梁桥, 冲击系数: 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
-                * ARCH = 拱桥, 冲击系数: 拱厚变化系数、拱桥矢跨比、桥长、弹模、惯性矩，质量
-                * CABLE_STAYED = 斜拉桥（无辅助墩）, 冲击系数: 计算常数、主跨跨径
-                * CABLE_STAYED_AUX = 斜拉桥（有辅助墩）, 冲击系数: 计算常数、主跨跨径
-                * SUSPENSION = 悬索桥, 冲击系数: 主跨跨径、弹模、惯性矩、主缆水平拉力、质量
-                * BRIDGE_TYPE_CUSTOM = 自定义, 冲击系数: 用户直接输入基频
-            mu_params: 冲击系数计算参数（根据桥型不同参数不同），1-5个
-            lane_names: 车道线名称列表
+                - SIMPLE: 简支梁桥
+                - CONTINUOUS: 连续梁桥
+                - ARCH: 拱桥
+                - CABLE_STAYED: 斜拉桥（无辅助墩）
+                - CABLE_STAYED_AUS: 斜拉桥（有辅助墩）
+                - SUSPENSION: 悬索桥
+                - CUSTOM: 自定义，直接输入基频
+            mu_params: 冲击系数计算参数列表（根据桥型不同参数不同）
+            lane_names: 车道名称列表
+
+        Returns:
+            更新后的 LiveCase 对象
 
         Raises:
             RuntimeError: 添加失败时抛出异常
@@ -196,12 +286,13 @@ class Live:
         )
         if not ok:
             raise RuntimeError(f"添加子工况 {sub_name} 到活载工况 {self.name} 失败: {err}")
+        return self.refresh()
 
-    def delete(self, sub_name: str) -> None:
+    def delete_sub(self, sub_name: str) -> None:
         """删除活载子工况
 
         Args:
-            sub_name: 子工况名称
+            sub_name: 要删除的子工况名称
 
         Raises:
             RuntimeError: 删除失败时抛出异常
@@ -209,8 +300,9 @@ class Live:
         ok, err = osis_live_analysis_inc_mod(self.name, "d", sub_name)
         if not ok:
             raise RuntimeError(f"从活载工况 {self.name} 删除子工况 {sub_name} 失败: {err}")
+        self.refresh()
 
-    def rename(self, old_sub_name: str, new_sub_name: str) -> None:
+    def rename_sub(self, old_sub_name: str, new_sub_name: str) -> None:
         """重命名活载子工况
 
         Args:
@@ -223,12 +315,13 @@ class Live:
         ok, err = osis_live_analysis_inc_mod(self.name, "mn", old_sub_name, new_sub_name)
         if not ok:
             raise RuntimeError(f"重命名子工况 {old_sub_name} -> {new_sub_name} 失败: {err}")
+        self.refresh()
 
     def set_trans_reduction_factors(self, factors: list[float]) -> None:
         """设置活载工况的横向布载折减系数
 
         Args:
-            factors: 折减系数列表，最多10个
+            factors: 折减系数列表，最多10个，不足10个按最后一个系数补齐
 
         Raises:
             RuntimeError: 设置失败时抛出异常
@@ -236,17 +329,18 @@ class Live:
         ok, err = osis_live_analysis_factor(self.name, factors)
         if not ok:
             raise RuntimeError(f"设置横向折减系数失败: {err}")
+        self.refresh()
 
     def set_lane_count(self, sub_name: str, min_lanes: int, max_lanes: int) -> None:
         """设置活载子工况的加载车道数范围
 
         Args:
             sub_name: 子工况名称
-            min_lanes: 最少车道数
-            max_lanes: 最多车道数
+            min_lanes: 最少加载车道数
+            max_lanes: 最多加载车道数
 
         Note:
-            不调用此函数则默认min = 0，max = 最多车道数
+            不调用此方法则默认 min=0, max=最多车道数
 
         Raises:
             RuntimeError: 设置失败时抛出异常
@@ -254,86 +348,39 @@ class Live:
         ok, err = osis_live_analysis_option(self.name, sub_name, min_lanes, max_lanes)
         if not ok:
             raise RuntimeError(f"设置加载车道数失败: {err}")
+        self.refresh()
+
+    def __repr__(self) -> str:
+        return f"LiveCase(name={self.name!r}, sub_cases={len(self.sub_load_cases)})"
+
 
 # ──────────────────────────────────────────────
-# 管理类
+# 子管理器
 # ──────────────────────────────────────────────
 
 
-class LiveManager:
-    """活载管理器
-
-    统一管理活载等级、车道和活载的查询。
-
-    用法:
-        >>> from pyosis.live import live_manager
-        >>> live_manager.load()                               # 加载所有活载数据
-        >>> all_grades = live_manager.all_grades()             # 获取所有活载等级
-        >>> all_lanes = live_manager.all_lanes()               # 获取所有车道
-        >>> all_lives = live_manager.all_lives()              # 获取所有活载
-        >>> grade = live_manager.get_grade("活载等级1")        # 按名称获取活载等级
-        >>> lane = live_manager.get_lane("车道1")              # 按名称获取车道
-        >>> live = live_manager.get_live("活载1")              # 按名称获取活载
+class LiveGradeManager:
+    """活载等级管理器
+    
+    统一管理活载等级的创建、删除、修改和查询。
+    活载等级包括：公路活载、车辆荷载、人群荷载、疲劳荷载等。
     """
 
-    def __init__(self) -> None:
-        self._loaded: bool = False
-        self._live_grades: list[LiveGrade] = []
-        self._lanes: list[Lane] = []
-        self._lives: list[Live] = []
-        self._grade_map: dict[str, LiveGrade] = {}
-        self._lane_map: dict[str, Lane] = {}
-        self._live_map: dict[str, Live] = {}
-
-    # ── 数据加载 ──────────────────────────────
-
-    def _load(self) -> None:
-        """从服务端加载所有活载数据（延迟加载，带缓存）"""
-        if self._loaded:
-            return
-
-        resp = osis_client("GetAllLiveLoadInfo", {})
-        if isinstance(resp, tuple):
-            raise RuntimeError(f"加载活载数据失败: {resp[1]}")
-
-        data = resp.get("data", {})
-
-        # 解析活载等级
-        self._live_grades = [
-            LiveGrade._from_dict(d) for d in data.get("liveGrades", [])
+    def _load(self) -> list[LiveGrade]:
+        """从服务端加载所有活载等级信息（内部使用）
+        
+        Returns:
+            LiveGrade 对象列表
+        """
+        resp = osis_client("GetAllGradeInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        grades = [
+            LiveGrade._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
         ]
-        self._grade_map = {g.name: g for g in self._live_grades}
+        return grades
 
-        # 解析车道
-        self._lanes = [Lane._from_dict(d) for d in data.get("lanes", [])]
-        self._lane_map = {l.name: l for l in self._lanes}
-
-        # 解析活载
-        self._lives = [
-            Live._from_dict(d) for d in data.get("liveInfos", [])
-        ]
-        self._live_map = {l.name: l for l in self._lives}
-
-        self._loaded = True
-
-    def refresh(self) -> None:
-        """强制刷新缓存"""
-        self._loaded = False
-        self._live_grades = []
-        self._lanes = []
-        self._lives = []
-        self._grade_map = {}
-        self._lane_map = {}
-        self._live_map = {}
-        self._load()
-
-    def load(self) -> None:
-        """显式加载数据（也可直接调用查询方法，会自动加载）"""
-        self._load()
-
-    # ── 活载等级增删改 ────────────────────────────────
-
-    def create_grade_highway(
+    def create_highway(
         self,
         name: str,
         eCode: Literal["JTGD60_2015"] = "JTGD60_2015",
@@ -344,7 +391,12 @@ class LiveManager:
         Args:
             name: 活载等级名称
             eCode: 规范类型，默认 JTGD60_2015
-            eLiveLoadType: 活载类型，HIGHWAY_I=公路I级，HIGHWAY_II=公路II级
+            eLiveLoadType: 活载类型
+                - HIGHWAY_I: 公路I级
+                - HIGHWAY_II: 公路II级
+
+        Returns:
+            创建的 LiveGrade 对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -352,10 +404,9 @@ class LiveManager:
         ok, err = osis_livegrade_highway(name, eCode, eLiveLoadType)
         if not ok:
             raise RuntimeError(f"创建公路活载等级 {name} 失败: {err}")
-        self._loaded = False
-        return self.get_grade(name)
+        return self.get(name)
 
-    def create_grade_vehicle(
+    def create_vehicle(
         self,
         name: str,
         eCode: Literal["JTGD60_2015"] = "JTGD60_2015",
@@ -366,16 +417,18 @@ class LiveManager:
             name: 活载等级名称
             eCode: 规范类型，默认 JTGD60_2015
 
+        Returns:
+            创建的 LiveGrade 对象
+
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
         ok, err = osis_livegrade_vehicle(name, eCode, "VEHICLE")
         if not ok:
             raise RuntimeError(f"创建车辆荷载等级 {name} 失败: {err}")
-        self._loaded = False
-        return self.get_grade(name)
+        return self.get(name)
 
-    def create_grade_crowd(
+    def create_crowd(
         self,
         name: str,
         eBridgeType: Literal["BRIDGE_COMMON", "BRIDGE_CROWD_WITH", "BRIDGE_CROWD_ONLY"] = "BRIDGE_COMMON",
@@ -385,8 +438,14 @@ class LiveManager:
 
         Args:
             name: 活载等级名称
-            eBridgeType: 桥类型，BRIDGE_COMMON=一般桥，BRIDGE_CROWD_WITH=行人密集桥，BRIDGE_CROWD_ONLY=专用行人桥
-            dPara: 人群横向宽度
+            eBridgeType: 桥类型
+                - BRIDGE_COMMON: 一般桥
+                - BRIDGE_CROWD_WITH: 行人密集桥
+                - BRIDGE_CROWD_ONLY: 专用行人桥
+            dPara: 人群横向宽度（m），默认 10.0
+
+        Returns:
+            创建的 LiveGrade 对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -394,10 +453,9 @@ class LiveManager:
         ok, err = osis_livegrade_crowd(name, "JTGD60_2015", "CROWD", eBridgeType, dPara)
         if not ok:
             raise RuntimeError(f"创建人群荷载等级 {name} 失败: {err}")
-        self._loaded = False
-        return self.get_grade(name)
+        return self.get(name)
 
-    def create_grade_fatigue(
+    def create_fatigue(
         self,
         name: str,
         eLiveLoadType: Literal["FATIGUE_I", "FATIGUE_II", "FATIGUE_III"] = "FATIGUE_I",
@@ -407,8 +465,14 @@ class LiveManager:
 
         Args:
             name: 活载等级名称
-            eLiveLoadType: 疲劳模型类型，FATIGUE_I/II/III
-            dPara: 车辆中心间距，仅 FATIGUE_II 时需要填写
+            eLiveLoadType: 疲劳模型类型
+                - FATIGUE_I: 疲劳模型I
+                - FATIGUE_II: 疲劳模型II（需要 dPara）
+                - FATIGUE_III: 疲劳模型III
+            dPara: 车辆中心间距（m），仅 FATIGUE_II 时需要
+
+        Returns:
+            创建的 LiveGrade 对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -416,10 +480,9 @@ class LiveManager:
         ok, err = osis_livegrade_fatigue(name, "JTGD60_2015", eLiveLoadType, dPara)
         if not ok:
             raise RuntimeError(f"创建疲劳荷载等级 {name} 失败: {err}")
-        self._loaded = False
-        return self.get_grade(name)
+        return self.get(name)
 
-    def delete_grade(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """删除活载等级
 
         Args:
@@ -431,9 +494,8 @@ class LiveManager:
         ok, err = osis_livegrade_del(name)
         if not ok:
             raise RuntimeError(f"删除活载等级 {name} 失败: {err}")
-        self._loaded = False
 
-    def rename_grade(self, old_name: str, new_name: str) -> None:
+    def rename(self, old_name: str, new_name: str) -> None:
         """重命名活载等级
 
         Args:
@@ -446,11 +508,80 @@ class LiveManager:
         ok, err = osis_livegrade_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名活载等级 {old_name} -> {new_name} 失败: {err}")
-        self._loaded = False
 
-    # ── 车道增删改 ────────────────────────────────
+    def get(self, name: str | list[str]) -> LiveGrade | list[LiveGrade | None] | None:
+        """根据名称获取活载等级
 
-    def create_lane_ve(
+        Args:
+            name: 活载等级名称，支持单个名称或名称列表
+
+        Returns:
+            单个 LiveGrade 对象；如果传入列表则返回对象列表；
+            不存在返回 None
+
+        Raises:
+            TypeError: 名称类型不支持时抛出
+            RuntimeError: 接口调用失败时抛出
+        """
+        if isinstance(name, str):
+            name = [name]
+        elif not isinstance(name, list):
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        
+        resp = osis_client("GetGradeInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        
+        grades = [LiveGrade._from_dict(d) if d else None for d in resp.get("data", [])]
+        
+        if len(grades) == 0:
+            return None
+        elif len(grades) == 1:
+            return grades[0]
+        return grades
+
+    def all(self) -> list[LiveGrade]:
+        """获取所有活载等级
+
+        Returns:
+            全部 LiveGrade 对象列表
+        """
+        return self._load()
+
+    def count(self) -> int:
+        """获取活载等级数量
+
+        Returns:
+            活载等级数量
+        """
+        return len(self._load())
+
+    def __repr__(self) -> str:
+        return f"LiveGradeManager(count={self.count()})"
+
+
+class LaneManager:
+    """车道管理器
+    
+    统一管理车道的创建、删除、修改和查询。
+    支持两种影响线算法：车道单元法（VE）和横向联系梁法（TCB）。
+    """
+
+    def _load(self) -> list[Lane]:
+        """从服务端加载所有车道信息（内部使用）
+        
+        Returns:
+            Lane 对象列表
+        """
+        resp = osis_client("GetAllLaneInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        lanes = [
+            Lane._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
+        ]
+        return lanes
+
+    def create_ve(
         self,
         name: str,
         dLength: float,
@@ -464,24 +595,29 @@ class LiveManager:
     ) -> Lane:
         """创建车道（车道单元法 VE）
 
+        适用于主梁为梁单元的桥梁结构，车辆沿纵向路径移动。
+
         Args:
             name: 车道名称
             dLength: 桥梁跨度（m）
-            wheel: 轮距（默认1）
+            wheel: 轮距，默认 1
             eOriention: 车辆移动方向
-                * -1=向后
-                * 0=往返
-                * 1=向前
-            eRef: 车道参照方式，
-                * 0=单元组
-                * 1=样条曲线
-            spline_name: 样条曲线名称（eRef=1时使用）
-            ref_elems: 参照单元组名称列表（纵梁）（eRef=0时使用）
-            offsetY: 局部坐标系下Y方向偏移量（m）（eRef=0时使用）
-            offsetZ: 局部坐标系下Z方向偏移量（m）（eRef=0时使用）
+                - -1: 向后
+                - 0: 往返（默认）
+                - 1: 向前
+            eRef: 车道参照方式
+                - 0: 参照单元组（默认）
+                - 1: 参照样条曲线
+            spline_name: 样条曲线名称（eRef=1 时必填）
+            ref_elems: 参照纵梁单元组名称（eRef=0 时必填）
+            offsetY: Y方向偏移量（m），默认 0.0
+            offsetZ: Z方向偏移量（m），默认 0.0
+
+        Returns:
+            创建的 Lane 对象
 
         Raises:
-            RuntimeError: 创建失败时抛出异常
+            RuntimeError: 参数校验失败或创建失败时抛出
         """
         if eRef == 0:
             if not ref_elems:
@@ -495,10 +631,9 @@ class LiveManager:
         ok, err = osis_lane_ve(name, "VE", dLength, wheel, eOriention, eRef, param)
         if not ok:  
             raise RuntimeError(f"创建车道 {name} 失败: {err}")
-        self._loaded = False
-        return self.get_lane(name)
+        return self.get(name)
 
-    def create_lane_tcb(
+    def create_tcb(
         self,
         name: str,
         crossbeam_elems: str,
@@ -513,20 +648,30 @@ class LiveManager:
     ) -> Lane:
         """创建车道（横向联系梁法 TCB）
 
+        适用于由主梁+横梁组成的空间传力结构，荷载先分配给横梁再传递至主梁。
+
         Args:
             name: 车道名称
             crossbeam_elems: 横梁单元组名称
             dLength: 桥梁跨度（m）
-            wheel: 轮距（默认1）
+            wheel: 轮距，默认 1
             eOriention: 车辆移动方向
-            eRef: 车道参照方式，0=单元组，1=样条曲线
-            ref_elems: 参照纵梁单元组名称（eRef=0时使用）
-            offsetY: Y方向偏移量（m）
-            offsetZ: Z方向偏移量（m）
-            spline_name: 样条曲线名称（eRef=1时使用）
+                - -1: 向后
+                - 0: 往返（默认）
+                - 1: 向前
+            eRef: 车道参照方式
+                - 0: 参照单元组（默认）
+                - 1: 参照样条曲线
+            spline_name: 样条曲线名称（eRef=1 时必填）
+            ref_elems: 参照纵梁单元组名称（eRef=0 时必填）
+            offsetY: Y方向偏移量（m），默认 0.0
+            offsetZ: Z方向偏移量（m），默认 0.0
+
+        Returns:
+            创建的 Lane 对象
 
         Raises:
-            RuntimeError: 创建失败时抛出异常
+            RuntimeError: 参数校验失败或创建失败时抛出
         """
         if eRef == 0:
             if not ref_elems:
@@ -540,10 +685,9 @@ class LiveManager:
         ok, err = osis_lane_tcb(name, "TCB", crossbeam_elems, dLength, wheel, eOriention, eRef, param)
         if not ok:
             raise RuntimeError(f"创建车道 {name} 失败: {err}")
-        self._loaded = False
-        return self.get_lane(name)
+        return self.get(name)
 
-    def delete_lane(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """删除车道
 
         Args:
@@ -555,9 +699,8 @@ class LiveManager:
         ok, err = osis_lane_del(name)
         if not ok:
             raise RuntimeError(f"删除车道 {name} 失败: {err}")
-        self._loaded = False
 
-    def rename_lane(self, old_name: str, new_name: str) -> None:
+    def rename(self, old_name: str, new_name: str) -> None:
         """重命名车道
 
         Args:
@@ -570,22 +713,96 @@ class LiveManager:
         ok, err = osis_lane_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名车道 {old_name} -> {new_name} 失败: {err}")
-        self._loaded = False
 
-    # ── 活载工况增删改 ────────────────────────────────
+    def get(self, name: str | list[str]) -> Lane | list[Lane | None] | None:
+        """根据名称获取车道
 
-    def create_live(
+        Args:
+            name: 车道名称，支持单个名称或名称列表
+
+        Returns:
+            单个 Lane 对象；如果传入列表则返回对象列表；
+            不存在返回 None
+
+        Raises:
+            TypeError: 名称类型不支持时抛出
+            RuntimeError: 接口调用失败时抛出
+        """
+        if isinstance(name, str):
+            name = [name]
+        elif not isinstance(name, list):
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        
+        resp = osis_client("GetLaneInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        
+        lanes = [Lane._from_dict(d) if d else None for d in resp.get("data", [])]
+        
+        if len(lanes) == 0:
+            return None
+        elif len(lanes) == 1:
+            return lanes[0]
+        return lanes
+
+    def all(self) -> list[Lane]:
+        """获取所有车道
+
+        Returns:
+            全部 Lane 对象列表
+        """
+        return self._load()
+
+    def count(self) -> int:
+        """获取车道数量
+
+        Returns:
+            车道数量
+        """
+        return len(self._load())
+
+    def __repr__(self) -> str:
+        return f"LaneManager(count={self.count()})"
+
+
+class LiveCaseManager:
+    """活载工况管理器
+    
+    统一管理活载工况的创建、删除、修改和查询。
+    活载工况包含多个子工况，每个子工况对应一种加载方案。
+    """
+
+    def _load(self) -> list[LiveCase]:
+        """从服务端加载所有活载工况信息（内部使用）
+        
+        Returns:
+            LiveCase 对象列表
+        """
+        resp = osis_client("GetAllLiveInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        lives = [
+            LiveCase._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
+        ]
+        return lives
+
+    def create(
         self,
         name: str,
         code: Literal["JTGD60_2015"] = "JTGD60_2015",
         sub_cmb_type: Literal[0, 1] = 1,
-    ) -> Live:
+    ) -> LiveCase:
         """创建活载工况
 
         Args:
             name: 活载工况名称
-            code: 规范名
-            sub_cmb_type: 子工况组合类型，1=单独（包络），0=组合（相加）
+            code: 规范名，默认 JTGD60_2015
+            sub_cmb_type: 子工况组合类型
+                - 1: 单独（包络，默认）
+                - 0: 组合（相加）
+
+        Returns:
+            创建的 LiveCase 对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
@@ -593,10 +810,9 @@ class LiveManager:
         ok, err = osis_live_analysis(name, code, sub_cmb_type)
         if not ok:
             raise RuntimeError(f"创建活载工况 {name} 失败: {err}")
-        self._loaded = False
-        return self.get_live(name)
+        return self.get(name)
 
-    def delete_live(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """删除活载工况
 
         Args:
@@ -608,9 +824,8 @@ class LiveManager:
         ok, err = osis_live_analysis_del(name)
         if not ok:
             raise RuntimeError(f"删除活载工况 {name} 失败: {err}")
-        self._loaded = False
 
-    def rename_live(self, old_name: str, new_name: str) -> None:
+    def rename(self, old_name: str, new_name: str) -> None:
         """重命名活载工况
 
         Args:
@@ -623,58 +838,148 @@ class LiveManager:
         ok, err = osis_live_analysis_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名活载工况 {old_name} -> {new_name} 失败: {err}")
-        self._loaded = False
 
-    # ── 查询 ──────────────────────────────────
+    def get(self, name: str | list[str]) -> LiveCase | list[LiveCase | None] | None:
+        """根据名称获取活载工况
 
-    def all_grades(self) -> list[LiveGrade]:
-        """获取所有活载等级"""
-        self._load()
-        return list(self._live_grades)
+        Args:
+            name: 活载工况名称，支持单个名称或名称列表
 
-    def all_lanes(self) -> list[Lane]:
-        """获取所有车道"""
-        self._load()
-        return list(self._lanes)
+        Returns:
+            单个 LiveCase 对象；如果传入列表则返回对象列表；
+            不存在返回 None
 
-    def all_lives(self) -> list[Live]:
-        """获取所有活载"""
-        self._load()
-        return list(self._lives)
+        Raises:
+            TypeError: 名称类型不支持时抛出
+            RuntimeError: 接口调用失败时抛出
+        """
+        if isinstance(name, str):
+            name = [name]
+        elif not isinstance(name, list):
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        
+        resp = osis_client("GetLiveInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        
+        lives = [LiveCase._from_dict(d) if d else None for d in resp.get("data", [])]
+        
+        if len(lives) == 0:
+            return None
+        elif len(lives) == 1:
+            return lives[0]
+        return lives
 
-    def get_grade(self, name: str) -> Optional[LiveGrade]:
-        """根据名称获取活载等级"""
-        self._load()
-        return self._grade_map.get(name)
+    def all(self) -> list[LiveCase]:
+        """获取所有活载工况
 
-    def get_lane(self, name: str) -> Optional[Lane]:
-        """根据名称获取车道"""
-        self._load()
-        return self._lane_map.get(name)
+        Returns:
+            全部 LiveCase 对象列表
+        """
+        return self._load()
 
-    def get_live(self, name: str) -> Optional[Live]:
-        """根据名称获取活载"""
-        self._load()
-        return self._live_map.get(name)
+    def count(self) -> int:
+        """获取活载工况数量
 
-    def count_grades(self) -> int:
-        """获取活载等级数量"""
-        self._load()
-        return len(self._live_grades)
-
-    def count_lanes(self) -> int:
-        """获取车道数量"""
-        self._load()
-        return len(self._lanes)
-
-    def count_lives(self) -> int:
-        """获取活载数量"""
-        self._load()
-        return len(self._lives)
+        Returns:
+            活载工况数量
+        """
+        return len(self._load())
 
     def __repr__(self) -> str:
-        self._load()
-        return f"LiveManager(grades={len(self._live_grades)}, lanes={len(self._lanes)}, lives={len(self._lives)})"
+        return f"LiveCaseManager(count={self.count()})"
+
+
+# ──────────────────────────────────────────────
+# 主管理器
+# ──────────────────────────────────────────────
+
+
+class LiveManager:
+    """活载管理器
+
+    统一管理活载等级、车道和活载工况。通过子管理器属性访问具体功能：
+
+    - ``grade``: 活载等级管理器（LiveGradeManager）
+    - ``lane``: 车道管理器（LaneManager）
+    - ``case``: 活载工况管理器（LiveCaseManager）
+
+    用法示例::
+
+        >>> from pyosis.live import live_manager
+        >>> 
+        >>> # 创建活载等级
+        >>> grade = live_manager.grade.create_highway("公路I级")
+        >>> 
+        >>> # 创建车道
+        >>> lane = live_manager.lane.create_ve(
+        ...     name="车道1",
+        ...     dLength=30.0,
+        ...     ref_elems="主梁单元组",
+        ...     offsetY=2.5,
+        ... )
+        >>> 
+        >>> # 创建活载工况并添加子工况
+        >>> live_case = live_manager.case.create("活载工况1")
+        >>> live_case.create_sub(
+        ...     sub_name="子工况1",
+        ...     grade_name=grade.name,
+        ...     lane_names=[lane.name],
+        ...     calc_mu=True,
+        ...     bridge_type="SIMPLE",
+        ...     mu_params=[30.0, 3.45e10, 0.5, 2500.0],
+        ... )
+    """
+
+    def __init__(self) -> None:
+        self._grade_manager = LiveGradeManager()
+        self._lane_manager = LaneManager()
+        self._case_manager = LiveCaseManager()
+
+    @property
+    def grade(self) -> LiveGradeManager:
+        """活载等级管理器
+        
+        提供活载等级的增删改查功能。
+        
+        用法::
+            
+            >>> live_manager.grade.create_highway("公路I级")
+            >>> live_manager.grade.all()
+            >>> live_manager.grade.get("公路I级")
+        """
+        return self._grade_manager
+
+    @property
+    def lane(self) -> LaneManager:
+        """车道管理器
+        
+        提供车道的增删改查功能。
+        
+        用法::
+            
+            >>> live_manager.lane.create_ve("车道1", 30.0, ref_elems="主梁")
+            >>> live_manager.lane.all()
+            >>> live_manager.lane.get("车道1")
+        """
+        return self._lane_manager
+
+    @property
+    def case(self) -> LiveCaseManager:
+        """活载工况管理器
+        
+        提供活载工况的增删改查功能。
+        
+        用法::
+            
+            >>> live_manager.case.create("活载工况1")
+            >>> live_manager.case.all()
+            >>> live_manager.case.get("活载工况1")
+        """
+        return self._case_manager
+
+    def __repr__(self) -> str:
+        return f"LiveManager(grades={self.grade.count()}, lanes={self.lane.count()}, cases={self.case.count()})"
 
 
 # ──────────────────────────────────────────────

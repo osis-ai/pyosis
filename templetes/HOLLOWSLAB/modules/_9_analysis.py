@@ -18,11 +18,11 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     live = engine.live
     
     # 活载等级（名称标识）
-    grade1 = live.create_grade_highway("简支空心板移动荷载", "JTGD60_2015", "HIGHWAY_I")
+    grade1 = live.grade.create_highway("简支空心板移动荷载", "JTGD60_2015", "HIGHWAY_I")
     
     eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
     # 车道（名称标识）
-    lane1 = live.create_lane_ve(
+    lane1 = live.lane.create_ve(
         name="车道",
         dLength=15.0800,
         wheel=1.80,
@@ -34,12 +34,12 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     )
     
     # 活载工况（名称标识）
-    live_lane = live.create_live("车道荷载包络", "JTGD60_2015", 1)
+    livecase_lane = live.case.create("车道荷载包络", "JTGD60_2015", 1)
     # 横向布载折减系数
-    live_lane.set_trans_reduction_factors([1.2000, 1.0000, 0.7800, 0.6700, 0.6000, 0.5500, 0.5200, 0.5000, 0.5000, 0.5000])
+    livecase_lane.set_trans_reduction_factors([1.2000, 1.0000, 0.7800, 0.6700, 0.6000, 0.5500, 0.5200, 0.5000, 0.5000, 0.5000])
     
     # 子工况
-    live_lane.create(
+    livecase_lane.create_sub(
         sub_name="车道荷载工况1",
         grade_name=grade1.name,
         scalar=1.0,
@@ -50,9 +50,9 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     )
     
     # 加载车道数范围
-    live_lane.set_lane_count("车道荷载工况1", 0, 1)
+    livecase_lane.set_lane_count("车道荷载工况1", 0, 1)
 
-    live_analysis_names = [live_lane.name, ]
+    live_analysis_names = [livecase_lane.name, ]
     return live_analysis_names
 
 if __name__ == "__main__":
@@ -64,3 +64,4 @@ if __name__ == "__main__":
     
     live_names = build_live_analysis(engine, elem_group_names)
     print(live_names)
+    print(engine.live.case.all())

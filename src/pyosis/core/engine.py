@@ -61,7 +61,7 @@ class OSISEngine:
         - boundary:  边界管理器
         - load:      荷载工况管理器
         - stage:     施工阶段管理器
-        - live:      活载管理器
+        - live:      活载管理器（含 grade/lane/case 子管理器）
         - geometry:  几何管理器（三维样条曲线）
         - property:  属性管理器（坐标系、收缩徐变、阻尼等）
         - thickness: 厚度管理器（壳厚度特性）
@@ -285,21 +285,24 @@ class OSISEngine:
         }
 
     def refresh_all(self) -> None:
-        """强制刷新有状态管理器的缓存"""
-        self._load.refresh()
-        self._live.refresh()
+        """强制刷新有状态管理器的缓存
+        
+        当前所有管理器均为无状态设计，此方法保留以保持向后兼容。
+        """
+        pass
 
     def __repr__(self) -> str:
-        summary = self.model_summary()
-        parts = [
-            f"OSISEngine(",
-            f"  materials={summary['materials']},",
-            f"  sections={summary['sections']},",
-            f"  nodes={summary['nodes']},",
-            f"  elements={summary['elements']},",
-            f"  boundaries={summary['boundaries']},",
-            f"  load_cases={summary['load_cases']},",
-            f"  stages={summary['stages']}",
-            f")",
-        ]
-        return "\n".join(parts)
+        # summary = self.model_summary()
+        # parts = [
+        #     f"OSISEngine(",
+        #     f"  materials={summary['materials']},",
+        #     f"  sections={summary['sections']},",
+        #     f"  nodes={summary['nodes']},",
+        #     f"  elements={summary['elements']},",
+        #     f"  boundaries={summary['boundaries']},",
+        #     f"  load_cases={summary['load_cases']},",
+        #     f"  stages={summary['stages']}",
+        #     f")",
+        # ]
+        # return "\n".join(parts)
+        return f"OSISEngine(project_path={self.project.get_directory()})"

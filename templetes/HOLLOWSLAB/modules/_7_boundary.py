@@ -19,11 +19,11 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
     bd2.assign("a", [node_nos[13]])  # 分配给节点14
     
     # 边界组
-    boundary.group.create("桥台1_永久_x向固定")
-    boundary.group.add("桥台1_永久_x向固定", [1])
-    boundary.group.create("桥台2_永久_x向滑动")
-    boundary.group.add("桥台2_永久_x向滑动", [2])
-    boundary_group_name = ["桥台1_永久_x向固定", "桥台2_永久_x向滑动"]
+    bg1 = boundary.group.create("桥台1_永久_x向固定")
+    bg1.add([bd1.no])
+    bg2 = boundary.group.create("桥台2_永久_x向滑动")
+    bg2.add([bd2.no])
+    boundary_group_name = [bg1.name, bg2.name]
     return [bd1.no, bd2.no], boundary_group_name
 
 if __name__ == "__main__":
@@ -35,3 +35,5 @@ if __name__ == "__main__":
     bd_nos, bd_groups = build_boundaries(engine, node_nos)
     print(bd_nos)
     print(bd_groups)
+    print(engine.boundary.all())
+    print(engine.boundary.group.all())

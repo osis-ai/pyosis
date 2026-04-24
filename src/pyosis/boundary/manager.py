@@ -312,11 +312,12 @@ class GeneralElstcSptBoundary(Boundary):
         return f"GeneralElstcSptBoundary(no={self.no})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class BoundaryGroup:
     """边界组对象
 
     由 BoundaryGroupManager 内部创建，用户不应直接实例化。
+    提供组成员增删改查操作。
     """
     name: str
     boundary_nos: list[int] = field(default_factory=list)
@@ -339,6 +340,99 @@ class BoundaryGroup:
             relied_elements=list(d.get("reliedElements")),
         )
 
+    def _sync_from_dict(self, d: dict) -> None:
+        """用 dict 同步当前对象（内部使用）"""
+        self.name = d.get("groupName")
+        self.boundary_nos = list(d.get("boundaryNos"))
+        self.boundary_count = d.get("boundaryCount")
+        self.related_stages = list(d.get("relatedStages"))
+        self.related_stage_count = d.get("relatedStageCount")
+        self.relied_nodes = list(d.get("reliedNodes"))
+        self.relied_elements = list(d.get("reliedElements"))
+
+    def refresh(self) -> BoundaryGroup:
+        """刷新当前边界组对象并同步到对象属性"""
+        resp = osis_client("GetBoundaryGroupInfoByNames", {"name": [self.name]})
+        if not resp['success']:
+            raise RuntimeError(f"刷新边界组 {self.name} 失败: {resp['error']}")
+        data = resp.get("data", [])
+        if data and data[0]:
+            self._sync_from_dict(data[0])
+        return self
+
+    def _execute(self, operation: str, param: list | None = None) -> None:
+        """执行边界组底层操作（内部使用）"""
+        ok, err = osis_boundary_group(self.name, operation, param)
+        if not ok:
+            raise RuntimeError(f"边界组操作 {self.name} ({operation}) 失败: {err}")
+
+    def add(self, boundaries: list[int]) -> BoundaryGroup:
+        """向边界组添加边界
+
+        Args:
+            boundaries: 边界编号列表
+
+        Returns:
+            更新后的 BoundaryGroup 对象
+        """
+        self._execute("a", boundaries)
+        return self.refresh()
+
+    def remove(self, boundaries: list[int]) -> BoundaryGroup:
+        """从边界组移除边界
+
+        Args:
+            boundaries: 边界编号列表
+
+        Returns:
+            更新后的 BoundaryGroup 对象
+        """
+        self._execute("r", boundaries)
+        return self.refresh()
+
+    def replace(self, boundaries: list[int]) -> BoundaryGroup:
+        """替换边界组内边界
+
+        Args:
+            boundaries: 新的边界编号列表
+
+        Returns:
+            更新后的 BoundaryGroup 对象
+        """
+        self._execute("s", boundaries)
+        return self.refresh()
+
+    def add_all(self) -> BoundaryGroup:
+        """添加全部边界到组
+
+        Returns:
+            更新后的 BoundaryGroup 对象
+        """
+        self._execute("aa")
+        return self.refresh()
+
+    def remove_all(self) -> BoundaryGroup:
+        """从组移除全部边界
+
+        Returns:
+            更新后的 BoundaryGroup 对象
+        """
+        self._execute("ra")
+        return self.refresh()
+
+    def rename(self, new_name: str) -> BoundaryGroup:
+        """修改边界组名称
+
+        Args:
+            new_name: 新名称
+
+        Returns:
+            更新后的 BoundaryGroup 对象
+        """
+        self._execute("m", [new_name])
+        self.name = new_name
+        return self.refresh()
+
     def __repr__(self) -> str:
         return f"BoundaryGroup(name={self.name!r}, boundaries={self.boundary_nos})"
 
@@ -351,23 +445,22 @@ class BoundaryGroup:
 class BoundaryGroupManager:
     """边界组管理器
 
-    统一管理边界组的增删改查。由 BoundaryManager 持有，不单独导出。
+    统一管理边界组的创建、删除和查询。组成员操作在 BoundaryGroup 对象上进行。
+    由 BoundaryManager 持有，不单独导出。
 
     用法:
         >>> from pyosis.boundary import boundary_manager
-        >>> boundary_manager.group.create("桥台1")
-        >>> boundary_manager.group.add("桥台1", [1, 2])
+        >>> # 创建和查询
+        >>> bg = boundary_manager.group.create("桥台1")
         >>> bg = boundary_manager.group.get("桥台1")
+        >>> # 组成员操作（在对象上调用）
+        >>> bg.add([1, 2])
+        >>> bg.remove([1])
+        >>> bg.replace([3, 4])
     """
 
     def __init__(self) -> None:
         ...
-
-    def _execute(self, name: str, operation: str, param: list | None = None) -> None:
-        """执行边界组底层操作"""
-        ok, err = osis_boundary_group(name, operation, param)
-        if not ok:
-            raise RuntimeError(f"边界组操作 {name} ({operation}) 失败: {err}")
 
     def _load(self) -> list[BoundaryGroup]:
         """从服务端加载所有边界组信息"""
@@ -385,54 +478,58 @@ class BoundaryGroupManager:
     # ── 增删改 ────────────────────────────────
 
     def create(self, name: str) -> BoundaryGroup:
-        """创建边界组"""
-        self._execute(name, "c")
-        return self.get(name)
+        """创建边界组
 
-    def add(self, name: str, boundaries: list[int]) -> BoundaryGroup:
-        """向边界组添加边界"""
-        self._execute(name, "a", boundaries)
-        return self.get(name)
+        Args:
+            name: 边界组名称
 
-    def remove(self, name: str, boundaries: list[int]) -> BoundaryGroup:
-        """从边界组移除边界"""
-        self._execute(name, "r", boundaries)
+        Returns:
+            创建的 BoundaryGroup 对象
+        """
+        ok, err = osis_boundary_group(name, "c")
+        if not ok:
+            raise RuntimeError(f"创建边界组 {name} 失败: {err}")
         return self.get(name)
-
-    def replace(self, name: str, boundaries: list[int]) -> BoundaryGroup:
-        """替换边界组内边界"""
-        self._execute(name, "s", boundaries)
-        return self.get(name)
-
-    def add_all(self, name: str) -> BoundaryGroup:
-        """添加全部边界到组"""
-        self._execute(name, "aa")
-        return self.get(name)
-
-    def remove_all(self, name: str) -> BoundaryGroup:
-        """从组移除全部边界"""
-        self._execute(name, "ra")
-        return self.get(name)
-
-    def rename(self, old_name: str, new_name: str) -> BoundaryGroup:
-        """修改边界组名称"""
-        self._execute(old_name, "m", [new_name])
-        return self.get(new_name)
 
     def delete(self, name: str) -> None:
-        """删除边界组"""
-        self._execute(name, "d")
+        """删除边界组
+
+        Args:
+            name: 边界组名称
+        """
+        ok, err = osis_boundary_group(name, "d")
+        if not ok:
+            raise RuntimeError(f"删除边界组 {name} 失败: {err}")
 
     # ── 查询 ──────────────────────────────────
+    
+    def get(self, name: str | list[str]) -> BoundaryGroup | list[BoundaryGroup | None] | None:
+        """根据名称获取单个或多个边界组
 
-    def get(self, name: str) -> BoundaryGroup | None:
-        """根据名称获取边界组"""
-        groups = self._load()
-        for g in groups:
-            if g.name == name:
-                return g
-        return None
+        Args:
+            name: 边界组名称，支持单个名称或名称列表
 
+        Returns:
+            单个 BoundaryGroup 对象；如果传入列表则返回对象列表；
+            不存在返回 None
+        """
+        if isinstance(name, str):
+            name = [name]
+        elif not isinstance(name, list):
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        
+        resp = osis_client("GetBoundaryGroupInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        
+        boundary_groups = [BoundaryGroup._from_dict(d) if d else None for d in resp.get("data", [])]
+        
+        if len(boundary_groups) == 0:
+            return None
+        elif len(boundary_groups) == 1:
+            return boundary_groups[0]
+        return boundary_groups
+    
     def all(self) -> list[BoundaryGroup]:
         """获取所有边界组"""
         return self._load()
@@ -460,7 +557,10 @@ class BoundaryManager:
         >>> bd = boundary_manager.create_general(bX=1, bY=1, bZ=1, no=1)
         >>> bd = boundary_manager.get(1)
         >>> all_bds = boundary_manager.all()
-        >>> boundary_manager.group.create("桥台1")
+        >>> # 边界组操作
+        >>> bg = boundary_manager.group.create("桥台1")
+        >>> bg.add([1, 2])
+        >>> bg = boundary_manager.group.get("桥台1")
     """
 
     def __init__(self) -> None:

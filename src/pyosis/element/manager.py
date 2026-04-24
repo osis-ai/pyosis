@@ -100,7 +100,7 @@ class Element:
         return f"Element(no={self.no}, type={self.type}, mat={self.mat}, nodes={self.node_vec})"
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class ElementGroup:
     """单元组对象
 
@@ -132,6 +132,101 @@ class ElementGroup:
             related_stage_count=d.get("relatedStageCount"),
         )
 
+    def _sync_from_dict(self, d: dict) -> None:
+        """用 dict 同步当前对象（内部使用）"""
+        self.name = d.get("groupName")
+        self.elements = list(d.get("elements"))
+        self.element_count = d.get("elementCount")
+        self.related_tendon_shapes = list(d.get("relatedTendonShapes"))
+        self.related_tendon_shape_count = d.get("relatedTendonShapeCount")
+        self.related_lanes = list(d.get("relatedLanes"))
+        self.related_lane_count = d.get("relatedLaneCount")
+        self.related_stages = list(d.get("relatedStages"))
+        self.related_stage_count = d.get("relatedStageCount")
+
+    def refresh(self) -> ElementGroup:
+        """刷新当前单元组对象并同步到对象属性"""
+        resp = osis_client("GetElementGroupInfoByNames", {"name": [self.name]})
+        if not resp['success']:
+            raise RuntimeError(f"刷新单元组 {self.name} 失败: {resp['error']}")
+        data = resp.get("data", [])
+        if data and data[0]:
+            self._sync_from_dict(data[0])
+        return self
+
+    def _execute(self, operation: str, param: list | None = None) -> None:
+        """执行单元组底层操作（内部使用）"""
+        ok, err = osis_element_group(self.name, operation, param)
+        if not ok:
+            raise RuntimeError(f"单元组操作 {self.name} ({operation}) 失败: {err}")
+
+    def add(self, elements: list[int]) -> ElementGroup:
+        """向单元组添加单元
+
+        Args:
+            elements: 单元编号列表
+
+        Returns:
+            更新后的 ElementGroup 对象
+        """
+        self._execute("a", elements)
+        return self.refresh()
+
+    def remove(self, elements: list[int]) -> ElementGroup:
+        """从单元组移除单元
+
+        Args:
+            elements: 单元编号列表
+
+        Returns:
+            更新后的 ElementGroup 对象
+        """
+        self._execute("r", elements)
+        return self.refresh()
+
+    def replace(self, elements: list[int]) -> ElementGroup:
+        """替换单元组内单元
+
+        Args:
+            elements: 新的单元编号列表
+
+        Returns:
+            更新后的 ElementGroup 对象
+        """
+        self._execute("s", elements)
+        return self.refresh()
+
+    def add_all(self) -> ElementGroup:
+        """添加全部单元到组
+
+        Returns:
+            更新后的 ElementGroup 对象
+        """
+        self._execute("aa")
+        return self.refresh()
+
+    def remove_all(self) -> ElementGroup:
+        """从组移除全部单元
+
+        Returns:
+            更新后的 ElementGroup 对象
+        """
+        self._execute("ra")
+        return self.refresh()
+
+    def rename(self, new_name: str) -> ElementGroup:
+        """修改单元组名称
+
+        Args:
+            new_name: 新名称
+
+        Returns:
+            更新后的 ElementGroup 对象
+        """
+        self._execute("m", [new_name])
+        self.name = new_name
+        return self.refresh()
+
     def __repr__(self) -> str:
         return f"ElementGroup(name={self.name!r}, elements={self.elements}, count={self.element_count})"
 
@@ -144,30 +239,22 @@ class ElementGroup:
 class ElementGroupManager:
     """单元组管理器
 
-    统一管理单元组的增删改查。由 ElementManager 持有，不单独导出。
+    统一管理单元组的创建、删除和查询。组成员操作在 ElementGroup 对象上进行。
+    由 ElementManager 持有，不单独导出。
 
     用法:
         >>> from pyosis.element import element_manager
-        >>> # 创建单元组
-        >>> element_manager.group.create("主梁单元")
-        >>> element_manager.group.add("主梁单元", [1, 2, 3])
-        >>> # 查询
+        >>> # 创建和查询
+        >>> eg = element_manager.group.create("主梁单元")
         >>> eg = element_manager.group.get("主梁单元")
-        >>> print(eg.elements)              # 组内单元
-        >>> print(eg.related_tendon_shapes) # 关联钢束
-        >>> print(eg.related_stages)        # 关联施工阶段
+        >>> # 组成员操作（在对象上调用）
+        >>> eg.add([1, 2, 3])
+        >>> eg.remove([1])
+        >>> eg.replace([4, 5])
     """
 
     def __init__(self) -> None:
         ...
-
-    # ── 内部方法 ──────────────────────────────
-
-    def _execute(self, name: str, operation: str, param: list | None = None) -> None:
-        """执行单元组底层操作"""
-        ok, err = osis_element_group(name, operation, param)
-        if not ok:
-            raise RuntimeError(f"单元组操作 {name} ({operation}) 失败: {err}")
 
     def _load(self) -> list[ElementGroup]:
         """从服务端加载所有单元组信息"""
@@ -193,84 +280,10 @@ class ElementGroupManager:
         Returns:
             ElementGroup: 创建的单元组对象
         """
-        self._execute(name, "c")
+        ok, err = osis_element_group(name, "c")
+        if not ok:
+            raise RuntimeError(f"创建单元组 {name} 失败: {err}")
         return self.get(name)
-
-    def add(self, name: str, elements: list[int]) -> ElementGroup:
-        """向单元组添加单元
-
-        Args:
-            name: 单元组名称
-            elements: 单元编号列表
-
-        Returns:
-            ElementGroup: 更新后的单元组对象
-        """
-        self._execute(name, "a", elements)
-        return self.get(name)
-
-    def remove(self, name: str, elements: list[int]) -> ElementGroup:
-        """从单元组移除单元
-
-        Args:
-            name: 单元组名称
-            elements: 单元编号列表
-
-        Returns:
-            ElementGroup: 更新后的单元组对象
-        """
-        self._execute(name, "r", elements)
-        return self.get(name)
-
-    def replace(self, name: str, elements: list[int]) -> ElementGroup:
-        """替换单元组内单元
-
-        Args:
-            name: 单元组名称
-            elements: 新的单元编号列表
-
-        Returns:
-            ElementGroup: 更新后的单元组对象
-        """
-        self._execute(name, "s", elements)
-        return self.get(name)
-
-    def add_all(self, name: str) -> ElementGroup:
-        """添加全部单元到组
-
-        Args:
-            name: 单元组名称
-
-        Returns:
-            ElementGroup: 更新后的单元组对象
-        """
-        self._execute(name, "aa")
-        return self.get(name)
-
-    def remove_all(self, name: str) -> ElementGroup:
-        """从组移除全部单元
-
-        Args:
-            name: 单元组名称
-
-        Returns:
-            ElementGroup: 更新后的单元组对象
-        """
-        self._execute(name, "ra")
-        return self.get(name)
-
-    def rename(self, old_name: str, new_name: str) -> ElementGroup:
-        """修改单元组名称
-
-        Args:
-            old_name: 旧名称
-            new_name: 新名称
-
-        Returns:
-            ElementGroup: 更新后的单元组对象
-        """
-        self._execute(old_name, "m", [new_name])
-        return self.get(new_name)
 
     def delete(self, name: str) -> None:
         """删除单元组
@@ -278,7 +291,9 @@ class ElementGroupManager:
         Args:
             name: 单元组名称
         """
-        self._execute(name, "d")
+        ok, err = osis_element_group(name, "d")
+        if not ok:
+            raise RuntimeError(f"删除单元组 {name} 失败: {err}")
 
     # ── 查询 ──────────────────────────────────
 

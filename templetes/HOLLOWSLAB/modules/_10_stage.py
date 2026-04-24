@@ -59,8 +59,9 @@ if __name__ == "__main__":
     ele_groups = engine.element.group.all()
     print("element groups", ele_groups)
     elem_group_names = [g.name for g in ele_groups]
+
     bd_groups = engine.boundary.group.all()
-    print("boundary groups", ele_groups)
+    print("boundary groups", bd_groups)
     bd_group_names = [g.name for g in bd_groups]
     
     loadcases = engine.load.all()
@@ -71,9 +72,10 @@ if __name__ == "__main__":
     print("settlements", settles)
     settle_analysis = [sa.name for sa in settles]
 
-    lives = engine.live.all_lives()
-    print("lives", settles)
+    lives = engine.live.case.all()
+    print("lives", lives)
     live_analysis = [la.name for la in lives]
+    # live_analysis = ["车道荷载包络"]
     
     build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_analysis, live_analysis)
-    print("施工阶段创建完成")
+    print(engine.stage.all())
