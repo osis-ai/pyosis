@@ -26,7 +26,7 @@ from ..section.manager import SectionManager, section_manager
 from ..node.manager import NodeManager, node_manager
 from ..element.manager import ElementManager, element_manager
 from ..boundary.manager import BoundaryManager, boundary_manager
-from ..load.manager import LoadCaseManager, loadcase_manager
+from ..load.manager import LoadCaseManager, loadcase_manager, tendon_manager
 from ..stage.manager import StageManager, stage_manager
 from ..live.manager import LiveManager, live_manager
 from ..control.manager import ControlManager, control_manager
@@ -61,6 +61,7 @@ class OSISEngine:
         - boundary:  边界管理器
         - load:      荷载工况管理器
         - stage:     施工阶段管理器
+        - tendon:    钢束管理器（含 prop/shape 子管理器）
         - live:      活载管理器（含 grade/lane/case 子管理器）
         - geometry:  几何管理器（三维样条曲线）
         - property:  属性管理器（坐标系、收缩徐变、阻尼等）
@@ -84,6 +85,7 @@ class OSISEngine:
         self._element = element_manager
         self._boundary = boundary_manager
         self._load = loadcase_manager
+        self._tendon = tendon_manager
         self._stage = stage_manager
         self._live = live_manager
         self._control = control_manager
@@ -133,6 +135,11 @@ class OSISEngine:
     def stage(self) -> StageManager:
         """施工阶段管理器"""
         return self._stage
+
+    @property
+    def tendon(self) -> TendonManager:
+        """钢束管理器"""
+        return self._tendon
 
     @property
     def live(self) -> LiveManager:

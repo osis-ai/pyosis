@@ -81,7 +81,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     
     # 10. 施工阶段（获取所有组）
     print("[10/10] 创建施工阶段...")
-    # build_stages(engine, elem_groups, bd_group_names, lc_names, settle_names, live_names)
+    build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_names, live_names)
     
     print("\n" + "=" * 50)
     print("建模完成！")
@@ -100,7 +100,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
 def main():
     parser = argparse.ArgumentParser(description='简支空心板桥梁建模')
     parser.add_argument('--increment', action='store_true', 
-                        help='增量模式：不清空，幂等执行（默认清空重建）')
+                        help='增量模式：不清空（默认清空重建）')
     parser.add_argument('--solve', action='store_true',
                         help='建模后自动运行分析')
     parser.add_argument('--save', type=str, default='',

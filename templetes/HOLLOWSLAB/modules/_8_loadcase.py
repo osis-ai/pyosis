@@ -14,27 +14,27 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     - "正温度梯度": 正温度梯度（TG）
     - "主梁单元自重": 主梁单元自重（CS）
     """
-    tendon = engine.load.tendon
+    tendon = engine.tendon
     loadcase = engine.load
     
     # ── 钢束特性──
-    tendon.create_prop_in("15-10", mat_nos[2], "GBT5224_2014", 15.2, 10, 9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.create_prop_in("15-3",  mat_nos[2], "GBT5224_2014", 15.2, 3,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.create_prop_in("15-4",  mat_nos[2], "GBT5224_2014", 15.2, 4,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.create_prop_in("15-5",  mat_nos[2], "GBT5224_2014", 15.2, 5,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.create_prop_in("15-6",  mat_nos[2], "GBT5224_2014", 15.2, 6,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.create_prop_in("15-7",  mat_nos[2], "GBT5224_2014", 15.2, 7,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.create_prop_in("15-8",  mat_nos[2], "GBT5224_2014", 15.2, 8,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.create_prop_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-10", mat_nos[2], "GBT5224_2014", 15.2, 10, 9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-3",  mat_nos[2], "GBT5224_2014", 15.2, 3,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-4",  mat_nos[2], "GBT5224_2014", 15.2, 4,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-5",  mat_nos[2], "GBT5224_2014", 15.2, 5,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-6",  mat_nos[2], "GBT5224_2014", 15.2, 6,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-7",  mat_nos[2], "GBT5224_2014", 15.2, 7,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-8",  mat_nos[2], "GBT5224_2014", 15.2, 8,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tendon.prop.create_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     
     tendon_geo1, tendon_geo2 = geo_names
     # 钢束形状（名称标识）
-    tendon.create_shape_arc3d("N1", 2, "15-4", "钢束-1-N1线型单元", tendon_geo1)
-    tendon.create_shape_arc3d("N2", 2, "15-4", "钢束-2-N2线型单元", tendon_geo2)
+    tendon.shape.create_arc3d("N1", 2, "15-4", "钢束-1-N1线型单元", tendon_geo1)
+    tendon.shape.create_arc3d("N2", 2, "15-4", "钢束-2-N2线型单元", tendon_geo2)
     
     # 布置钢束
-    tendon.layout("N1", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
-    tendon.layout("N2", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
+    tendon.shape.layout("N1", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
+    tendon.shape.layout("N2", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
     
     
     # ── 荷载工况──

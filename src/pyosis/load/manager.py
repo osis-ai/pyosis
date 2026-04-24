@@ -410,19 +410,97 @@ class LoadCase:
 
 
 # ──────────────────────────────────────────────
-# Tendon 管理器
+# Tendon 数据类
 # ──────────────────────────────────────────────
 
 
-class TendonManager:
-    """钢束管理器
+@dataclass(frozen=True)
+class TendonProp:
+    """钢束特性对象"""
+    name: str
+    tension_type: int
+    tendon_mat_no: int
+    area: float
+    code: int
+    tendon_d: int
+    tendon_num: int
+    pipe_d: float
+    tension_coeff: float
+    relaxation_coeff: float
+    tendon_area: float
+    related_tendon_shapes: list[str] = field(default_factory=list)
 
-    统一管理钢束特性、钢束形状和钢束布置。
-    """
+    @classmethod
+    def _from_dict(cls, d: dict) -> TendonProp:
+        return cls(
+            name=d.get("name"),
+            tension_type=d.get("tensionType"),
+            tendon_mat_no=d.get("tendonMatNO"),
+            area=d.get("area"),
+            code=d.get("code"),
+            tendon_d=d.get("tendonD"),
+            tendon_num=d.get("tendonNum"),
+            pipe_d=d.get("pipeD"),
+            tension_coeff=d.get("tensionCoeff"),
+            relaxation_coeff=d.get("relaxationCoeff"),
+            tendon_area=d.get("tendonArea"),
+            related_tendon_shapes=d.get("relatedTendonShapes") or [],
+        )
 
-    # ── 钢束特性 ──────────────────────────────
+    def __repr__(self) -> str:
+        return f"TendonProp(name={self.name!r}, type={self.tension_type})"
 
-    def create_prop_in(
+
+@dataclass(frozen=True)
+class TendonShape:
+    """钢束形状对象"""
+    name: str
+    tendon_num: int
+    tendon_prop: str
+    ele_grp: str
+    shape_def_type: int
+    layout_ref_type: int
+    length: float
+    related_loads: list[str] = field(default_factory=list)
+    master_tendon_shape: str = ""
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> TendonShape:
+        return cls(
+            name=d.get("name"),
+            tendon_num=d.get("tendonNum"),
+            tendon_prop=d.get("tendonProp"),
+            ele_grp=d.get("eleGrp"),
+            shape_def_type=d.get("shapeDefType"),
+            layout_ref_type=d.get("layoutRefType"),
+            length=d.get("length"),
+            related_loads=d.get("relatedLoads") or [],
+            master_tendon_shape=d.get("masterTendonShape") or "",
+        )
+
+    def __repr__(self) -> str:
+        return f"TendonShape(name={self.name!r}, prop={self.tendon_prop})"
+
+
+# ──────────────────────────────────────────────
+# Tendon 子管理器
+# ──────────────────────────────────────────────
+
+
+class TendonPropManager:
+    """钢束特性管理器"""
+
+    def _load(self) -> list[TendonProp]:
+        """从服务端加载所有钢束特性信息"""
+        resp = osis_client("GetAllTendonPropInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        props = [
+            TendonProp._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
+        ]
+        return props
+
+    def create_in(
         self,
         name: str,
         n_mat: int,
@@ -437,24 +515,7 @@ class TendonManager:
         d_tensioning_coeff: float = 1.0,
         d_relaxation_coeff: float = 1.0,
     ) -> None:
-        """创建体内钢束特性（按规范输入面积）
-        
-        Args:
-            name (str): 钢束特性名称
-            n_mat (int): 材料编号
-            e_code (str): 规范名
-                * GBT5224_2014
-                * GBT20065_2016
-            diameter (float): 公称直径
-            n_num (int): 每束钢束根数
-            d_pipe (float): 管道直径
-            d_friction_coeff (float): 摩擦系数
-            d_deviation_coeff (float): 偏差系数
-            d_starting_deform (float): 起点变形
-            d_end_deform (float): 终点变形
-            d_tensioning_coeff (float): 张拉系数
-            d_relaxation_coeff (float): 松弛系数
-        """
+        """创建体内钢束特性（按规范输入面积）"""
         ok, err = osis_tendon_prop_in_area1(
             name, "IN", n_mat, 1, e_code, diameter, n_num, d_pipe,
             d_friction_coeff, d_deviation_coeff, d_starting_deform,
@@ -463,7 +524,7 @@ class TendonManager:
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
 
-    def create_prop_in_custom(
+    def create_in_custom(
         self,
         name: str,
         n_mat: int,
@@ -476,20 +537,7 @@ class TendonManager:
         d_tensioning_coeff: float = 1.0,
         d_relaxation_coeff: float = 1.0,
     ) -> None:
-        """创建体内钢束特性（用户输入面积）
-        
-        Args:
-            name (str): 钢束特性名称
-            n_mat (int): 材料编号
-            d_val (float): 用户输入的钢束面积
-            d_pipe (float): 管道直径
-            d_friction_coeff (float): 摩擦系数
-            d_deviation_coeff (float): 偏差系数
-            d_starting_deform (float): 起点变形
-            d_end_deform (float): 终点变形
-            d_tensioning_coeff (float): 张拉系数
-            d_relaxation_coeff (float): 松弛系数
-        """
+        """创建体内钢束特性（用户输入面积）"""
         ok, err = osis_tendon_prop_in_area0(
             name, "IN", n_mat, 0, d_val, d_pipe,
             d_friction_coeff, d_deviation_coeff, d_starting_deform,
@@ -498,7 +546,7 @@ class TendonManager:
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
 
-    def create_prop_ex(
+    def create_ex(
         self,
         name: str,
         n_mat: int,
@@ -512,23 +560,7 @@ class TendonManager:
         d_tensioning_coeff: float = 1.0,
         d_relaxation_coeff: float = 1.0,
     ) -> None:
-        """创建体外钢束特性（按规范输入面积）
-        
-        Args:
-            name (str): 钢束特性名称
-            n_mat (int): 材料编号
-            e_code (str): 规范名
-                * GBT5224_2014
-                * GBT20065_2016
-            diameter (float): 公称直径
-            n_num (int): 每束钢束根数
-            d_pipe (float): 管道直径
-            d_friction_coeff (float): 摩擦系数
-            d_starting_deform (float): 起点变形
-            d_end_deform (float): 终点变形
-            d_tensioning_coeff (float): 张拉系数
-            d_relaxation_coeff (float): 松弛系数
-        """
+        """创建体外钢束特性（按规范输入面积）"""
         ok, err = osis_tendon_prop_ex_area1(
             name, "EX", n_mat, 1, e_code, diameter, n_num, d_pipe,
             d_friction_coeff, d_starting_deform, d_end_deform,
@@ -537,7 +569,7 @@ class TendonManager:
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
 
-    def create_prop_ex_custom(
+    def create_ex_custom(
         self,
         name: str,
         n_mat: int,
@@ -549,19 +581,7 @@ class TendonManager:
         d_tensioning_coeff: float = 1.0,
         d_relaxation_coeff: float = 1.0,
     ) -> None:
-        """创建体外钢束特性（用户输入面积）
-        
-        Args:
-            name (str): 钢束特性名称
-            n_mat (int): 材料编号
-            d_val (float): 用户输入的钢束面积
-            d_pipe (float): 管道直径
-            d_friction_coeff (float): 摩擦系数
-            d_starting_deform (float): 起点变形
-            d_end_deform (float): 终点变形
-            d_tensioning_coeff (float): 张拉系数
-            d_relaxation_coeff (float): 松弛系数
-        """
+        """创建体外钢束特性（用户输入面积）"""
         ok, err = osis_tendon_prop_ex_area0(
             name, "EX", n_mat, 0, d_val, d_pipe,
             d_friction_coeff, d_starting_deform, d_end_deform,
@@ -570,7 +590,7 @@ class TendonManager:
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
 
-    def create_prop_pre(
+    def create_pre(
         self,
         name: str,
         n_mat: int,
@@ -581,20 +601,7 @@ class TendonManager:
         d_tensioning_coeff: float = 1.0,
         d_relaxation_coeff: float = 1.0,
     ) -> None:
-        """创建先张法钢束特性（按规范输入面积）
-        
-        Args:
-            name (str): 钢束特性名称
-            n_mat (int): 材料编号
-            e_code (str): 规范名
-                * GBT5224_2014
-                * GBT20065_2016
-            diameter (float): 公称直径
-            n_num (int): 每束钢束根数
-            d_delta_t (float): 与台座温差
-            d_tensioning_coeff (float): 张拉系数
-            d_relaxation_coeff (float): 松弛系数
-        """
+        """创建先张法钢束特性（按规范输入面积）"""
         ok, err = osis_tendon_prop_pre_area1(
             name, "PRE", n_mat, 1, e_code, diameter, n_num,
             d_delta_t, d_tensioning_coeff, d_relaxation_coeff,
@@ -602,7 +609,7 @@ class TendonManager:
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
 
-    def create_prop_pre_custom(
+    def create_pre_custom(
         self,
         name: str,
         n_mat: int,
@@ -611,16 +618,7 @@ class TendonManager:
         d_tensioning_coeff: float = 1.0,
         d_relaxation_coeff: float = 1.0,
     ) -> None:
-        """创建先张法钢束特性（用户输入面积）
-        
-        Args:
-            name (str): 钢束特性名称
-            n_mat (int): 材料编号
-            d_val (float): 用户输入的钢束面积
-            d_delta_t (float): 与台座温差
-            d_tensioning_coeff (float): 张拉系数
-            d_relaxation_coeff (float): 松弛系数
-        """
+        """创建先张法钢束特性（用户输入面积）"""
         ok, err = osis_tendon_prop_pre_area0(
             name, "PRE", n_mat, 0, d_val,
             d_delta_t, d_tensioning_coeff, d_relaxation_coeff,
@@ -628,30 +626,63 @@ class TendonManager:
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
 
-    def delete_prop(self, name: str) -> None:
-        """删除钢束特性
-        
-        Args:
-            name (str): 钢束特性名称
-        """
+    def delete(self, name: str) -> None:
+        """删除钢束特性"""
         ok, err = osis_tendon_prop_del(name)
         if not ok:
             raise RuntimeError(f"删除钢束特性 {name} 失败: {err}")
 
-    def rename_prop(self, old_name: str, new_name: str) -> None:
-        """修改钢束特性名称
-
-        Args:
-            old_name (str): 旧名称
-            new_name (str): 新名称
-        """
+    def rename(self, old_name: str, new_name: str) -> None:
+        """重命名钢束特性"""
         ok, err = osis_tendon_prop_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名钢束特性 {old_name} -> {new_name} 失败: {err}")
 
-    # ── 钢束形状 ──────────────────────────────
+    def get(self, name: str | list[str]) -> TendonProp | list[TendonProp | None] | None:
+        """根据名称获取钢束特性"""
+        if isinstance(name, str):
+            name = [name]
+        elif not isinstance(name, list):
+            raise TypeError(f"不支持的名称类型: {type(name)}")
 
-    def create_shape_spl3d(
+        resp = osis_client("GetTendonPropInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+
+        props = [TendonProp._from_dict(d) if d else None for d in resp.get("data", [])]
+
+        if len(props) == 0:
+            return None
+        elif len(props) == 1:
+            return props[0]
+        return props
+
+    def all(self) -> list[TendonProp]:
+        """获取所有钢束特性"""
+        return self._load()
+
+    def count(self) -> int:
+        """获取钢束特性数量"""
+        return len(self._load())
+
+    def __repr__(self) -> str:
+        return f"TendonPropManager(count={self.count()})"
+
+
+class TendonShapeManager:
+    """钢束形状管理器"""
+
+    def _load(self) -> list[TendonShape]:
+        """从服务端加载所有钢束形状信息"""
+        resp = osis_client("GetAllTendonShapeInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        shapes = [
+            TendonShape._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
+        ]
+        return shapes
+
+    def create_spl3d(
         self,
         name: str,
         n_num: int,
@@ -659,20 +690,12 @@ class TendonManager:
         element_group: str,
         curve_name: str,
     ) -> None:
-        """定义钢束形状-3D样条
-
-        Args:
-            name (str): 名称
-            n_num (int): 钢束数量
-            prop (str): 钢束特性
-            element_group (str): 作用的单元组
-            curve_name (str): 样条曲线名称
-        """
+        """定义钢束形状-3D样条"""
         ok, err = osis_tendon_shape_spl3d(name, n_num, prop, element_group, "SPL3D", curve_name)
         if not ok:
             raise RuntimeError(f"创建钢束形状 {name} 失败: {err}")
 
-    def create_shape_arc3d(
+    def create_arc3d(
         self,
         name: str,
         n_num: int,
@@ -680,20 +703,12 @@ class TendonManager:
         element_group: str,
         curve_name: str,
     ) -> None:
-        """定义钢束形状-3D圆弧
-
-        Args:
-            name (str): 名称
-            n_num (int): 钢束数量
-            prop (str): 钢束特性
-            element_group (str): 作用的单元组
-            curve_name (str): 样条曲线名称
-        """
+        """定义钢束形状-3D圆弧"""
         ok, err = osis_tendon_shape_arc3d(name, n_num, prop, element_group, "ARC3D", curve_name)
         if not ok:
             raise RuntimeError(f"创建钢束形状 {name} 失败: {err}")
 
-    def create_shape_arc2d(
+    def create_arc2d(
         self,
         name: str,
         n_num: int,
@@ -702,52 +717,22 @@ class TendonManager:
         e_type: int,
         param: list,
     ) -> None:
-        """定义钢束形状-2D圆弧
-
-        Args:
-            name (str): 名称
-            n_num (int): 钢束数量
-            prop (str): 钢束特性
-            element_group (str): 作用的单元组
-            e_type (int): 参考类型
-                * 0 = 距离
-                * 1 = 坐标
-            param (list):
-                - e_type = 0 时需要填入：
-                    竖弯参考位置-梁顶缘线，
-                    竖弯样条曲线名称，
-                    平弯参考位置-梁中心线，
-                    平弯样条曲线名称
-                - e_type = 1 时需要填入：
-                    竖弯样条曲线名称，
-                    平弯样条曲线名称
-        """
+        """定义钢束形状-2D圆弧"""
         ok, err = osis_tendon_shape_arc2d(name, n_num, prop, element_group, "ARC2D", e_type, param)
         if not ok:
             raise RuntimeError(f"创建钢束形状 {name} 失败: {err}")
 
-    def delete_shape(self, name: str) -> None:
-        """删除钢束形状
-
-        Args:
-            name (str): 名称
-        """
+    def delete(self, name: str) -> None:
+        """删除钢束形状"""
         ok, err = osis_tendon_shape_del(name)
         if not ok:
             raise RuntimeError(f"删除钢束形状 {name} 失败: {err}")
 
-    def rename_shape(self, old_name: str, new_name: str) -> None:
-        """修改钢束形状名称
-
-        Args:
-            old_name (str): 钢束形状名称
-            new_name (str): 新名称
-        """
+    def rename(self, old_name: str, new_name: str) -> None:
+        """重命名钢束形状"""
         ok, err = osis_tendon_shape_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名钢束形状 {old_name} -> {new_name} 失败: {err}")
-
-    # ── 钢束布置 ──────────────────────────────
 
     def layout(
         self,
@@ -760,40 +745,87 @@ class TendonManager:
         d_offset_y: float = 0.0,
         d_offset_z: float = 0.0,
     ) -> None:
-        """布置钢束形状
-
-        Args:
-            name (str): 钢束形状名称
-            layout_type (str): 分配钢束形状的方法
-                * GLOBAL = 参考整体坐标系原点
-                * ELEMENT = 参考单元分配
-            n_ele (int): 参考单元编号（ELEMENT模式时）
-            n_beg (int): 起点
-                * 0 = i
-                * 1 = j
-            n_dir (int): 方向
-                * 0 = i->j
-                * 1 = j->i
-            d_offset_x (float): x方向起点偏移
-            d_offset_y (float): y方向起点偏移
-            d_offset_z (float): z方向起点偏移
-        """
+        """布置钢束形状"""
         ok, err = osis_layout_tendons(name, layout_type, n_ele, n_beg, n_dir, d_offset_x, d_offset_y, d_offset_z)
         if not ok:
             raise RuntimeError(f"布置钢束 {name} 失败: {err}")
 
     def wipe(self, name: str) -> None:
-        """擦除已布置钢束形状
-        
-        Args:
-            name (str): 钢束形状名称
-        """
+        """擦除已布置钢束形状"""
         ok, err = osis_wipe_tendons(name)
         if not ok:
             raise RuntimeError(f"擦除钢束 {name} 失败: {err}")
 
+    def get(self, name: str | list[str]) -> TendonShape | list[TendonShape | None] | None:
+        """根据名称获取钢束形状"""
+        if isinstance(name, str):
+            name = [name]
+        elif not isinstance(name, list):
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+
+        resp = osis_client("GetTendonShapeInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+
+        shapes = [TendonShape._from_dict(d) if d else None for d in resp.get("data", [])]
+
+        if len(shapes) == 0:
+            return None
+        elif len(shapes) == 1:
+            return shapes[0]
+        return shapes
+
+    def all(self) -> list[TendonShape]:
+        """获取所有钢束形状"""
+        return self._load()
+
+    def count(self) -> int:
+        """获取钢束形状数量"""
+        return len(self._load())
+
     def __repr__(self) -> str:
-        return "TendonManager()"
+        return f"TendonShapeManager(count={self.count()})"
+
+
+# ──────────────────────────────────────────────
+# Tendon 主管理器
+# ──────────────────────────────────────────────
+
+
+class TendonManager:
+    """钢束管理器
+
+    统一管理钢束特性和钢束形状。
+
+    子管理器：
+    - prop: TendonPropManager - 钢束特性
+    - shape: TendonShapeManager - 钢束形状
+
+    用法:
+        >>> from pyosis.load import tendon_manager
+        >>> # 钢束特性
+        >>> tendon_manager.prop.create_in("15-10", mat_no, "GBT5224_2014", 15.2, 10, 0.09)
+        >>> # 钢束形状
+        >>> tendon_manager.shape.create_arc3d("N1", 2, "15-4", "主梁", "curve1")
+        >>> tendon_manager.shape.layout("N1", "ELEMENT", 1, 0, 0)
+    """
+
+    def __init__(self) -> None:
+        self._prop_manager = TendonPropManager()
+        self._shape_manager = TendonShapeManager()
+
+    @property
+    def prop(self) -> TendonPropManager:
+        """钢束特性管理器"""
+        return self._prop_manager
+
+    @property
+    def shape(self) -> TendonShapeManager:
+        """钢束形状管理器"""
+        return self._shape_manager
+
+    def __repr__(self) -> str:
+        return f"TendonManager(props={self.prop.count()}, shapes={self.shape.count()})"
 
 
 # ──────────────────────────────────────────────
@@ -815,12 +847,7 @@ class LoadCaseManager:
         """
 
     def __init__(self) -> None:
-        self._tendon_manager = TendonManager()
-
-    @property
-    def tendon(self) -> TendonManager:
-        """钢束管理器"""
-        return self._tendon_manager
+        pass
 
     # ── 数据加载 ──────────────────────────────
 
@@ -946,3 +973,4 @@ class LoadCaseManager:
 # ──────────────────────────────────────────────
 
 loadcase_manager = LoadCaseManager()
+tendon_manager = TendonManager()
