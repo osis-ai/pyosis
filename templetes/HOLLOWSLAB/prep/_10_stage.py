@@ -75,7 +75,6 @@ if __name__ == "__main__":
     lives = engine.live.case.all()
     print("lives", lives)
     live_analysis = [la.name for la in lives]
-    # live_analysis = ["车道荷载包络"]
     
     build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_analysis, live_analysis)
     print(engine.stage.all())
