@@ -11,7 +11,7 @@ from typing import Literal
 from ..core import REGISTRY
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_pre_area0(strName: str="钢束特性1", eType: Literal["PRE"]="PRE", nMat: int=1, 
+def osis_tendon_prop_pre_area0(strName: str, eType: Literal["PRE"]="PRE", nMat: int=1, 
                                bArea: Literal[0]=0, dVal: float=10,  
                                dDeltaT: float=10, dTensioningCoeff: float=1.0, dRelaxationCoeff: float=1.0):
     '''
@@ -33,7 +33,7 @@ def osis_tendon_prop_pre_area0(strName: str="钢束特性1", eType: Literal["PRE
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_pre_area1(strName: str="钢束特性1", eType: Literal["PRE"]="PRE", nMat: int=1, 
+def osis_tendon_prop_pre_area1(strName: str, eType: Literal["PRE"]="PRE", nMat: int=1, 
                                bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", dDiameter: float=1, nNum: int=10, 
                                dDeltaT: float=10, dTensioningCoeff: float=1.0, dRelaxationCoeff: float=1.0):
     '''
@@ -59,7 +59,7 @@ def osis_tendon_prop_pre_area1(strName: str="钢束特性1", eType: Literal["PRE
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_in_area0(strName: str="钢束特性1", eType: Literal["IN"]="IN", nMat: int=1, 
+def osis_tendon_prop_in_area0(strName: str, eType: Literal["IN"]="IN", nMat: int=1, 
                                bArea: int=0, dVal: float=10, 
                                dPipe: float=10, dFrictionCoeff: float=1.0, dDeviationCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
@@ -85,7 +85,7 @@ def osis_tendon_prop_in_area0(strName: str="钢束特性1", eType: Literal["IN"]
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_in_area1(strName: str="钢束特性1", eType: Literal["IN"]="IN", nMat: int=1, 
+def osis_tendon_prop_in_area1(strName: str, eType: Literal["IN"]="IN", nMat: int=1, 
                               bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", dDiameter: float=1, nNum: int=10, 
                               dPipe: float=10, dFrictionCoeff: float=1.0, dDeviationCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
@@ -115,7 +115,7 @@ def osis_tendon_prop_in_area1(strName: str="钢束特性1", eType: Literal["IN"]
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_ex_area0(strName: str="钢束特性1", eType: Literal["EX"]="EX", nMat: int=1, 
+def osis_tendon_prop_ex_area0(strName: str, eType: Literal["EX"]="EX", nMat: int=1, 
                               bArea: Literal[0]=0, dVal: float=1, 
                               dPipe: float=10, dFrictionCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
@@ -140,7 +140,7 @@ def osis_tendon_prop_ex_area0(strName: str="钢束特性1", eType: Literal["EX"]
     pass
 
 @REGISTRY.register("TdProp")
-def osis_tendon_prop_ex_area1(strName: str="钢束特性1", eType: Literal["EX"]="EX", nMat: int=1, 
+def osis_tendon_prop_ex_area1(strName: str, eType: Literal["EX"]="EX", nMat: int=1, 
                               bArea: Literal[1]=1, eCode: Literal["GBT5224_2014", "GBT20065_2016"]="GBT5224_2014", dDiameter: float=1, nNum: int=10,
                               dPipe: float=10, dFrictionCoeff: float=1.0, dStartingDefor: float=0.0, dEndDefor: float=0.0, dTensioningCoeff: float=1, dRelaxationCoeff: float=1.0):
     '''
@@ -169,7 +169,7 @@ def osis_tendon_prop_ex_area1(strName: str="钢束特性1", eType: Literal["EX"]
     pass
 
 @REGISTRY.register("TdPropDel")
-def osis_tendon_prop_del(strName: str="钢束特性1"):
+def osis_tendon_prop_del(strName: str):
     '''
     删除钢束特性
     
@@ -182,7 +182,7 @@ def osis_tendon_prop_del(strName: str="钢束特性1"):
     pass
 
 @REGISTRY.register("TdPropMod")
-def osis_tendon_prop_mod(strOldName: str="钢束特性1", strNewName: str="钢束特性2"):
+def osis_tendon_prop_mod(strOldName: str, strNewName: str):
     '''
     修改钢束特性
 
@@ -196,7 +196,7 @@ def osis_tendon_prop_mod(strOldName: str="钢束特性1", strNewName: str="钢�
     pass
 
 @REGISTRY.register("TdShape")
-def osis_tendon_shape_spl3d(strName: str="钢束形状1", nNum: int=10, strProp: str="钢束特性1", strElementGroup: str="单元组1", strLayoutType: Literal["SPL3D"]="SPL3D", strCurveName: str="样条曲线1"):
+def osis_tendon_shape_spl3d(strName: str, nNum: int, strProp: str, strElementGroup: str, strLayoutType: Literal["SPL3D"], strCurveName: str):
     '''
     定义钢束形状-3D样条
 
@@ -214,7 +214,7 @@ def osis_tendon_shape_spl3d(strName: str="钢束形状1", nNum: int=10, strProp:
     pass
 
 @REGISTRY.register("TdShape")
-def osis_tendon_shape_arc3d(strName: str="钢束形状1", nNum: int=10, strProp: str="钢束特性1", strElementGroup: str="单元组1", strLayoutType: Literal["ARC3D"]="ARC3D", strCurveName: str="样条曲线1"):
+def osis_tendon_shape_arc3d(strName: str, nNum: int, strProp: str, strElementGroup: str, strLayoutType: Literal["ARC3D"], strCurveName: str):
     '''
     定义钢束形状-3D圆弧
 
@@ -232,7 +232,7 @@ def osis_tendon_shape_arc3d(strName: str="钢束形状1", nNum: int=10, strProp:
     pass
 
 @REGISTRY.register("TdShape")
-def osis_tendon_shape_arc2d(strName: str="钢束形状1", nNum: int=10, strProp: str="钢束特性1", strElementGroup: str="单元组1", strLayoutType: Literal["ARC2D"]="ARC2D", eType: Literal[0, 1]=1, param: list=["样条曲线1", "样条曲线2"]):
+def osis_tendon_shape_arc2d(strName: str, nNum: int, strProp: str, strElementGroup: str, strLayoutType: Literal["ARC2D"], eType: Literal[0, 1], param: list):
     '''
     定义钢束形状-2D圆弧
 
@@ -261,7 +261,7 @@ def osis_tendon_shape_arc2d(strName: str="钢束形状1", nNum: int=10, strProp:
     pass
 
 @REGISTRY.register("TdShapeDel")
-def osis_tendon_shape_del(strName: str="钢束形状1"):
+def osis_tendon_shape_del(strName: str):
     '''
     删除钢束形状
 
@@ -274,7 +274,7 @@ def osis_tendon_shape_del(strName: str="钢束形状1"):
     pass
 
 @REGISTRY.register("TdShapeMod")
-def osis_tendon_shape_mod(strOldName: str="钢束形状1", strNewName: str="钢束形状2"):
+def osis_tendon_shape_mod(strOldName: str, strNewName: str):
     '''
     修改钢束形状
 
@@ -317,7 +317,7 @@ def osis_layout_tendons(strShapeName: str, eLayoutType: Literal["GLOBAL", "ELEME
 
 
 @REGISTRY.register("WipeTS")
-def osis_wipe_tendons(strShapeName: str="钢束形状1"):
+def osis_wipe_tendons(strShapeName: str):
     '''
     擦除已布置钢束形状
 

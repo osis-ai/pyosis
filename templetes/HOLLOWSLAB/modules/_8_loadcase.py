@@ -1,6 +1,6 @@
 from pyosis.core.engine import OSISEngine
 
-def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int], elem_nos: list[int]) -> list[str]:
+def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int], elem_nos: list[int], elem_group_names) -> list[str]:
     """创建荷载工况和钢束，返回荷载工况名称列表
     
     荷载工况名称：
@@ -28,13 +28,14 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     tendon.prop.create_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     
     tendon_geo1, tendon_geo2 = geo_names
+    _, tendon_eg_1, tendon_eg_2, _ = elem_group_names
     # 钢束形状（名称标识）
-    tendon.shape.create_arc3d("N1", 2, "15-4", "钢束-1-N1线型单元", tendon_geo1)
-    tendon.shape.create_arc3d("N2", 2, "15-4", "钢束-2-N2线型单元", tendon_geo2)
+    shape1 = tendon.shape.create_arc3d("N1", 2, "15-4", tendon_eg_1, tendon_geo1)
+    shape2 = tendon.shape.create_arc3d("N2", 2, "15-4", tendon_eg_2, tendon_geo2)
     
     # 布置钢束
-    tendon.shape.layout("N1", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
-    tendon.shape.layout("N2", "ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
+    shape1.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
+    shape2.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
     
     
     # ── 荷载工况──
@@ -87,8 +88,8 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     
     # 5: 预应力（CS）
     lc_pst = loadcase.create("预应力", "CS")
-    lc_pst.create_prestress("N1", "BOTH", "ST", 1.395000E+09, 1.395000E+09)
-    lc_pst.create_prestress("N2", "BOTH", "ST", 1.395000E+09, 1.395000E+09)
+    lc_pst.create_prestress(shape1.name, "BOTH", "ST", 1.395000E+09, 1.395000E+09)
+    lc_pst.create_prestress(shape2.name, "BOTH", "ST", 1.395000E+09, 1.395000E+09)
     
     # 6: 整体降温（T）
     lc_temp_drop = loadcase.create("整体降温", "T")
@@ -137,10 +138,13 @@ if __name__ == "__main__":
     elems = engine.element.all()
     print("elements: ", elems)
     elem_nos = [e.no for e in elems]
+    elem_groups = engine.element.group.all()
+    print("element groups: ", elem_groups)
+    elem_group_names = [eg.name for eg in elem_groups]
     
     # print("geometrys: ", geoms)
     geo_names = ["钢束-1-N1", "钢束-2-N2"]  # 几何名称固定
     
-    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos)
+    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
     print(lc_names)
     print(engine.load.all())

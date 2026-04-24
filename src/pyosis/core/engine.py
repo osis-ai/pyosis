@@ -26,7 +26,7 @@ from ..section.manager import SectionManager, section_manager
 from ..node.manager import NodeManager, node_manager
 from ..element.manager import ElementManager, element_manager
 from ..boundary.manager import BoundaryManager, boundary_manager
-from ..load.manager import LoadCaseManager, loadcase_manager, tendon_manager
+from ..load.manager import LoadCaseManager, TendonManager, loadcase_manager, tendon_manager
 from ..stage.manager import StageManager, stage_manager
 from ..live.manager import LiveManager, live_manager
 from ..control.manager import ControlManager, control_manager

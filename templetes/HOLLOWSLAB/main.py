@@ -72,7 +72,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     
     # 8. 荷载工况（获取geo/mat/elem）
     print("[8/10] 创建荷载工况和钢束...")
-    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos)
+    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
     
     # 9. 活载分析（获取elem）
     print("[9/10] 创建分析...")
