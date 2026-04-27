@@ -7,7 +7,7 @@ from pyosis.result.result import txt_file_path
 # 将包络结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
 
-def osis_env_result(strEnvName:str, eType: Literal['EnvBF','EnvEF','EnvES','EnvS','EnvND']) -> tuple[bool, str, pd.DataFrame]:
+def osis_env_result(strEnvName:str, eType: Literal['EnvBF','EnvEF','EnvES','EnvS','EnvND']) -> tuple[bool, str, pd.DataFrame]:       # todo: 该函数日后需要修改成从OSIS的HDF5里导出
     """
     提取包络结果
     Args:

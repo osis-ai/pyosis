@@ -7,6 +7,7 @@ def export_check_results(
     engine: OSISEngine,
     output_dir: str | None = None,
     save_format: str = "csv",
+    verbose: bool = True
 ) -> dict[str, Path]:
     """导出项目下所有验算结果
 
@@ -17,6 +18,7 @@ def export_check_results(
         engine: OSISEngine 实例
         output_dir: 输出目录，默认使用项目目录下的 "Check"
         save_format: 保存格式，"csv" 或 "excel"
+        verbose: 直接打印所有结果
 
     Returns:
         字典，键为验算名称，值为导出的文件路径
@@ -39,6 +41,9 @@ def export_check_results(
     exported: dict[str, Path] = {}
     for name, df in results.items():
         safe_name = name.replace("/", "_").replace("\\", "_")
+        if verbose:
+            print(safe_name)
+            print(df)
 
         if save_format.lower() in ["excel", "xlsx"]:
             file_path = output_dir / f"{safe_name}.xlsx"
