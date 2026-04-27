@@ -5,7 +5,7 @@ from pyosis.core.engine import OSISEngine
 
 def export_check_results(
     engine: OSISEngine,
-    output_dir: str | None = None,
+    output_dir: str | None = "auto",
     save_format: str = "csv",
     verbose: bool = True
 ) -> dict[str, Path]:
@@ -16,7 +16,7 @@ def export_check_results(
 
     Args:
         engine: OSISEngine 实例
-        output_dir: 输出目录，默认使用项目目录下的 "Check"
+        output_dir: 输出目录，为 auto 时默认使用项目目录下的 "Check"
         save_format: 保存格式，"csv" 或 "excel"
         verbose: 直接打印所有结果
 
@@ -29,13 +29,22 @@ def export_check_results(
         raise RuntimeError("无法获取项目目录，请确认 OSIS 已登录并打开项目")
 
     if output_dir is None:
+        results = engine.result.check_all()
+        exported: dict[str, Path] = {}
+        for name, df in results.items():
+            safe_name = name.replace("/", "_").replace("\\", "_")
+            if verbose:
+                print(safe_name)    # 默认打印
+                print(df)
+            return exported
+
+    elif output_dir == "auto":
         output_dir = Path(project_dir) / "Check"
     else:
         output_dir = Path(output_dir)
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print("开始导出验算结果...")
     results = engine.result.check_all()
 
     exported: dict[str, Path] = {}
