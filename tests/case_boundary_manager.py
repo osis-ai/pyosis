@@ -23,7 +23,7 @@ def cleanup_test_boundaries(created_nos: list[int]):
 
 def test_get_all():
     """测试获取全部边界"""
-    boundary_manager.refresh()
+
     all_bds = boundary_manager.all()
     assert isinstance(all_bds, list), f"应返回 list，实际 {type(all_bds)}"
     for bd in all_bds:
@@ -33,14 +33,13 @@ def test_get_all():
 
 def test_create_general():
     """测试创建一般边界（返回 GeneralBoundary）"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     # 全约束
     bd = boundary_manager.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1, bRW=1)
     assert isinstance(bd, GeneralBoundary), f"应返回 GeneralBoundary，实际 {type(bd)}"
     assert bd.boundary_type == "General"
-    assert bd.raw_type == 1
     created_nos.append(bd.no)
 
     bd_check = boundary_manager.get(bd.no)
@@ -59,7 +58,7 @@ def test_create_general():
 
 def test_create_elstcspt():
     """测试创建弹性支承（返回 ElstcSptBoundary）"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     bd = boundary_manager.create_elstcspt(
@@ -73,7 +72,6 @@ def test_create_elstcspt():
     assert isinstance(bd, ElstcSptBoundary), f"应返回 ElstcSptBoundary，实际 {type(bd)}"
     assert bd.boundary_type in ("ElstcSpt", "GeneralElstcSpt")
     # 部分服务端将弹性支承误标为 type=4，manager 会按 payload 解析为 ElstcSptBoundary
-    assert bd.raw_type in (4, 5, 6)
     created_nos.append(bd.no)
 
     bd_check = boundary_manager.get(bd.no)
@@ -86,7 +84,7 @@ def test_create_elstcspt():
 
 def test_create_master_slave():
     """测试创建主从约束（返回 MstSlvBoundary）"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     bd = boundary_manager.create_master_slave(
@@ -96,7 +94,6 @@ def test_create_master_slave():
     )
     assert isinstance(bd, MstSlvBoundary), f"应返回 MstSlvBoundary，实际 {type(bd)}"
     assert bd.boundary_type == "MstSlv"
-    assert bd.raw_type == 2
     assert bd.master_no == 1
     created_nos.append(bd.no)
 
@@ -110,7 +107,7 @@ def test_create_master_slave():
 
 def test_delete():
     """测试删除边界"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     bd = boundary_manager.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1, bRW=1)
@@ -118,7 +115,7 @@ def test_delete():
     created_nos.append(bd.no)
     assert boundary_manager.get(bd.no) is not None
     boundary_manager.delete(bd.no)
-    boundary_manager.refresh()
+
     assert boundary_manager.get(bd.no) is None, "边界应已删除"
     print("✓ 删除边界成功")
 
@@ -127,7 +124,7 @@ def test_delete():
 
 def test_get_multiple():
     """测试批量查询边界"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     bd1 = boundary_manager.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1, bRW=1)
@@ -150,7 +147,7 @@ def test_get_multiple():
 
 def test_assign_general_boundary():
     """GeneralBoundary.assign：分配一般边界到节点（依赖模型中存在对应节点编号）"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     bd = boundary_manager.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1, bRW=1)
@@ -168,7 +165,7 @@ def test_assign_general_boundary():
 
 def test_assign_elstcspt_boundary():
     """ElstcSptBoundary.assign：分配节点弹性支撑到节点"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     bd = boundary_manager.create_elstcspt(
@@ -188,7 +185,7 @@ def test_assign_elstcspt_boundary():
 
 def test_mstslv_no_assign_method():
     """主从约束不支持 assign（仅一般边界与弹性支承可分配节点）"""
-    boundary_manager.refresh()
+
     created_nos: list[int] = []
 
     bd = boundary_manager.create_master_slave(

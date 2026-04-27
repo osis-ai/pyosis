@@ -8,8 +8,6 @@ from pyosis.material import material_manager
 
 def reset():
     """刷新缓存"""
-    material_manager.refresh()
-
 
 def cleanup_test_materials(created_nos: list[int]):
     """清理测试残留数据"""

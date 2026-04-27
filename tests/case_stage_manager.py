@@ -6,7 +6,7 @@ StageManager 接口测试（手动运行版）
 import traceback
 
 from pyosis.stage import stage_manager
-from pyosis.element import osis_element_group
+from pyosis.element import osis_element_group, element_manager
 from pyosis.boundary import boundary_manager
 from pyosis.load import loadcase_manager
 
@@ -25,7 +25,7 @@ def setup_test_data():
     created = {"element_groups": [], "boundary_groups": [], "load_cases": []}
 
     # 单元组
-    ok, err = osis_element_group(_TEST_ELE_GROUP, "c", [])
+    ok, err = element_manager.group.create(_TEST_ELE_GROUP)
     if ok:
         created["element_groups"].append(_TEST_ELE_GROUP)
     else:
@@ -35,7 +35,7 @@ def setup_test_data():
 
     # 边界组（group 失败时抛 RuntimeError）
     try:
-        boundary_manager.group(_TEST_BD_GROUP, "c", [])
+        boundary_manager.group.create(_TEST_BD_GROUP)
         created["boundary_groups"].append(_TEST_BD_GROUP)
     except RuntimeError as e:
         if "已存在" not in str(e):
@@ -43,7 +43,7 @@ def setup_test_data():
 
     # 荷载工况
     try:
-        lc = loadcase_manager.create("USER", name=_TEST_LC_NAME)
+        lc = loadcase_manager.create(_TEST_LC_NAME, 'USER')
         if lc is not None:
             created["load_cases"].append(_TEST_LC_NAME)
     except RuntimeError as e:
@@ -56,10 +56,10 @@ def setup_test_data():
 def teardown_test_data(created: dict):
     """清理测试创建的前置数据"""
     for name in created["element_groups"]:
-        osis_element_group(name, "d", [])
+        element_manager.group.delete(name)
 
     for name in created["boundary_groups"]:
-        boundary_manager.group(name, "d", [])
+        boundary_manager.group.delete(name)
 
     for name in created["load_cases"]:
         if loadcase_manager.get(name) is not None:
@@ -79,7 +79,7 @@ def cleanup_test_stages(created_nos: list[int]):
 
 def test_get_all():
     """测试获取全部施工阶段"""
-    stage_manager.refresh()
+
     all_stgs = stage_manager.all()
     assert isinstance(all_stgs, list), f"应返回list，实际{type(all_stgs)}"
     print(f"✓ 获取全部施工阶段成功，共 {len(all_stgs)} 个")
@@ -87,10 +87,10 @@ def test_get_all():
 
 def test_create():
     """测试创建施工阶段"""
-    stage_manager.refresh()
+
     created_nos: list[int] = []
 
-    stg = stage_manager.create(3.0)
+    stg = stage_manager.create(1, "阶段1", 3.0)
     assert stg is not None, "应返回阶段对象"
     created_nos.append(stg.no)
 
@@ -104,10 +104,10 @@ def test_create():
 
 def test_create_multiple():
     """测试创建多个施工阶段"""
-    stage_manager.refresh()
+
     created_nos: list[int] = []
 
-    stg1 = stage_manager.create(3.0)
+    stg1 = stage_manager.create(2, "阶段2", 3.0)
     created_nos.append(stg1.no)
     stg2 = stage_manager.create(5.0)
     created_nos.append(stg2.no)
@@ -129,10 +129,10 @@ def test_create_multiple():
 
 def test_delete():
     """测试删除施工阶段"""
-    stage_manager.refresh()
+
     created_nos: list[int] = []
 
-    stg = stage_manager.create(3.0)
+    stg = stage_manager.create(3, "阶段3", 3.0)
     created_nos.append(stg.no)
     assert stage_manager.get(stg.no) is not None
     stage_manager.delete(stg.no)
@@ -144,10 +144,10 @@ def test_delete():
 
 def test_get_multiple():
     """测试批量查询施工阶段"""
-    stage_manager.refresh()
+
     created_nos: list[int] = []
 
-    stg1 = stage_manager.create(3.0)
+    stg1 = stage_manager.create(4, "阶段4", 3.0)
     created_nos.append(stg1.no)
     stg2 = stage_manager.create(5.0)
     created_nos.append(stg2.no)
@@ -165,10 +165,10 @@ def test_get_multiple():
 
 def test_insert():
     """测试插入施工阶段"""
-    stage_manager.refresh()
+
     created_nos: list[int] = []
 
-    stg1 = stage_manager.create(3.0)
+    stg1 = stage_manager.create(5, "阶段5", 3.0)
     created_nos.append(stg1.no)
 
     stg2 = stage_manager.insert(stg1.no, 1, 5.0)
@@ -184,10 +184,10 @@ def test_insert():
 
 def test_count():
     """测试获取施工阶段总数"""
-    stage_manager.refresh()
+
     initial_count = stage_manager.count()
 
-    stg = stage_manager.create(3.0)
+    stg = stage_manager.create(6, "阶段6", 3.0)
     try:
         new_count = stage_manager.count()
         assert new_count == initial_count + 1, f"计数应为{initial_count + 1}，实际{new_count}"
@@ -196,20 +196,12 @@ def test_count():
         stage_manager.delete(stg.no)
 
 
-def test_refresh():
-    """测试刷新缓存"""
-    stage_manager.refresh()
-    all_stgs = stage_manager.all()
-    assert isinstance(all_stgs, list), "refresh后应返回列表"
-    print(f"✓ 刷新缓存成功, 共 {len(all_stgs)} 个阶段")
-
-
 def test_remove():
     """测试移除插入的施工阶段"""
-    stage_manager.refresh()
+
     created_nos: list[int] = []
 
-    stg1 = stage_manager.create(3.0)
+    stg1 = stage_manager.create(7, "阶段7", 3.0)
     created_nos.append(stg1.no)
     stg2 = stage_manager.insert(stg1.no, 1, 5.0)
     created_nos.append(stg2.no)
@@ -225,12 +217,12 @@ def test_remove():
 
 def test_activate_element():
     """测试激活单元"""
-    stage_manager.refresh()
+
     created_stgs: list[int] = []
     test_data = setup_test_data()
 
     try:
-        stg = stage_manager.create(3.0)
+        stg = stage_manager.create(8, "阶段8", 3.0)
         created_stgs.append(stg.no)
 
         stage_manager.activate_element(stg.no, "墩", 5.0)
@@ -246,12 +238,12 @@ def test_activate_element():
 
 def test_deactivate_element():
     """测试钝化单元"""
-    stage_manager.refresh()
+
     created_stgs: list[int] = []
     test_data = setup_test_data()
 
     try:
-        stg = stage_manager.create(3.0)
+        stg = stage_manager.create(9, "阶段9", 3.0)
         created_stgs.append(stg.no)
 
         stage_manager.deactivate_element(stg.no, "墩")
@@ -267,12 +259,12 @@ def test_deactivate_element():
 
 def test_activate_boundary():
     """测试激活边界"""
-    stage_manager.refresh()
+
     created_stgs: list[int] = []
     test_data = setup_test_data()
 
     try:
-        stg = stage_manager.create(3.0)
+        stg = stage_manager.create(10, "阶段10", 3.0)
         created_stgs.append(stg.no)
 
         stage_manager.activate_boundary(stg.no, "固结")
@@ -288,12 +280,12 @@ def test_activate_boundary():
 
 def test_deactivate_boundary():
     """测试钝化边界"""
-    stage_manager.refresh()
+
     created_stgs: list[int] = []
     test_data = setup_test_data()
 
     try:
-        stg = stage_manager.create(3.0)
+        stg = stage_manager.create(11, "阶段11", 3.0)
         created_stgs.append(stg.no)
 
         stage_manager.deactivate_boundary(stg.no, "固结")
@@ -309,12 +301,12 @@ def test_deactivate_boundary():
 
 def test_activate_loadcase():
     """测试激活荷载工况"""
-    stage_manager.refresh()
+
     created_stgs: list[int] = []
     test_data = setup_test_data()
 
     try:
-        stg = stage_manager.create(3.0)
+        stg = stage_manager.create(12, "阶段12", 3.0)
         created_stgs.append(stg.no)
 
         stage_manager.activate_loadcase(stg.no, "", "自定义工况1")
@@ -330,12 +322,12 @@ def test_activate_loadcase():
 
 def test_deactivate_loadcase():
     """测试钝化荷载工况"""
-    stage_manager.refresh()
+
     created_stgs: list[int] = []
     test_data = setup_test_data()
 
     try:
-        stg = stage_manager.create(3.0)
+        stg = stage_manager.create(13, "阶段13", 3.0)
         created_stgs.append(stg.no)
 
         stage_manager.deactivate_loadcase(stg.no, "", "自定义工况1")
@@ -351,11 +343,11 @@ def test_deactivate_loadcase():
 
 def test_activate_analysis():
     """测试激活分析工况"""
-    stage_manager.refresh()
+
     created_stgs: list[int] = []
 
     try:
-        stg = stage_manager.create(3.0)
+        stg = stage_manager.create(14, "阶段14", 3.0)
         created_stgs.append(stg.no)
 
         stage_manager.activate_analysis(stg.no, "MODAL")

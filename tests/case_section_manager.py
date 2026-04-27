@@ -8,8 +8,6 @@ from pyosis.section import section_manager
 
 def reset():
     """刷新缓存"""
-    section_manager.refresh()
-
 
 def cleanup_test_sections():
     """预留钩子：本文件依赖自动编号，各用例创建后自行 delete。"""

@@ -13,5 +13,10 @@ from ..section import *
 from ..stage import *
 from ..geometry import *
 from ..thickness import *
+from ..project import *
+from ..dynamic import *
+from ..settlement import *
+from ..stability import *
 
+from ..post import *
 from ..result import *

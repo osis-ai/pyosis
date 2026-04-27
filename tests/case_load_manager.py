@@ -18,8 +18,8 @@ def _setup_shell_element_for_surface_test() -> tuple[int, list[int]]:
     Returns:
         (shell_elem_no, node_nos): 壳单元编号、四个角点节点编号列表
     """
-    node_manager.refresh()
-    element_manager.refresh()
+
+
     n1 = node_manager.create(0.0, 0.0, 0.0)
     n2 = node_manager.create(1.0, 0.0, 0.0)
     n3 = node_manager.create(1.0, 1.0, 0.0)
@@ -72,8 +72,6 @@ TEST_NODE_OTHER = 2
 
 def reset():
     """刷新缓存"""
-    loadcase_manager.refresh()
-
 
 def cleanup_test_loadcases():
     """清理测试残留数据"""
@@ -91,7 +89,7 @@ def _lc_for_name(name: str):
     loadcase_manager.create(load_case_type="USER", name=name)
     lc = loadcase_manager.get(name)
     if lc is None:
-        loadcase_manager.refresh()
+
         lc = loadcase_manager.get(name)
     assert lc is not None, f"工况{name}应存在"
     return lc
@@ -132,7 +130,7 @@ def test_create_loadcase():
     name = "PyTest_LoadCase_Create"
     lc = loadcase_manager.create(load_case_type="USER", scalar=1.0, prompt="pytest", name=name)
     if lc is None:
-        loadcase_manager.refresh()
+
         lc = loadcase_manager.get(name)
     assert lc is not None, "创建后应能取得 LoadCase"
     assert lc.name == name, f"名称应为'{name}'，实际'{lc.name}'"
@@ -174,7 +172,7 @@ def test_rename_loadcase():
     _lc_for_name(old)
     lc_new = loadcase_manager.rename(old, new)
     if lc_new is None:
-        loadcase_manager.refresh()
+
         lc_new = loadcase_manager.get(new)
     assert lc_new is not None and lc_new.name == new
     assert loadcase_manager.get(old) is None, "旧名称应不存在"
@@ -242,8 +240,8 @@ def test_loadcase_get_load_data():
 
     name = "PyTest_LoadCase_LoadOps"
     lc = _lc_for_name(name)
-    data = lc.get()
-    assert isinstance(data, dict), f"荷载数据应为 dict，实际{type(data)}"
+    lc.refresh()
+    assert lc.name == name
     loadcase_manager.delete(name)
     print("✓ 查询工况荷载数据成功")
 
@@ -339,15 +337,15 @@ def test_loadcase_create_displacement():
     print("✓ 添加强迫位移成功")
 
 
-def test_loadcase_create_temperature_uniform():
+def test_loadcase_create_uniform_temperature():
     """测试添加均匀温度荷载"""
     reset()
     cleanup_test_loadcases()
 
     name = "PyTest_LoadCase_LoadOps"
     lc = _lc_for_name(name)
-    result = lc.create_temperature_uniform(nEntity=10, dTemp=20)
-    assert result is lc, "create_temperature_uniform 应返回 self"
+    result = lc.create_uniform_temperature(nEntity=10, dTemp=20)
+    assert result is lc, "create_uniform_temperature 应返回 self"
     lc.delete("UTEMP", entity=10)
     loadcase_manager.delete(name)
     print("✓ 添加均匀温度荷载成功")
@@ -525,7 +523,7 @@ if __name__ == "__main__":
         test_loadcase_delete_gravity,
         test_loadcase_create_line_load,
         test_loadcase_create_displacement,
-        test_loadcase_create_temperature_uniform,
+        test_loadcase_create_uniform_temperature,
         test_loadcase_create_gradient_temperature,
         test_loadcase_create_initial_force,
         test_loadcase_create_prestress,

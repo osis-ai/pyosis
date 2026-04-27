@@ -442,32 +442,32 @@ for i in range(1, 6):
 #    - 时间步长跳跃：从CS3的97天直接跳到CS4的3650天（+3553天），AutoTs应能处理，但需监控CS4迭代次数。
 
 # 阶段1：CS1_预制张拉（7天，图5）
-stage(1, "CS1_预制、张拉预应力", 7.0)
-stage_element(1, 1, 1, "主梁单元组", 7.0, 0)
-stage_boundary(1, 1, 1, "左端支座")
-stage_boundary(1, 1, 1, "右端支座")
-stage_loadcase(1, 1, 1, "", "主梁单元自重")
-stage_loadcase(1, 1, 1, "", "预应力")
-stage_loadcase(1, 1, 1, "", "端横梁荷载工况")
+osis_stage(1, "CS1_预制、张拉预应力", 7.0)
+osis_stage_element(1, 1, 1, "主梁单元组", 7.0, 0)
+osis_stage_boundary(1, 1, 1, "左端支座")
+osis_stage_boundary(1, 1, 1, "右端支座")
+osis_stage_loadcase(1, 1, 1, "", "主梁单元自重")
+osis_stage_loadcase(1, 1, 1, "", "预应力")
+osis_stage_loadcase(1, 1, 1, "", "端横梁荷载工况")
 
 # 阶段2：CS2_存梁（60天，图5）
-stage(2, "CS2_存梁", 60.0)
+osis_stage(2, "CS2_存梁", 60.0)
 
 # 阶段3：CS3_二期恒载（30天，图5）
-stage(3, "CS3_二期恒载", 30.0)
-stage_loadcase(3, 1, 1, "", "铺装工况")
-stage_loadcase(3, 1, 1, "", "防撞护栏工况")
+osis_stage(3, "CS3_二期恒载", 30.0)
+osis_stage_loadcase(3, 1, 1, "", "铺装工况")
+osis_stage_loadcase(3, 1, 1, "", "防撞护栏工况")
 
 # 阶段4：CS4_徐变十年（3650天，图5）
-stage(4, "CS4_徐变十年", 3650.0)
+osis_stage(4, "CS4_徐变十年", 3650.0)
 
 # 阶段5：CS5_运营阶段（图5）
-stage(5, "CS5_运营阶段", 0.0)
-stage_loadcase(5, 1, 1, "", "整体升温")
-stage_loadcase(5, 1, 1, "", "整体降温")
-stage_loadcase(5, 1, 1, "", "正温度梯度")
-stage_loadcase(5, 1, 1, "", "负温度梯度")
-stage_analysis(5, 1, "LIVE", "车道荷载包络")
+osis_stage(5, "CS5_运营阶段", 0.0)
+osis_stage_loadcase(5, 1, 1, "", "整体升温")
+osis_stage_loadcase(5, 1, 1, "", "整体降温")
+osis_stage_loadcase(5, 1, 1, "", "正温度梯度")
+osis_stage_loadcase(5, 1, 1, "", "负温度梯度")
+osis_stage_analysis(5, 1, "LIVE", "车道荷载包络")
 
 # Step 9: 求解
 # 【思考过程 - 数值稳定性与结果有效性检查】

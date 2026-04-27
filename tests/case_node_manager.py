@@ -5,8 +5,6 @@ from pyosis.node import node_manager
 
 def reset():
     """刷新缓存"""
-    node_manager.refresh()
-
 
 def test_get_all():
     """测试获取全部节点"""

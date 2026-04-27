@@ -21,9 +21,7 @@ from pyosis.material import material_manager
 
 def reset_all():
     """刷新所有缓存"""
-    node_manager.refresh()
-    material_manager.refresh()
-    element_manager.refresh()
+    ...
 
 
 def cleanup_test_data(created_nos: list[int]):
@@ -43,7 +41,7 @@ def cleanup_test_data(created_nos: list[int]):
 
 def ensure_pytest_material_no() -> int:
     """按名称复用或创建测试用混凝土材料，返回材料编号。"""
-    material_manager.refresh()
+
     for m in material_manager.all():
         if m.name == "测试材料":
             return m.no
