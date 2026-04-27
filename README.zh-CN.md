@@ -103,7 +103,8 @@ pyosis 采用 Manager 模式组织代码，每个模块对应一个 Manager：
 | SettlementManager | `engine.settlement` | 沉降分析 |
 | StabilityManager | `engine.stability` | 稳定分析 |
 | DynamicManager | `engine.dynamic` | 动力分析 |
-| PostManager | `engine.post` | 后处理 |
+| PostManager | `engine.post` | 后处理（荷载组合、规范验算） |
+| ResultManager | `engine.result` | 结果导出（工况/包络/验算结果） |
 | ControlManager | `engine.control` | 全局控制参数 |
 | ProjectManager | `engine.project` | 项目操作 |
 
@@ -163,6 +164,34 @@ sec = engine.section.create_circle("截面1", d=0.5)
 # 显式指定编号
 sec = engine.section.create_circle("截面1", d=0.5, no=100)
 ```
+
+## 结果导出
+
+求解完成后，可通过 `engine.result` 导出各类分析结果，所有导出方法均返回 pandas DataFrame：
+
+```python
+# 导出荷载工况结果（单元内力）
+df = engine.result.loadcase("自重", "LCEF")
+
+# 导出包络结果（单元内力）
+df = engine.result.env("基本组合包络", "EnvEF")
+
+# 导出规范验算结果
+df = engine.result.check(
+    "混凝土", "正截面抗弯验算", "基本组合"
+)
+
+# 批量导出 Check 文件夹下所有验算结果
+results = engine.result.check_all()
+for name, df in results.items():
+    print(f"{name}: {len(df)} 行")
+```
+
+支持的结果类型：
+- **荷载工况**：`LCEF`（单元内力）、`LCED`（单元位移）、`LCND`（节点位移）、`LCBF`（边界反力）、`LCTL`（钢束损失）、`LCS`（单元应力）
+- **包络**：`EnvBF`（边界反力）、`EnvEF`（单元内力）、`EnvES`（单元应变）、`EnvS`（单元应力）、`EnvND`（节点位移）
+
+需要安装 pandas：`pip install pandas`
 
 ## 完整示例
 

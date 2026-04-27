@@ -34,7 +34,7 @@ def osis_check_result(
                         "RC施工阶段正截面压应力验算",
                         "RC施工阶段中性轴处主拉应力验算",
                         "RC施工阶段受拉钢筋拉应力验算"], 
-    strCheckName: str) -> tuple[bool, str, pd.DataFrame]:
+    strCheckName: str) -> tuple[bool, str, pd.DataFrame]:       # todo: 该函数日后需要修改成从OSIS的HDF5里导出
     '''
     验算结果导出
     

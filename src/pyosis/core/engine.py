@@ -38,6 +38,7 @@ from ..settlement.manager import SettlementManager, settlement_manager
 from ..stability.manager import StabilityManager, stability_manager
 from ..dynamic.manager import DynamicManager, dynamic_manager
 from ..post.manager import PostManager, post_manager
+from ..result.manager import ResultManager, result_manager
 from ..general.interface import (
     osis_matrix,
     output_result_for_calc_book,
@@ -73,6 +74,7 @@ class OSISEngine:
         - stability: 稳定分析管理器（屈曲分析）
         - dynamic:   动力分析管理器（荷载转换质量、模态、反应谱）
         - post:      后处理管理器（荷载组合、规范验算、结果显示）
+        - result:    结果导出管理器（工况结果、包络结果、验算结果）
 
     通用操作可直接通过 engine 调用：
         - run(), solve(), replot(), clear(), clc()
@@ -99,6 +101,7 @@ class OSISEngine:
         self._stability = stability_manager
         self._dynamic = dynamic_manager
         self._post = post_manager
+        self._result = result_manager
 
     # ──────────────────────────────────────────
     # 子管理器属性
@@ -193,6 +196,11 @@ class OSISEngine:
     def post(self) -> PostManager:
         """后处理管理器（荷载组合、规范验算、结果显示）"""
         return self._post
+
+    @property
+    def result(self) -> ResultManager:
+        """结果导出管理器（工况结果、包络结果、验算结果）"""
+        return self._result
 
     # ──────────────────────────────────────────
     # 通用操作（直接暴露 general 和 core 的函数）

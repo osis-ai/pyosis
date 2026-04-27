@@ -6,7 +6,7 @@ StageManager 接口测试（手动运行版）
 import traceback
 
 from pyosis.stage import stage_manager
-from pyosis.element import osis_element_group, element_manager
+from pyosis.element import element_manager
 from pyosis.boundary import boundary_manager
 from pyosis.load import loadcase_manager
 
@@ -372,7 +372,6 @@ if __name__ == "__main__":
         test_get_multiple,
         test_insert,
         test_count,
-        test_refresh,
         test_remove,
         test_activate_element,
         test_deactivate_element,

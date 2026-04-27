@@ -103,7 +103,8 @@ pyosis adopts a Manager pattern to organize code. Each module corresponds to a M
 | SettlementManager | `engine.settlement` | Settlement analysis |
 | StabilityManager | `engine.stability` | Stability analysis |
 | DynamicManager | `engine.dynamic` | Dynamic analysis |
-| PostManager | `engine.post` | Post-processing |
+| PostManager | `engine.post` | Post-processing (load combinations, design checks) |
+| ResultManager | `engine.result` | Result export (load case / envelope / check results) |
 | ControlManager | `engine.control` | Global control parameters |
 | ProjectManager | `engine.project` | Project operations |
 
@@ -163,6 +164,34 @@ sec = engine.section.create_circle("Section 1", d=0.5)
 # Explicit number
 sec = engine.section.create_circle("Section 1", d=0.5, no=100)
 ```
+
+## Result Export
+
+After solving, you can export various analysis results using `engine.result`. All export methods return pandas DataFrames:
+
+```python
+# Export load case results (element forces)
+df = engine.result.loadcase("Self-weight", "LCEF")
+
+# Export envelope results (element forces)
+df = engine.result.env("Basic Combination Envelope", "EnvEF")
+
+# Export design check results
+df = engine.result.check(
+    "Concrete", "Ultimate Bending Capacity Check", "Basic Combination"
+)
+
+# Batch export all check results from Check folder
+results = engine.result.check_all()
+for name, df in results.items():
+    print(f"{name}: {len(df)} rows")
+```
+
+Supported result types:
+- **Load case**: `LCEF` (element force), `LCED` (element displacement), `LCND` (node displacement), `LCBF` (boundary reaction), `LCTL` (tendon loss), `LCS` (element stress)
+- **Envelope**: `EnvBF` (boundary reaction), `EnvEF` (element force), `EnvES` (element strain), `EnvS` (element stress), `EnvND` (node displacement)
+
+Requires `pandas` to be installed: `pip install pandas`
 
 ## Complete Example
 

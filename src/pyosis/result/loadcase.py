@@ -26,7 +26,7 @@ _LOAD_CASE_TXT_PATH = "Temperary"
 #     eElementType = eElementType.upper()
 #     return e.OSIS_ElemForce(strLCName, eDataItem, eElementType)
 
-def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, pd.DataFrame]:
+def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, pd.DataFrame]:       # todo: 该函数日后需要修改成从OSIS的HDF5里导出
     """
     提取荷载工况结果
     Args:
