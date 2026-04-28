@@ -29,6 +29,7 @@ from .interface import (
     osis_boundary_master_slave,
     osis_boundary_release,
     osis_boundary_general_elstcspt,
+    osis_boundary_rigid,
     osis_boundary_section_factor,
     osis_boundary_group,
     osis_boundary_del,
@@ -786,6 +787,30 @@ class BoundaryManager:
         )
         if not ok:
             raise RuntimeError(f"创建一般弹性支承 {no} 失败: {err}")
+        return self.get(no)  # type: ignore[return-value]
+
+    def create_rigid(
+        self,
+        nNodeI: int,
+        no: int | None = None,
+    ) -> Boundary:
+        """创建刚性连接
+
+        Args:
+            nNodeI: 节点1编号（刚性区域的主节点）
+            no: 边界编号，None 时自动分配
+
+        Returns:
+            Boundary 对象
+
+        Notes:
+            用于形成刚性区域的节点号 nodeJ, nodeK, ..., nodeL 由 assign 方法定义
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_boundary_rigid(no, "RIGID", nNodeI)
+        if not ok:
+            raise RuntimeError(f"创建刚性连接 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]
 
     def delete(self, no: int) -> None:
