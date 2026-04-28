@@ -141,10 +141,10 @@ if __name__ == "__main__":
     elem_groups = engine.element.group.all()
     print("element groups: ", elem_groups)
     elem_group_names = [eg.name for eg in elem_groups]
-    splines = engine.geometry.all()
-    print("geometrys (splines): ", splines)
-    spline_names = [s.name for s in splines]  # 几何名称固定
+    geos = engine.geometry.all()
+    print("geometrys: ", geos)
+    geo_names = [s.name for s in geos]  # 几何名称固定
     
-    lc_names = build_loadcases(engine, spline_names, mat_nos, elem_nos, elem_group_names)
+    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
     print(lc_names)
     print(engine.load.all())

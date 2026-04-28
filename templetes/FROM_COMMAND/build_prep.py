@@ -97,7 +97,7 @@ def generate_module(module_name: str, commands: List[str]) -> str:
     # 根据模块确定函数签名
     signatures = {
         "CONTROL": ("def setup_control(engine: OSISEngine) -> None:", ""),
-        "PROPERTY": ("def setup_property(engine: OSISEngine) -> list[str]:", "    return []\n"),
+        "PROPERTY": ("def build_property(engine: OSISEngine) -> list[str]:", "    return []\n"),
         "MATERIAL": ("def build_materials(engine: OSISEngine) -> list[int]:", "    return []\n"),
         "SECTION": ("def build_sections(engine: OSISEngine) -> list[int]:", "    return []\n"),
         "NODE": ("def build_nodes(engine: OSISEngine) -> list[int]:", "    return []\n"),
@@ -136,7 +136,7 @@ def generate_module(module_name: str, commands: List[str]) -> str:
     # 根据模块生成对应的测试代码（和空心板模板一致）
     test_codes = {
         "CONTROL": "    setup_control(engine)",
-        "PROPERTY": "    geo_names = setup_property(engine)\n    print(geo_names)",
+        "PROPERTY": "    geo_names = build_property(engine)\n    print(geo_names)\n    print(engine.geometry.all())",
         "MATERIAL": "    mat_nos = build_materials(engine)\n    print(mat_nos)\n    print(engine.material.all())",
         "SECTION": "    sec_nos = build_sections(engine)\n    print(sec_nos)\n    print(engine.section.all())",
         "NODE": "    node_nos = build_nodes(engine)\n    print(node_nos)\n    print(engine.node.all())",
@@ -169,7 +169,8 @@ def generate_module(module_name: str, commands: List[str]) -> str:
             "    elem_nos = [e.no for e in elems]\n"
             "    elem_groups = engine.element.group.all()\n"
             "    elem_group_names = [eg.name for eg in elem_groups]\n"
-            '    geo_names = ["钢束-1-N1", "钢束-2-N2"]\n'
+            "    geos = engine.geometry.all()\n"
+            "    geo_names = [s.name for s in geos]\n"
             "    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)\n"
             "    print(lc_names)\n"
             "    print(engine.load.all())"

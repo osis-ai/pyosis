@@ -31,7 +31,7 @@ from .interface import (
 # 与服务端 splineType 字段对应
 class SplineType(Enum):
     """样条曲线类型"""
-    UNASSIGNED = 0  # 未分配
+    Unassigned = 0  # 未分配
     General = 1     # 一般边界
     Natural = 2     # 自然边界
     Arc3D = 3       # 3D圆弧

@@ -14,7 +14,7 @@ import argparse
 
 from prep._0_engine import engine
 from prep._1_control import setup_control
-from prep._2_property import setup_property
+from prep._2_property import build_property
 from prep._3_material import build_materials
 from prep._4_section import build_sections
 from prep._5_node import build_nodes
@@ -48,7 +48,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     
     # 2. 几何属性（无依赖）
     print("[2/10] 设置几何属性（钢束线型）...")
-    geo_names = setup_property(engine)
+    geo_names = build_property(engine)
     
     # 3. 材料（无依赖）
     print("[3/10] 创建材料...")

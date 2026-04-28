@@ -3,7 +3,7 @@
 from pyosis.core.engine import OSISEngine
 
 
-def setup_property(engine: OSISEngine) -> list[str]:
+def build_property(engine: OSISEngine) -> list[str]:
     """设置几何属性（钢束线型等）"""
     geometry = engine.geometry
     
@@ -34,5 +34,5 @@ def setup_property(engine: OSISEngine) -> list[str]:
 
 if __name__ == "__main__":
     from ._0_engine import engine
-    geo_names = setup_property(engine)
+    geo_names = build_property(engine)
     print(geo_names)
