@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from typing import Literal
 
+from ..core import osis_run
 from .control import (
     osis_acel,
     osis_calc_tendon,
@@ -36,13 +37,7 @@ from .nonlinear import (
     osis_NSUBST,
 )
 from ..dynamic.modal import osis_mod_opt
-# from ..general.project import (
-#     osis_new_project,
-#     osis_open_project,
-#     osis_save_project,
-#     osis_close_project,
-# )
-# from ..general.project import osis_get_project_info
+
 
 
 class ControlManager:
@@ -82,6 +77,20 @@ class ControlManager:
         ok, err = osis_apdl(path)
         if not ok:
             raise RuntimeError(f"导出 APDL 文件失败: {err}")
+        
+    def import_apdl(self, path: str | None = None) -> None:
+        """读取 .out / .sml 文件
+
+        Args:
+            path (str): 完整文件名
+         
+        Notes: 
+            path 中如果不输入绝对路径的话，默认使用程序执行文件所在的路径，比如“D:\Rbin\X.sml”。
+        """
+        ok, err = osis_run(f"/input,{path}")
+        if not ok:
+            raise RuntimeError(f"导入 APDL 文件失败: {err}")
+
 
     # ── 材料效应开关 ────────────────────────────
 

@@ -288,6 +288,28 @@ class OSISEngine:
         self._project.open(filepath)
 
     # ──────────────────────────────────────────
+    # 便捷方法（委托给 control manager）
+    # ──────────────────────────────────────────
+    def export_apdl(self, path) -> None:
+        """导出前处理状态为 .out 文件
+        
+        Args:
+            path: 路径，可缺省。格式：C:\\Temp\\OSIS.out
+        """
+        self.control.export_apdl(path)
+
+    def import_apdl(self, path: str | None = None) -> None:
+        """读取 .out / .sml 文件
+
+        Args:
+            path (str): 完整文件名
+         
+        Notes: 
+            path 中如果不输入绝对路径的话，默认使用程序执行文件所在的路径，比如“D:\Rbin\X.sml”。
+        """
+        self.control.import_apdl(path)
+
+    # ──────────────────────────────────────────
     # 模型汇总
     # ──────────────────────────────────────────
 
@@ -306,13 +328,6 @@ class OSISEngine:
             "load_cases": self._load.count(),
             "stages": self._stage.count(),
         }
-
-    def refresh_all(self) -> None:
-        """强制刷新有状态管理器的缓存
-        
-        当前所有管理器均为无状态设计，此方法保留以保持向后兼容。
-        """
-        pass
 
     def __repr__(self) -> str:
         # summary = self.model_summary()
