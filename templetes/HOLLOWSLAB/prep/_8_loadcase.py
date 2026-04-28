@@ -27,11 +27,11 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     tendon.prop.create_in("15-8",  mat_nos[2], "GBT5224_2014", 15.2, 8,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     tendon.prop.create_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
     
-    tendon_geo1, tendon_geo2 = geo_names
+    tendon_spline1, tendon_spline2 = geo_names
     _, tendon_eg_1, tendon_eg_2, _ = elem_group_names
     # 钢束形状（名称标识）
-    shape1 = tendon.shape.create_arc3d("N1", 2, "15-4", tendon_eg_1, tendon_geo1)
-    shape2 = tendon.shape.create_arc3d("N2", 2, "15-4", tendon_eg_2, tendon_geo2)
+    shape1 = tendon.shape.create_arc3d("N1", 2, "15-4", tendon_eg_1, tendon_spline1)
+    shape2 = tendon.shape.create_arc3d("N2", 2, "15-4", tendon_eg_2, tendon_spline2)
     
     # 布置钢束
     shape1.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
@@ -141,10 +141,10 @@ if __name__ == "__main__":
     elem_groups = engine.element.group.all()
     print("element groups: ", elem_groups)
     elem_group_names = [eg.name for eg in elem_groups]
+    splines = engine.geometry.all()
+    print("geometrys (splines): ", splines)
+    spline_names = [s.name for s in splines]  # 几何名称固定
     
-    # print("geometrys: ", geoms)
-    geo_names = ["钢束-1-N1", "钢束-2-N2"]  # 几何名称固定
-    
-    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
+    lc_names = build_loadcases(engine, spline_names, mat_nos, elem_nos, elem_group_names)
     print(lc_names)
     print(engine.load.all())
