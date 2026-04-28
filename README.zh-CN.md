@@ -71,7 +71,28 @@ lc.create_gravity()
 engine.solve()
 ```
 
-### 2. 直接使用 Manager
+### 2. Engine 便捷方法
+
+`OSISEngine` 提供项目级别的便捷方法：
+
+```python
+# 项目管理
+engine.new_project()           # 新建项目
+engine.save_project()          # 保存当前项目
+engine.open_project(path)      # 打开已有项目
+
+# 模型信息
+summary = engine.model_summary()  # 返回包含各管理器数量的字典
+
+# 导入/导出
+engine.export_apdl(path)       # 导出为 APDL 格式
+engine.import_apdl(path)       # 从 APDL 格式导入
+
+# 矩阵定义
+engine.matrix("矩阵1", [[1, 2],[3, 4]])
+```
+
+### 3. 直接使用 Manager
 
 如果不需要 Engine 的便捷方法，也可以直接导入各模块管理器：
 
@@ -96,6 +117,9 @@ pyosis 采用 Manager 模式组织代码，每个模块对应一个 Manager：
 | NodeManager | `engine.node` | 节点 |
 | ElementManager | `engine.element` | 单元（梁、桁架、弹簧、拉索、壳） |
 | BoundaryManager | `engine.boundary` | 边界（一般支撑、主从、弹性支承等） |
+| GeometryManager | `engine.geometry` | 几何实体（样条曲线、空间曲线等） |
+| PropertyManager | `engine.prop` | 属性（坐标系、收缩徐变、阻尼、P-U曲线、构件厚度分配） |
+| ThicknessManager | `engine.thickness` | 壳厚度特性 |
 | LoadCaseManager | `engine.load` | 荷载工况 |
 | StageManager | `engine.stage` | 施工阶段 |
 | TendonManager | `engine.tendon` | 钢束（特性+形状） |
@@ -121,6 +145,15 @@ grp.add([1, 2, 3])
 bg = engine.boundary.group.create("桥台边界")
 bg.add([1, 2])
 
+# 各类边界条件
+engine.boundary.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1)  # 一般支撑
+engine.boundary.create_master_slave(nMast=1, nSlav=2, dDir=1)           # 主从约束
+engine.boundary.create_release(nElem=1, iReleaseEnd=2)                  # 端部释放
+engine.boundary.create_elstcspt(nNode=1, dK=[1e9, 1e9, 1e9, 0, 0, 0])  # 弹性支承
+engine.boundary.create_general_elstcspt(nNode=1, bX=1, bY=1, bZ=1, dKx=1e9, dKy=1e9, dKz=1e9)  # 一般弹性支承
+engine.boundary.create_rigid(nNode1=1, nNode2=2)                        # 刚性连接
+engine.boundary.create_section_factor(nElem=1, iEnd=1)                  # 截面系数
+
 # 钢束
 prop = engine.tendon.prop.create_in(
     "15-10", mat_no=1, e_code="GBT5224_2014",
@@ -135,6 +168,44 @@ shape = engine.tendon.shape.create_arc3d(
 grade = engine.live.grade.create("公路-I级")
 lane = engine.live.lane.create("车道1")
 case = engine.live.case.create("活载工况1")
+```
+
+### 属性与厚度管理
+
+```python
+# 坐标系
+engine.prop.coord.create_local("CS1", origin=[0, 0, 0], x_axis=[1, 0, 0], y_axis=[0, 1, 0])
+
+# 收缩徐变
+engine.prop.creep_shrink.create("Creep1", eCode="JTG3362_2018", eGrade="C30")
+
+# 阻尼
+engine.prop.damping.create("Damping1", dDmp=0.05)
+
+# P-U 曲线（用于土-结构相互作用）
+engine.prop.pu_curve.create("PU1", data=[(0, 0), (0.01, 1000), (0.02, 1500)])
+
+# 构件厚度分配
+engine.prop.thickness.assign_element(nElem=1, dThick=0.3)
+
+# 壳厚度特性
+engine.thickness.create_uniform("Thick1", dThick=0.3)
+engine.thickness.create_tapered("Thick2", dThick1=0.2, dThick2=0.4)
+```
+
+### 几何查询
+
+`GeometryManager` 支持几何实体查询：
+
+```python
+# 获取所有样条曲线
+splines = engine.geometry.all("spline")
+
+# 获取指定样条曲线
+spline = engine.geometry.get("spline", name="curve1")
+
+# 按类型筛选
+arcs = engine.geometry.filter("spline", spline_type="ARC3D")
 ```
 
 ### 数据类对象
@@ -253,9 +324,8 @@ engine.solve()
 
 1. **需要先登录 OSIS**：执行代码前请确保 OSIS 软件已启动并登录，pyosis 通过 HTTP 与 OSIS 通信。
 2. **异常处理**：所有操作失败时会抛出 `RuntimeError`，建议在实际工程中加上异常处理。
-3. **无状态设计**：Manager 不缓存数据，频繁调用 `all()` 等查询方法会产生网络开销，在循环中建议谨慎使用。
+3. **无状态设计**：Manager 不缓存数据，每次调用查询方法（`all()`、`get()`、`filter()`）都会通过 HTTP 从 OSIS 获取最新数据。这保证了数据一致性，但会产生网络开销。在循环中建议本地缓存查询结果。
 4. **编号唯一性**：显式指定 `no` 时，如果编号已存在，行为取决于 OSIS 底层实现（通常覆盖或报错）。
-5. **命令模式**：在 OSIS 命令模式下执行代码时，可直接发送 Python 代码块；在 IDE 中执行时，需确保 OSIS 已运行。
 
 ## 更多资源
 

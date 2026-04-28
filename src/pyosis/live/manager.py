@@ -978,6 +978,18 @@ class LiveManager:
         """
         return self._case_manager
 
+    def count(self) -> dict[str, int]:
+        """获取活载各组件数量
+        
+        Returns:
+            活载等级、车道、活载工况数量的字典
+        """
+        return {
+            "grades": self._grade_manager.count(),
+            "lanes": self._lane_manager.count(),
+            "cases": self._case_manager.count(),
+        }
+
     def __repr__(self) -> str:
         return f"LiveManager()"
 

@@ -327,6 +327,11 @@ class OSISEngine:
             "boundaries": self._boundary.count(),
             "load_cases": self._load.count(),
             "stages": self._stage.count(),
+            "geometry": self._geometry.count(),
+            "live_loads": self._live.count(),
+            "settlements": self._settlement.count(),
+            "tendon_props": self._tendon.prop.count(),
+            "tendon_shapes": self._tendon.shape.count(),
         }
 
     def __repr__(self) -> str:

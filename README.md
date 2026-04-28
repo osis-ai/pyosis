@@ -71,7 +71,31 @@ lc.create_gravity()
 engine.solve()
 ```
 
-### 2. Using Managers Directly
+### 2. Engine Convenience Methods
+
+`OSISEngine` provides project-level convenience methods:
+
+```python
+# Project management
+engine.new_project()           # Create new project
+engine.save_project()          # Save current project
+engine.open_project(path)      # Open existing project
+
+# Model information
+summary = engine.model_summary()  # Returns dict with all manager counts
+
+# Import/Export
+engine.export_apdl(path)       # Export to APDL format
+engine.import_apdl(path)       # Import from APDL format
+
+# Result output for calculation book
+engine.output_result_for_calc_book()
+
+# Matrix output
+engine.matrix("matrix_1", [[1, 2],[3, 4]])
+```
+
+### 3. Using Managers Directly
 
 If you don't need the convenience methods of Engine, you can also import individual managers directly:
 
@@ -96,6 +120,9 @@ pyosis adopts a Manager pattern to organize code. Each module corresponds to a M
 | NodeManager | `engine.node` | Nodes |
 | ElementManager | `engine.element` | Elements (beam, truss, spring, cable, shell) |
 | BoundaryManager | `engine.boundary` | Boundaries (general support, master-slave, elastic support, etc.) |
+| GeometryManager | `engine.geometry` | Geometric entities (splines, spatial curves) |
+| PropertyManager | `engine.prop` | Properties (coordinate systems, creep/shrinkage, damping, P-U curves, element thickness assignments) |
+| ThicknessManager | `engine.thickness` | Shell thickness properties |
 | LoadCaseManager | `engine.load` | Load cases |
 | StageManager | `engine.stage` | Construction stages |
 | TendonManager | `engine.tendon` | Tendons (properties + shapes) |
@@ -121,6 +148,15 @@ grp.add([1, 2, 3])
 bg = engine.boundary.group.create("Abutment Boundaries")
 bg.add([1, 2])
 
+# Various boundary types
+engine.boundary.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1)  # General support
+engine.boundary.create_master_slave(nMast=1, nSlav=2, dDir=1)           # Master-slave
+engine.boundary.create_release(nElem=1, iReleaseEnd=2)                  # End release
+engine.boundary.create_elstcspt(nNode=1, dK=[1e9, 1e9, 1e9, 0, 0, 0])  # Elastic support
+engine.boundary.create_general_elstcspt(nNode=1, bX=1, bY=1, bZ=1, dKx=1e9, dKy=1e9, dKz=1e9)  # General elastic
+engine.boundary.create_rigid(nNode1=1, nNode2=2)                        # Rigid link
+engine.boundary.create_section_factor(nElem=1, iEnd=1)                  # Section factor
+
 # Tendons
 prop = engine.tendon.prop.create_in(
     "15-10", mat_no=1, e_code="GBT5224_2014",
@@ -135,6 +171,44 @@ shape = engine.tendon.shape.create_arc3d(
 grade = engine.live.grade.create("Highway-Class I")
 lane = engine.live.lane.create("Lane 1")
 case = engine.live.case.create("Live Load Case 1")
+```
+
+### Property & Thickness Management
+
+```python
+# Coordinate systems
+engine.prop.coord.create_local("CS1", origin=[0, 0, 0], x_axis=[1, 0, 0], y_axis=[0, 1, 0])
+
+# Creep and shrinkage
+engine.prop.creep_shrink.create("Creep1", eCode="JTG3362_2018", eGrade="C30")
+
+# Damping
+engine.prop.damping.create("Damping1", dDmp=0.05)
+
+# P-U curve (for soil-structure interaction)
+engine.prop.pu_curve.create("PU1", data=[(0, 0), (0.01, 1000), (0.02, 1500)])
+
+# Element thickness assignment
+engine.prop.thickness.assign_element(nElem=1, dThick=0.3)
+
+# Shell thickness properties
+engine.thickness.create_uniform("Thick1", dThick=0.3)
+engine.thickness.create_tapered("Thick2", dThick1=0.2, dThick2=0.4)
+```
+
+### Geometry Queries
+
+The `GeometryManager` supports querying geometric entities:
+
+```python
+# Get all splines
+splines = engine.geometry.all("spline")
+
+# Get a specific spline
+spline = engine.geometry.get("spline", name="curve1")
+
+# Filter by type
+arcs = engine.geometry.filter("spline", spline_type="ARC3D")
 ```
 
 ### Data Class Objects
@@ -178,7 +252,7 @@ df = engine.result.env("Basic Combination Envelope", "EnvEF")
 
 # Export design check results
 df = engine.result.check(
-    "Concrete", "Ultimate Bending Capacity Check", "Basic Combination"
+    "混凝土", "正截面抗弯验算", "Basic Combination"
 )
 
 # Batch export all check results from Check folder
@@ -253,9 +327,8 @@ engine.solve()
 
 1. **OSIS must be running**: Before executing code, ensure the OSIS software is launched and logged in. pyosis communicates with OSIS via HTTP.
 2. **Exception handling**: All operations throw `RuntimeError` on failure. It is recommended to add exception handling in production code.
-3. **Stateless design**: Managers do not cache data. Frequent calls to `all()` and other query methods incur network overhead. Use cautiously in loops.
+3. **Stateless design**: Managers do not cache data. Every query method (`all()`, `get()`, `filter()`) fetches fresh data from OSIS via HTTP. This ensures consistency but incurs network overhead. Cache results locally when iterating in loops.
 4. **Number uniqueness**: When explicitly specifying `no`, if the number already exists, the behavior depends on the OSIS underlying implementation (usually overwrites or raises an error).
-5. **Command mode**: When executing code in OSIS command mode, you can directly send Python code blocks. When executing in an IDE, ensure OSIS is running.
 
 ## More Resources
 
