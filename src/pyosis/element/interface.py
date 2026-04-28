@@ -10,22 +10,6 @@ from typing import Any, Dict, Literal
 from ..core import REGISTRY
 
 
-# @REGISTRY.register("Element")
-# def osis_element(nEle: int, eElementType: Literal["BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"], params: Dict[str, Any]):
-#     '''
-#     创建单元
-    
-#     Args:
-#         nEle (int): 单元编号
-#         eElementType (str): 单元类型，不区分大小写。BEAM3D = 梁柱单元，TRUSS = 桁架单元，SPRING = 弹簧单元，CABLE = 拉索单元，SHELL = 壳单元
-#         params (Dict[str, Any]): 对应单元类型所需要的参数
-#     Returns:
-#         tuple (bool, str): 是否成功，失败原因
-#     '''
-#     e = OSISEngine.GetInstance()
-#     eElementType = eElementType.upper()
-#     return e.OSIS_Element(nEle, eElementType, params)
-
 @REGISTRY.register("Element")
 def osis_element_beam3d(nEle: int, eElementType: str="BEAM3D", nNode1: int=1, nNode2: int=2, nMat: int=1, nSec1: int=1, nSec2: int=1, 
                         nYTrans: Literal[1, 2, 3, 4]=1, nZTrans: Literal[1, 2, 3, 4]=1, dStrain: float=0.0, bFlag: bool=0, dTheta: float=0, bWarping: bool=0):

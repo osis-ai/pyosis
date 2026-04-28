@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Literal
+from enum import Enum
 
 from ..core.client import osis_client
 from .loadcase import (
@@ -162,9 +163,6 @@ class LoadCase:
         if data and data[0]:
             self._sync_from_dict(data[0])
         return self
-
-    def __repr__(self) -> str:
-        return f"LoadCase(name={self.name!r}, type={self.load_case_type}, scalar={self.scalar}, prompt={self.prompt})"
 
     # ── 荷载添加 ──────────────────────────────
 
@@ -639,11 +637,20 @@ class LoadCase:
         if not ok:
             raise RuntimeError(f"修改工况 {self.name} 中的荷载失败: {err}")
         return self.refresh()
+    
+    def __repr__(self) -> str:
+        return f"LoadCase(name={self.name!r}, type={self.load_case_type}, scalar={self.scalar}, prompt={self.prompt})"
 
 
 # ──────────────────────────────────────────────
 # Tendon 数据类
 # ──────────────────────────────────────────────
+
+class TensionType(Enum):
+    Unassigned = 0
+    Pre = 1             # 先张法
+    In = 2              # 后张法（体内）
+    Ex = 3              # 后张法（体外）
 
 
 @dataclass(frozen=True)
@@ -652,8 +659,8 @@ class TendonProp:
 
     对应接口 GetAllTendonPropInfo / GetTendonPropInfoByNames 返回的数据。
     """
-    name: str                           # 钢束特性名称
-    tension_type: int                  # 张拉类型：0=先张法, 1=后张法体内, 2=后张法体外
+    name: str                          # 钢束特性名称
+    tension_type: TensionType          # 张拉类型：1=先张法, 2=后张法体内, 3=后张法体外
     tendon_mat_no: int                 # 钢束材料编号
     area: float                        # 钢束面积
     code: int                          # 规范代码
@@ -680,11 +687,11 @@ class TendonProp:
             tension_coeff=d.get("tensionCoeff"),
             relaxation_coeff=d.get("relaxationCoeff"),
             tendon_area=d.get("tendonArea"),
-            related_tendon_shapes=d.get("relatedTendonShapes") or [],
+            related_tendon_shapes=d.get("relatedTendonShapes"),
         )
 
     def __repr__(self) -> str:
-        return f"TendonProp(name={self.name!r}, type={self.tension_type})"
+        return f"TendonProp(name={self.name!r}, type={self.tension_type.name}, tendon_mat_no={self.tendon_mat_no}, area={self.area}, code={self.code})"
 
 
 @dataclass(frozen=False)
@@ -693,7 +700,7 @@ class TendonShape:
 
     对应接口 GetAllTendonShapeInfo / GetTendonShapeInfoByNames 返回的数据。
     """
-    name: str                           # 钢束形状名称
+    name: str                          # 钢束形状名称
     tendon_num: int                    # 钢束数量
     tendon_prop: str                   # 钢束特性名称
     ele_grp: str                       # 作用的单元组名称
@@ -740,7 +747,7 @@ class TendonShape:
             raise RuntimeError(f"擦除钢束 {self.name} 失败: {err}")
 
     def __repr__(self) -> str:
-        return f"TendonShape(name={self.name!r}, prop={self.tendon_prop})"
+        return f"TendonShape(name={self.name!r}, tendon_num={self.tendon_num}, prop={self.tendon_prop}, ele_grp={self.ele_grp})"
 
 
 # ──────────────────────────────────────────────

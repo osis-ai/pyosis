@@ -27,8 +27,8 @@ from .interface import (
 )
 
 
-# 与服务端 type 字段对应（见 io/element_info）
 class ElementType(Enum):
+    UNASSIGNED = 0
     BEAM3D = 1
     TRUSS = 2
     SPRING = 3
@@ -57,7 +57,7 @@ class Element:
     """
 
     no: int
-    type: ElementType  # BEAM3D, TRUSS, ...
+    element_type: ElementType  # BEAM3D, TRUSS, ...
     mat: int
     node_vec: list[int] = field(default_factory=list)   # 实际上就是 node_i 和 node_j
     node_i: int = 0
@@ -97,7 +97,7 @@ class Element:
         )
 
     def __repr__(self) -> str:
-        return f"Element(no={self.no}, type={self.type}, mat={self.mat}, nodes={self.node_vec})"
+        return f"Element(no={self.no}, type={self.element_type.name}, mat={self.mat}, nodes={self.node_vec})"
 
 
 @dataclass(frozen=False)
@@ -111,11 +111,11 @@ class ElementGroup:
     elements: list[int] = field(default_factory=list)      # 组内单元列表
     element_count: int = 0                       # 单元数量
     related_tendon_shapes: list[str] = field(default_factory=list)  # 关联的钢束形状
-    related_tendon_shape_count: int = 0          # 关联钢束形状数量
+    related_tendon_shape_count: int = 0                             # 关联钢束形状数量
     related_lanes: list[str] = field(default_factory=list)          # 关联的车道
-    related_lane_count: int = 0                  # 关联车道数量
+    related_lane_count: int = 0                                     # 关联车道数量
     related_stages: list[int] = field(default_factory=list)         # 关联的施工阶段
-    related_stage_count: int = 0                 # 关联施工阶段数量
+    related_stage_count: int = 0                                    # 关联施工阶段数量
 
     @classmethod
     def _from_dict(cls, d: dict) -> ElementGroup:
@@ -223,7 +223,7 @@ class ElementGroup:
         Returns:
             更新后的 ElementGroup 对象
         """
-        self._execute("m", [new_name])
+        self._execute("m", new_name)
         self.name = new_name
         return self.refresh()
 
@@ -297,20 +297,32 @@ class ElementGroupManager:
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, name: str) -> ElementGroup | None:
-        """根据名称获取单元组
+    def get(self, name: str | list[str]) -> ElementGroup | list[ElementGroup | None] | None:
+        """根据名称获取单个或多个单元组
 
         Args:
-            name: 单元组名称
+            name: 单元组名称，支持单个名称或名称列表
 
         Returns:
-            ElementGroup 对象；不存在返回 None
+            单个 ElementGroup 对象；如果传入列表则返回对象列表；
+            不存在返回 None
         """
-        groups = self._load()
-        for g in groups:
-            if g.name == name:
-                return g
-        return None
+        if isinstance(name, str):
+            name = [name]
+        elif not isinstance(name, list):
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        
+        resp = osis_client("GetElementGroupInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        
+        element_groups = [ElementGroup._from_dict(d) if d else None for d in resp.get("data", [])]
+        
+        if len(element_groups) == 0:
+            return None
+        elif len(element_groups) == 1:
+            return element_groups[0]
+        return element_groups
 
     def all(self) -> list[ElementGroup]:
         """获取所有单元组
@@ -500,37 +512,38 @@ class ElementManager:
             raise RuntimeError(f"修改单元编号 {old_no} -> {new_no} 失败: {err}")
         return self.get(new_no)
 
-    def modify(self, no: int, **kwargs) -> None:
-        """修改单元,编号不存在会抛出异常,修改时需要提供完整参数"""
-        ele = self.get(no)
-        if ele is None:
-            raise RuntimeError(f"单元 {no} 不存在，无法修改")
+    # 下面的函数可能没有必要，直接重新调用创建函数就能修改了
+    # def modify(self, no: int, **kwargs) -> None:
+    #     """修改单元,编号不存在会抛出异常,修改时需要提供完整参数"""
+    #     ele = self.get(no)
+    #     if ele is None:
+    #         raise RuntimeError(f"单元 {no} 不存在，无法修改")
 
-        element_type = kwargs.pop("element_type", None)
+    #     element_type = kwargs.pop("element_type", None)
 
-        if element_type is None:
-            raise RuntimeError("必须提供 element_type 来指定单元类型")
+    #     if element_type is None:
+    #         raise RuntimeError("必须提供 element_type 来指定单元类型")
 
-        kwargs["no"] = no
+    #     kwargs["no"] = no
 
-        if element_type == "BEAM3D":
-            self.create_beam3d(**kwargs)
-        elif element_type == "TRUSS":
-            self.create_truss(**kwargs)
-        elif element_type == "SPRING":
-            self.create_spring(**kwargs)
-        elif element_type == "CABLE":
-            self.create_cable(**kwargs)
-        elif element_type == "SHELL":
-            self.create_shell(**kwargs)
-        else:
-            raise RuntimeError(f"不支持的单元类型: {element_type}")
+    #     if element_type.upper() == "BEAM3D":
+    #         self.create_beam3d(**kwargs)
+    #     elif element_type.upper() == "TRUSS":
+    #         self.create_truss(**kwargs)
+    #     elif element_type.upper() == "SPRING":
+    #         self.create_spring(**kwargs)
+    #     elif element_type.upper() == "CABLE":
+    #         self.create_cable(**kwargs)
+    #     elif element_type.upper() == "SHELL":
+    #         self.create_shell(**kwargs)
+    #     else:
+    #         raise RuntimeError(f"不支持的单元类型: {element_type}")
 
-        return self.get(no)
+    #     return self.get(no)
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int], expected_cls: type[Element]=Element) -> Element | list[Element | None] | None:
+    def get(self, no: int | list[int]) -> Element | list[Element | None] | None:
         """根据编号获取单个或多个单元 (O(k))"""
         if isinstance(no, int):
             no = [no]
@@ -541,7 +554,7 @@ class ElementManager:
         resp = osis_client("GetElementInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        eles = [expected_cls._from_dict(d) if d else None for d in resp.get("data", [])]
+        eles = [Element._from_dict(d) if d else None for d in resp.get("data", [])]
 
         if len(eles) == 0:     # 有问题
             return None

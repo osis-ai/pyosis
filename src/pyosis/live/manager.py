@@ -81,14 +81,14 @@ class LiveGrade:
             crowd_bridge_type=d.get("crowdBridgeType"),
             crowd_width=d.get("crowdWidth"),
             fatigue_ii_veichle_center_dis=d.get("fatigueIIVeichleCenterDis"),
-            related_live_anal=d.get("relatedLiveAnal") or [],
-            related_stages=d.get("relatedStages") or [],
-            custom_layout=d.get("customLayout") or [],
-            code_data_qk_pk5_pk50=d.get("codeData_qk_pk5_pk50") or {},
-            code_data_vehicle_5x2=d.get("codeData_vehicle_5x2") or [],
-            code_data_crowd_w50_w150=d.get("codeData_crowd_w50_w150") or {},
-            code_data_fatigueII_6x2=d.get("codeData_fatigueII_6x2") or [],
-            code_data_fatigueIII_4x2=d.get("codeData_fatigueIII_4x2") or [],
+            related_live_anal=d.get("relatedLiveAnal"),
+            related_stages=d.get("relatedStages"),
+            custom_layout=d.get("customLayout"),
+            code_data_qk_pk5_pk50=d.get("codeData_qk_pk5_pk50"),
+            code_data_vehicle_5x2=d.get("codeData_vehicle_5x2"),
+            code_data_crowd_w50_w150=d.get("codeData_crowd_w50_w150"),
+            code_data_fatigueII_6x2=d.get("codeData_fatigueII_6x2"),
+            code_data_fatigueIII_4x2=d.get("codeData_fatigueIII_4x2"),
         )
 
     def __repr__(self) -> str:
@@ -168,11 +168,11 @@ class SubLoadCase:
             max_lanes=d.get("maxLanes"),
             master_live_anal=d.get("masterLiveAnal"),
             freq=d.get("freq"),
-            lane_vkt=d.get("laneVkt") or [],
+            lane_vkt=d.get("laneVkt"),
             scalar=d.get("scalar"),
             is_calc_mu=d.get("isCalcMu"),
             mu_bridge_type=d.get("muBridgeType"),
-            mu_paras=d.get("muParas") or [],
+            mu_paras=d.get("muParas"),
         )
 
 
@@ -211,9 +211,9 @@ class LiveCase:
             code=d.get("code"),
             cmb_type=d.get("cmbType"),
             max_lanes_allowed=d.get("maxLanesAllowed"),
-            trans_reduction_factors=d.get("transReductionFactors") or [],
+            trans_reduction_factors=d.get("transReductionFactors"),
             sub_load_cases=[SubLoadCase._from_dict(s) for s in d.get("subLoadCases", []) if isinstance(s, dict)],
-            related_stages=d.get("relatedStages") or [],
+            related_stages=d.get("relatedStages"),
         )
 
     def _sync_from_dict(self, d: dict) -> None:

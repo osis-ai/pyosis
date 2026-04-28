@@ -133,6 +133,12 @@ class Section:
         ok, err = osis_section_mesh(self.no, mesh_method, mesh_size)
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 网格失败: {err}")
+        
+    def export(self):
+        """生成截面图片，会在 image/section/ 目录下生成一张 {nSec}.jpg"""
+        ok, err = osis_export_section_pic(self.no)
+        if not ok:
+            raise RuntimeError(f"导出截面 {self.no} 图片失败: {err}")
 
 
 # ──────────────────────────────────────────────

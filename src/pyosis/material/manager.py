@@ -30,7 +30,7 @@ from .interface import (
 # ──────────────────────────────────────────────
 
 class MaterialType(Enum):
-    UNASSIGEND = 0      # 未定义
+    UNASSIGNED = 0      # 未定义
     CONC = 1            # 混凝土
     STEEL = 2           # 钢材
     Prestressed = 3     # 预应力
@@ -46,7 +46,7 @@ class Material:
 
     no: int
     name: str
-    type: MaterialType # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
+    material_type: MaterialType # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
     code: str                   # 规范名
     grade: str                  # 材料等级
     e: float                    # 弹性模量(Pa)
@@ -79,8 +79,8 @@ class Material:
             creep_shrink_no=d.get("creepShrinkNo"),
         )
 
-    # def __repr__(self) -> str:
-    #     return f"Material(no={self.no}, name={self.name!r}, type={self.type})"
+    def __repr__(self) -> str:
+        return f"Material(no={self.no}, name={self.name!r}, type={self.material_type.name})"
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -160,10 +160,7 @@ class MaterialManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_material_conc(
-            no, name, "CONC", eCode, eGrade,
-            -1 if nCrepShrk is None else nCrepShrk, dDmp
-        )
+        ok, err = osis_material_conc(no, name, "CONC", eCode, eGrade, nCrepShrk, dDmp)
         if not ok:
             raise RuntimeError(f"创建混凝土材料 {no} 失败: {err}")
         return self.get(no)

@@ -86,7 +86,7 @@ class NodeManager:
     用法:
         >>> from pyosis.node import node_manager
         >>> node_manager.create(0, 0, 0)              # 创建节点（自动生成编号）
-        >>> node_manager.create(1, 0, 0, 0)           # 创建节点（指定编号）
+        >>> node_manager.create(0, 0, 0, 1)           # 创建节点（指定编号）
         >>> node = node_manager.get(1)                # 按编号查询
         >>> print(node.coord)                         # (0.0, 0.0, 0.0)
         >>> all_nodes = node_manager.all()            # 获取全部节点
@@ -169,17 +169,18 @@ class NodeManager:
             raise RuntimeError(f"修改节点编号 {old_no} -> {new_no} 失败: {err}")
         # self._loaded = False
 
-    def modify(self, no: int, x: float, y: float, z: float) -> None:
-        """修改节点，编号不存在会自动创建
+    # 该函数或许不需要，直接创建即可覆盖
+    # def modify(self, no: int, x: float, y: float, z: float) -> None:
+    #     """修改节点，编号不存在会自动创建
 
-        Args:
-            no: 节点编号
-            x, y, z: 节点坐标
+    #     Args:
+    #         no: 节点编号
+    #         x, y, z: 节点坐标
 
-        Raises:
-            RuntimeError: 修改失败时抛出异常
-        """
-        self.create(x, y, z, no=no)  # 直接调用 create 接口，编号存在时会覆盖
+    #     Raises:
+    #         RuntimeError: 修改失败时抛出异常
+    #     """
+    #     return self.create(x, y, z, no=no)  # 直接调用 create 接口，编号存在时会覆盖
 
     # ── 查询 ──────────────────────────────────
 

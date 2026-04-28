@@ -38,15 +38,6 @@ class SplineType(Enum):
     Arc2D = 4       # 2D圆弧
 
 
-SPLINE_TYPE_NAMES: dict[int, str] = {
-    0: "UNASSIGNED",
-    1: "General",
-    2: "Natural",
-    3: "Arc3D",
-    4: "Arc2D",
-}
-
-
 # ──────────────────────────────────────────────
 # 数据类
 # ──────────────────────────────────────────────

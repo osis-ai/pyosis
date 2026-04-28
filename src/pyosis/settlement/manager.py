@@ -36,10 +36,10 @@ class SettlementGroup:
 
     由 SettlementGroupManager 内部创建，用户不应直接实例化。
     """
-    name: str                           # 组名
-    setl: float                        # 沉降数值
-    nodes: list[int] = field(default_factory=list)      # 施加沉降的节点列表
-    related_settlements: list[str] = field(default_factory=list)  # 关联的沉降工况名称列表
+    name: str                                                       # 组名
+    setl: float                                                     # 沉降数值
+    nodes: list[int] = field(default_factory=list)                  # 施加沉降的节点列表
+    related_settlements: list[str] = field(default_factory=list)    # 关联的沉降工况名称列表
 
     @classmethod
     def _from_dict(cls, d: dict) -> SettlementGroup:

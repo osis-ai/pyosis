@@ -231,14 +231,14 @@ class StageManager:
 
     def create(     
         self,
-        no: int,
+        no: int,    # 施工阶段编号必须连续，不做自动编号
         name: str,
         duration: int,
     ) -> Stage:
         """创建施工阶段
 
         Args:
-            no: 阶段编号
+            no: 阶段编号。施工阶段编号必须连续，不做自动编号
             name: 施工阶段名称
             duration: 持续时间（天）
 
@@ -350,7 +350,7 @@ class StageManager:
         return len(self._load())
 
     def __repr__(self) -> str:
-        return f"StageManager(count={self.count()})"
+        return f"StageManager()"
 
 
 # ──────────────────────────────────────────────

@@ -12,6 +12,8 @@
 - RELEASE（释放梁端约束，type=4）
 - ELSTCSPT（弹性支承，type=5）
 - GENERALELSTCSPT（一般弹性支承，type=6）
+
+注：截面特性调整（SECF）为独立功能，不属于边界类型
 """
 
 from __future__ import annotations
@@ -26,6 +28,8 @@ from .interface import (
     osis_boundary_elstcspt,
     osis_boundary_master_slave,
     osis_boundary_release,
+    osis_boundary_general_elstcspt,
+    osis_boundary_section_factor,
     osis_boundary_group,
     osis_boundary_del,
     osis_assign_boundary,
@@ -93,10 +97,42 @@ class Boundary:
                 is_selected=d.get("isSelected"),
                 is_ploted=d.get("isPloted"),
             )
+    
+    def set_section_factor(
+        self,
+        area: float,
+        sy: float,
+        sz: float,
+        ixx: float,
+        iyy: float,
+        izz: float,
+        iww: float,
+        weight: float,
+    ):
+        """边界截面特性调整
+
+        Args:
+            area: 面积调整系数
+            sy: Y向剪切常数调整系数
+            sz: Z向剪切常数调整系数
+            ixx: X轴抗扭惯性矩调整系数
+            iyy: Y轴抗弯惯性矩调整系数
+            izz: Z轴抗弯惯性矩调整系数
+            iww: 翘曲惯性矩调整系数
+            weight: 自重调整系数
+            no: 截面编号，None 时自动分配
+
+        Returns:
+            SectionFactorBoundary 对象
+        """
+        ok, err = osis_boundary_section_factor(
+            self.no, "SECF", area, sy, sz, ixx, iyy, izz, iww, weight
+        )
+        if not ok:
+            raise RuntimeError(f"边界 {self.no} 的截面特性修改失败: {err}")
 
     def __repr__(self) -> str:
         return f"Boundary(no={self.no}, type={self.boundary_type.name})"
-
 
 @dataclass(frozen=True)
 class GeneralBoundary(Boundary):
@@ -592,6 +628,7 @@ class BoundaryManager:
 
     def create_general(
         self,
+        nCoor: int | str = "",
         bX: Literal[0, 1] = 1,
         bY: Literal[0, 1] = 1,
         bZ: Literal[0, 1] = 1,
@@ -599,7 +636,6 @@ class BoundaryManager:
         bRY: Literal[0, 1] = 1,
         bRZ: Literal[0, 1] = 1,
         bRW: Literal[0, 1] = 1,
-        nCoor: int | None = None,
         no: int | None = None,
     ) -> GeneralBoundary:
         """创建一般边界"""
@@ -677,6 +713,7 @@ class BoundaryManager:
 
     def create_elstcspt(
         self,
+        nCoor: int | str = "",
         bX: Literal[0, 1] = 1,
         DX: float = 1e13,
         bY: Literal[0, 1] = 1,
@@ -689,7 +726,6 @@ class BoundaryManager:
         RY: float = 1e16,
         bRZ: Literal[0, 1] = 1,
         RZ: float = 1e16,
-        nCoor: int | None = None,
         no: int | None = None,
     ) -> ElstcSptBoundary:
         """创建弹性支承"""
@@ -700,6 +736,56 @@ class BoundaryManager:
         )
         if not ok:
             raise RuntimeError(f"创建弹性支承 {no} 失败: {err}")
+        return self.get(no)  # type: ignore[return-value]
+
+    def create_general_elstcspt(
+        self,
+        nCoor: int | str = "",
+        stiffness_matrix: list[float] | None = None,
+        mass_matrix: list[float] | None = None,
+        damping_matrix: list[float] | None = None,
+        no: int | None = None,
+    ) -> GeneralElstcSptBoundary:
+        """创建一般弹性支承
+
+        Args:
+            nCoor: 局部坐标系编号，"" 代表缺省
+            stiffness_matrix: 6x6 刚度矩阵上三角元素（21个值），必须全部给出
+                顺序：K11,K12,K13,K14,K15,K16,K22,K23,K24,K25,K26,K33,K34,K35,K36,K44,K45,K46,K55,K56,K66
+            mass_matrix: 6x6 质量矩阵上三角元素（21个值），可选
+            damping_matrix: 6x6 阻尼矩阵上三角元素（21个值），可选
+            no: 边界编号，None 时自动分配
+
+        Returns:
+            GeneralElstcSptBoundary 对象
+        """
+        if no is None:
+            no = self._next_no()
+        if stiffness_matrix is None:
+            stiffness_matrix = []
+        
+        # 构建参数序列
+        params = list(stiffness_matrix)
+        
+        # 质量矩阵
+        if mass_matrix:
+            params.append(1)  # bM = 1
+            params.extend(mass_matrix)
+        else:
+            params.append(0)  # bM = 0
+        
+        # 阻尼矩阵
+        if damping_matrix:
+            params.append(1)  # bC = 1
+            params.extend(damping_matrix)
+        else:
+            params.append(0)  # bC = 0
+        
+        ok, err = osis_boundary_general_elstcspt(
+            no, "GES", nCoor or "", *params
+        )
+        if not ok:
+            raise RuntimeError(f"创建一般弹性支承 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]
 
     def delete(self, no: int) -> None:
