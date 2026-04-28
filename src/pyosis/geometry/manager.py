@@ -93,12 +93,19 @@ class Spline:
                         pt.get("y"),
                         pt.get("z"),
                     ])
-                elif s_type in (SplineType.Arc3D, SplineType.Arc2D):
-                    # Arc3D/Arc2D: x, y, z, r
+                elif s_type == SplineType.Arc3D:
+                    # Arc3D: x, y, z, r
                     result.append([
                         pt.get("x"),
                         pt.get("y"),
                         pt.get("z"),
+                        pt.get("r"),
+                    ])
+                elif s_type == SplineType.Arc2D:
+                    # Arc2D: x, y, r
+                    result.append([
+                        pt.get("x"),
+                        pt.get("y"),
                         pt.get("r"),
                     ])
                 else:
@@ -197,7 +204,7 @@ class GeometryManager:
         Args:
             name: 曲线名称
             owner: 用途
-            coordinates: 坐标序列，按 x, y, z, R 顺序交替排列
+            coordinates: 坐标序列，按 x, y, z 顺序交替排列
 
         Returns:
             创建后的 Spline 对象

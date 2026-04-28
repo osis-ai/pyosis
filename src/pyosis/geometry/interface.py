@@ -51,9 +51,9 @@ def osis_spline3d_natural(strName: str, type: str, eOwner: Literal["LIVE", "TEND
         eOwner (str): 用途
             * LIVE = 用于活载的车道线定义
             * TENDON = 用于钢束定义
-        *coordinates (float): 变长坐标序列，严格按 x, y, z, R 顺序交替排列。
-            表示各控制点的三维坐标 (x,y,z) 和该点处的曲率半径 R。
-            格式示例：x1, y1, z1, R1, x2, y2, z2, R2, ...
+        *coordinates (float): 变长坐标序列，严格按 x, y, z顺序交替排列。
+            表示各控制点的三维坐标 (x,y,z) 。
+            格式示例：x1, y1, z1, x2, y2, z2, ...
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
