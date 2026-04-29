@@ -105,6 +105,29 @@ def osis_load_line(eType: Literal['LINE'], strLCName: str, nEntity: int, eCoordS
     pass
 
 @REGISTRY.register("Load")
+def osis_load_concentrated(eType: Literal['PTF', 'PTM'], strLCName: str, nEntity: int,
+                           eCoordSystem: Literal[0, 1], nLoadRange: Literal[1, 2, 3, 4, 5],
+                           params: list):
+    '''
+    创建或修改任意节间集中力/力矩
+
+    Args:
+        eType (str): 荷载类型，不区分大小写。PTF = 集中力，PTM = 集中力矩
+        strLCName (str): 荷载工况名称
+        nEntity (int): 单元编号
+        eCoordSystem (int): 
+            * 0-单元坐标系
+            * 1-整体坐标系
+        nLoadRange (int): 力/力矩组数，1~5
+        params (list): 各组力/力矩参数，按顺序填入：
+            [offsetX1, offsetY1, offsetZ1, Px1, Py1, Pz1, offsetX2, offsetY2, offsetZ2, Px2, Py2, Pz2, ...]
+            每组包含6个参数：偏移量X/L, Y轴偏移量, Z轴偏移量, x方向力/力矩, y方向力/力矩, z方向力/力矩
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("Load")
 def osis_load_surface_load(eType: str, strLc: str, strEntity: str, strPlanei:str, strDir:str, strGlobalI:Literal["0","1","2"], strP1i:str, strP2i:str,strP3i:str,strP4i:str) -> tuple[bool, str]:
     """
     创建或修改单元面荷载，不考虑边中节点荷载插值

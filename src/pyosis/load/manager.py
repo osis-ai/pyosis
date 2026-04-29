@@ -43,6 +43,7 @@ from .static import (
     osis_load_gravity,
     osis_load_nforce,
     osis_load_line,
+    osis_load_concentrated,
     osis_load_surface_load,
     osis_load_surface_load_vector,
     osis_load_displacement,
@@ -279,6 +280,52 @@ class LoadCase:
         )
         if not ok:
             raise RuntimeError(f"添加线荷载到工况 {self.name} 失败: {err}")
+        return self.refresh()
+
+    def create_concentrated_force(
+            self,
+            nEntity: int,
+            eCoordSystem: Literal[0, 1] = 1,
+            is_moment: bool = False,
+            forces: list[list[float]] = None,
+    ) -> LoadCase:
+        """添加任意节间集中力/力矩
+
+        Args:
+            nEntity: 单元编号
+            eCoordSystem: 坐标系
+                * 0 = 单元坐标系
+                * 1 = 整体坐标系
+            is_moment: 是否为集中力矩（True=力矩PTM，False=力PTF）
+            forces: 各组力/力矩参数列表，每组为 [offsetX, offsetY, offsetZ, Px, Py, Pz]
+                最多5组，例如：
+                [[0.5, 0, 0, 100, 0, 0]]  # 1组力
+                [[0.25, 0, 0, 50, 0, 0], [0.75, 0, 0, 50, 0, 0]]  # 2组力
+
+        Returns:
+            更新后的 LoadCase 对象
+        """
+        if forces is None:
+            forces = []
+        
+        nLoadRange = len(forces)
+        if nLoadRange < 1 or nLoadRange > 5:
+            raise ValueError(f"forces 组数必须在 1~5 之间，当前为 {nLoadRange}")
+        
+        # 展平参数列表
+        params = []
+        for force in forces:
+            if len(force) != 6:
+                raise ValueError(f"每组力/力矩必须包含6个参数 [offsetX, offsetY, offsetZ, Px, Py, Pz]，当前为 {len(force)}")
+            params.extend(force)
+        
+        eType = "PTM" if is_moment else "PTF"
+        ok, err = osis_load_concentrated(
+            eType, self.name, nEntity, eCoordSystem, nLoadRange, params
+        )
+        if not ok:
+            force_type = "集中力矩" if is_moment else "集中力"
+            raise RuntimeError(f"添加{force_type}到工况 {self.name} 失败: {err}")
         return self.refresh()
 
     def create_displacement(
