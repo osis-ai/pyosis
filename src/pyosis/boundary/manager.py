@@ -134,6 +134,18 @@ class Boundary:
 
     def __repr__(self) -> str:
         return f"Boundary(no={self.no}, type={self.boundary_type.name})"
+    
+    
+    def assign(
+        self,
+        eOP: Literal["a", "s", "r", "aa", "ra"] = "a",
+        param: list | None = None,
+    ) -> None:
+        """分配边界给节点"""
+        ok, err = osis_assign_boundary(self.no, eOP, param if param is not None else [])
+        if not ok:
+            raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
+
 
 @dataclass(frozen=True)
 class GeneralBoundary(Boundary):
@@ -191,16 +203,6 @@ class GeneralBoundary(Boundary):
     @property
     def rw(self) -> int:
         return self.constraints[6] if len(self.constraints) > 6 else 0
-
-    def assign(
-        self,
-        eOP: Literal["a", "s", "r", "aa", "ra"] = "a",
-        param: list | None = None,
-    ) -> None:
-        """分配边界给节点"""
-        ok, err = osis_assign_boundary(self.no, eOP, param if param is not None else [])
-        if not ok:
-            raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
 
 
 @dataclass(frozen=True)
@@ -299,16 +301,6 @@ class ElstcSptBoundary(Boundary):
 
     def __repr__(self) -> str:
         return f"ElstcSptBoundary(no={self.no}, constraints={self.constraints})"
-
-    def assign(
-        self,
-        eOP: Literal["a", "s", "r", "aa", "ra"] = "a",
-        param: list | None = None,
-    ) -> None:
-        """分配边界给节点（节点弹性支撑）"""
-        ok, err = osis_assign_boundary(self.no, eOP, param if param is not None else [])
-        if not ok:
-            raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
 
 
 @dataclass(frozen=True)
