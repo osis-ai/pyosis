@@ -24,7 +24,7 @@ session.mount("http://", adapter)
 session.mount("https://", adapter)  # 如果你后续用HTTPS
 
 # ========== 通用客户端函数（复用连接池） ==========
-def osis_client(func_name: str, payload: dict) -> dict | tuple[bool, str]:
+def osis_client(func_name: str, payload: dict) -> dict:
     """
     通用 OSIS 接口客户端（复用连接池，高效批量调用）
     Args:
