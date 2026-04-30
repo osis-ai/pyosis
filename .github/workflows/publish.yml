@@ -7,35 +7,49 @@ on:
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
-  
+  id-token: write  # Required for Trusted Publishing (optional if using API token)
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build requests
 
     # 👇 【修复关键：安装本地方包，让 setuptools 能读到 __version__】
     - name: Install local package for version detection
       run: pip install -e .
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build
-
-    # 👇 【调试：打印当前版本，确认是否读到最新】
     - name: Show detected version
       run: |
         python -c "from pyosis import __version__; print('✅ 当前版本:', __version__)"
+
+    # 👇 【新增：检查 PyPI 是否已存在该版本，避免发布失败】
+    - name: Check if version already exists on PyPI
+      run: |
+        $version = python -c "from pyosis import __version__; print(__version__)"
+        Write-Host "📦 当前构建版本: $version"
+        $url = "https://pypi.org/pypi/osis-python/$version/json"
+        try {
+            $response = Invoke-WebRequest -Uri $url -Method Head -UseBasicParsing -ErrorAction Stop
+            Write-Host "❌ 错误: PyPI 上已存在版本 $version"
+            Write-Host "👉 请先更新 src/pyosis/__init__.py 中的 __version__，再重新发布"
+            exit 1
+        } catch {
+            Write-Host "✅ 版本 $version 在 PyPI 上不存在，可以继续发布"
+        }
+      shell: pwsh
 
     - name: Build package
       run: python -m build
@@ -49,7 +63,7 @@ jobs:
         password: ${{ secrets.PYPI_API_TOKEN }}
 
     - name: Upload Release Assets
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: github.event_name == 'release'
       with:
         files: |
