@@ -2,7 +2,7 @@ from typing import Dict, Any, Literal
 from ..core import REGISTRY
 
 @REGISTRY.register("InflAlgo")
-def osis_lane_ve(strName: str, eType: Literal["VE"], dLength: float, wheel: int, eOriention: Literal[-1, 0, 1], eRef: Literal[0, 1], param: list):
+def osis_lane_ve(strName: str, eType: Literal["VE"], dLength: float, wheel: float, eOriention: Literal[-1, 0, 1], eRef: Literal[0, 1], param: list):
     # Name, type, length, vehOri, ref, par1,par2, par3
     '''
     定义活载影响线计算方法：车道单元法（Vehicle Element Method）
@@ -11,7 +11,7 @@ def osis_lane_ve(strName: str, eType: Literal["VE"], dLength: float, wheel: int,
         strName (str): 车道名称，如"行车道-左幅"
         eType (str): 算法类型，不区分大小写。固定为 'VE'（Vehicle Element）
         dLength (float): 车道对应的桥梁跨度（m），决定影响线计算范围
-        wheel: 轮距(默认为0，占位)
+        wheel (float): 轮距(默认为0，占位)
         eOriention (int): 车辆移动方向
             - -1: 向后（车辆沿坐标轴负向行驶）
             - 0: 往返（影响线对称，用于最不利加载）
@@ -48,7 +48,7 @@ def osis_lane_ve(strName: str, eType: Literal["VE"], dLength: float, wheel: int,
     pass
 
 @REGISTRY.register("InflAlgo")
-def osis_lane_tcb(strName: str, eType: Literal["TCB"], ESel: str, dLength: float, wheel: int,eOriention: Literal[-1, 0, 1], eRef: Literal[0, 1], param: list):
+def osis_lane_tcb(strName: str, eType: Literal["TCB"], ESel: str, dLength: float, wheel: float,eOriention: Literal[-1, 0, 1], eRef: Literal[0, 1], param: list):
     '''
     定义活载影响线计算方法：横向联系梁法（Transverse Connection Beam Method）
 
@@ -57,7 +57,7 @@ def osis_lane_tcb(strName: str, eType: Literal["TCB"], ESel: str, dLength: float
         eType (str): 算法类型，不区分大小写。固定为 'TCB'（Transverse Connection Beam）
         ESel (str): 横梁单元组名称（如横隔板、横梁框架）
         dLength (float): 车道对应的桥梁跨度（m）
-        wheel: 轮距(默认为0，占位)
+        wheel (float): 轮距(默认为0，占位)
         eOriention (int): 车辆移动方向
             - -1: 向后
             - 0: 往返

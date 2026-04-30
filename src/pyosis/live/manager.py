@@ -585,7 +585,7 @@ class LaneManager:
         self,
         name: str,
         dLength: float,
-        wheel: int = 1,
+        wheel: float,
         eOriention: Literal[-1, 0, 1] = 0,
         eRef: Literal[0, 1] = 0,
         spline_name: str | None = None,
@@ -600,7 +600,7 @@ class LaneManager:
         Args:
             name: 车道名称
             dLength: 桥梁跨度（m）
-            wheel: 轮距，默认 1
+            wheel: 轮距
             eOriention: 车辆移动方向
                 - -1: 向后
                 - 0: 往返（默认）
@@ -638,7 +638,7 @@ class LaneManager:
         name: str,
         crossbeam_elems: str,
         dLength: float,
-        wheel: int = 1,
+        wheel: float,
         eOriention: Literal[-1, 0, 1] = 0,
         eRef: Literal[0, 1] = 0,
         spline_name: str | None = None,
@@ -654,7 +654,7 @@ class LaneManager:
             name: 车道名称
             crossbeam_elems: 横梁单元组名称
             dLength: 桥梁跨度（m）
-            wheel: 轮距，默认 1
+            wheel: 轮距
             eOriention: 车辆移动方向
                 - -1: 向后
                 - 0: 往返（默认）
