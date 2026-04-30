@@ -64,7 +64,7 @@ class Material:
         return cls(
             no=d.get("no"),
             name=d.get("name"),
-            type=d.get("materialType"),
+            material_type=d.get("materialType"),
             code=d.get("code"),
             grade=d.get("grade"),
             e=d.get("e"),

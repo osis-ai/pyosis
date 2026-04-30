@@ -242,7 +242,7 @@ class OSISFunctionRegistry:
     
     def _execute_command(self, cmd) -> Tuple[bool, str, Any]:
         """执行命令（发送到软件）"""
-        _log(cmd)
+        # _log(cmd)
         result = osis_run(cmd, "exec")
         isok, error, *rest = result
         return result

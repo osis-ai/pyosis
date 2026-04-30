@@ -118,7 +118,7 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     # 返回拼接后的完整命令字符串
     # str_cmds = "\n".join(all_cmds)
     str_cmds = ";".join(all_cmds)
-    _log(str_cmds)
+    # _log(str_cmds)
     return osis_run(str_cmds, "exec")
 
 def output_result_for_calc_book():

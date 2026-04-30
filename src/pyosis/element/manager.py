@@ -79,7 +79,7 @@ class Element:
         """从接口 dict 构造 Material 对象（内部使用）"""
         return cls(
             no=d.get("no"),
-            type=d.get("type"),
+            element_type=d.get("type"),
             mat=d.get("mat"),
             node_vec=d.get("nodeVec"),
             node_i=d.get("nodeI"),
