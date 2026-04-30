@@ -275,15 +275,66 @@ class LiveCase:
         Raises:
             RuntimeError: 添加失败时抛出异常
         """
-        if mu_params is None:
-            mu_params = []
-        if lane_names is None:
-            lane_names = []
+        if calc_mu:
+            ok, err = osis_live_analysis_inc(
+                self.name, "a", sub_name, grade_name,
+                scalar, 1, bridge_type, mu_params, lane_names
+            )
+        else:
+            ok, err = osis_live_analysis_inc(
+                self.name, "a", sub_name, grade_name,
+                scalar, 0, None, None, lane_names
+            )
+            
+        if not ok:
+            raise RuntimeError(f"添加子工况 {sub_name} 到活载工况 {self.name} 失败: {err}")
+        return self.refresh()
+    
+    def modify_sub(
+        self,
+        sub_name: str,
+        grade_name: str,
+        scalar: float = 1.0,
+        calc_mu: bool = True,
+        bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "SIMPLE",
+        mu_params: list[float] | None = None,
+        lane_names: list[str] | None = None,
+    ) -> LiveCase:
+        """添加活载子工况
 
-        ok, err = osis_live_analysis_inc(
-            self.name, "a", sub_name, grade_name,
-            scalar, 1 if calc_mu else 0, bridge_type, mu_params, lane_names
-        )
+        Args:
+            sub_name: 子工况名称
+            grade_name: 活载等级名称
+            scalar: 缩放系数，默认 1.0
+            calc_mu: 是否计算冲击系数，默认 True
+            bridge_type: 桥型（用于计算冲击系数）
+                - SIMPLE: 简支梁桥
+                - CONTINUOUS: 连续梁桥
+                - ARCH: 拱桥
+                - CABLE_STAYED: 斜拉桥（无辅助墩）
+                - CABLE_STAYED_AUS: 斜拉桥（有辅助墩）
+                - SUSPENSION: 悬索桥
+                - CUSTOM: 自定义，直接输入基频
+            mu_params: 冲击系数计算参数列表（根据桥型不同参数不同）
+            lane_names: 车道名称列表
+
+        Returns:
+            更新后的 LiveCase 对象
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        """
+        if calc_mu:
+            ok, err = osis_live_analysis_inc(
+                self.name, "m", sub_name, grade_name,
+                scalar, 1, bridge_type, mu_params, lane_names
+            )
+        else:
+            ok, err = osis_live_analysis_inc(
+                self.name, "m", sub_name, grade_name,
+                scalar, 0, None, None, lane_names
+            )
+            
         if not ok:
             raise RuntimeError(f"添加子工况 {sub_name} 到活载工况 {self.name} 失败: {err}")
         return self.refresh()
