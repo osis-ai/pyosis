@@ -287,7 +287,7 @@ class GeometryManager:
         else:
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
-        resp = osis_client("GetSplineInfoByNames", {"names": names})
+        resp = osis_client("GetSplineInfoByNames", {"name": names})
         if not resp["success"]:
             raise RuntimeError(f"{resp['error']}")
         
