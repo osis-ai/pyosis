@@ -577,22 +577,22 @@ class Section:
         if not ok:
             raise RuntimeError(f"清除截面 {self.no} 加劲肋失败: {err}")
 
-    # 这两方法放在管理类
+    # 这个方法放在管理类
     # def delete(self) -> None:
     #     """删除当前截面"""
     #     ok, err = osis_section_del(self.no)
     #     if not ok:
     #         raise RuntimeError(f"删除截面 {self.no} 失败: {err}")
 
-    # def renumber(self, new_no: int) -> None:
-    #     """修改截面编号
+    def renumber(self, new_no: int) -> None:
+        """修改截面编号
 
-    #     Args:
-    #         new_no: 新截面编号
-    #     """
-    #     ok, err = osis_section_mod(self.no, new_no)
-    #     if not ok:
-    #         raise RuntimeError(f"修改截面编号 {self.no} -> {new_no} 失败: {err}")
+        Args:
+            new_no: 新截面编号
+        """
+        ok, err = osis_section_mod(self.no, new_no)
+        if not ok:
+            raise RuntimeError(f"修改截面编号 {self.no} -> {new_no} 失败: {err}")
 
 
 # ──────────────────────────────────────────────

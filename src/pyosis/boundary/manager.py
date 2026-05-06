@@ -529,6 +529,13 @@ class BoundaryGroupManager:
         ok, err = osis_boundary_group(name, "d")
         if not ok:
             raise RuntimeError(f"删除边界组 {name} 失败: {err}")
+        
+    def rename(self, old, new) -> None:
+        """修改边界组名"""
+        ok, err = osis_boundary_group(old, "m", [new])
+        if not ok:
+            raise RuntimeError(f"修改边界组名 {old} 失败: {err}")
+        return self.get(new)
 
     # ── 查询 ──────────────────────────────────
     
