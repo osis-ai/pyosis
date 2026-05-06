@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 from .coordinate import (
@@ -36,6 +37,7 @@ from .pu_curve import (
     osis_pu_curve_mod,
 )
 from .component_thickness import osis_assign_component_thickness
+from ..core.client import osis_client
 
 
 # ──────────────────────────────────────────────
@@ -91,9 +93,61 @@ class CoordinateManager:
     def __repr__(self) -> str:
         return "CoordinateManager()"
 
+@dataclass(frozen=False)
+class CreepShrink:
+    """收缩徐变对象"""
+    avg_humidity: float
+    birth_by_shrinking: int
+    birth_time: int
+    name: str
+    no: int
+    shrink_birth: int
+    related_material: list[int]
+    type_coeff: float
+    @classmethod
+    def _from_dict(cls, d: dict) -> CreepShrink:
+        """从接口 dict 构造 CreepShrink 对象（内部使用）"""
+        return cls(
+            avg_humidity=d.get("avgHumidity"),
+            birth_by_shrinking=d.get("birthByShrinking"),
+            birth_time=d.get("birthTime"),
+            name=d.get("name"),
+            no=d.get("no"),
+            shrink_birth=d.get("shrinkBirth"),
+            related_material=list(d.get("relatedMaterial")),
+            type_coeff = d.get("typeCoeff"),
+        )
 
 class CreepShrinkManager:
     """收缩徐变管理器"""
+    def all(self):
+        """
+        获取全部收缩徐变
+        Returns:
+        """
+        resp = osis_client("GetAllCreepShrinkInfo",{})
+        if not resp["success"]:
+            raise RuntimeError(resp["error"])
+        creep_shrinks = [CreepShrink._from_dict(d) for d in resp.get("data", []) if "no" in d]
+        return creep_shrinks
+
+    def get(self, no:list[int]):
+        if isinstance(no, int):
+            no = [no]
+        elif not isinstance(no, list):
+            raise TypeError(f"不支持的编号类型: {type(no)}")
+
+        resp = osis_client("GetCreepShrinkInfoByNos", {"no": no})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+
+        creep_shrinks = [CreepShrink._from_dict(d) if d else None for d in resp.get("data", [])]
+
+        if len(creep_shrinks) == 0:
+            return None
+        elif len(creep_shrinks) == 1:
+            return creep_shrinks[0]
+        return creep_shrinks
 
     def create(
         self,
