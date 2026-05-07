@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 from .buckling import (
@@ -15,6 +16,7 @@ from .buckling import (
     osis_buckl_anal_mod,
     osis_buckl_anal_inc,
 )
+from ..core.client import osis_client
 
 
 # ──────────────────────────────────────────────
@@ -33,6 +35,29 @@ class BucklCaseInfo:
     def __repr__(self) -> str:
         return f"BucklCaseInfo(name={self.name!r}, scalar={self.scalar}, type={self.load_type})"
 
+@dataclass(frozen=False)
+class BucklCase:
+    """屈曲工况对象"""
+    accum: bool
+    accumLCParas: dict
+    analysisType: int
+    lcParas: list[dict]
+    modalNum: int
+    name: str
+    no: int
+    relatedStages: list[int]
+    @classmethod
+    def _from_dict(cls, d: dict) -> BucklCase:
+        return cls(
+            accum=d.get("accum"), 
+            accumLCParas=d.get("accumLCParas"), 
+            analysisType=d.get("analysisType"), 
+            lcParas=d.get("lcParas"), 
+            modalNum=d.get("modalNum"), 
+            name=d.get("name"), 
+            no=d.get("no"), 
+            relatedStages=d.get("relatedStages")
+            )
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -60,6 +85,34 @@ class StabilityManager:
         ...
 
     # ── 屈曲工况管理 ──────────────────────────────
+    def _load(self) -> list[BucklCase]:
+        """从服务端加载所有屈曲工况信息"""
+        resp = osis_client("GetAllBucklingInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        buckl_cases = [BucklCase._from_dict(d) for d in resp.get("data", []) if "name" in d]
+        return buckl_cases
+    def get(self, name: str | list[str]) -> BucklCase | list[BucklCase | None] | None:
+        """根据名称获取屈曲工况"""
+        if isinstance(name, str):
+            name = [name]
+        elif isinstance(name, list):
+            ...
+        else:
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        resp = osis_client("GetBucklingInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        buckl_cases = [BucklCase._from_dict(d) if d else None for d in resp.get("data", [])]
+        if len(buckl_cases) == 0:
+            return None
+        elif len(buckl_cases) == 1:
+            return buckl_cases[0]
+        return buckl_cases
+
+    def all(self) -> list[BucklCase]:
+        """获取所有屈曲工况"""
+        return self._load()
 
     def create(
         self,
