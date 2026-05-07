@@ -230,11 +230,33 @@ class ElementGroup:
     def __repr__(self) -> str:
         return f"ElementGroup(name={self.name!r}, elements={self.elements}, count={self.element_count})"
 
-
-# ──────────────────────────────────────────────
-# ElementGroup 管理类
-# ──────────────────────────────────────────────
-
+@dataclass(frozen=False)
+class TaperEleGroup:
+  """变截面单元组对象"""
+  name: str = ""
+  z_type: int = 0
+  z_trans: float = 0.0
+  z_pos: float = 0.0
+  z_dis: float = 0.0
+  y_type: int = 0
+  y_trans: float = 0.0
+  y_pos: float = 0.0
+  y_dis: float = 0.0
+  elements: list[int] = field(default_factory=list)
+  @classmethod
+  def _from_dict(cls, d: dict) -> TaperEleGroup:
+      return cls(
+          name=d.get("name"),
+          z_type=d.get("zType"),
+          z_trans=d.get("zTrans"),
+          z_pos= d.get("zPos"),
+          z_dis=d.get("zDis"),
+          y_type=d.get("yType"),
+          y_trans=d.get("yTrans"),
+          y_pos=d.get("yPos"),
+          y_dis=d.get("yDis"),
+          elements=d.get("elements"),
+      )
 
 class ElementGroupManager:
     """单元组管理器
@@ -343,6 +365,58 @@ class ElementGroupManager:
     def __repr__(self) -> str:
         return f"ElementGroupManager()"
 
+
+# ──────────────────────────────────────────────
+# TaperEleGroup 管理类
+# ──────────────────────────────────────────────
+
+class TaperEleGroupManager:
+    """变截面单元组信息"""
+
+    def __init__(self) -> None:
+        ...
+    def _load(self) -> list[TaperEleGroup]:
+        """从服务端加载所有变截面单元组信息"""
+        resp = osis_client("GetAllTaperEleGroupInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        taper_ele_groups = [TaperEleGroup._from_dict(d) for d in resp.get("data", []) if "name" in d]
+        return taper_ele_groups
+
+    def get(self, name: str | list[str]) -> TaperEleGroup | list[TaperEleGroup | None] | None:
+        """根据名称获取变截面单元组
+        Args:
+            name: 变截面单元组名称
+            name: 变截面单元组名称，支持单个名称或名称列表
+        Returns:
+            TaperEleGroup | list[TaperEleGroup | None]: 变截面单元组对象
+        """
+        if isinstance(name, str):
+            name = [name]
+        elif isinstance(name, list):
+            ...
+        else:
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        resp = osis_client("GetTaperEleGroupInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")  
+        taper_ele_groups = [
+            TaperEleGroup._from_dict(d) if d else None
+            for d in resp.get("data", [])
+            if "name" in d
+        ]
+        if len(taper_ele_groups) == 0:
+            return None
+        elif len(taper_ele_groups) == 1:
+            return taper_ele_groups[0]
+        return taper_ele_groups
+
+    def all(self) -> list[TaperEleGroup]:
+        """获取所有变截面单元组"""
+        return self._load()
+
+    def __repr__(self) -> str:
+        return f"TaperEleGroupManager()"
 
 # ──────────────────────────────────────────────
 # 单元管理类
@@ -589,95 +663,20 @@ class ElementManager:
         """
         return self._element_manager
 
-    def __repr__(self) -> str:
-        return f"ElementManager()"
-
     @property
-    def taper_ele_group(self) -> TaperEleGroupManager:
+    def taper_group(self) -> TaperEleGroupManager:
         """变截面单元组管理器
 
         提供变截面单元组的查询功能。
         用法:
-            >>> element_manager.taper_ele_group.all()
-            >>> element_manager.taper_ele_group.get([1, 2, 3])
+            >>> element_manager.taper_group.all()
+            >>> element_manager.taper_group.get([1, 2, 3])
         """
         return self._taper_ele_group_manager
 
-@dataclass(frozen=False)
-class TaperEleGroup:
-  """变截面单元组对象"""
-  name: str = ""
-  z_type: int = 0
-  z_trans: float = 0.0
-  z_pos: float = 0.0
-  z_dis: float = 0.0
-  y_type: int = 0
-  y_trans: float = 0.0
-  y_pos: float = 0.0
-  y_dis: float = 0.0
-  elements: list[int] = field(default_factory=list)
-  @classmethod
-  def _from_dict(cls, d: dict) -> TaperEleGroup:
-      return cls(
-          name=d.get("name"),
-          z_type=d.get("zType"),
-          z_trans=d.get("zTrans"),
-          z_pos= d.get("zPos"),
-          z_dis=d.get("zDis"),
-          y_type=d.get("yType"),
-          y_trans=d.get("yTrans"),
-          y_pos=d.get("yPos"),
-          y_dis=d.get("yDis"),
-          elements=d.get("elements"),
-      )
-
-class TaperEleGroupManager:
-    """变截面单元组信息"""
-
-    def __init__(self) -> None:
-        ...
-    def _load(self) -> list[TaperEleGroup]:
-        """从服务端加载所有变截面单元组信息"""
-        resp = osis_client("GetAllTaperEleGroupInfo", {})
-        if not resp['success']:
-            raise RuntimeError(f"{resp['error']}")
-        taper_ele_groups = [TaperEleGroup._from_dict(d) for d in resp.get("data", []) if "name" in d]
-        return taper_ele_groups
-
-    def get(self, name: str | list[str]) -> TaperEleGroup | list[TaperEleGroup | None] | None:
-        """根据名称获取变截面单元组
-        Args:
-            name: 变截面单元组名称
-            name: 变截面单元组名称，支持单个名称或名称列表
-        Returns:
-            TaperEleGroup | list[TaperEleGroup | None]: 变截面单元组对象
-        """
-        if isinstance(name, str):
-            name = [name]
-        elif isinstance(name, list):
-            ...
-        else:
-            raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetTaperEleGroupInfoByNames", {"name": name})
-        if not resp['success']:
-            raise RuntimeError(f"{resp['error']}")  
-        taper_ele_groups = [
-            TaperEleGroup._from_dict(d) if d else None
-            for d in resp.get("data", [])
-            if "name" in d
-        ]
-        if len(taper_ele_groups) == 0:
-            return None
-        elif len(taper_ele_groups) == 1:
-            return taper_ele_groups[0]
-        return taper_ele_groups
-
-    def all(self) -> list[TaperEleGroup]:
-        """获取所有变截面单元组"""
-        return self._load()
-
     def __repr__(self) -> str:
-        return f"TaperEleGroupManager()"
+        return f"ElementManager()"
+
 # ──────────────────────────────────────────────
 # 全局单例
 # ──────────────────────────────────────────────
