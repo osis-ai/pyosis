@@ -181,6 +181,27 @@ class CreepShrinkManager:
         return "CreepShrinkManager()"
 
 
+@dataclass(frozen=False)
+class Damping:
+    """阻尼模型对象"""
+    analysisType: int
+    dampingType: int
+    kind: str
+    ksi: float
+    name: str
+    no: int
+    relatedAnalysis: list[str]
+    relatedStages: list[str]
+    @classmethod
+    def _from_dict(cls, d: dict) -> Damping:
+        return cls(
+            analysisType=d.get("analysisType"),
+            dampingType=d.get("dampingType"),
+            kind=d.get("kind"), ksi=d.get("ksi"),
+            name=d.get("name"), no=d.get("no"),
+            relatedAnalysis=d.get("relatedAnalysis"),
+            relatedStages=d.get("relatedStages"))
+
 class DampingManager:
     """阻尼管理器"""
 
@@ -220,6 +241,36 @@ class DampingManager:
         ok, err = osis_damping_mod(old, new)
         if not ok:
             raise RuntimeError(f"修改阻尼名称 {old} -> {new} 失败: {err}")
+
+    def _load(self) -> list[Damping]:
+        """从服务端加载所有阻尼模型信息"""
+        resp = osis_client("GetAllDampingInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        dampings = [Damping._from_dict(d) for d in resp.get("data", []) if "name" in d]
+        return dampings
+
+    def get(self, name: str | list[str]) -> Damping | list[Damping | None] | None:
+        """根据名称获取阻尼模型"""
+        if isinstance(name, str):
+            name = [name]
+        elif isinstance(name, list):
+            ...
+        else:
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        resp = osis_client("GetDampingInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        dampings = [Damping._from_dict(d) if d else None for d in resp.get("data", [])]
+        if len(dampings) == 0:
+            return None
+        elif len(dampings) == 1:
+            return dampings[0]
+        return dampings
+
+    def all(self) -> list[Damping]:
+        """获取所有阻尼模型"""
+        return self._load()
 
     def __repr__(self) -> str:
         return "DampingManager()"
