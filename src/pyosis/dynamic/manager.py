@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Literal
 
 from .load_to_mass import (
@@ -25,89 +26,64 @@ from .seismic import (
     osis_rspec_anal_del,
     osis_rspec_anal_mod,
 )
-
-
-# ──────────────────────────────────────────────
-# 数据类
-# ──────────────────────────────────────────────
-
-
-class LoadToMassItem:
-    """荷载转换质量项信息"""
-    
-    def __init__(
-        self,
-        lc_name: str,
-        mass_factor: float,
-        g: float,
-        bx: Literal[0, 1] = 1,
-        by: Literal[0, 1] = 1,
-        bz: Literal[0, 1] = 1,
-        bnf: Literal[0, 1] = 1,
-        bbf: Literal[0, 1] = 1,
-        bsf: Literal[0, 1] = 1,
-    ):
-        self.lc_name = lc_name
-        self.mass_factor = mass_factor
-        self.g = g
-        self.bx = bx
-        self.by = by
-        self.bz = bz
-        self.bnf = bnf
-        self.bbf = bbf
-        self.bsf = bsf
-    
-    def __repr__(self) -> str:
-        return (f"LoadToMassItem(lc={self.lc_name!r}, factor={self.mass_factor}, "
-                f"g={self.g}, dir=({self.bx},{self.by},{self.bz}))")
-
-
-class SpectrumData:
-    """反应谱数据点"""
-    
-    def __init__(self, period: float, value: float):
-        self.period = period
-        self.value = value
-    
-    def __repr__(self) -> str:
-        return f"SpectrumData(T={self.period}, S={self.value})"
+from ..core.client import osis_client
 
 
 # ──────────────────────────────────────────────
 # 管理类
 # ──────────────────────────────────────────────
+@dataclass(frozen=False)
+class LoadToMass:
+    name: str
 
+    @classmethod
+    def _from_dict(cls, d: dict) -> LoadToMass:
+        return cls(
+            name=d.get("name"),
+        )
 
-class DynamicManager:
-    """动力分析管理器
+class LoadToMassManager:
+    """荷载转换质量管理器
+    统一管理荷载转换质量的创建、删除、修改和查询。
 
-    统一管理荷载转换质量、自振模态分析和地震反应谱分析。
-
-    用法:
-        >>> from pyosis.dynamic import dynamic_manager
-        >>> # 荷载转换质量
-        >>> dynamic_manager.create_ltm("LTM1")
-        >>> dynamic_manager.add_ltm("LTM1", "D", 1.0, 9.806)
-        >>> # 模态分析
-        >>> dynamic_manager.set_modal_opt(10)
-        >>> # 地震反应谱
-        >>> data = [(0.1, 0.5), (0.2, 0.8)]
-        >>> dynamic_manager.create_rsp_spec("RS1", "A", 9.806, data)
-        >>> # 反应谱工况
-        >>> dynamic_manager.create_rspec_anal("RA1", "RS1", num=10)
     """
-
     def __init__(self) -> None:
         ...
+    def _load(self) -> list[LoadToMass]:
+        """从服务端加载所有荷载转换质量信息"""
+        resp = osis_client("GetAllLoadToMassInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        ltm = [LoadToMass._from_dict(d) for d in resp.get("data", [])]
+        return ltm
 
-    # ── 荷载转换质量管理 ─────────────────────────
+    def get(self, name: str | list[str]) -> LoadToMass | list[LoadToMass | None] | None:
+        """根据名称获取荷载转换质量"""
+        if isinstance(name, str):
+            name = [name]
+        elif isinstance(name, list):
+            ...
+        else:
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        resp = osis_client("GetLoadToMassInfoByNames", {"name": name})
+        if not resp['success']: 
+            raise RuntimeError(f"{resp['error']}")
+        ltm = [LoadToMass._from_dict(d) if d else None for d in resp.get("data", [])]
+        if len(ltm) == 0:
+            return None
+        elif len(ltm) == 1:
+            return ltm[0]
+        return ltm
+        
+    def all(self) -> list[LoadToMass]:
+        """获取所有荷载转换质量"""
+        return self._load()
 
     def create_ltm(self, name: str) -> None:
         """创建或修改荷载转换质量总体信息。
 
         Args:
             name: 荷载转换质量标识名称
-
         Note:
             - 无论荷载工况是否被激活，均可转化为质量
         """
@@ -183,8 +159,8 @@ class DynamicManager:
         if not ok:
             raise RuntimeError(f"移除荷载转换质量项 {lc_name} 从 {name} 失败: {err}")
 
-    # ── 自振模态分析 ────────────────────────────
-
+class ModOptManager:
+    """模态分析管理器"""
     def set_modal_opt(self, num: int = 1) -> None:
         """定义模态分析所需的特征值最大数目。
 
@@ -195,14 +171,115 @@ class DynamicManager:
         if not ok:
             raise RuntimeError(f"设置模态分析选项失败: {err}")
 
-    # ── 地震反应谱管理 ───────────────────────────
+@dataclass(frozen=False)
+class SeisRspSpec:
+    A: float #水平地震动峰值加速度系数
+    Cd: float #阻尼调整系数
+    Ci: float #重要性系数
+    Cs: float #场地系数
+    Smax: float #谱值上限
+    Tg: float #特征周期
+    Tmax: float #曲线计算最长周期
+    analysisType: int #分析类型枚举
+    bridgeType: int #桥梁类别枚举
+    characPeriod: int #分区特征周期相关
+    co: list[float] #规范系数向量
+    code: int #采用的抗震规范类型
+    curve: list[dict] #反应谱离散点
+    dataType: int #谱数据类型枚举
+    dataTypeName: str #数据类型名称
+    deltaT: float #周期间隔
+    directionHorizontal: bool #水平/竖向谱方向
+    fortificationIntensity:int #设防烈度
+    fortificationLevel: bool #设防水准
+    g: float #重力加速度
+    inputType: bool #输入类型开关
+    isLongSpan: bool #是否大跨/特殊桥分类
+    kind: str #规范生成谱
+    ksi: float #阻尼比
+    name: str #反应谱函数名称
+    no: int #特性编号
+    relatedAnalysis: list[str] #关联的分析工况名称列表
+    relatedStages: list #关联的施工阶段编号列表
+    site: int #场地类别
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> SeisRspSpec:
+        return cls(
+            A=d.get("A"),
+            Cd=d.get("Cd"),
+            Ci=d.get("Ci"),
+            Cs=d.get("Cs"),
+            Smax=d.get("Smax"),
+            Tg=d.get("Tg"),
+            Tmax=d.get("Tmax"),
+            analysisType=d.get("analysisType"),
+            bridgeType=d.get("bridgeType"),
+            characPeriod=d.get("characPeriod"),
+            co=d.get("co"),
+            code=d.get("code"),
+            curve=d.get("curve"),
+            dataType=d.get("dataType"),
+            dataTypeName=d.get("dataTypeName"),
+            deltaT=d.get("deltaT"),
+            directionHorizontal=d.get("directionHorizontal"),
+            fortificationIntensity=d.get("fortificationIntensity"),
+            fortificationLevel=d.get("fortificationLevel"),
+            g=d.get("g"),
+            inputType=d.get("inputType"),
+            isLongSpan=d.get("isLongSpan"),
+            kind=d.get("kind"),
+            ksi=d.get("ksi"),
+            name=d.get("name"),
+            no=d.get("no"),
+            relatedAnalysis=d.get("relatedAnalysis"),
+            relatedStages=d.get("relatedStages"),
+            site=d.get("site"),
+        )
+
+class SeisRspSpecManager:
+    """地震反应谱管理器
+    统一管理地震反应谱的创建、删除、修改和查询。
+    """
+    def __init__(self):
+        pass
+
+    def _load(self) -> list[SeisRspSpec]:
+        """从服务端加载所有地震反应谱信息"""
+        resp = osis_client("GetAllSeisRspSpecInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        rsp = [SeisRspSpec._from_dict(d) for d in resp.get("data", [])]
+        return rsp
+
+    def get(self, name: str | list[str]) -> SeisRspSpec | list[SeisRspSpec | None] | None:
+        """根据名称获取地震反应谱"""
+        if isinstance(name, str):
+            name = [name]
+        elif isinstance(name, list):
+            ...
+        else:
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        resp = osis_client("GetSeisRspSpecInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        rsp = [SeisRspSpec._from_dict(d) if d else None for d in resp.get("data", [])]
+        if len(rsp) == 0:
+            return None
+        elif len(rsp) == 1:
+            return rsp[0]
+        return rsp
+
+    def all(self) -> list[SeisRspSpec]:
+        """获取所有地震反应谱"""
+        return self._load()
 
     def create_rsp_spec(
-        self,
-        name: str,
-        spec_type: Literal["N", "A", "V", "D"],
-        g: float,
-        spectrum_data: list[tuple[float, float]],
+            self,
+            name: str,
+            spec_type: Literal["N", "A", "V", "D"],
+            g: float,
+            spectrum_data: list[tuple[float, float]],
     ) -> None:
         """创建导入类型地震反应谱。
 
@@ -218,21 +295,21 @@ class DynamicManager:
             raise RuntimeError(f"创建地震反应谱 {name} 失败: {err}")
 
     def create_rsp_spec_code(
-        self,
-        name: str,
-        spec_type: Literal["N", "A", "V", "D"],
-        g: float,
-        code: str = "JTGT_2231_01_2020",
-        bridge_type: Literal["A", "B", "C", "D"] = "A",
-        is_long_span: Literal[0, 1] = 0,
-        level: Literal[0, 1] = 0,
-        intensity: float = 0.2,
-        site: Literal[0, 1, 2, 3, 4] = 2,
-        direction: Literal[0, 1] = 0,
-        period: float = 0.35,
-        ksi: float = 0.05,
-        t: float = 6.0,
-        delta_t: float = 0.01,
+            self,
+            name: str,
+            spec_type: Literal["N", "A", "V", "D"],
+            g: float,
+            code: str = "JTGT_2231_01_2020",
+            bridge_type: Literal["A", "B", "C", "D"] = "A",
+            is_long_span: Literal[0, 1] = 0,
+            level: Literal[0, 1] = 0,
+            intensity: float = 0.2,
+            site: Literal[0, 1, 2, 3, 4] = 2,
+            direction: Literal[0, 1] = 0,
+            period: float = 0.35,
+            ksi: float = 0.05,
+            t: float = 6.0,
+            delta_t: float = 0.01,
     ) -> None:
         """创建按规范生成类型地震反应谱。
 
@@ -281,19 +358,88 @@ class DynamicManager:
         if not ok:
             raise RuntimeError(f"修改地震反应谱编号 {old_no} -> {new_no} 失败: {err}")
 
-    # ── 反应谱工况管理 ───────────────────────────
+@dataclass(frozen=False)
+class RspecAnal:
+    analysisType: int #分析类型枚举
+    angle: float #水平地震动的入射角度，单位为度（°）
+    cmb: int #振型组合方法枚举值
+    cmbName: str #组合方法名称
+    damping: str #阻尼模型名称
+    directionHorizontal: bool #水平/竖向谱方向开关
+    interpolateLinear: bool #谱荷载插值方法开关
+    modalNum: int #组合的模态数量
+    name: str #工况名称
+    no: int #特性编号
+    relatedStages: list[int] #关联的施工阶段编号列表
+    scalar: float #工况缩放系数
+    seisSpec: str #反应谱荷载名称，关联的地震反应谱
+    
+    @classmethod
+    def _from_dict(cls, d: dict) -> RspecAnal:
+        return cls(
+            analysisType=d.get("analysisType"),
+            angle=d.get("angle"),
+            cmb=d.get("cmb"),
+            cmbName=d.get("cmbName"),
+            damping=d.get("damping"),
+            directionHorizontal=d.get("directionHorizontal"),
+            interpolateLinear=d.get("interpolateLinear"),
+            modalNum=d.get("modalNum"),
+            name=d.get("name"),
+            no=d.get("no"),
+            relatedStages=d.get("relatedStages"),
+            scalar=d.get("scalar"),
+            seisSpec=d.get("seisSpec"),
+        )
+
+class RspecAnalManager:
+    """反应谱工况管理器
+    统一管理反应谱工况的创建、删除、修改和查询。
+    """
+    def __init__(self):
+        ...
+
+    def _load(self) -> list[RspecAnal]:
+        """从服务端加载所有反应谱工况信息"""
+        resp = osis_client("GetAllRspecAnalInfo", {})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        rsp = [RspecAnal._from_dict(d) for d in resp.get("data", [])]
+        return rsp
+
+    def get(self, name: str | list[str]) -> RspecAnal | list[RspecAnal | None] | None:
+        """根据名称获取反应谱工况"""
+        if isinstance(name, str):
+            name = [name]
+        elif isinstance(name, list):
+            ...
+        else:
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        resp = osis_client("GetRspecAnalInfoByNames", {"name": name})
+        if not resp['success']:
+            raise RuntimeError(f"{resp['error']}")
+        rsp = [RspecAnal._from_dict(d) if d else None for d in resp.get("data", [])]
+        if len(rsp) == 0:
+            return None
+        elif len(rsp) == 1:
+            return rsp[0]
+        return rsp
+
+    def all(self) -> list[RspecAnal]:
+        """获取所有反应谱工况"""
+        return self._load()
 
     def create_rspec_anal(
-        self,
-        name: str,
-        spectrum: str,
-        direction: Literal[1, 0] = 1,
-        angle: float = 0.0,
-        scalar: float = 1.0,
-        interpolated: Literal[1, 0] = 1,
-        cmb: Literal["SRSS", "CQC"] = "CQC",
-        damping_name: str = "",
-        num: int = 1,
+            self,
+            name: str,
+            spectrum: str,
+            direction: Literal[1, 0] = 1,
+            angle: float = 0.0,
+            scalar: float = 1.0,
+            interpolated: Literal[1, 0] = 1,
+            cmb: Literal["SRSS", "CQC"] = "CQC",
+            damping_name: str = "",
+            num: int = 1,
     ) -> None:
         """定义或修改反应谱工况。
 
@@ -336,8 +482,46 @@ class DynamicManager:
         if not ok:
             raise RuntimeError(f"修改反应谱工况编号 {old_no} -> {new_no} 失败: {err}")
 
-    def __repr__(self) -> str:
-        return f"DynamicManager()"
+class DynamicManager:
+    """动力分析管理器
+
+    统一管理荷载转换质量、自振模态分析和地震反应谱分析。
+
+    用法:
+    >>> from pyosis.dynamic import dynamic_manager
+    >>> # 荷载转换质量
+    >>> dynamic_manager.load_to_mass.create_ltm("LTM1")
+    >>> dynamic_manager.load_to_mass.add_ltm("LTM1", "D", 1.0, 9.806)
+    >>> # 模态分析
+    >>> dynamic_manager.mod_opt.set_modal_opt(10)
+    >>> # 地震反应谱
+    >>> data = [(0.1, 0.5), (0.2, 0.8)]
+    >>> dynamic_manager.seis_rsp_spec_mod.create_rsp_spec("RS1", "A", 9.806, data)
+    >>> # 反应谱工况
+    >>> dynamic_manager.rspec_anal.create_rspec_anal("RA1", "RS1", num=10)
+    """
+
+    def __init__(self) -> None:
+        self._load_to_mass = LoadToMassManager()
+        self._mod_opt = ModOptManager()
+        self._seis_rsp_spec = SeisRspSpecManager()
+        self._rspec_anal = RspecAnalManager()
+
+    @property
+    def load_to_mass(self)-> LoadToMassManager:
+        return self._load_to_mass
+
+    @property
+    def mod_opt(self) -> ModOptManager:
+        return self._mod_opt
+
+    @property
+    def seis_rsp_spec_mod(self) -> SeisRspSpecManager:
+        return self._seis_rsp_spec
+
+    @property
+    def rspec_anal(self) -> RspecAnalManager:
+        return self._rspec_anal
 
 
 # ──────────────────────────────────────────────

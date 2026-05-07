@@ -9,4 +9,4 @@ from .seismic import (
     osis_rspec_anal_del,
     osis_rspec_anal_mod,
 )
-from .manager import DynamicManager, dynamic_manager, LoadToMassItem, SpectrumData
+from .manager import DynamicManager, dynamic_manager
