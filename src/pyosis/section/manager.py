@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Literal
-import uuid
 
 from ..core.client import osis_client
 

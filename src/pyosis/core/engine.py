@@ -206,7 +206,7 @@ class OSISEngine:
     # 通用操作（直接暴露 general 和 core 的函数）
     # ──────────────────────────────────────────
 
-    def run(self, cmd: str = "") -> tuple[bool, str]:
+    def run(self, cmd: str = "") -> None:
         """执行 OSIS 命令流
 
         Args:
@@ -244,7 +244,7 @@ class OSISEngine:
         if not ok:
             raise RuntimeError(f"清屏失败: {err}")
 
-    def matrix(self, name: str, data: Any) -> tuple[bool, str]:
+    def matrix(self, name: str, data: Any) -> str:
         """定义矩阵（用于自定义截面等）
 
         Args:
@@ -257,6 +257,7 @@ class OSISEngine:
         ok, err = osis_matrix(name, data)
         if not ok:
             raise RuntimeError(f"定义失败: {err}")
+        return name
 
     def output_result_for_calc_book(self) -> dict:
         """输出计算书所需结果"""
