@@ -737,8 +737,25 @@ class TendonProp:
             related_tendon_shapes=d.get("relatedTendonShapes"),
         )
 
+    def rename(self, new_name: str) -> None:
+        """重命名钢束特性
+
+        Args:
+            old_name: 旧名称
+            new_name: 新名称
+
+        Raises:
+            RuntimeError: 重命名失败时抛出异常
+        """
+        ok, err = osis_tendon_prop_mod(self.name, new_name)
+        if not ok:
+            raise RuntimeError(f"重命名钢束特性 {self.name} -> {new_name} 失败: {err}")
+        self.name = new_name
+
     def __repr__(self) -> str:
         return f"TendonProp(name={self.name!r}, type={self.tension_type.name}, tendon_mat_no={self.tendon_mat_no}, area={self.area}, code={self.code})"
+    
+    
 
 
 @dataclass(frozen=False)
@@ -792,6 +809,21 @@ class TendonShape:
         ok, err = osis_wipe_tendons(self.name)
         if not ok:
             raise RuntimeError(f"擦除钢束 {self.name} 失败: {err}")
+
+    def rename(self, new_name: str) -> None:
+        """重命名钢束形状
+
+        Args:
+            old_name: 旧名称
+            new_name: 新名称
+
+        Raises:
+            RuntimeError: 重命名失败时抛出异常
+        """
+        ok, err = osis_tendon_shape_mod(self.name, new_name)
+        if not ok:
+            raise RuntimeError(f"重命名钢束形状 {self.name} -> {new_name} 失败: {err}")
+        self.name = new_name
 
     def __repr__(self) -> str:
         return f"TendonShape(name={self.name!r}, tendon_num={self.tendon_num}, prop={self.tendon_prop}, ele_grp={self.ele_grp})"
@@ -1345,8 +1377,14 @@ class TendonManager:
         """钢束形状管理器"""
         return self._shape_manager
 
+    def count(self):
+        return {
+            "props": self.prop.count(),
+            "shapes": self.shape.count()
+        }
+
     def __repr__(self) -> str:
-        return f"TendonManager(props={self.prop.count()}, shapes={self.shape.count()})"
+        return f"TendonManager()"
 
 
 # ──────────────────────────────────────────────
