@@ -592,6 +592,16 @@ class ElementManager:
     def __repr__(self) -> str:
         return f"ElementManager()"
 
+    @property
+    def taper_ele_group(self) -> TaperEleGroupManager:
+        """变截面单元组管理器
+
+        提供变截面单元组的查询功能。
+        用法:
+            >>> element_manager.taper_ele_group.all()
+            >>> element_manager.taper_ele_group.get([1, 2, 3])
+        """
+        return self._taper_ele_group_manager
 
 class TaperEleGroupManager:
     """变截面单元组信息"""
@@ -605,23 +615,28 @@ class TaperEleGroupManager:
             raise RuntimeError(f"{resp['error']}")
         taper_ele_groups = [ElementGroup._from_dict(d) for d in resp.get("data", []) if "no" in d]
         return taper_ele_groups
-    def get(self, no: int | list[int]) -> ElementGroup | list[ElementGroup | None] | None:
-        """根据编号获取变截面单元组
+    def get(self, name: str | list[str]) -> ElementGroup | list[ElementGroup | None] | None:
+        """根据名称获取变截面单元组
         Args:
-            no: 变截面单元组编号
+            name: 变截面单元组名称
+            name: 变截面单元组名称，支持单个名称或名称列表
         Returns:
             ElementGroup | list[ElementGroup | None]: 变截面单元组对象
         """
-        if isinstance(no, int):
-            no = [no]
-        elif isinstance(no, list):
+        if isinstance(name, str):
+            name = [name]
+        elif isinstance(name, list):
             ...
         else:
-            raise TypeError(f"不支持的编号类型: {type(no)}")
-        resp = osis_client("GetTaperEleGroupInfoByNos", {"no": no})
+            raise TypeError(f"不支持的名称类型: {type(name)}")
+        resp = osis_client("GetTaperEleGroupInfoByNames", {"name": name})
         if not resp['success']:
-            raise RuntimeError(f"{resp['error']}")
-        taper_ele_groups = [ElementGroup._from_dict(d) if d else None for d in resp.get("data", [])]
+            raise RuntimeError(f"{resp['error']}")  
+        taper_ele_groups = [
+            ElementGroup._from_dict(d) if d else None
+            for d in resp.get("data", [])
+            if "name" in d
+        ]
         if len(taper_ele_groups) == 0:
             return None
         elif len(taper_ele_groups) == 1:
