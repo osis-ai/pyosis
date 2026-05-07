@@ -603,25 +603,54 @@ class ElementManager:
         """
         return self._taper_ele_group_manager
 
+@dataclass(frozen=False)
+class TaperEleGroup:
+  """变截面单元组对象"""
+  name: str = ""
+  z_type: int = 0
+  z_trans: float = 0.0
+  z_pos: float = 0.0
+  z_dis: float = 0.0
+  y_type: int = 0
+  y_trans: float = 0.0
+  y_pos: float = 0.0
+  y_dis: float = 0.0
+  elements: list[int] = field(default_factory=list)
+  @classmethod
+  def _from_dict(cls, d: dict) -> TaperEleGroup:
+      return cls(
+          name=d.get("name"),
+          z_type=d.get("zType"),
+          z_trans=d.get("zTrans"),
+          z_pos= d.get("zPos"),
+          z_dis=d.get("zDis"),
+          y_type=d.get("yType"),
+          y_trans=d.get("yTrans"),
+          y_pos=d.get("yPos"),
+          y_dis=d.get("yDis"),
+          elements=d.get("elements"),
+      )
+
 class TaperEleGroupManager:
     """变截面单元组信息"""
 
     def __init__(self) -> None:
         ...
-    def _load(self) -> list[ElementGroup]:
+    def _load(self) -> list[TaperEleGroup]:
         """从服务端加载所有变截面单元组信息"""
         resp = osis_client("GetAllTaperEleGroupInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        taper_ele_groups = [ElementGroup._from_dict(d) for d in resp.get("data", []) if "no" in d]
+        taper_ele_groups = [TaperEleGroup._from_dict(d) for d in resp.get("data", []) if "name" in d]
         return taper_ele_groups
-    def get(self, name: str | list[str]) -> ElementGroup | list[ElementGroup | None] | None:
+
+    def get(self, name: str | list[str]) -> TaperEleGroup | list[TaperEleGroup | None] | None:
         """根据名称获取变截面单元组
         Args:
             name: 变截面单元组名称
             name: 变截面单元组名称，支持单个名称或名称列表
         Returns:
-            ElementGroup | list[ElementGroup | None]: 变截面单元组对象
+            TaperEleGroup | list[TaperEleGroup | None]: 变截面单元组对象
         """
         if isinstance(name, str):
             name = [name]
@@ -633,7 +662,7 @@ class TaperEleGroupManager:
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")  
         taper_ele_groups = [
-            ElementGroup._from_dict(d) if d else None
+            TaperEleGroup._from_dict(d) if d else None
             for d in resp.get("data", [])
             if "name" in d
         ]
@@ -642,7 +671,8 @@ class TaperEleGroupManager:
         elif len(taper_ele_groups) == 1:
             return taper_ele_groups[0]
         return taper_ele_groups
-    def all(self) -> list[ElementGroup]:
+
+    def all(self) -> list[TaperEleGroup]:
         """获取所有变截面单元组"""
         return self._load()
 
