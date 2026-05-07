@@ -53,18 +53,15 @@ def osis_client(func_name: str, payload: dict) -> dict:
         # 接口不存在
         if response.status_code == 404:
             return {"success": False, "error": f"接口不存在: {func_name}"}
-        # 200
-        # if response.ok:
-        return data if data is not None else {"success": False, "error": f"接口不存在: {func_name}" }
 
-        # 500
-        # # 500：[false, "命令流中……"]
-        # if isinstance(data, list) and len(data) >= 2 and data[0] is False:
-        #     return False, str(data[1])
+        if response.ok:  # 200-299
+            if data is not None:
+                return data
+            return {"success": False, "error": f"接口返回空数据: {func_name}"}
 
-        # 无结构化 body 时退回文本 / 状态码
-        # detail = response.text.strip() if response.text else ""
-        # return {"success": False, "error": detail if detail else f"HTTP {response.status_code}"}# False, detail if detail else f"HTTP {response.status_code}"
+        # 其他错误状态码 (500, 502, etc.)
+        return {"success": False, "error": f"HTTP {response.status_code}: {response.text[:200]}"}
+
 
     except requests.RequestException as e:
         return {"success": False, "error": f"调用失败: {str(e)}"}

@@ -577,9 +577,9 @@ class ElementManager:
 
     @property
     def group(self) -> ElementGroupManager:
-        """边界组管理器
+        """单元组管理器
 
-        提供边界组的增删改查功能。
+        提供单元组的增删改查功能。
 
         用法:
             >>> element_manager.group.create("主梁1")

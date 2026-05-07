@@ -1427,7 +1427,7 @@ class LoadCaseManager:
             name: str,
             load_case_type: str = "USER",
             scalar: float = 1.0,
-            prompt: str = None,
+            prompt: str | None = None,
     ) -> LoadCase:
         """创建荷载工况
 
