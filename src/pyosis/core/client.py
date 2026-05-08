@@ -34,7 +34,7 @@ def osis_client(func_name: str, payload: dict, base_url=None) -> dict:
     Returns:
         异常时返回 (False, 错误信息)
     """
-    base_url = base_url or os.environ.get("OSIS_URL", "http://localhost:8080")
+    base_url = base_url or os.environ.get("OSIS_URL", "http://localhost:18080")
     url = f"{base_url}/{func_name}"
 
     try:
