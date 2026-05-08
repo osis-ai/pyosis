@@ -11,7 +11,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
     material = engine.material
     
     # 收缩徐变模型（编号 1）
-    engine.prop.creep_shrink.create(1, "收缩徐变", 75.00, 7, 5.000, 3)
+    creep_shrink = engine.prop.creep_shrink.create(1, "收缩徐变", 75.00, 7, 5.000, 3)
     
     # 材料 1: C50 混凝土
     mat1 = material.create_conc("C50", "JTG3362_2018", "C50", nCrepShrk=1, dDmp=0.050, no=1)
