@@ -34,7 +34,8 @@ def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> tuple[boo
     response = osis_client("OSIS_Run", locals())
     return response['success'], response['error']
     
-
+def _log(text, log_dir="pyosis_logs"):
+    ...
 # def _log(text, log_dir="pyosis_logs"):
 #     """
 #     同一轮执行（<1秒间隔）的代码追加到同一文件，
