@@ -1,3 +1,4 @@
+import os
 import requests
 import json
 from requests.adapters import HTTPAdapter
@@ -24,7 +25,7 @@ session.mount("http://", adapter)
 session.mount("https://", adapter)  # 如果你后续用HTTPS
 
 # ========== 通用客户端函数（复用连接池） ==========
-def osis_client(func_name: str, payload: dict) -> dict:
+def osis_client(func_name: str, payload: dict, base_url=None) -> dict:
     """
     通用 OSIS 接口客户端（复用连接池，高效批量调用）
     Args:
@@ -33,7 +34,8 @@ def osis_client(func_name: str, payload: dict) -> dict:
     Returns:
         异常时返回 (False, 错误信息)
     """
-    url = f"http://localhost:8080/{func_name}"
+    base_url = base_url or os.environ.get("OSIS_URL", "http://localhost:18080")
+    url = f"{base_url}/{func_name}"
 
     try:
         response = session.post(

@@ -12,27 +12,6 @@ from typing import Dict, Any, Tuple, Literal, Optional
 # from .engine import OSISEngine
 from .client import osis_client
 
-    
-# def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> Tuple[bool, str, Any]:
-#     '''
-#     直接以命令流的形式运行OSIS功能
-    
-#     Args:
-#         strCmd: 完整的命令流
-#         mode: 运行模式，此参数为了同时执行多条命令提高效率
-#             * 使用 stash 仅会将命令流存到OSIS中，不会执行
-#             * 收到 exec 信号才会执行暂存包括当前的所有命令流。
-
-#     Returns:
-#         tuple (bool, str, Any): 是否成功，失败原因，其他结果数据
-#     '''
-# #     # 自动判断模式：非空默认暂存，为空默认执行
-# #     if mode is None:
-# #         mode = "stash" if strCmd else "exec"
-    
-#     e = OSISEngine.GetInstance()
-#     return e.OSIS_Run(strCmd, mode)
-
 # def _log(text, filename="pyosis.log"):
 #     """简单的日志函数"""
 #     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -54,83 +33,58 @@ def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> tuple[boo
     """
     response = osis_client("OSIS_Run", locals())
     return response['success'], response['error']
-    # # 1. 配置 C++ 服务地址
-    # url = "http://localhost:8080/OSIS_Run"
     
-    # # 2. 构造请求参数（JSON 格式，UTF-8 编码）
-    # payload = {
-    #     "strCmd": strCmd,
-    #     "mode": mode
-    # }
-    
-    # # 3. 发送 POST 请求（自动处理中文编码）
-    # try:
-    #     response = requests.post(
-    #         url,
-    #         data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-    #         headers={"Content-Type": "application/json; charset=utf-8"},
-    #         timeout=10
-    #     )
-    #     response.raise_for_status()  # 抛出 HTTP 错误
-        
-    #     # 4. 解析返回值，还原为 C++ 原生返回格式
-    #     resp_data = response.json()
-    #     return resp_data["success"], resp_data["message"]
-    
-    # except Exception as e:
-    #     # 异常时返回和 C++ 一致的格式
-    #     return False, f"调用失败：{str(e)}"
-    
-
 def _log(text, log_dir="pyosis_logs"):
-    """
-    同一轮执行（<1秒间隔）的代码追加到同一文件，
-    超过1秒则创建新文件
+    ...
+# def _log(text, log_dir="pyosis_logs"):
+#     """
+#     同一轮执行（<1秒间隔）的代码追加到同一文件，
+#     超过1秒则创建新文件
     
-    Args:
-        text: 要记录的代码行
-        log_dir: 日志文件夹路径
-    Returns:
-        目标文件路径
-    """
-    # 创建日志目录
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-        files = []
-    else:
-        # 获取所有文件（排除子目录）
-        files = [os.path.join(log_dir, f) for f in os.listdir(log_dir) 
-                if os.path.isfile(os.path.join(log_dir, f))]
+#     Args:
+#         text: 要记录的代码行
+#         log_dir: 日志文件夹路径
+#     Returns:
+#         目标文件路径
+#     """
+#     # 创建日志目录
+#     if not os.path.exists(log_dir):
+#         os.makedirs(log_dir)
+#         files = []
+#     else:
+#         # 获取所有文件（排除子目录）
+#         files = [os.path.join(log_dir, f) for f in os.listdir(log_dir) 
+#                 if os.path.isfile(os.path.join(log_dir, f))]
     
-    current_time = datetime.datetime.now()
-    target_file = None
-    is_new_file = True
+#     current_time = datetime.datetime.now()
+#     target_file = None
+#     is_new_file = True
     
-    # 查找最近修改的文件
-    if files:
-        latest_file = max(files, key=os.path.getmtime)
-        mtime = datetime.datetime.fromtimestamp(os.path.getmtime(latest_file))
+#     # 查找最近修改的文件
+#     if files:
+#         latest_file = max(files, key=os.path.getmtime)
+#         mtime = datetime.datetime.fromtimestamp(os.path.getmtime(latest_file))
         
-        # 如果小于1秒，追加到该文件
-        if (current_time - mtime).total_seconds() < 1.0:
-            target_file = latest_file
-            is_new_file = False
+#         # 如果小于1秒，追加到该文件
+#         if (current_time - mtime).total_seconds() < 1.0:
+#             target_file = latest_file
+#             is_new_file = False
     
-    # 需要创建新文件
-    if is_new_file:
-        timestamp = current_time.strftime("%Y%m%d_%H%M%S_%f")[:-3]  # 毫秒级
-        target_file = os.path.join(log_dir, f"session_{timestamp}.txt")
+#     # 需要创建新文件
+#     if is_new_file:
+#         timestamp = current_time.strftime("%Y%m%d_%H%M%S_%f")[:-3]  # 毫秒级
+#         target_file = os.path.join(log_dir, f"session_{timestamp}.txt")
     
-    with open(target_file, 'a', encoding='utf-8') as f:
-        f.write(f"{text}\n")
+#     with open(target_file, 'a', encoding='utf-8') as f:
+#         f.write(f"{text}\n")
     
-    return target_file
+#     return target_file
 
-def _tmp(text, tmp_file="tmp.tmp", clear=False):        # 运行时临时信息
-    if clear:
-        os.remove(tmp_file)
-    with open(tmp_file, "a+", encoding="utf-8") as f:
-        f.write(text)
+# def _tmp(text, tmp_file="tmp.tmp", clear=False):        # 运行时临时信息
+#     if clear:
+#         os.remove(tmp_file)
+#     with open(tmp_file, "a+", encoding="utf-8") as f:
+#         f.write(text)
 
 class OSISFunctionRegistry:
     """

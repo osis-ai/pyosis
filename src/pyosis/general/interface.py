@@ -1,6 +1,5 @@
 from typing import Any, Dict, Literal, List, Union, Sequence
 from ..core import REGISTRY, osis_run
-from ..core.command import _log
 from ..core.client import osis_client
 
 def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
