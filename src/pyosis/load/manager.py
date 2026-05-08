@@ -700,7 +700,7 @@ class TensionType(Enum):
     Ex = 3              # 后张法（体外）
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class TendonProp:
     """钢束特性对象
 
