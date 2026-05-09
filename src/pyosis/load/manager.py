@@ -792,12 +792,12 @@ class TendonShape:
     def layout(
         self,
         layout_type: Literal['GLOBAL', "ELEMENT"],
-        n_ele: int,
-        n_beg: int,
-        n_dir: int,
-        d_offset_x: float = 0.0,
-        d_offset_y: float = 0.0,
-        d_offset_z: float = 0.0,
+        n_ele: int = None,
+        n_beg: int = None,
+        n_dir: int = None,
+        d_offset_x: float = None,
+        d_offset_y: float = None,
+        d_offset_z: float = None,
     ) -> None:
         """布置钢束形状"""
         ok, err = osis_layout_tendons(self.name, layout_type, n_ele, n_beg, n_dir, d_offset_x, d_offset_y, d_offset_z)
