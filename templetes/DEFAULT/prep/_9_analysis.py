@@ -2,26 +2,43 @@
 
 from pyosis.core.engine import OSISEngine
 
-def build_live_analysis(engine: OSISEngine, elem_group_names) -> list[str]:
-    """分析设置"""
+def build_analysis(engine: OSISEngine, node_nos: list[int], elem_group_names: list[str]) -> tuple[list[str], list[str]]:
+    """创建沉降分析和活载分析，返回(沉降工况名列表, 活载工况名列表)"""
 
-    # ========== 原始命令流 ==========
-    # SetlGrp,沉降组1,-1.000E-02,2001;//创建沉降组，引用节点号
-    # SetlGrp,沉降组2,-1.000E-02,2002
-    # SetlGrp,沉降组3,-1.000E-02,2003
-    # SetlGrp,沉降组4,-1.000E-02,2004
-    # SetlAnal,支座沉降;//创建沉降工况
-    # SetlAnalInc,支座沉降,a,沉降组1,沉降组2,沉降组3,沉降组4;//添加沉降工况至沉降组，引用沉降组、沉降工况
-    # LiveGrade,荷载1,JTGD60_2015,HIGHWAY_I;//创建移动荷载
-    # InflAlgo,车道一,VE,80.0000,1,0,上部主梁单元组,0.00000E+00,0.00000E+00;//定义车道线，该方法引用单元组名称
-    # LiveAnal,移动荷载工况1,JTGD60_2015,0;//定义活载工况
-    # LiveAnalInc,移动荷载工况1,a,子工况1,荷载1,2.69100,1,CUSTOM,4.000000,车道一;//往活载工况里面加子工况，引用活载工况名
-    return []
+    settle_names = []
+    live_names = []
+
+    engine.settlement.group.create('沉降组1', -1.000E-02, [2001])
+
+    engine.settlement.group.create('沉降组2', -1.000E-02, [2002])
+
+    engine.settlement.group.create('沉降组3', -1.000E-02, [2003])
+
+    engine.settlement.group.create('沉降组4', -1.000E-02, [2004])
+
+    st = engine.settlement.create('支座沉降')
+    settle_names.append(st.name)
+
+    st.include('沉降组1', '沉降组2', '沉降组3', '沉降组4')
+
+    engine.live.grade.create_highway('荷载1', eCode='JTGD60_2015', eLiveLoadType='HIGHWAY_I')
+
+    engine.live.lane.create_ve('车道一', dLength=80.0000, wheel=1.8, eOriention=1, eRef=0, ref_elems='上部主梁单元组', offsetY=0.00000E+00, offsetZ=0.00000E+00)
+
+    lc = engine.live.case.create('移动荷载工况1', code='JTGD60_2015', sub_cmb_type=0)
+    live_names.append(lc.name)
+
+    lc.create_sub('子工况1', '荷载1', scalar=2.69100, calc_mu=True, bridge_type='CUSTOM', mu_params=[4], lane_names=['车道一'])
+
+    return settle_names, live_names
 
 
 if __name__ == "__main__":
     from ._0_engine import engine
+    nodes = engine.node.all()
+    node_nos = [n.no for n in nodes]
     elem_groups = engine.element.group.all()
     elem_group_names = [eg.name for eg in elem_groups]
-    live_names = build_live_analysis(engine, elem_group_names)
+    settle_names, live_names = build_analysis(engine, node_nos, elem_group_names)
+    print(settle_names)
     print(live_names)
