@@ -574,12 +574,15 @@ class LiveGradeManager:
             TypeError: 名称类型不支持时抛出
             RuntimeError: 接口调用失败时抛出
         """
-        if isinstance(name, str):
-            name = [name]
-        elif not isinstance(name, list):
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
+        else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
-        resp = osis_client("GetGradeInfoByNames", {"name": name})
+        resp = osis_client("GetGradeInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         
@@ -779,12 +782,15 @@ class LaneManager:
             TypeError: 名称类型不支持时抛出
             RuntimeError: 接口调用失败时抛出
         """
-        if isinstance(name, str):
-            name = [name]
-        elif not isinstance(name, list):
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
+        else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
-        resp = osis_client("GetLaneInfoByNames", {"name": name})
+        resp = osis_client("GetLaneInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         
@@ -904,12 +910,15 @@ class LiveCaseManager:
             TypeError: 名称类型不支持时抛出
             RuntimeError: 接口调用失败时抛出
         """
-        if isinstance(name, str):
-            name = [name]
-        elif not isinstance(name, list):
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
+        else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
-        resp = osis_client("GetLiveInfoByNames", {"name": name})
+        resp = osis_client("GetLiveInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         

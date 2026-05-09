@@ -280,11 +280,12 @@ class GeometryManager:
         Returns:
             单个 Spline 对象，或 Spline 对象列表
         """
-        if isinstance(name, str):
-            names = [name]
-        elif isinstance(name, list):
-            names = name
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
         else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
         resp = osis_client("GetSplineInfoByNames", {"name": names})

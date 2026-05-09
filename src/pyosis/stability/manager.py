@@ -94,13 +94,14 @@ class StabilityManager:
         return buckl_cases
     def get(self, name: str | list[str]) -> BucklCase | list[BucklCase | None] | None:
         """根据名称获取屈曲工况"""
-        if isinstance(name, str):
-            name = [name]
-        elif isinstance(name, list):
-            ...
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
         else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetBucklingInfoByNames", {"name": name})
+        resp = osis_client("GetBucklingInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         buckl_cases = [BucklCase._from_dict(d) if d else None for d in resp.get("data", [])]

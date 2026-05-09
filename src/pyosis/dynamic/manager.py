@@ -59,13 +59,14 @@ class LoadToMassManager:
 
     def get(self, name: str | list[str]) -> LoadToMass | list[LoadToMass | None] | None:
         """根据名称获取荷载转换质量"""
-        if isinstance(name, str):
-            name = [name]
-        elif isinstance(name, list):
-            ...
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
         else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetLoadToMassInfoByNames", {"name": name})
+        resp = osis_client("GetLoadToMassInfoByNames", {"name": names})
         if not resp['success']: 
             raise RuntimeError(f"{resp['error']}")
         ltm = [LoadToMass._from_dict(d) if d else None for d in resp.get("data", [])]
@@ -254,13 +255,14 @@ class SeisRspSpecManager:
 
     def get(self, name: str | list[str]) -> SeisRspSpec | list[SeisRspSpec | None] | None:
         """根据名称获取地震反应谱"""
-        if isinstance(name, str):
-            name = [name]
-        elif isinstance(name, list):
-            ...
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
         else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetSeisRspSpecInfoByNames", {"name": name})
+        resp = osis_client("GetSeisRspSpecInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         rsp = [SeisRspSpec._from_dict(d) if d else None for d in resp.get("data", [])]
@@ -409,13 +411,14 @@ class RspecAnalManager:
 
     def get(self, name: str | list[str]) -> RspecAnal | list[RspecAnal | None] | None:
         """根据名称获取反应谱工况"""
-        if isinstance(name, str):
-            name = [name]
-        elif isinstance(name, list):
-            ...
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
         else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetSeisRespSpecByNames", {"name": name})
+        resp = osis_client("GetSeisRespSpecByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         rsp = [RspecAnal._from_dict(d) if d else None for d in resp.get("data", [])]

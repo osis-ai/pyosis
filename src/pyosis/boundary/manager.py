@@ -549,12 +549,15 @@ class BoundaryGroupManager:
             单个 BoundaryGroup 对象；如果传入列表则返回对象列表；
             不存在返回 None
         """
-        if isinstance(name, str):
-            name = [name]
-        elif not isinstance(name, list):
+
+        if isinstance(name, list):
+            names = [str(x) for x in name]
+        else:
+            names = [str(name)]
+        if not isinstance(name, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
-        resp = osis_client("GetBoundaryGroupInfoByNames", {"name": name})
+        resp = osis_client("GetBoundaryGroupInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         
