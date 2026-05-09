@@ -131,7 +131,7 @@ class CreepShrinkManager:
         creep_shrinks = [CreepShrink._from_dict(d) for d in resp.get("data", []) if "no" in d]
         return creep_shrinks
 
-    def get(self, no:list[int]):
+    def get(self, no:int | list[int]):
         if isinstance(no, int):
             no = [no]
         elif not isinstance(no, list):
@@ -157,13 +157,14 @@ class CreepShrinkManager:
         birth_time: int = 7,
         type_coeff: float = 5.0,
         shrink_birth: int = 3,
-    ) -> None:
+    ) -> CreepShrink:
         """创建或修改收缩徐变特性"""
         ok, err = osis_creep_shrink(
             no, name, avg_humidity, birth_time, type_coeff, shrink_birth,
         )
         if not ok:
             raise RuntimeError(f"创建收缩徐变特性 {no} 失败: {err}")
+        return self.get(no)
 
     def delete(self, no: int) -> None:
         """删除收缩徐变特性"""
