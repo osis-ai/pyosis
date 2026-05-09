@@ -21,7 +21,7 @@ from prep._5_node import build_nodes
 from prep._6_element import build_elements
 from prep._7_boundary import build_boundaries
 from prep._8_loadcase import build_loadcases
-from prep._9_analysis import build_live_analysis
+from prep._9_analysis import build_analysis
 from prep._10_stage import build_stages
 
 
@@ -74,13 +74,13 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     print("[8/10] 创建荷载工况...")
     lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
     
-    # 9. 分析设置（依赖单元组）
+    # 9. 分析设置（依赖节点编号和单元组名称）
     print("[9/10] 创建分析设置...")
-    live_names = build_live_analysis(engine, elem_group_names)
+    settle_names, live_names = build_analysis(engine, node_nos, elem_group_names)
     
     # 10. 施工阶段（依赖所有组）
     print("[10/10] 创建施工阶段...")
-    build_stages(engine, elem_group_names, bd_group_names, lc_names, [], live_names)
+    build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_names, live_names)
     
     print("\n" + "=" * 50)
     print("建模完成！")

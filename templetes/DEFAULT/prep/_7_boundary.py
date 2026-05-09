@@ -3,32 +3,67 @@
 from pyosis.core.engine import OSISEngine
 
 def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> tuple[list[int], list[str]]:
-    """边界条件"""
+    """创建边界条件，返回边界编号列表和边界组名称列表"""
 
-    # ========== 原始命令流 ==========
-    # Boundary,1,GENERAL,,1,1,1,1,1,1,1;//建立边界，GENERAL类型
-    # AsgnBd,1,a,2001to2004;//往边界施加对象，引用边界号，该类型引用节点号
-    # Boundary,3,MSTSLV,1002,1,1,1,1,0,1;//建立边界，MSTSLV类型，该类型会引用节点号，为主节点
-    # AsgnBd,3,a,17;//往边界施加对象，引用边界号，该类型引用节点号，为从节点
-    # Boundary,4,MSTSLV,1003,0,1,1,1,0,1
-    # AsgnBd,4,a,43
-    # Boundary,6,MSTSLV,1002,1,1,1,1,1,1
-    # AsgnBd,6,a,16,18
-    # Boundary,7,MSTSLV,1003,1,1,1,1,1,1
-    # AsgnBd,7,a,42,44
-    # Boundary,8,MSTSLV,1001,0,1,1,1,0,1
-    # AsgnBd,8,a,2
-    # Boundary,9,MSTSLV,1004,0,1,1,1,0,1
-    # AsgnBd,9,a,58
-    # BdGrp,边墩临时支持,c;//建立边界组名字
-    # BdGrp,边墩临时支持,a,8,9;//往边界组里面加数据，引用边界号，边界组组名
-    # BdGrp,成桥支座,c
-    # BdGrp,成桥支座,a,2to5
-    # BdGrp,墩底固结,c
-    # BdGrp,墩底固结,a,1
-    # BdGrp,主墩临时支持,c
-    # BdGrp,主墩临时支持,a,6,7
-    return [], []
+    bd_nos = []
+    bd_group_names = []
+
+    bd = engine.boundary.create_general(nCoor="", no=1)
+    bd_nos.append(bd.no)
+
+    bd.assign('a', ['2001to2004'])
+
+    bd = engine.boundary.create_master_slave(nNode=1002, bRY=0, no=3)
+    bd_nos.append(bd.no)
+
+    bd.assign('a', [17])
+
+    bd = engine.boundary.create_master_slave(nNode=1003, bX=0, bRY=0, no=4)
+    bd_nos.append(bd.no)
+
+    bd.assign('a', [43])
+
+    bd = engine.boundary.create_master_slave(nNode=1002, no=6)
+    bd_nos.append(bd.no)
+
+    bd.assign('a', [16, 18])
+
+    bd = engine.boundary.create_master_slave(nNode=1003, no=7)
+    bd_nos.append(bd.no)
+
+    bd.assign('a', [42, 44])
+
+    bd = engine.boundary.create_master_slave(nNode=1001, bX=0, bRY=0, no=8)
+    bd_nos.append(bd.no)
+
+    bd.assign('a', [2])
+
+    bd = engine.boundary.create_master_slave(nNode=1004, bX=0, bRY=0, no=9)
+    bd_nos.append(bd.no)
+
+    bd.assign('a', [58])
+
+    bg = engine.boundary.group.create('边墩临时支持')
+    bd_group_names.append(bg.name)
+
+    bg.add([8, 9])
+
+    bg = engine.boundary.group.create('成桥支座')
+    bd_group_names.append(bg.name)
+
+    bg.add(['2to5'])
+
+    bg = engine.boundary.group.create('墩底固结')
+    bd_group_names.append(bg.name)
+
+    bg.add([1])
+
+    bg = engine.boundary.group.create('主墩临时支持')
+    bd_group_names.append(bg.name)
+
+    bg.add([6, 7])
+
+    return bd_nos, bd_group_names
 
 
 if __name__ == "__main__":

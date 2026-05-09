@@ -3,23 +3,21 @@
 from pyosis.core.engine import OSISEngine
 
 def setup_control(engine: OSISEngine) -> None:
-    """全局控制参数"""
+    """设置全局控制参数"""
 
-    # ========== 原始命令流 ==========
-    # Acel,9.8066; //定义加速度
-    # CalcTendon,1;//打开计算预应力开关
-    # CalcConForce,1;//打开计算并发反力开关
-    # CalcShrink,1;//打开计算收缩开关
-    # CalcCreep,1;//打开计算徐变开关
-    # CalcShear,1;//打开计算剪切变形开关
-    # CalcRlx,1;//打开计算钢束松弛开关
-    # ModLocCoor,0;//打开修改变截面局部坐标系开关
-    # IncTendon,1;//打开考虑钢束自重开关
-    # NL,0,0;//设置非线性参数，打开几何非线性
-    # LnSrch,0;//设置非线性参数，打开非线性连接单元
-    # AutoTs,0;//设置非线性参数，线形检索
-    # ModOpt,0;//设置模态阶数
-    return
+    engine.control.set_gravity_acceleration(9.8066)
+    engine.control.set_calc_tendon(True)
+    engine.control.set_calc_concurrent_force(True)
+    engine.control.set_calc_shrink(True)
+    engine.control.set_calc_creep(True)
+    engine.control.set_calc_shear(True)
+    engine.control.set_calc_relaxation(True)
+    engine.control.set_mod_loc_coor(False)
+    engine.control.set_inc_tendon(True)
+    engine.control.set_nonlinear(geom=False, link=False)
+    engine.control.set_line_search(False)
+    engine.control.set_auto_time_step(False)
+    engine.control.set_modal_opt(0)
 
 
 if __name__ == "__main__":
