@@ -1123,7 +1123,7 @@ class TendonPropManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
         resp = osis_client("GetTendonPropInfoByNames", {"name": names})
@@ -1311,7 +1311,7 @@ class TendonShapeManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
         resp = osis_client("GetTendonShapeInfoByNames", {"name": names})
@@ -1501,7 +1501,7 @@ class LoadCaseManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
         resp = osis_client("GetLoadCaseInfoByNames", {"name": names})

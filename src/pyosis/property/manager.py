@@ -254,12 +254,12 @@ class DampingManager:
     def get(self, name: str | list[str]) -> Damping | list[Damping | None] | None:
         """根据名称获取阻尼模型"""
         if isinstance(name, list):
-            name = [str(x) for x in name]
+            names = [str(x) for x in name]
         else:
-            name = [str(name)]
-        if not isinstance(name, list):
+            names = [str(name)]
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetDampingInfoByNames", {"name": name})
+        resp = osis_client("GetDampingInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         dampings = [Damping._from_dict(d) if d else None for d in resp.get("data", [])]

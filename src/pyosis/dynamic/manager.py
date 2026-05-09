@@ -64,7 +64,7 @@ class LoadToMassManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         resp = osis_client("GetLoadToMassInfoByNames", {"name": names})
         if not resp['success']: 
@@ -260,7 +260,7 @@ class SeisRspSpecManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         resp = osis_client("GetSeisRspSpecInfoByNames", {"name": names})
         if not resp['success']:
@@ -416,7 +416,7 @@ class RspecAnalManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         resp = osis_client("GetSeisRespSpecByNames", {"name": names})
         if not resp['success']:

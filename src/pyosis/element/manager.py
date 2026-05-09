@@ -334,7 +334,7 @@ class ElementGroupManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
         resp = osis_client("GetElementGroupInfoByNames", {"name": names})
@@ -399,7 +399,7 @@ class TaperEleGroupManager:
             names = [str(x) for x in name]
         else:
             names = [str(name)]
-        if not isinstance(name, list):
+        if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         resp = osis_client("GetTaperEleGroupInfoByNames", {"name": names})
         if not resp['success']:
