@@ -103,6 +103,7 @@ class Section:
     has_concrete_section: bool = False   # 是否有混凝土截面
     has_steel_section: bool = False      # 是否有钢截面
     related_elements: list[int] = field(default_factory=list) # 相关元素
+    rebar:dict = field(default_factory=dict)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
@@ -126,6 +127,7 @@ class Section:
             has_concrete_section=d.get("hasConcreteSection"),
             has_steel_section=d.get("hasSteelSection"),
             related_elements=list(d.get("relatedElement")),
+            rebar= d.get("rebar")
         )
 
     def __repr__(self) -> str:
