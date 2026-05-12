@@ -35,13 +35,6 @@ class ElementType(Enum):
     CABLE = 4
     SHELL = 5
 
-ELEMENT_TYPE_NAMES: dict[int, str] = {
-    1: "BEAM3D",
-    2: "TRUSS",
-    3: "SPRING",
-    4: "CABLE",
-    5: "SHELL",
-}
 
 
 # ──────────────────────────────────────────────
@@ -77,9 +70,10 @@ class Element:
     @classmethod
     def _from_dict(cls, d: dict) -> Element:
         """从接口 dict 构造 Material 对象（内部使用）"""
+        raw_type = int(d.get("type"))
         return cls(
             no=d.get("no"),
-            element_type=d.get("type"),
+            element_type=ElementType(raw_type) if raw_type in [t.value for t in ElementType] else ElementType.UNASSIGNED,
             mat=d.get("mat"),
             node_vec=d.get("nodeVec"),
             node_i=d.get("nodeI"),

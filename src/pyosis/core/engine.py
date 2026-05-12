@@ -291,7 +291,7 @@ class OSISEngine:
     # ──────────────────────────────────────────
     # 便捷方法（委托给 control manager）
     # ──────────────────────────────────────────
-    def export_apdl(self, path) -> None:
+    def export_apdl(self, path: str | None = None) -> None:
         """导出前处理状态为 .out 文件
         
         Args:
@@ -299,7 +299,7 @@ class OSISEngine:
         """
         self.control.export_apdl(path)
 
-    def import_apdl(self, path: str | None = None) -> None:
+    def import_apdl(self, path: str) -> None:
         """读取 .out / .sml 文件
 
         Args:
