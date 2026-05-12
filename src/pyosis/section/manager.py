@@ -121,23 +121,23 @@ class Section:
     """
 
     no: int                              # 截面编号
-    name: str = ""                       # 截面名称
+    name: str                            # 截面名称
     section_type: SectionType            # 截面类型
-    prop: dict | None = None             # 截面属性
-    prop_factor: dict | None = None      # 截面因子
-    offset_type_y: int = 0               # 偏移类型 Y
-    offset_value_y: float = 0.0          # 偏移值 Y
-    offset_type_z: int = 0               # 偏移类型 Z
-    offset_value_z: float = 0.0          # 偏移值 Z
-    stress_points: list[dict] = field(default_factory=list)  # 应力点
-    boundary: dict | None = None         # 边界
-    height: float = 0.0                  # 高度
-    modeling_point_x: float = 0.0        # 模型点 X
-    modeling_point_y: float = 0.0        # 模型点 Y
-    contour: list[dict] = field(default_factory=list)        # 轮廓
-    has_concrete_section: bool = False   # 是否有混凝土截面
-    has_steel_section: bool = False      # 是否有钢截面
-    related_elements: list[int] = field(default_factory=list) # 相关元素
+    prop: dict                           # 截面属性
+    prop_factor: dict                    # 截面因子
+    offset_type_y: int                   # 偏移类型 Y
+    offset_value_y: float                # 偏移值 Y
+    offset_type_z: int                   # 偏移类型 Z
+    offset_value_z: float                # 偏移值 Z
+    stress_points: list[dict]            # 应力点
+    boundary: dict                       # 边界
+    height: float                        # 高度
+    modeling_point_x: float              # 模型点 X
+    modeling_point_y: float              # 模型点 Y
+    contour: list[dict]                  # 轮廓
+    has_concrete_section: bool           # 是否有混凝土截面
+    has_steel_section: bool              # 是否有钢截面
+    related_elements: list[int]          # 相关单元
 
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
