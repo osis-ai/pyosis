@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Union
 from enum import Enum
 from ..core.client import osis_client
 from .interface import (
@@ -135,8 +135,8 @@ class MaterialManager:
         name: str,
         eCode: Literal["JTG3362_2018", "JTGD62_2004"],
         eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
-        nCrepShrk: int | None = None,
-        dDmp: float = 0.0,
+        nCrepShrk: int | str = "",
+        dDmp: float = 0.05,
         no: int | None = None,
     ) -> Material:
         """创建混凝土材料
