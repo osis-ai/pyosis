@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Literal
+from enum import Enum
 
 from ..core.client import osis_client
 
@@ -72,6 +73,40 @@ from .rib import (
 )
 
 
+class SectionType(Enum):
+    UNASSIGNED = 0                    # 未分配
+    LSHAPE = 1                        # L形与倒L形
+    TSHAPE = 2                        # T形与倒T形
+    ISHAPE = 3                        # 工字形
+    CIRCLE = 4                        # 圆形与圆管形
+    RECTANGLE = 5                     # 实腹与空腹矩形（可倒圆/斜角）
+    ROUNDEDEND = 6                    # 实腹与空腹圆端形
+    HOLLOWSLAB = 7                    # 空心板梁
+    SMALLBOX = 8                      # 小箱梁
+    TGIRDER = 9                       # T梁
+    CONVENTIONALBOX = 10              # 常规箱梁
+    FLATBOX = 11                      # 扁平箱梁
+    DOUBLESIDEBOX = 12                # 双边箱梁
+    RIBBEDSLAB = 13                   # 肋板式
+    CUSTOM = 14                       # 常规自定义截面
+
+    STEELI = 21                       # 工字钢梁截面
+    STEELBOX = 22                     # 箱型钢梁截面
+    STEELBOXTHREECELL = 23            # 单箱单/三室钢梁截面
+    STEELBOXITF = 24                  # 单箱单室斜顶板钢梁界面
+    STEELCANTIBOX = 25                # 悬臂单箱单/双室钢梁界面
+    STEELCANTIBOXIBF = 26             # 悬臂单箱单/双室斜底板钢梁截面
+    STEELCUSTOM = 27                  # 钢梁自定义截面，采用几何点线形式输入
+    STEELCUSTOMPLATE = 28             # 钢梁自定义截面，采用参数板形式输入
+
+    COMPOSITESTEELI = 41              # 钢-工字型组合截面
+    COMPOSITESTEELTROUGH = 42         # 钢-槽型组合截面
+    COMPOSITESTEELBOX = 43            # 钢-箱型组合截面
+    COMPOSITECUSTOM = 44              # 自定义组合截面
+
+    NUMERICAL = 51                    # 数值截面
+
+
 # ──────────────────────────────────────────────
 # Section 基类
 # ──────────────────────────────────────────────
@@ -86,32 +121,32 @@ class Section:
     """
 
     no: int                              # 截面编号
-    name: str = ""                       # 截面名称
-    type: int = 0                        # 截面类型
-    prop: dict | None = None             # 截面属性
-    prop_factor: dict | None = None      # 截面因子
-    offset_type_y: int = 0               # 偏移类型 Y
-    offset_value_y: float = 0.0          # 偏移值 Y
-    offset_type_z: int = 0               # 偏移类型 Z
-    offset_value_z: float = 0.0          # 偏移值 Z
-    stress_points: list[dict] = field(default_factory=list)  # 应力点
-    boundary: dict | None = None         # 边界
-    height: float = 0.0                  # 高度
-    modeling_point_x: float = 0.0        # 模型点 X
-    modeling_point_y: float = 0.0        # 模型点 Y
-    contour: list[dict] = field(default_factory=list)        # 轮廓
-    has_concrete_section: bool = False   # 是否有混凝土截面
-    has_steel_section: bool = False      # 是否有钢截面
-    related_elements: list[int] = field(default_factory=list) # 相关元素
-    rebar:dict = field(default_factory=dict)
+    name: str                            # 截面名称
+    section_type: SectionType            # 截面类型
+    prop: dict                           # 截面属性
+    prop_factor: dict                    # 截面因子
+    offset_type_y: int                   # 偏移类型 Y
+    offset_value_y: float                # 偏移值 Y
+    offset_type_z: int                   # 偏移类型 Z
+    offset_value_z: float                # 偏移值 Z
+    stress_points: list[dict]            # 应力点
+    boundary: dict                       # 边界
+    height: float                        # 高度
+    modeling_point_x: float              # 模型点 X
+    modeling_point_y: float              # 模型点 Y
+    contour: list[dict]                  # 轮廓
+    has_concrete_section: bool           # 是否有混凝土截面
+    has_steel_section: bool              # 是否有钢截面
+    related_elements: list[int]          # 相关单元
 
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
         """从接口 dict 构造 Section 对象（内部使用）"""
+        raw_type = int(d.get("type", 0))
         return cls(
             no=d.get("no"),
             name=d.get("name"),
-            type=d.get("type"),
+            section_type=SectionType(raw_type) if raw_type in [t.value for t in SectionType] else SectionType.UNASSIGNED,
             prop=d.get("prop"),
             prop_factor=d.get("propFactor"),
             offset_type_y=d.get("offsetTypeY"),
@@ -127,11 +162,10 @@ class Section:
             has_concrete_section=d.get("hasConcreteSection"),
             has_steel_section=d.get("hasSteelSection"),
             related_elements=list(d.get("relatedElement")),
-            rebar= d.get("rebar")
         )
 
     def __repr__(self) -> str:
-        return f"Section(no={self.no}, name={self.name!r}, type={self.type})"
+        return f"Section(no={self.no}, name={self.name!r}, type={self.section_type.name})"
 
     # ── 实例方法 ──────────────────────────────
 

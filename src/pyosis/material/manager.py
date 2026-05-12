@@ -61,10 +61,11 @@ class Material:
     @classmethod
     def _from_dict(cls, d: dict) -> Material:
         """从接口 dict 构造 Material 对象（内部使用）"""
+        raw_type = int(d.get("materialType"))
         return cls(
             no=d.get("no"),
             name=d.get("name"),
-            material_type=d.get("materialType"),
+            material_type=MaterialType(raw_type) if raw_type in [t.value for t in MaterialType] else MaterialType.UNASSIGNED ,
             code=d.get("code"),
             grade=d.get("grade"),
             e=d.get("e"),
@@ -80,7 +81,7 @@ class Material:
         )
 
     def __repr__(self) -> str:
-        return f"Material(no={self.no}, name={self.name!r}, type={self.material_type})"
+        return f"Material(no={self.no}, name={self.name!r}, type={self.material_type.name})"
 
 # ──────────────────────────────────────────────
 # 管理类
