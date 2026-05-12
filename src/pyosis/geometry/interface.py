@@ -105,7 +105,7 @@ def osis_spline3d_arc3d(strName: str, type: str, eOwner: str, *coordinates: floa
     """
     pass
 
-@REGISTRY.register('Spline3D')
+@REGISTRY.register('Spline3DDel')
 def osis_spline3d_del(strName: str):
     """删除三维样条曲线。
 

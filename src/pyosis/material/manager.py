@@ -80,7 +80,7 @@ class Material:
         )
 
     def __repr__(self) -> str:
-        return f"Material(no={self.no}, name={self.name!r}, type={self.material_type.name})"
+        return f"Material(no={self.no}, name={self.name!r}, type={self.material_type})"
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -269,14 +269,14 @@ class MaterialManager:
     def create_custom(
         self,
         name: str,
-        no: int | None = None,
-        dE: float = 0,
+        dE: float = 1,
         dG: float = 0,
         dMu: float = 0,
         dExpCoeff: float = 0,
         dUnitWeight: float = 0,
         dDensity: float = 0,
         dDmp: float = 0,
+        no: int | None = None,
     ) -> Material:
         """创建自定义材料
 
@@ -319,7 +319,7 @@ class MaterialManager:
         if not ok:
             raise RuntimeError(f"删除材料 {no} 失败: {err}")
 
-    def renumber(self, old_no: int, new_no: int) -> None:
+    def renumber(self, old_no: int, new_no: int) -> Material | list[Material | None]:
         """修改材料编号
 
         Args:
