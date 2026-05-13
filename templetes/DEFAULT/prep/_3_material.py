@@ -8,23 +8,18 @@ def build_materials(engine: OSISEngine) -> list[int]:
     mat_nos = []
 
     engine.prop.creep_shrink.create(
-        no=1, name='收缩徐变', avg_humidity=70.00,
-        birth_time=7, type_coeff=5.000, shrink_birth=3
+        no=1, name='C50SSXB', avg_humidity=70.00,
+        birth_time=28, type_coeff=5.000, shrink_birth=3
     )
 
     mat = engine.material.create_conc(
-        'C50', eCode='JTG3362_2018', eGrade='C50',
+        'C50', eCode='JTGD62_2004', eGrade='C50',
         nCrepShrk=1, dDmp=0.050, no=1
     )
     mat_nos.append(mat.no)
 
     mat = engine.material.create_prestressed(
-        '钢绞线-1860', eCode='JTG3362_2018', eGrade='Strand1860', dDmp=0.050, no=2
-    )
-    mat_nos.append(mat.no)
-
-    mat = engine.material.create_rebar(
-        'HRB400', eCode='JTG3362_2018', eGrade='HRB400', dDmp=0.050, no=3
+        'Strand1860', eCode='JTGD62_2004', eGrade='Strand1860', dDmp=0.020, no=2
     )
     mat_nos.append(mat.no)
 

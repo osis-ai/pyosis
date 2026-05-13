@@ -52,9 +52,6 @@ MODULE_NAMES = {
 def _val(v: str) -> str:
     """将字符串值转为 Python 字面量"""
     v = v.strip()
-    # 修正 OSIS 命令流中的已知拼写错误
-    if v == "Intergal":
-        v = "Integral"
     if not v:
         return '""'
     # 尝试转为数字
@@ -121,7 +118,7 @@ def parse_command_file(file_path: str) -> Dict[str, List[str]]:
     file_path = Path(file_path)
 
     content = None
-    for encoding in ["utf-8", "gbk", "gb2312", "gb18030", "latin-1"]:
+    for encoding in ["gbk", "utf-8", "gb2312", "gb18030", "latin-1"]:
         try:
             content = file_path.read_text(encoding=encoding)
             print(f"使用编码: {encoding}")
@@ -277,8 +274,7 @@ def generate_control(commands: List[str]) -> str:
     """生成 _1_control.py：全局控制参数"""
 
     # 命令到 pyosis API 的映射：(方法名, 参数位置列表, 是否布尔)
-    # 参数位置列表中的整数表示 args 中的索引
-    # 元组 (idx, name) 表示命名参数
+    # 参数位置列表中的整数表示 args 中的索引（从0开始）
     CONTROL_MAP = {
         "Acel": ("set_gravity_acceleration", [0]),
         "CalcTendon": ("set_calc_tendon", [0], True),
@@ -306,21 +302,17 @@ def generate_control(commands: List[str]) -> str:
         cmd_name = args[0]
 
         if cmd_name == "NL":
-            # NL,geom,link → set_nonlinear(geom=bool, link=bool)
-            if len(args) >= 3:
-                geom = _bool(args[1])
-                link = _bool(args[2])
-                lines.append(
-                    f"    engine.control.set_nonlinear(geom={geom}, link={link})"
-                )
+            geom = _bool(args[1])
+            link = _bool(args[2])
+            lines.append(
+                f"    engine.control.set_nonlinear(geom={geom}, link={link})"
+            )
             continue
 
         if cmd_name == "NSUBST":
-            # NSUBST,nls,nsbmx
-            if len(args) >= 3:
-                lines.append(
-                    f"    engine.control.set_substitution_steps({args[1]}, {args[2]})"
-                )
+            lines.append(
+                f"    engine.control.set_substitution_steps({args[1]}, {args[2]})"
+            )
             continue
 
         if cmd_name in CONTROL_MAP:
@@ -331,9 +323,8 @@ def generate_control(commands: List[str]) -> str:
 
             params = []
             for idx in param_indices:
-                if idx < len(args) - 1:
-                    v = args[idx + 1]
-                    params.append(_bool(v) if is_bool else _val(v))
+                v = args[idx + 1]
+                params.append(_bool(v) if is_bool else _val(v))
 
             if params:
                 lines.append(f"    engine.control.{method}({', '.join(params)})")
@@ -361,43 +352,39 @@ def generate_property(commands: List[str]) -> str:
             continue
 
         if args[0] == "Spline3D":
-            # Spline3D,name,TYPE,OWNER,p1,p2,...
-            if len(args) >= 4:
-                name = args[1]
-                stype = args[2]
-                owner = args[3]
-                points = args[4:]
-                points_str = ", ".join(_val(p) for p in points)
+            name = args[1]
+            stype = args[2]
+            owner = args[3]
+            points = args[4:]
+            points_str = ", ".join(_val(p) for p in points)
 
-                if stype == "ARC3D":
-                    lines.append(
-                        f"    spline = engine.geometry.create_arc3d({_val(name)}, {_val(owner)}, [{points_str}])"
-                    )
-                elif stype == "ARC2D":
-                    lines.append(
-                        f"    spline = engine.geometry.create_arc2d({_val(name)}, {_val(owner)}, [{points_str}])"
-                    )
-                elif stype == "GENERAL":
-                    lines.append(
-                        f"    spline = engine.geometry.create_general({_val(name)}, {_val(owner)}, [{points_str}])"
-                    )
-                elif stype == "NATURAL":
-                    lines.append(
-                        f"    spline = engine.geometry.create_natural({_val(name)}, {_val(owner)}, [{points_str}])"
-                    )
-                else:
-                    lines.append(f"    # TODO: Spline3D {stype} not supported")
-                    continue
+            if stype == "ARC3D":
+                lines.append(
+                    f"    spline = engine.geometry.create_arc3d({_val(name)}, {_val(owner)}, [{points_str}])"
+                )
+            elif stype == "ARC2D":
+                lines.append(
+                    f"    spline = engine.geometry.create_arc2d({_val(name)}, {_val(owner)}, [{points_str}])"
+                )
+            elif stype == "GENERAL":
+                lines.append(
+                    f"    spline = engine.geometry.create_general({_val(name)}, {_val(owner)}, [{points_str}])"
+                )
+            elif stype == "NATURAL":
+                lines.append(
+                    f"    spline = engine.geometry.create_natural({_val(name)}, {_val(owner)}, [{points_str}])"
+                )
+            else:
+                lines.append(f"    # TODO: Spline3D {stype} not supported")
+                continue
 
-                lines.append("    geo_names.append(spline.name)")
-                lines.append("")
+            lines.append("    geo_names.append(spline.name)")
+            lines.append("")
 
         elif args[0] == "CoorSys":
-            # CoorSys,no,TRIPT,p1x,p1y,p1z,p2x,p2y,p2z,p3x,p3y,p3z
-            # CoorSys,no,DBPT,p1x,p1y,p1z,p2x,p2y,p2z,angle
             coor_type = args[2].upper() if len(args) > 2 else "TRIPT"
-            if coor_type == "TRIPT" and len(args) >= 12:
-                no = args[1]
+            no = args[1]
+            if coor_type == "TRIPT":
                 p1x, p1y, p1z = args[3], args[4], args[5]
                 p2x, p2y, p2z = args[6], args[7], args[8]
                 p3x, p3y, p3z = args[9], args[10], args[11]
@@ -407,8 +394,7 @@ def generate_property(commands: List[str]) -> str:
                 lines.append(f"        p3x={p3x}, p3y={p3y}, p3z={p3z}")
                 lines.append("    )")
                 lines.append("")
-            elif coor_type == "DBPT" and len(args) >= 10:
-                no = args[1]
+            elif coor_type == "DBPT":
                 p1x, p1y, p1z = args[3], args[4], args[5]
                 p2x, p2y, p2z = args[6], args[7], args[8]
                 angle = args[9]
@@ -419,7 +405,7 @@ def generate_property(commands: List[str]) -> str:
                 lines.append("")
             else:
                 lines.append(
-                    f"    # TODO: CoorSys {coor_type} not enough params: {cmd}"
+                    f"    # TODO: CoorSys {coor_type} not supported"
                 )
                 lines.append("")
         else:
@@ -452,25 +438,18 @@ def generate_material(commands: List[str]) -> str:
             continue
 
         if args[0] == "CrpShrk":
-            # CrpShrk,no,name,humidity,birth,type_coeff,shrink_birth
-            if len(args) >= 7:
-                lines.append(f"    engine.prop.creep_shrink.create(")
-                lines.append(
-                    f"        no={args[1]}, name={_val(args[2])}, avg_humidity={args[3]},"
-                )
-                lines.append(
-                    f"        birth_time={args[4]}, type_coeff={args[5]}, shrink_birth={args[6]}"
-                )
-                lines.append("    )")
-                lines.append("")
+            lines.append(f"    engine.prop.creep_shrink.create(")
+            lines.append(
+                f"        no={args[1]}, name={_val(args[2])}, avg_humidity={args[3]},"
+            )
+            lines.append(
+                f"        birth_time={args[4]}, type_coeff={args[5]}, shrink_birth={args[6]}"
+            )
+            lines.append("    )")
+            lines.append("")
             continue
 
         if args[0] == "Material":
-            # Material,no,name,TYPE,code,grade,...
-            if len(args) < 6:
-                lines.append(f"    # TODO: {cmd}")
-                continue
-
             no = args[1]
             name = _val(args[2])
             mat_type = args[3].upper()
@@ -479,7 +458,7 @@ def generate_material(commands: List[str]) -> str:
 
             if mat_type == "CONC":
                 # Material,no,name,CONC,code,grade,nCrepShrk,dDmp
-                if len(args) >= 8:
+                if len(args) > 7:
                     nCrepShrk = _val(args[6])
                     dDmp = args[7]
                     lines.append(f"    mat = engine.material.create_conc(")
@@ -622,11 +601,10 @@ def generate_section(commands: List[str]) -> str:
         # 处理 *dim 命令: *dim,MatrixName,rows,cols
         if args[0].startswith("*dim"):
             _flush_matrix()
-            if len(args) >= 4:
-                current_matrix_name = args[1]
-                current_matrix_rows = int(args[2])
-                current_matrix_cols = int(args[3])
-                current_matrix_data = {}
+            current_matrix_name = args[1]
+            current_matrix_rows = int(args[2])
+            current_matrix_cols = int(args[3])
+            current_matrix_data = {}
             continue
 
         # 处理矩阵赋值: MatrixName[row,col] = value
@@ -646,11 +624,6 @@ def generate_section(commands: List[str]) -> str:
                 continue
 
         if args[0] == "Section":
-            # Section,no,name,TYPE,params...
-            if len(args) < 4:
-                lines.append(f"    # TODO: {cmd}")
-                continue
-
             no = args[1]
             name = args[2]
             sec_type = args[3]
@@ -681,32 +654,26 @@ def generate_section(commands: List[str]) -> str:
             lines.append("")
 
         elif args[0] == "SectionOffset":
-            # SectionOffset,no,offsetTypeY,offsetValueY,offsetTypeZ,offsetValueZ
-            if len(args) >= 6:
-                lines.append(f"    sec.set_offset(")
-                lines.append(
-                    f"        offset_type_y={_val(args[2])}, offset_value_y={args[3]},"
-                )
-                lines.append(
-                    f"        offset_type_z={_val(args[4])}, offset_value_z={args[5]}"
-                )
-                lines.append("    )")
-                lines.append("")
+            lines.append(f"    sec.set_offset(")
+            lines.append(
+                f"        offset_type_y={_val(args[2])}, offset_value_y={args[3]},"
+            )
+            lines.append(
+                f"        offset_type_z={_val(args[4])}, offset_value_z={args[5]}"
+            )
+            lines.append("    )")
+            lines.append("")
 
         elif args[0] == "SectionMesh":
-            # SectionMesh,no,method,size
-            if len(args) >= 4:
-                lines.append(f"    sec.set_mesh(")
-                lines.append(f"        mesh_method={args[2]}, mesh_size={args[3]}")
-                lines.append("    )")
-                lines.append("")
+            lines.append(f"    sec.set_mesh(")
+            lines.append(f"        mesh_method={args[2]}, mesh_size={args[3]}")
+            lines.append("    )")
+            lines.append("")
 
         elif args[0] == "StressPoint":
-            # StressPoint,sec_no,point_no,coord_x,coord_y
-            if len(args) >= 5:
-                lines.append(
-                    f"    sec.set_stress_point({args[2]}, {args[3]}, {args[4]})"
-                )
+            lines.append(
+                f"    sec.set_stress_point({args[2]}, {args[3]}, {args[4]})"
+            )
 
         else:
             lines.append(f"    # TODO: {cmd}")
@@ -741,15 +708,11 @@ def generate_node(commands: List[str]) -> str:
             lines.append(f"    # TODO: {cmd}")
             continue
 
-        # Node,no,x,y,z
-        if len(args) >= 5:
-            no = args[1]
-            x, y, z = args[2], args[3], args[4]
-            lines.append(f"    n = engine.node.create({x}, {y}, {z}, no={no})")
-            lines.append("    node_nos.append(n.no)")
-            lines.append("")
-        else:
-            lines.append(f"    # TODO: {cmd}")
+        no = args[1]
+        x, y, z = args[2], args[3], args[4]
+        lines.append(f"    n = engine.node.create({x}, {y}, {z}, no={no})")
+        lines.append("    node_nos.append(n.no)")
+        lines.append("")
 
     lines.append("    return node_nos")
     lines.append("")
@@ -781,7 +744,7 @@ def generate_element(commands: List[str]) -> str:
     lines.append("    elem_group_names = []")
     lines.append("")
 
-    # 跟踪当前单元组，用于连续 c→a 操作优化
+    # 跟踪当前单元组，用于连续 c->a 操作优化
     current_elem_group = None
 
     for cmd in commands:
@@ -790,11 +753,6 @@ def generate_element(commands: List[str]) -> str:
             continue
 
         if args[0] == "Element":
-            # Element,no,TYPE,p1,p2,p3,...
-            if len(args) < 4:
-                lines.append(f"    # TODO: {cmd}")
-                continue
-
             no = args[1]
             elem_type = args[2].upper()
             # 从 TYPE 后面的参数开始，按顺序传入
@@ -816,38 +774,33 @@ def generate_element(commands: List[str]) -> str:
                 lines.append(f"    # TODO: Element type {elem_type}")
 
         elif args[0] == "AsgnCompThk":
-            # AsgnCompThk,thickness,op,elems
-            if len(args) >= 4:
-                thickness = args[1]
-                op = _val(args[2])
-                items = ", ".join(_item_val(item) for item in args[3:])
-                lines.append(
-                    f"    engine.prop.assign_component_thickness({thickness}, op={op}, elems=[{items}])"
-                )
-                lines.append("")
+            thickness = args[1]
+            op = _val(args[2])
+            items = ", ".join(_item_val(item) for item in args[3:])
+            lines.append(
+                f"    engine.prop.assign_component_thickness({thickness}, op={op}, elems=[{items}])"
+            )
+            lines.append("")
 
         elif args[0] == "EleGrp":
-            # EleGrp,name,c → create
-            # EleGrp,name,a,elem1,elem2,... → add
-            if len(args) >= 3:
-                op = args[2]
-                raw_name = args[1]
-                name = _val(raw_name)
-                if op == "c":
-                    lines.append(f"    eg = engine.element.group.create({name})")
-                    lines.append("    elem_group_names.append(eg.name)")
-                    lines.append("")
-                    current_elem_group = raw_name
-                elif op == "a" and len(args) >= 4:
-                    items = ", ".join(_item_val(item) for item in args[3:])
-                    # 如果紧接着同名组，直接用 eg 变量
-                    if raw_name == current_elem_group:
-                        lines.append(f"    eg.add([{items}])")
-                    else:
-                        lines.append(
-                            f"    engine.element.group.get({name}).add([{items}])"
-                        )
-                    lines.append("")
+            op = args[2]
+            raw_name = args[1]
+            name = _val(raw_name)
+            if op == "c":
+                lines.append(f"    eg = engine.element.group.create({name})")
+                lines.append("    elem_group_names.append(eg.name)")
+                lines.append("")
+                current_elem_group = raw_name
+            elif op == "a":
+                items = ", ".join(_item_val(item) for item in args[3:])
+                # 如果紧接着同名组，直接用 eg 变量
+                if raw_name == current_elem_group:
+                    lines.append(f"    eg.add([{items}])")
+                else:
+                    lines.append(
+                        f"    engine.element.group.get({name}).add([{items}])"
+                    )
+                lines.append("")
 
         else:
             lines.append(f"    # TODO: {cmd}")
@@ -897,16 +850,11 @@ def generate_boundary(commands: List[str]) -> str:
             continue
 
         if args[0] == "Boundary":
-            # Boundary,no,GENERAL,nCoor,bX,bY,bZ,bRX,bRY,bRZ,bRW
-            if len(args) < 3:
-                lines.append(f"    # TODO: {cmd}")
-                continue
-
             no = args[1]
             bd_type = args[2].upper()
             bd_created[no] = bd_type
 
-            if bd_type == "GENERAL" and len(args) >= 11:
+            if bd_type == "GENERAL":
                 nCoor = _val(args[3]) if args[3] else '""'
                 bX, bY, bZ = args[4], args[5], args[6]
                 bRX, bRY, bRZ, bRW = args[7], args[8], args[9], args[10]
@@ -935,7 +883,7 @@ def generate_boundary(commands: List[str]) -> str:
                 lines.append("")
                 current_bd_no = no
 
-            elif bd_type == "MSTSLV" and len(args) >= 9:
+            elif bd_type == "MSTSLV":
                 master = args[3]
                 bX, bY, bZ = args[4], args[5], args[6]
                 bRX, bRY, bRZ = args[7], args[8], args[9]
@@ -962,11 +910,11 @@ def generate_boundary(commands: List[str]) -> str:
                 lines.append("")
                 current_bd_no = no
 
-            elif bd_type == "ELSTCSPT" and len(args) >= 4:
+            elif bd_type == "ELSTCSPT":
                 nCoor = _val(args[3]) if args[3] else '""'
                 params = [f"nCoor={nCoor}"]
 
-                # 成对参数: (flag, stiffness) — 仅当 flag!=1 或 stiffness!=默认值时传入
+                # 成对参数: (flag, stiffness) -- 仅当 flag!=1 或 stiffness!=默认值时传入
                 pair_defaults = {
                     "bX": ("1", "1e13"),
                     "bY": ("1", "1e13"),
@@ -1011,42 +959,37 @@ def generate_boundary(commands: List[str]) -> str:
                 lines.append(f"    # TODO: Boundary type {bd_type}")
 
         elif args[0] == "AsgnBd":
-            # AsgnBd,no,a,node1,node2,...
-            if len(args) >= 4:
-                no = args[1]
-                op = args[2]
-                nodes = ", ".join(_item_val(item) for item in args[3:])
-                # 如果紧接着同名边界，直接用 bd 变量
-                if no == current_bd_no:
-                    lines.append(f"    bd.assign('{op}', [{nodes}])")
-                else:
-                    lines.append(
-                        f"    engine.boundary.get({no}).assign('{op}', [{nodes}])"
-                    )
-                lines.append("")
+            no = args[1]
+            op = args[2]
+            nodes = ", ".join(_item_val(item) for item in args[3:])
+            # 如果紧接着同名边界，直接用 bd 变量
+            if no == current_bd_no:
+                lines.append(f"    bd.assign('{op}', [{nodes}])")
+            else:
+                lines.append(
+                    f"    engine.boundary.get({no}).assign('{op}', [{nodes}])"
+                )
+            lines.append("")
 
         elif args[0] == "BdGrp":
-            # BdGrp,name,c → create
-            # BdGrp,name,a,nos... → add
-            if len(args) >= 3:
-                raw_name = args[1]
-                name = _val(raw_name)
-                op = args[2]
-                if op == "c":
-                    lines.append(f"    bg = engine.boundary.group.create({name})")
-                    lines.append("    bd_group_names.append(bg.name)")
-                    lines.append("")
-                    current_bd_group = raw_name
-                elif op == "a" and len(args) >= 4:
-                    items = ", ".join(_item_val(item) for item in args[3:])
-                    # 如果紧接着同名组，直接用 bg 变量
-                    if raw_name == current_bd_group:
-                        lines.append(f"    bg.add([{items}])")
-                    else:
-                        lines.append(
-                            f"    engine.boundary.group.get({name}).add([{items}])"
-                        )
-                    lines.append("")
+            raw_name = args[1]
+            name = _val(raw_name)
+            op = args[2]
+            if op == "c":
+                lines.append(f"    bg = engine.boundary.group.create({name})")
+                lines.append("    bd_group_names.append(bg.name)")
+                lines.append("")
+                current_bd_group = raw_name
+            elif op == "a":
+                items = ", ".join(_item_val(item) for item in args[3:])
+                # 如果紧接着同名组，直接用 bg 变量
+                if raw_name == current_bd_group:
+                    lines.append(f"    bg.add([{items}])")
+                else:
+                    lines.append(
+                        f"    engine.boundary.group.get({name}).add([{items}])"
+                    )
+                lines.append("")
 
         else:
             lines.append(f"    # TODO: {cmd}")
@@ -1100,31 +1043,29 @@ def generate_loadcase(commands: List[str]) -> str:
             continue
 
         if args[0] == "LoadCase":
-            # LoadCase,name,type,scalar
-            if len(args) >= 3:
-                raw_name = args[1]
-                name = _val(raw_name)
-                lc_type = _val(args[2])
-                scalar = args[3] if len(args) > 3 else "1.0"
-                lines.append(
-                    f"    lc = engine.load.create({name}, load_case_type={lc_type}, scalar={scalar})"
-                )
-                lines.append("    lc_names.append(lc.name)")
-                lines.append("")
-                lc_created.add(raw_name)
-                current_lc_name = raw_name
+            raw_name = args[1]
+            name = _val(raw_name)
+            lc_type = _val(args[2])
+            scalar = args[3] if len(args) > 3 else "1.0"
+            lines.append(
+                f"    lc = engine.load.create({name}, load_case_type={lc_type}, scalar={scalar})"
+            )
+            lines.append("    lc_names.append(lc.name)")
+            lines.append("")
+            lc_created.add(raw_name)
+            current_lc_name = raw_name
 
         elif args[0] == "Load":
             load_type = args[1].upper()
             lc_name_raw = args[2]
             prefix = _get_lc_prefix(lc_name_raw)
 
-            if load_type == "GRAVITY" and len(args) >= 6:
+            if load_type == "GRAVITY":
                 dX, dY, dZ = args[3], args[4], args[5]
                 lines.append(f"    {prefix}create_gravity({dX}, {dY}, {dZ})")
                 lines.append("")
 
-            elif load_type == "NFORCE" and len(args) >= 10:
+            elif load_type == "NFORCE":
                 node = args[3]
                 Fx, Fy, Fz = args[4], args[5], args[6]
                 Mx, My, Mz = args[7], args[8], args[9]
@@ -1133,10 +1074,7 @@ def generate_loadcase(commands: List[str]) -> str:
                 )
                 lines.append("")
 
-            elif load_type == "LINE" and len(args) >= 24:
-                # Load,LINE,lc_name,elem,eCoordSystem,eLoadType,
-                #   dOffsetXI,dOffsetYI,dOffsetZI,dFXI,dFYI,dFZI,dMXI,dMYI,dMZI,
-                #   dOffsetXJ,dOffsetYJ,dOffsetZJ,dFXJ,dFYJ,dFZJ,dMXJ,dMYJ,dMZJ
+            elif load_type == "LINE":
                 elem = args[3]
                 eCoord = args[4]
                 eType = args[5]
@@ -1179,7 +1117,7 @@ def generate_loadcase(commands: List[str]) -> str:
                 lines.append(f"    {prefix}create_line_load({', '.join(params)})")
                 lines.append("")
 
-            elif load_type == "UTEMP" and len(args) >= 6:
+            elif load_type == "UTEMP":
                 elem = args[3]
                 direct = _val(args[4])
                 temp = args[5]
@@ -1188,7 +1126,7 @@ def generate_loadcase(commands: List[str]) -> str:
                 )
                 lines.append("")
 
-            elif load_type == "GTEMP" and len(args) >= 7:
+            elif load_type == "GTEMP":
                 elem = args[3]
                 direct = _val(args[4])
                 gtype = _val(args[5])
@@ -1199,19 +1137,33 @@ def generate_loadcase(commands: List[str]) -> str:
                 )
                 lines.append("")
 
-            elif load_type == "PST" and len(args) >= 8:
+            elif load_type == "PST":
                 shape = _val(args[3])
                 tension_type = _val(args[4])
                 force_type = _val(args[5])
                 beg = args[6]
-                end = args[7]
-                lines.append(
-                    f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg={beg}, dEnd={end})"
-                )
+                if len(args) > 7:
+                    end = args[7]
+                    lines.append(
+                        f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg={beg}, dEnd={end})"
+                    )
+                else:
+                    # OSIS 导出时可能省略末尾的 0 值
+                    if args[4].upper() == "BEG":
+                        lines.append(
+                            f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg={beg}, dEnd=None)"
+                        )
+                    elif args[4].upper() == "END":
+                        lines.append(
+                            f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg=None, dEnd={beg})"
+                        )
+                    else:
+                        lines.append(
+                            f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg={beg}, dEnd={beg})"
+                        )
                 lines.append("")
 
-            elif load_type in ("PTF", "PTM") and len(args) >= 12:
-                # Load,PTF/PTM,lc_name,elem,eCoordSystem,?,offsetX,offsetY,offsetZ,Px/Py/Pz,Py/My,Pz/Mz
+            elif load_type in ("PTF", "PTM"):
                 elem = args[3]
                 eCoord = args[4]
                 is_moment = "True" if load_type == "PTM" else "False"
@@ -1232,90 +1184,189 @@ def generate_loadcase(commands: List[str]) -> str:
                 lines.append("")
 
         elif args[0] == "TdProp":
-            # TdProp,name,IN/EX/PRE,mat,bArea,code,diameter,num,pipe,...
-            if len(args) >= 9:
-                name = _val(args[1])
-                t_type = args[2].upper()
-                mat = args[3]
-                bArea = args[4]
-                code = _val(args[5])
-                diameter = args[6]
-                n_num = args[7]
-                d_pipe = args[8]
+            name = _val(args[1])
+            t_type = args[2].upper()
+            mat = args[3]
+            bArea = args[4]
 
-                if t_type == "IN":
-                    extra_params = []
-                    if len(args) > 9:
-                        extra_params.append(f"d_friction_coeff={args[9]}")
-                    if len(args) > 10:
-                        extra_params.append(f"d_deviation_coeff={args[10]}")
-                    if len(args) > 11:
-                        extra_params.append(f"d_starting_deform={args[11]}")
-                    if len(args) > 12:
-                        extra_params.append(f"d_end_deform={args[12]}")
-                    if len(args) > 13:
-                        extra_params.append(f"d_tensioning_coeff={args[13]}")
-                    if len(args) > 14:
-                        extra_params.append(f"d_relaxation_coeff={args[14]}")
+            # 从 args[5] 开始取剩余参数
+            rem = args[5:]
 
-                    if bArea == "1":
-                        # 按规范输入面积
-                        if extra_params:
-                            lines.append(
-                                f"    engine.tendon.prop.create_in({name}, n_mat={mat}, e_code={code}, diameter={diameter}, n_num={n_num}, d_pipe={d_pipe}, {', '.join(extra_params)})"
-                            )
-                        else:
-                            lines.append(
-                                f"    engine.tendon.prop.create_in({name}, n_mat={mat}, e_code={code}, diameter={diameter}, n_num={n_num}, d_pipe={d_pipe})"
-                            )
-                    else:
-                        # 用户输入面积（bArea=0），code 为截面积
-                        if extra_params:
-                            lines.append(
-                                f"    engine.tendon.prop.create_in_custom({name}, n_mat={mat}, d_val={code}, d_pipe={d_pipe}, {', '.join(extra_params)})"
-                            )
-                        else:
-                            lines.append(
-                                f"    engine.tendon.prop.create_in_custom({name}, n_mat={mat}, d_val={code}, d_pipe={d_pipe})"
-                            )
-                    lines.append("")
+            def _fmt_param(idx: int, pname: str) -> str:
+                if idx < len(rem):
+                    return f"{pname}={rem[idx]}"
+                return ""
+
+            if t_type == "IN":
+                if bArea == "1":
+                    # IN 按规范: eCode, diameter, nNum, dPipe, [friction, deviation, startDef, endDef, tension, relax]
+                    params = [
+                        f"n_mat={mat}",
+                        f"e_code={_val(rem[0])}",
+                        f"diameter={rem[1]}",
+                        f"n_num={rem[2]}",
+                        f"d_pipe={rem[3]}",
+                    ]
+                    # 可选参数
+                    opts = [
+                        (4, "d_friction_coeff"),
+                        (5, "d_deviation_coeff"),
+                        (6, "d_starting_deform"),
+                        (7, "d_end_deform"),
+                        (8, "d_tensioning_coeff"),
+                        (9, "d_relaxation_coeff"),
+                    ]
+                    for idx, pname in opts:
+                        s = _fmt_param(idx, pname)
+                        if s:
+                            params.append(s)
+                    lines.append(f"    engine.tendon.prop.create_in({name}, {', '.join(params)})")
                 else:
-                    lines.append(f"    # TODO: TdProp type {t_type}")
-                    lines.append("")
+                    # IN 用户输入: dVal, dPipe, [friction, deviation, startDef, endDef, tension, relax]
+                    params = [
+                        f"n_mat={mat}",
+                        f"d_val={rem[0]}",
+                        f"d_pipe={rem[1]}",
+                    ]
+                    opts = [
+                        (2, "d_friction_coeff"),
+                        (3, "d_deviation_coeff"),
+                        (4, "d_starting_deform"),
+                        (5, "d_end_deform"),
+                        (6, "d_tensioning_coeff"),
+                        (7, "d_relaxation_coeff"),
+                    ]
+                    for idx, pname in opts:
+                        s = _fmt_param(idx, pname)
+                        if s:
+                            params.append(s)
+                    lines.append(f"    engine.tendon.prop.create_in_custom({name}, {', '.join(params)})")
+                lines.append("")
+
+            elif t_type == "EX":
+                if bArea == "1":
+                    # EX 按规范: eCode, diameter, nNum, dPipe, [friction, startDef, endDef, tension, relax]
+                    params = [
+                        f"n_mat={mat}",
+                        f"e_code={_val(rem[0])}",
+                        f"diameter={rem[1]}",
+                        f"n_num={rem[2]}",
+                        f"d_pipe={rem[3]}",
+                    ]
+                    opts = [
+                        (4, "d_friction_coeff"),
+                        (5, "d_starting_deform"),
+                        (6, "d_end_deform"),
+                        (7, "d_tensioning_coeff"),
+                        (8, "d_relaxation_coeff"),
+                    ]
+                    for idx, pname in opts:
+                        s = _fmt_param(idx, pname)
+                        if s:
+                            params.append(s)
+                    lines.append(f"    engine.tendon.prop.create_ex({name}, {', '.join(params)})")
+                else:
+                    # EX 用户输入: dVal, dPipe, [friction, startDef, endDef, tension, relax]
+                    params = [
+                        f"n_mat={mat}",
+                        f"d_val={rem[0]}",
+                        f"d_pipe={rem[1]}",
+                    ]
+                    opts = [
+                        (2, "d_friction_coeff"),
+                        (3, "d_starting_deform"),
+                        (4, "d_end_deform"),
+                        (5, "d_tensioning_coeff"),
+                        (6, "d_relaxation_coeff"),
+                    ]
+                    for idx, pname in opts:
+                        s = _fmt_param(idx, pname)
+                        if s:
+                            params.append(s)
+                    lines.append(f"    engine.tendon.prop.create_ex_custom({name}, {', '.join(params)})")
+                lines.append("")
+
+            elif t_type == "PRE":
+                if bArea == "1":
+                    # PRE 按规范: eCode, diameter, nNum, dDeltaT, [tension, relax]
+                    params = [
+                        f"n_mat={mat}",
+                        f"e_code={_val(rem[0])}",
+                        f"diameter={rem[1]}",
+                        f"n_num={rem[2]}",
+                        f"d_delta_t={rem[3]}",
+                    ]
+                    opts = [
+                        (4, "d_tensioning_coeff"),
+                        (5, "d_relaxation_coeff"),
+                    ]
+                    for idx, pname in opts:
+                        s = _fmt_param(idx, pname)
+                        if s:
+                            params.append(s)
+                    lines.append(f"    engine.tendon.prop.create_pre({name}, {', '.join(params)})")
+                else:
+                    # PRE 用户输入: dVal, dDeltaT, [tension, relax]
+                    params = [
+                        f"n_mat={mat}",
+                        f"d_val={rem[0]}",
+                        f"d_delta_t={rem[1]}",
+                    ]
+                    opts = [
+                        (2, "d_tensioning_coeff"),
+                        (3, "d_relaxation_coeff"),
+                    ]
+                    for idx, pname in opts:
+                        s = _fmt_param(idx, pname)
+                        if s:
+                            params.append(s)
+                    lines.append(f"    engine.tendon.prop.create_pre_custom({name}, {', '.join(params)})")
+                lines.append("")
+
+            else:
+                lines.append(f"    # TODO: TdProp type {t_type}")
+                lines.append("")
 
         elif args[0] == "TdShape":
-            # TdShape,name,num,prop,elem_group,ARC3D,curve
-            if len(args) >= 7:
-                raw_name = args[1]
-                name = _val(raw_name)
-                num = args[2]
-                prop = _val(args[3])
-                elem_group = _val(args[4])
-                shape_type = args[5].upper()
-                curve = _val(args[6])
+            raw_name = args[1]
+            name = _val(raw_name)
+            num = args[2]
+            prop = _val(args[3])
+            elem_group = _val(args[4])
+            shape_type = args[5].upper()
 
-                if shape_type == "ARC3D":
-                    lines.append(
-                        f"    shape = engine.tendon.shape.create_arc3d({name}, n_num={num}, prop={prop}, element_group={elem_group}, curve_name={curve})"
-                    )
-                    lines.append("")
-                    current_shape_name = raw_name
-                elif shape_type == "SPL3D":
-                    lines.append(
-                        f"    shape = engine.tendon.shape.create_spl3d({name}, n_num={num}, prop={prop}, element_group={elem_group}, curve_name={curve})"
-                    )
-                    lines.append("")
-                    current_shape_name = raw_name
-                else:
-                    lines.append(f"    # TODO: TdShape type {shape_type}")
-                    lines.append("")
+            if shape_type == "ARC3D":
+                curve = _val(args[6])
+                lines.append(
+                    f"    shape = engine.tendon.shape.create_arc3d({name}, n_num={num}, prop={prop}, element_group={elem_group}, curve_name={curve})"
+                )
+                lines.append("")
+                current_shape_name = raw_name
+            elif shape_type == "SPL3D":
+                curve = _val(args[6])
+                lines.append(
+                    f"    shape = engine.tendon.shape.create_spl3d({name}, n_num={num}, prop={prop}, element_group={elem_group}, curve_name={curve})"
+                )
+                lines.append("")
+                current_shape_name = raw_name
+            elif shape_type == "ARC2D":
+                e_type = args[6]
+                curve1 = _val(args[7])
+                curve2 = _val(args[8])
+                lines.append(
+                    f"    shape = engine.tendon.shape.create_arc2d({name}, n_num={num}, prop={prop}, element_group={elem_group}, e_type={e_type}, param=[{curve1}, {curve2}])"
+                )
+                lines.append("")
+                current_shape_name = raw_name
+            else:
+                lines.append(f"    # TODO: TdShape type {shape_type}")
+                lines.append("")
 
         elif args[0] == "LayoutTS":
-            # LayoutTS,name,ELEMENT,nEle,nBeg,nDir,dOffsetX,dOffsetY,dOffsetZ
-            if len(args) >= 8:
-                raw_name = args[1]
-                name = _val(raw_name)
-                layout_type = _val(args[2])
+            name = args[1]
+            layout_type = args[2]
+            if layout_type.upper() == "ELEMENT":
+                layout_type = _val(layout_type)
                 n_ele = args[3]
                 n_beg = args[4]
                 n_dir = args[5]
@@ -1323,14 +1374,24 @@ def generate_loadcase(commands: List[str]) -> str:
                 d_offset_y = args[7]
                 d_offset_z = args[8] if len(args) > 8 else "0.0"
                 # 如果紧接着同名 shape，直接用 shape 变量
-                if raw_name == current_shape_name:
-                    lines.append(
-                        f"    shape.layout({layout_type}, {n_ele}, {n_beg}, {n_dir}, {d_offset_x}, {d_offset_y}, {d_offset_z})"
-                    )
+                if name == current_shape_name:
+                    lines.append(f"    shape.layout({layout_type}, {n_ele}, {n_beg}, {n_dir}, {d_offset_x}, {d_offset_y}, {d_offset_z})")
                 else:
                     lines.append(
                         f"    engine.tendon.shape.get({name}).layout({layout_type}, {n_ele}, {n_beg}, {n_dir}, {d_offset_x}, {d_offset_y}, {d_offset_z})"
                     )
+                lines.append("")
+            elif layout_type.upper() == "GLOBAL":
+                layout_type = _val(layout_type)
+                if name == current_shape_name:
+                    lines.append(f"    shape.layout({layout_type})")
+                else:
+                    lines.append(
+                        f"    engine.tendon.shape.get({name}).layout({layout_type})"
+                    )
+                lines.append("")
+            else:
+                lines.append(f"    # TODO: LayoutTS type {layout_type}")
                 lines.append("")
 
         else:
@@ -1388,99 +1449,71 @@ def generate_analysis(commands: List[str]) -> str:
             continue
 
         if args[0] == "SetlGrp":
-            # SetlGrp,name,val,node
-            if len(args) >= 4:
-                name = repr(args[1])
-                val = args[2]
-                node = args[3]
-                lines.append(
-                    f"    engine.settlement.group.create({name}, {val}, [{node}])"
-                )
-                lines.append("")
+            name = repr(args[1])
+            val = args[2]
+            node = args[3]
+            lines.append(
+                f"    engine.settlement.group.create({name}, {val}, [{node}])"
+            )
+            lines.append("")
 
         elif args[0] == "SetlAnal":
-            # SetlAnal,name
-            if len(args) >= 2:
-                raw_name = args[1]
-                name = repr(raw_name)
-                lines.append(f"    st = engine.settlement.create({name})")
-                lines.append("    settle_names.append(st.name)")
-                lines.append("")
-                _current_settlement = raw_name
+            raw_name = args[1]
+            name = repr(raw_name)
+            lines.append(f"    st = engine.settlement.create({name})")
+            lines.append("    settle_names.append(st.name)")
+            lines.append("")
+            _current_settlement = raw_name
 
         elif args[0] == "SetlAnalInc":
-            # SetlAnalInc,name,a,grps...
-            if len(args) >= 4:
-                raw_name = args[1]
-                grps = ", ".join(repr(g) for g in args[3:])
-                if raw_name == _current_settlement:
-                    lines.append(f"    st.include({grps})")
-                else:
-                    lines.append(
-                        f"    engine.settlement.get({repr(raw_name)}).include({grps})"
-                    )
-                lines.append("")
+            raw_name = args[1]
+            grps = ", ".join(repr(g) for g in args[3:])
+            if raw_name == _current_settlement:
+                lines.append(f"    st.include({grps})")
+            else:
+                lines.append(
+                    f"    engine.settlement.get({repr(raw_name)}).include({grps})"
+                )
+            lines.append("")
 
         elif args[0] == "LiveGrade":
-            # LiveGrade,name,code,grade
-            if len(args) >= 4:
-                name = _val(args[1])
-                code = _val(args[2])
-                grade = _val(args[3])
-                lines.append(
-                    f"    engine.live.grade.create_highway({name}, eCode={code}, eLiveLoadType={grade})"
-                )
-                lines.append("")
+            name = _val(args[1])
+            code = _val(args[2])
+            grade = _val(args[3])
+            lines.append(
+                f"    engine.live.grade.create_highway({name}, eCode={code}, eLiveLoadType={grade})"
+            )
+            lines.append("")
 
         elif args[0] == "InflAlgo":
-            # VE:  InflAlgo,name,VE,length,wheel,vehOri,ref,ESel,par2,par3
-            #      ref=0: par2=OffsetY, par3=OffsetZ
-            #      ref=1: par2=Spline(样条曲线名)
-            # TCB: InflAlgo,name,TCB,ESel(横梁),length,wheel,vehOri,ref,par1,par2,par3
-            #      ref=0: par1=RefESel(纵梁), par2=OffsetY, par3=OffsetZ
-            #      ref=1: par1=Spline
-            if len(args) < 8:
-                lines.append(f"    # TODO: InflAlgo too few params: {cmd}")
-                lines.append("")
-                continue
-
             name = _val(args[1])
             algo_type = args[2].upper()
 
             if algo_type == "VE":
-                # VE: InflAlgo,name,VE,length,wheel,vehOri,ref,...
                 length = args[3]
-                wheel = args[4] if len(args) > 4 else "1"
-                ori = args[5] if len(args) > 5 else "0"
+                wheel = args[4]
+                ori = args[5]
                 ref = args[6]
-                esel = _val(args[7]) if len(args) > 7 else '""'  # ESel 单元组
+                esel = _val(args[7])
                 if ref == "0":
-                    # ref=0: ESel, OffsetY, OffsetZ
                     offset_y = args[8] if len(args) > 8 else "0.0"
                     offset_z = args[9] if len(args) > 9 else "0.0"
                     lines.append(
                         f"    engine.live.lane.create_ve({name}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=0, ref_elems={esel}, offsetY={offset_y}, offsetZ={offset_z})"
                     )
                 else:
-                    # ref=1: ESel, Spline
                     spline = _val(args[8]) if len(args) > 8 else '""'
                     lines.append(
                         f"    engine.live.lane.create_ve({name}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=1, spline_name={spline})"
                     )
 
             elif algo_type == "TCB":
-                # TCB: InflAlgo,name,TCB,ESel(横梁),length,wheel,vehOri,ref,...
-                if len(args) < 9:
-                    lines.append(f"    # TODO: InflAlgo TCB too few params: {cmd}")
-                    lines.append("")
-                    continue
-                crossbeam = _val(args[3])  # 横梁单元组
+                crossbeam = _val(args[3])
                 length = args[4]
-                wheel = args[5] if len(args) > 5 else "1"
-                ori = args[6] if len(args) > 6 else "0"
+                wheel = args[5]
+                ori = args[6]
                 ref = args[7]
                 if ref == "0":
-                    # ref=0: RefESel(纵梁), OffsetY, OffsetZ
                     ref_elems = _val(args[8]) if len(args) > 8 else '""'
                     offset_y = args[9] if len(args) > 9 else "0.0"
                     offset_z = args[10] if len(args) > 10 else "0.0"
@@ -1488,7 +1521,6 @@ def generate_analysis(commands: List[str]) -> str:
                         f"    engine.live.lane.create_tcb({name}, crossbeam_elems={crossbeam}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=0, ref_elems={ref_elems}, offsetY={offset_y}, offsetZ={offset_z})"
                     )
                 else:
-                    # ref=1: Spline
                     spline = _val(args[8]) if len(args) > 8 else '""'
                     lines.append(
                         f"    engine.live.lane.create_tcb({name}, crossbeam_elems={crossbeam}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=1, spline_name={spline})"
@@ -1500,79 +1532,71 @@ def generate_analysis(commands: List[str]) -> str:
             lines.append("")
 
         elif args[0] == "LiveAnal":
-            # LiveAnal,name,code,sub_cmb_type
-            if len(args) >= 4:
-                raw_name = args[1]
-                name = _val(raw_name)
-                code = _val(args[2])
-                sub_cmb = args[3]
-                lines.append(
-                    f"    lc = engine.live.case.create({name}, code={code}, sub_cmb_type={sub_cmb})"
-                )
-                lines.append("    live_names.append(lc.name)")
-                lines.append("")
-                _current_live_case = raw_name
+            raw_name = args[1]
+            name = _val(raw_name)
+            code = _val(args[2])
+            sub_cmb = args[3]
+            lines.append(
+                f"    lc = engine.live.case.create({name}, code={code}, sub_cmb_type={sub_cmb})"
+            )
+            lines.append("    live_names.append(lc.name)")
+            lines.append("")
+            _current_live_case = raw_name
 
         elif args[0] == "LiveAnalFactor":
-            # LiveAnalFactor,name,factor1,factor2,...
-            if len(args) >= 3:
-                raw_name = args[1]
-                prefix = _get_live_prefix(raw_name)
-                factors = ", ".join(args[2:])
-                lines.append(f"    {prefix}set_trans_reduction_factors([{factors}])")
-                lines.append("")
+            raw_name = args[1]
+            prefix = _get_live_prefix(raw_name)
+            factors = ", ".join(args[2:])
+            lines.append(f"    {prefix}set_trans_reduction_factors([{factors}])")
+            lines.append("")
 
         elif args[0] == "LiveAnalOpt":
-            # LiveAnalOpt,name,subName,minLanes,maxLanes
-            if len(args) >= 5:
-                raw_name = args[1]
-                prefix = _get_live_prefix(raw_name)
-                sub_name = _val(args[2])
-                min_lanes = args[3]
-                max_lanes = args[4]
-                lines.append(
-                    f"    {prefix}set_lane_count({sub_name}, {min_lanes}, {max_lanes})"
-                )
-                lines.append("")
+            raw_name = args[1]
+            prefix = _get_live_prefix(raw_name)
+            sub_name = _val(args[2])
+            min_lanes = args[3]
+            max_lanes = args[4]
+            lines.append(
+                f"    {prefix}set_lane_count({sub_name}, {min_lanes}, {max_lanes})"
+            )
+            lines.append("")
 
         elif args[0] == "LiveAnalInc":
-            # LiveAnalInc,name,a,subName,gradeName,scalar,calcMu,bridgeType,muParams...,laneName
-            if len(args) >= 8:
-                raw_name = args[1]
-                prefix = _get_live_prefix(raw_name)
-                sub_name = _val(args[3])
-                grade_name = _val(args[4])
-                scalar = args[5]
-                calc_mu = "True" if args[6] == "1" else "False"
+            raw_name = args[1]
+            prefix = _get_live_prefix(raw_name)
+            sub_name = _val(args[3])
+            grade_name = _val(args[4])
+            scalar = args[5]
+            calc_mu = "True" if args[6] == "1" else "False"
 
-                # 当 calc_mu=False 时，bridge_type 和 mu_params 会被 pyosis 忽略，
-                # 因此生成代码时不应传入这些参数。
-                extra = args[8:]  # bridgeType 之后的参数
+            # 当 calc_mu=False 时，bridge_type 和 mu_params 会被 pyosis 忽略，
+            # 因此生成代码时不应传入这些参数。
+            extra = args[8:]  # bridgeType 之后的参数
 
-                # 提取车道名（最后一个参数）和 mu_params（中间参数）
-                if extra:
-                    lane_name = _val(extra[-1])
-                    mu_params_list = extra[:-1]
-                else:
-                    lane_name = None
-                    mu_params_list = []
+            # 提取车道名（最后一个参数）和 mu_params（中间参数）
+            if extra:
+                lane_name = _val(extra[-1])
+                mu_params_list = extra[:-1]
+            else:
+                lane_name = None
+                mu_params_list = []
 
-                # 构建参数字符串
-                params = f"{sub_name}, {grade_name}, scalar={scalar}, calc_mu={calc_mu}"
+            # 构建参数字符串
+            params = f"{sub_name}, {grade_name}, scalar={scalar}, calc_mu={calc_mu}"
 
-                if calc_mu == "True":
-                    # 计算冲击系数：需要 bridge_type 和 mu_params
-                    bridge_type = _val(args[7])
-                    params += f", bridge_type={bridge_type}"
-                    if mu_params_list:
-                        mu_params = ", ".join(_val(p) for p in mu_params_list)
-                        params += f", mu_params=[{mu_params}]"
+            if calc_mu == "True":
+                # 计算冲击系数：需要 bridge_type 和 mu_params
+                bridge_type = _val(args[7])
+                params += f", bridge_type={bridge_type}"
+                if mu_params_list:
+                    mu_params = ", ".join(_val(p) for p in mu_params_list)
+                    params += f", mu_params=[{mu_params}]"
 
-                if lane_name:
-                    params += f", lane_names=[{lane_name}]"
+            if lane_name:
+                params += f", lane_names=[{lane_name}]"
 
-                lines.append(f"    {prefix}create_sub({params})")
-                lines.append("")
+            lines.append(f"    {prefix}create_sub({params})")
+            lines.append("")
 
         else:
             lines.append(f"    # TODO: {cmd}")
@@ -1613,83 +1637,73 @@ def generate_stage(commands: List[str]) -> str:
             continue
 
         if args[0] == "Stage":
-            # Stage,no,name,duration
-            if len(args) >= 4:
-                no = args[1]
-                name = _val(args[2])
-                duration = args[3]
-                lines.append(f"    stg = engine.stage.create({no}, {name}, {duration})")
-                lines.append("")
-                _current_stage = no
+            no = args[1]
+            name = _val(args[2])
+            duration = args[3]
+            lines.append(f"    stg = engine.stage.create({no}, {name}, {duration})")
+            lines.append("")
+            _current_stage = no
 
         elif args[0] == "StgEle":
-            # StgEle,stageNo,eOP,eType,groupName,birth,part
-            if len(args) >= 6:
-                stage_no = args[1]
-                eOP = args[2]
-                eType = args[3]
-                group_name = _val(args[4])
-                birth = args[5]
-                part = args[6] if len(args) > 6 else "None"
-                if stage_no == _current_stage:
-                    lines.append(
-                        f"    stg.define_element({eOP}, {eType}, {group_name}, nBirth={birth}, ePart={part})"
-                    )
-                else:
-                    lines.append(
-                        f"    engine.stage.get({stage_no}).define_element({eOP}, {eType}, {group_name}, nBirth={birth}, ePart={part})"
-                    )
-                lines.append("")
+            stage_no = args[1]
+            eOP = args[2]
+            eType = args[3]
+            group_name = _val(args[4])
+            birth = args[5]
+            part = args[6] if len(args) > 6 else "None"
+            if stage_no == _current_stage:
+                lines.append(
+                    f"    stg.define_element({eOP}, {eType}, {group_name}, nBirth={birth}, ePart={part})"
+                )
+            else:
+                lines.append(
+                    f"    engine.stage.get({stage_no}).define_element({eOP}, {eType}, {group_name}, nBirth={birth}, ePart={part})"
+                )
+            lines.append("")
 
         elif args[0] == "StgBd":
-            # StgBd,stageNo,eOP,eType,groupName
-            if len(args) >= 5:
-                stage_no = args[1]
-                eOP = args[2]
-                eType = args[3]
-                group_name = _val(args[4])
-                if stage_no == _current_stage:
-                    lines.append(
-                        f"    stg.define_boundary({eOP}, {eType}, {group_name})"
-                    )
-                else:
-                    lines.append(
-                        f"    engine.stage.get({stage_no}).define_boundary({eOP}, {eType}, {group_name})"
-                    )
-                lines.append("")
+            stage_no = args[1]
+            eOP = args[2]
+            eType = args[3]
+            group_name = _val(args[4])
+            if stage_no == _current_stage:
+                lines.append(
+                    f"    stg.define_boundary({eOP}, {eType}, {group_name})"
+                )
+            else:
+                lines.append(
+                    f"    engine.stage.get({stage_no}).define_boundary({eOP}, {eType}, {group_name})"
+                )
+            lines.append("")
 
         elif args[0] == "StgLc":
-            # StgLc,stageNo,eOP,eType,refName,lcName
-            if len(args) >= 6:
-                stage_no = args[1]
-                eOP = args[2]
-                eType = args[3]
-                ref_name = _val(args[4]) if args[4] else '""'
-                lc_name = _val(args[5])
-                if stage_no == _current_stage:
-                    lines.append(
-                        f"    stg.define_loadcase({eOP}, {eType}, {ref_name}, {lc_name})"
-                    )
-                else:
-                    lines.append(
-                        f"    engine.stage.get({stage_no}).define_loadcase({eOP}, {eType}, {ref_name}, {lc_name})"
-                    )
-                lines.append("")
+            stage_no = args[1]
+            eOP = args[2]
+            eType = args[3]
+            ref_name = _val(args[4]) if args[4] else '""'
+            lc_name = _val(args[5])
+            if stage_no == _current_stage:
+                lines.append(
+                    f"    stg.define_loadcase({eOP}, {eType}, {ref_name}, {lc_name})"
+                )
+            else:
+                lines.append(
+                    f"    engine.stage.get({stage_no}).define_loadcase({eOP}, {eType}, {ref_name}, {lc_name})"
+                )
+            lines.append("")
 
         elif args[0] == "StgAnal":
-            # StgAnal,stageNo,eOP,eType,lcName
-            if len(args) >= 5:
-                stage_no = args[1]
-                eOP = args[2]
-                eType = _val(args[3])
-                lc_name = _val(args[4])
-                if stage_no == _current_stage:
-                    lines.append(f"    stg.define_analysis({eOP}, {eType}, {lc_name})")
-                else:
-                    lines.append(
-                        f"    engine.stage.get({stage_no}).define_analysis({eOP}, {eType}, {lc_name})"
-                    )
-                lines.append("")
+            stage_no = args[1]
+            eOP = args[2]
+            eType = _val(args[3])
+            lc_name = _val(args[4])
+            if stage_no == _current_stage:
+                lines.append(f"    stg.define_analysis({eOP}, {eType}, {lc_name})")
+            else:
+                lines.append(
+                    f"    engine.stage.get({stage_no}).define_analysis({eOP}, {eType}, {lc_name})"
+                )
+            lines.append("")
 
         else:
             lines.append(f"    # TODO: {cmd}")
@@ -1759,13 +1773,17 @@ MODULE_GENERATORS = {
 }
 
 
-def build_project(command_file: Optional[str] = None) -> None:
+def build_project(command_file: Optional[str] = None, output_dir: Optional[str] = None) -> None:
     """从命令流文件构建 Python 项目
 
     在当前目录自动创建:
     - post/     后处理目录
     - prep/     建模模块目录
     - main.py   主入口文件
+
+    Args:
+        command_file: 命令流文件路径 (.out 或 .sml)，为 None 时自动从当前 OSIS 项目导出
+        output_dir: 输出目录，为 None 时使用 build.py 所在目录
     """
     # 如果未提供命令流文件，尝试从项目导出
     if command_file is None:
@@ -1777,8 +1795,12 @@ def build_project(command_file: Optional[str] = None) -> None:
     print(f"解析命令流文件: {command_file}")
     modules = parse_command_file(command_file)
 
-    # 获取当前目录（build.py 所在目录）
-    base_dir = Path(__file__).parent.resolve()
+    # 获取输出目录
+    if output_dir:
+        base_dir = Path(output_dir).resolve()
+        base_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        base_dir = Path(__file__).parent.resolve()
 
     # 创建目录结构
     prep_dir = base_dir / "prep"
@@ -1788,38 +1810,38 @@ def build_project(command_file: Optional[str] = None) -> None:
 
     # 创建 .gitignore
     gitignore_file = base_dir / ".gitignore"
-    if not gitignore_file.exists():
-        gitignore_file.write_text(
-            "# Ignore log files\n"
-            "*.log\n"
-            "\n"
-            "# Ignore Python cache\n"
-            "__pycache__/\n"
-            "*.pyc\n"
-            "*.pyo\n",
-            encoding="utf-8",
-        )
-        print("创建: .gitignore")
+    gitignore_file.write_text(
+        "# Ignore log files\n"
+        "*.log\n"
+        "\n"
+        "# Ignore Python cache\n"
+        "__pycache__/\n"
+        "*.pyc\n"
+        "*.pyo\n",
+        encoding="utf-8",
+    )
+    print("写入: .gitignore")
 
     # 创建 post/__init__.py
     post_init = post_dir / "__init__.py"
-    if not post_init.exists():
-        post_init.write_text('"""后处理模块"""\n', encoding="utf-8")
-        print("创建: post/__init__.py")
+    post_init.write_text('"""后处理模块"""\n', encoding="utf-8")
+    print("写入: post/__init__.py")
 
     # 创建 _0_engine.py
     engine_file = prep_dir / "_0_engine.py"
-    if not engine_file.exists():
-        engine_file.write_text(
-            "from pyosis.core.engine import OSISEngine\n\n"
-            "engine = OSISEngine()\n\n"
-            "# 自动打开OSIS等操作暂未实现\n"
-            "# 目前需要手动打开OSIS并创建项目\n",
-            encoding="utf-8",
-        )
-        print(f"创建: prep/_0_engine.py")
+    engine_file.write_text(
+        "from pyosis.core.engine import OSISEngine\n\n"
+        "engine = OSISEngine()\n\n"
+        "# 自动打开OSIS等操作暂未实现\n"
+        "# 目前需要手动打开OSIS并创建项目\n",
+        encoding="utf-8",
+    )
+    print(f"写入: prep/_0_engine.py")
 
     print(f"生成 Python 文件到: {prep_dir}")
+
+    # 统计 TODO 数量
+    total_todos = 0
 
     for module_name, commands in modules.items():
         if module_name in MODULE_FILES:
@@ -1831,12 +1853,21 @@ def build_project(command_file: Optional[str] = None) -> None:
             python_code = generator(commands)
             file_path.write_text(python_code, encoding="utf-8")
 
-            print(f"  创建: prep/{file_name} ({len(commands)} 条命令)")
+            # 统计 TODO 数量
+            todo_count = python_code.count("# TODO")
+            total_todos += todo_count
+
+            if todo_count > 0:
+                print(f"  创建: prep/{file_name} ({len(commands)} 条命令, {todo_count} 条未转换)")
+            else:
+                print(f"  创建: prep/{file_name} ({len(commands)} 条命令)")
+
+    if total_todos > 0:
+        print(f"\n警告: 共 {total_todos} 条命令未转换 (# TODO)，请手动检查")
 
     # 创建 main.py（在当前目录）
     main_file = base_dir / "main.py"
-    if not main_file.exists():
-        main_content = '''"""
+    main_content = '''"""
 从命令流构建的桥梁建模项目
 
 使用方式:
@@ -1950,22 +1981,111 @@ def main():
 if __name__ == "__main__":
     main()
 '''
-        main_file.write_text(main_content, encoding="utf-8")
-        print(f"创建: main.py")
+    main_file.write_text(main_content, encoding="utf-8")
+    print(f"写入: main.py")
 
-    # 创建 post/README.md
-    post_readme = post_dir / "README.md"
-    if not post_readme.exists():
-        post_readme.write_text(
-            "# 后处理目录\n\n"
-            "此目录用于存放后处理脚本和结果文件。\n\n"
-            "例如:\n"
-            "- 结果提取脚本\n"
-            "- 数据可视化脚本\n"
-            "- 报告生成脚本\n",
-            encoding="utf-8",
-        )
-        print("创建: post/README.md")
+    # # 创建 post/README.md
+    # post_readme = post_dir / "README.md"
+    # post_readme.write_text(
+    #     "# 后处理目录\n\n"
+    #     "此目录用于存放后处理脚本和结果文件。\n\n"
+    #     "例如:\n"
+    #     "- 结果提取脚本\n"
+    #     "- 数据可视化脚本\n"
+    #     "- 报告生成脚本\n",
+    #     encoding="utf-8",
+    # )
+
+    # 创建 post/comb_and_check.py
+    post_file = post_dir / "comb_and_check.py"
+    post_content = """
+import os
+from pyosis import OSISEngine
+
+engine = OSISEngine()
+post_apdl_dir = os.path.abspath("../OSISPost.out")
+engine.import_apdl(post_apdl_dir)  # 导入之前的后处理组合和验算的步骤
+if os.path.exists(post_apdl_dir):
+    engine.post.select_elements("All")          # 全选单元
+    engine.post.solve_checks()                  # 进行验算
+    print("OK")
+else:
+    print("首次进行后处理荷载组合与验算请在软件内进行设置，后续重复进行组合与验算将自动复用您的操作步骤！")
+"""
+    post_file.write_text(post_content, encoding="utf-8")
+    print(f"写入: post/comb_and_check.py")
+
+    # 创建 项目画像.md（空架子，由AI后续填写）
+    profile_file = base_dir / "项目画像.md"
+    profile_content = """# 项目画像
+
+> **说明**：本文件由AI维护。每次构建或修改模型后，AI应自动更新此文件，记录桥梁工程师最关心的设计特征。
+
+## 基本信息
+- **桥梁名称**：
+- **桥梁体系**：
+- **结构形式**：
+- **设计规范**：
+
+## 几何参数
+- **跨径布置**：
+- **桥梁宽度**：
+- **梁高**：
+- **桥面横坡**：
+- **平面线型**：
+
+## 截面特征
+- **截面类型**：
+- **室数**：
+- **顶板厚度**：
+- **底板厚度**：
+- **腹板厚度**：
+- **悬臂长度**：
+
+## 材料
+- **混凝土等级**：
+- **钢筋等级**：
+- **预应力钢束等级**：
+
+## 预应力
+- **预应力体系**：
+- **钢束类型**：
+- **张拉控制应力**：
+- **张拉方式**：
+
+## 施工方法
+- **施工方式**：
+- **节段划分**：
+- **挂篮/支架形式**：
+
+## 边界条件
+- **支座类型**：
+- **支座布置**：
+- **特殊约束**：
+
+## 荷载
+- **设计荷载等级**：
+- **活载类型**：
+- **温度荷载**：
+- **风荷载**：
+- **地震荷载**：
+
+## 分析设置
+- **分析方法**：
+- **施工阶段数**：
+- **成桥状态**：
+
+## 关键控制指标
+- **最大挠度**：
+- **最大应力**：
+- **预应力损失**：
+- **收缩徐变**：
+
+---
+*最后更新：{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
+"""
+    profile_file.write_text(profile_content, encoding="utf-8")
+    print(f"创建: 项目画像.md（AI维护的项目画像）")
 
     print(f"\n完成！共生成 {len(modules)} 个模块文件")
     print("项目结构:")
@@ -1980,14 +2100,105 @@ if __name__ == "__main__":
     print("  3. 完整建模：python main.py")
 
 
+def build_from_sml(sml_file: str, output_dir: Optional[str] = None) -> None:
+    """从 .sml 模型文件构建 Python 项目
+
+    流程:
+        1. 导入 .sml 到 OSIS
+        2. 导出 OSIS.out 命令流
+        3. 使用 build_project 生成 Python 项目
+
+    Args:
+        sml_file: .sml 文件路径
+        output_dir: 输出目录，为 None 时在 .sml 同级目录创建项目
+    """
+    sml_path = Path(sml_file).resolve()
+    if not sml_path.exists():
+        print(f"错误: 文件不存在: {sml_path}")
+        sys.exit(1)
+
+    if not sml_path.suffix.lower() == ".sml":
+        print(f"错误: 不是 .sml 文件: {sml_path}")
+        sys.exit(1)
+
+    # 确定输出目录
+    if output_dir is None:
+        output_dir = sml_path.parent / sml_path.stem
+    else:
+        output_dir = Path(output_dir).resolve()
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # 临时目录用于存放导出的 OSIS.out
+    import tempfile
+    temp_dir = tempfile.mkdtemp(prefix="osis_build_")
+    temp_out = Path(temp_dir) / "OSIS.out"
+
+    try:
+        print(f"\n{'='*50}")
+        print(f"处理: {sml_path.name}")
+        print(f"{'='*50}")
+
+        # 导入 .sml 到 OSIS
+        print(f"\n[1/3] 导入 .sml 到 OSIS...")
+        try:
+            from pyosis.core.engine import OSISEngine
+            engine = OSISEngine()
+            print("  清空当前项目...")
+            engine.clear()
+            engine.clc()
+            print(f"  导入: {sml_path}")
+            engine.import_apdl(str(sml_path))
+            print("  导入成功")
+        except Exception as e:
+            print(f"导入失败: {e}")
+            print("\n建议: 请确保 OSIS 软件已打开")
+            sys.exit(1)
+
+        # 导出 OSIS.out
+        print(f"\n[2/3] 导出命令流...")
+        try:
+            engine.export_apdl(str(temp_out))
+            if temp_out.exists() and temp_out.stat().st_size > 0:
+                print(f"  导出成功: {temp_out}")
+            else:
+                print("  导出失败: 文件未生成或为空")
+                sys.exit(1)
+        except Exception as e:
+            print(f"导出失败: {e}")
+            sys.exit(1)
+
+        # 构建 Python 项目
+        print(f"\n[3/3] 生成 Python 项目...")
+        build_project(str(temp_out), str(output_dir))
+
+        print(f"\n{'='*50}")
+        print(f"完成: {output_dir}")
+        print(f"{'='*50}")
+
+    finally:
+        # 清理临时文件
+        import shutil
+        if Path(temp_dir).exists():
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 if __name__ == "__main__":
     command_file = sys.argv[1] if len(sys.argv) > 1 else None
 
     if command_file is None:
         print("用法: python build.py [command_file]")
         print("示例:")
-        print("  python build.py              # 自动从当前 OSIS 项目导出")
-        print("  python build.py C:/Temp/OSIS.out  # 从指定文件生成")
+        print("  python build.py                    # 自动从当前 OSIS 项目导出")
+        print("  python build.py C:/Temp/OSIS.out   # 从 .out 文件生成")
+        print("  python build.py C:/Temp/model.sml  # 从 .sml 文件导入并生成")
         print("")
-
-    build_project(command_file)
+        build_project(None)
+    elif command_file.lower().endswith(".sml"):
+        # 从 .sml 文件构建
+        output_dir = sys.argv[2] if len(sys.argv) > 2 else None
+        build_from_sml(command_file, output_dir)
+    else:
+        # 从 .out 文件构建
+        output_dir = sys.argv[2] if len(sys.argv) > 2 else None
+        build_project(command_file, output_dir)

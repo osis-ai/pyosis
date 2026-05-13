@@ -8,60 +8,45 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> tuple[list[int]
     bd_nos = []
     bd_group_names = []
 
-    bd = engine.boundary.create_general(nCoor="", no=1)
+    bd = engine.boundary.create_general(nCoor="", bRY=0, bRW=0, no=1)
     bd_nos.append(bd.no)
 
-    bd.assign('a', ['2001to2004'])
+    bd.assign('a', [67])
 
-    bd = engine.boundary.create_master_slave(nNode=1002, bRY=0, no=3)
+    bd = engine.boundary.create_general(nCoor="", bX=0, bRY=0, bRW=0, no=2)
     bd_nos.append(bd.no)
 
-    bd.assign('a', [17])
+    bd.assign('a', [23, 45, 89])
 
-    bd = engine.boundary.create_master_slave(nNode=1003, bX=0, bRY=0, no=4)
+    bd = engine.boundary.create_general(nCoor="", bRY=0, bRW=0, no=3)
     bd_nos.append(bd.no)
 
-    bd.assign('a', [43])
+    bd.assign('a', [21, 43, 65, 87, 91])
 
-    bd = engine.boundary.create_master_slave(nNode=1002, no=6)
+    bd = engine.boundary.create_general(nCoor="", bX=0, bRY=0, bRW=0, no=4)
     bd_nos.append(bd.no)
 
-    bd.assign('a', [16, 18])
+    bd.assign('a', [25, 47, 69])
 
-    bd = engine.boundary.create_master_slave(nNode=1003, no=7)
+    bd = engine.boundary.create_general(nCoor="", bX=0, bRY=0, bRW=0, no=5)
     bd_nos.append(bd.no)
 
-    bd.assign('a', [42, 44])
+    bd.assign('a', [2, 110])
 
-    bd = engine.boundary.create_master_slave(nNode=1001, bX=0, bRY=0, no=8)
-    bd_nos.append(bd.no)
-
-    bd.assign('a', [2])
-
-    bd = engine.boundary.create_master_slave(nNode=1004, bX=0, bRY=0, no=9)
-    bd_nos.append(bd.no)
-
-    bd.assign('a', [58])
-
-    bg = engine.boundary.group.create('边墩临时支持')
+    bg = engine.boundary.group.create('临时')
     bd_group_names.append(bg.name)
 
-    bg.add([8, 9])
+    bg.add(['3to4'])
 
-    bg = engine.boundary.group.create('成桥支座')
+    bg = engine.boundary.group.create('永久-边支座')
     bd_group_names.append(bg.name)
 
-    bg.add(['2to5'])
+    bg.add([5])
 
-    bg = engine.boundary.group.create('墩底固结')
+    bg = engine.boundary.group.create('永久-中支座')
     bd_group_names.append(bg.name)
 
-    bg.add([1])
-
-    bg = engine.boundary.group.create('主墩临时支持')
-    bd_group_names.append(bg.name)
-
-    bg.add([6, 7])
+    bg.add(['1to2'])
 
     return bd_nos, bd_group_names
 

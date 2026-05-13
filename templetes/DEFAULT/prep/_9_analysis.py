@@ -8,27 +8,35 @@ def build_analysis(engine: OSISEngine, node_nos: list[int], elem_group_names: li
     settle_names = []
     live_names = []
 
-    engine.settlement.group.create('沉降组1', -1.000E-02, [2001])
+    engine.settlement.group.create('0', 5.000E-03, [2])
 
-    engine.settlement.group.create('沉降组2', -1.000E-02, [2002])
+    engine.settlement.group.create('1', 5.000E-03, [23])
 
-    engine.settlement.group.create('沉降组3', -1.000E-02, [2003])
+    engine.settlement.group.create('2', 5.000E-03, [45])
 
-    engine.settlement.group.create('沉降组4', -1.000E-02, [2004])
+    engine.settlement.group.create('3', 5.000E-03, [67])
 
-    st = engine.settlement.create('支座沉降')
+    engine.settlement.group.create('4', 5.000E-03, [89])
+
+    engine.settlement.group.create('5', 5.000E-03, [110])
+
+    st = engine.settlement.create('1个')
     settle_names.append(st.name)
 
-    st.include('沉降组1', '沉降组2', '沉降组3', '沉降组4')
+    st.include('0', '1', '2', '3', '4', '5')
 
-    engine.live.grade.create_highway('荷载1', eCode='JTGD60_2015', eLiveLoadType='HIGHWAY_I')
+    engine.live.grade.create_highway('CH-CD', eCode='JTGD60_2015', eLiveLoadType='HIGHWAY_I')
 
-    engine.live.lane.create_ve('车道一', dLength=80.0000, wheel=1.8, eOriention=1, eRef=0, ref_elems='上部主梁单元组', offsetY=0.00000E+00, offsetZ=0.00000E+00)
+    engine.live.lane.create_ve('1_', dLength=25.0000, wheel=1.80, eOriention=1, eRef=0, ref_elems='1_车道线单元组', offsetY=0.00000E+00, offsetZ=0.00000E+00)
 
-    lc = engine.live.case.create('移动荷载工况1', code='JTGD60_2015', sub_cmb_type=0)
+    lc = engine.live.case.create('汽车', code='JTGD60_2015', sub_cmb_type=1)
     live_names.append(lc.name)
 
-    lc.create_sub('子工况1', '荷载1', scalar=2.69100, calc_mu=True, bridge_type='CUSTOM', mu_params=[4], lane_names=['车道一'])
+    lc.set_trans_reduction_factors([1.2000, 1.0000, 0.7800, 0.6700, 0.6000, 0.5500, 0.5200, 0.5000, 0.5000, 0.5000])
+
+    lc.create_sub('汽车_sub1', 'CH-CD', scalar=0.71000, calc_mu=True, bridge_type='CUSTOM', mu_params=[3], lane_names=['1_'])
+
+    lc.set_lane_count('汽车_sub1', 0, 1)
 
     return settle_names, live_names
 
