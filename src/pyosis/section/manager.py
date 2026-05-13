@@ -106,6 +106,39 @@ class SectionType(Enum):
 
     NUMERICAL = 51                    # 数值截面
 
+@dataclass(frozen=False)
+class Rebar:
+    """钢筋基类"""
+    has_bent_up_rebar: bool            # 是否有弯起钢筋
+    has_shear_stirrup: bool            # 是否有抗剪箍筋
+    has_torsional_stirrup: bool         # 是否有扭转箍筋
+    has_web_vertical_rebar: bool        # 是否有腹板竖筋
+    longitudinal_rebars: list[dict]      # 纵筋
+    longitudinal_rebars_count: int      # 纵筋数量
+    @staticmethod
+    def empty() -> Rebar:
+        """无钢筋信息时的占位对象（内部使用）"""
+        return Rebar(
+            has_bent_up_rebar=False,
+            has_shear_stirrup=False,
+            has_torsional_stirrup=False,
+            has_web_vertical_rebar=False,
+            longitudinal_rebars=[],
+            longitudinal_rebars_count=0,
+        )   
+    @classmethod
+    def _from_dict(cls, d: dict) -> Rebar:
+        """从接口 dict 构造 Rebar 对象（内部使用）"""
+        lr = d.get("longitudinalRebars")
+        cnt = d.get("longitudinalRebarsCount")
+        return cls(
+            has_bent_up_rebar=bool(d.get("hasBentUpRebar")),
+            has_shear_stirrup=bool(d.get("hasShearStirrup")),
+            has_torsional_stirrup=bool(d.get("hasTorsionalStirrup")),
+            has_web_vertical_rebar=bool(d.get("hasWebVerticalRebar")),
+            longitudinal_rebars=list(lr) if isinstance(lr, list) else [],
+            longitudinal_rebars_count=int(cnt) if cnt is not None else 0,
+        )   
 
 # ──────────────────────────────────────────────
 # Section 基类
@@ -138,11 +171,19 @@ class Section:
     has_concrete_section: bool           # 是否有混凝土截面
     has_steel_section: bool              # 是否有钢截面
     related_elements: list[int]          # 相关单元
-    rebar: dict                          # 钢筋
+    rebar: Rebar                         # 钢筋
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
         """从接口 dict 构造 Section 对象（内部使用）"""
         raw_type = int(d.get("type", 0))
+        sp = d.get("stressPoints")
+        ct = d.get("contour")
+        rel = d.get("relatedElement")
+        raw_rebar = d.get("rebar")
+        if isinstance(raw_rebar, dict):
+            rebar_obj = Rebar._from_dict(raw_rebar)
+        else:
+            rebar_obj = Rebar.empty()
         return cls(
             no=d.get("no"),
             name=d.get("name"),
@@ -153,16 +194,16 @@ class Section:
             offset_value_y=d.get("offsetValueY"),
             offset_type_z=d.get("offsetTypeZ"),
             offset_value_z=d.get("offsetValueZ"),
-            stress_points=list(d.get("stressPoints")),
+            stress_points=list(sp) if isinstance(sp, list) else [],
             boundary=d.get("boundary"),
             height=d.get("height"),
             modeling_point_x=d.get("modelingPointX"),
             modeling_point_y=d.get("modelingPointY"),
-            contour=list(d.get("contour")),
+            contour=list(ct) if isinstance(ct, list) else [],
             has_concrete_section=d.get("hasConcreteSection"),
             has_steel_section=d.get("hasSteelSection"),
-            related_elements=list(d.get("relatedElement")),
-            rebar = d.get("rebar")
+            related_elements=list(rel) if isinstance(rel, list) else [],
+            rebar = rebar_obj,
         )
 
     def __repr__(self) -> str:
