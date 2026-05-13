@@ -24,7 +24,7 @@ from .common import (
     osis_section_hollowslab,
     osis_section_rounded_end,
     osis_section_conventionalbox,
-    osis_section_flat_box,
+    osis_section_streamed_box,
     osis_section_double_side_box,
     osis_section_ribbed_slab,
     osis_section_TGirder,
@@ -85,7 +85,7 @@ class SectionType(Enum):
     SMALLBOX = 8                      # 小箱梁
     TGIRDER = 9                       # T梁
     CONVENTIONALBOX = 10              # 常规箱梁
-    FLATBOX = 11                      # 扁平箱梁
+    STREAMEDBOX = 11                  # 扁平箱梁
     DOUBLESIDEBOX = 12                # 双边箱梁
     RIBBEDSLAB = 13                   # 肋板式
     CUSTOM = 14                       # 常规自定义截面
@@ -1481,7 +1481,7 @@ class SectionManager:
             raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
         return self.get(no)
 
-    def create_flat_box(
+    def create_streamed_box(
         self,
         name: str,
         h: float = 4.0,
@@ -1537,7 +1537,7 @@ class SectionManager:
         r2: float = 0.2,
         no: int | None = None,
     ) -> Section:
-        """创建扁平箱梁截面(FLATBOX)。
+        """创建扁平箱梁截面(STREAMEDBOX)。
 
         Args:
             name: 截面名称
@@ -1567,8 +1567,8 @@ class SectionManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_section_flat_box(
-            no, name, "FLATBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
+        ok, err = osis_section_streamed_box(
+            no, name, "STREAMEDBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
             tt, tb1, tb2, tw, ttj, tbj, twj, n_cell_num, bi1, bi2, bi3, bi4,
             xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
             bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
