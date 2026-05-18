@@ -24,7 +24,7 @@ from .common import (
     osis_section_hollowslab,
     osis_section_rounded_end,
     osis_section_conventionalbox,
-    osis_section_flat_box,
+    osis_section_streamed_box,
     osis_section_double_side_box,
     osis_section_ribbed_slab,
     osis_section_TGirder,
@@ -1567,8 +1567,8 @@ class SectionManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_section_flat_box(
-            no, name, "StreamedBox", h, bt_l, bt_r, bb_l, bb_r, bs,
+        ok, err = osis_section_streamed_box(
+            no, name, "STREAMEDBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
             tt, tb1, tb2, tw, ttj, tbj, twj, n_cell_num, bi1, bi2, bi3, bi4,
             xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
             bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,

@@ -17,6 +17,7 @@ def setup_control(engine: OSISEngine) -> None:
     engine.control.set_nonlinear(geom=False, link=False)
     engine.control.set_line_search(False)
     engine.control.set_auto_time_step(False)
+    engine.control.set_substitution_steps(1, 20)
     engine.control.set_modal_opt(0)
 
 

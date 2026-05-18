@@ -371,7 +371,7 @@ def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal[
     pass
 
 @REGISTRY.register('Section')
-def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["StreamedBox"]="StreamedBox",
+def osis_section_streamed_box(nSec: int, strName: str, eSectionType: Literal["STREAMEDBOX"]="STREAMEDBOX",
                           H: float=4.0, BtL: float=20.0, BtR: float=20.0, BbL: float=10.5, BbR: float=10.5, Bs: float=0.8,
                           Tt: float=0.28, Tb1: float=0.27, Tb2: float=0.27, Tw: float=0.25, Ttj: float=0.5, Tbj: float=0.27, Twj: float=0.4,
                           nCellNum: int=5, Bi1: float=4.7, Bi2: float=6.85, Bi3: float=6, Bi4: float=6.85,
@@ -384,12 +384,12 @@ def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["Stream
                           eSlopeType: Literal["Integral", "CastInPlace"]="Integral",
                           i: float=0.0, i1: float=0.0, i2: float=0.0, i3: float=0.0, i4: float=0.0,
                           R1: float=0.5, R2: float=0.2):
-    """定义或修改扁平箱梁截面(FlatBox)。
+    """定义或修改扁平箱梁截面(STREAMEDBOX)。
 
     Args:
         nSec (int): 截面编号，从1开始编号。
         strName (str): 截面名称。
-        eSectionType (str): 截面类型，固定为 FLATBOX。
+        eSectionType (str): 截面类型，固定为 STREAMEDBOX。
         H (float): 截面高度。
         BtL (float): 设计线左顶板宽。
         BtR (float): 设计线右顶板宽。
