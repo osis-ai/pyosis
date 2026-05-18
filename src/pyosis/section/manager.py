@@ -85,7 +85,7 @@ class SectionType(Enum):
     SMALLBOX = 8                      # 小箱梁
     TGIRDER = 9                       # T梁
     CONVENTIONALBOX = 10              # 常规箱梁
-    FLATBOX = 11                      # 扁平箱梁
+    STREAMEDBOX = 11                  # 扁平箱梁
     DOUBLESIDEBOX = 12                # 双边箱梁
     RIBBEDSLAB = 13                   # 肋板式
     CUSTOM = 14                       # 常规自定义截面
@@ -1481,7 +1481,7 @@ class SectionManager:
             raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
         return self.get(no)
 
-    def create_flat_box(
+    def create_streamed_box(
         self,
         name: str,
         h: float = 4.0,
@@ -1537,7 +1537,7 @@ class SectionManager:
         r2: float = 0.2,
         no: int | None = None,
     ) -> Section:
-        """创建扁平箱梁截面(FLATBOX)。
+        """创建扁平箱梁截面(STREAMEDBOX)。
 
         Args:
             name: 截面名称
