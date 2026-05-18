@@ -56,7 +56,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     
     # 4. 截面（无依赖）
     print("[4/10] 创建截面...")
-    sec_nos = build_sections(engine)
+    sec_nos = build_sections(engine,mat_nos)
     
     # 5. 节点（无依赖）
     print("[5/10] 创建节点...")

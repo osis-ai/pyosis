@@ -53,11 +53,11 @@ def build_materials(engine: OSISEngine) -> list[int]:
         raise ValueError("material.all() 为空，期望至少存在 5 条材料")
 
     # 删除材料
-    no_list = [mat4.no, new_mat5.no]
+    no_list = [new_mat5.no]
     for no in no_list:
         material.delete(no)
 
-    return [mat1.no, mat2.no, mat3.no]
+    return [mat1.no, mat2.no, mat3.no, mat4.no]
 
 if __name__ == "__main__":
     from _0_engine import engine
