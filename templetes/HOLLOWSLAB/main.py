@@ -21,7 +21,7 @@ from prep._5_node import build_nodes
 from prep._6_element import build_elements
 from prep._7_boundary import build_boundaries
 from prep._8_loadcase import build_loadcases
-from prep._9_analysis import build_settle_analysis, build_live_analysis
+from prep._9_analysis import build_settle_analysis, build_live_analysis, build_buckling_analysis, build_damping
 from prep._10_stage import build_stages
 
 
@@ -78,11 +78,21 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     print("[9/10] 创建分析...")
     settle_names = build_settle_analysis(engine, node_nos)
     live_names = build_live_analysis(engine, elem_group_names)
+    buckling_names = build_buckling_analysis(engine, lc_names)
+    damping_names = build_damping(engine)
     
     # 10. 施工阶段（获取所有组）
     print("[10/10] 创建施工阶段...")
-    build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_names, live_names)
-    
+    build_stages(
+        engine,
+        elem_group_names,
+        bd_group_names,
+        lc_names,
+        settle_names,
+        live_names,
+        buckling_names,
+        damping_names,
+    )    
     print("\n" + "=" * 50)
     print("建模完成！")
     print("=" * 50)

@@ -1,4 +1,13 @@
+from typing import Any
+
 from pyosis.core.engine import OSISEngine
+
+def _expect_attr(obj: Any, attr: str, expected: Any) -> None:
+    if not hasattr(obj, attr):
+        raise TypeError(f"对象没有属性 {attr!r}: {type(obj).__name__}")
+    actual = getattr(obj, attr)
+    if actual != expected:
+        raise ValueError(f"荷载工况属性 {attr} 不符: 期望 {expected!r}, 实际 {actual!r}")
 
 def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int], elem_nos: list[int], elem_group_names) -> list[str]:
     """创建荷载工况和钢束，返回荷载工况名称列表
@@ -18,26 +27,77 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     loadcase = engine.load
     
     # ── 钢束特性──
-    tendon.prop.create_in("15-10", mat_nos[2], "GBT5224_2014", 15.2, 10, 9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.prop.create_in("15-3",  mat_nos[2], "GBT5224_2014", 15.2, 3,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.prop.create_in("15-4",  mat_nos[2], "GBT5224_2014", 15.2, 4,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.prop.create_in("15-5",  mat_nos[2], "GBT5224_2014", 15.2, 5,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.prop.create_in("15-6",  mat_nos[2], "GBT5224_2014", 15.2, 6,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.prop.create_in("15-7",  mat_nos[2], "GBT5224_2014", 15.2, 7,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.prop.create_in("15-8",  mat_nos[2], "GBT5224_2014", 15.2, 8,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    tendon.prop.create_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
-    
-    tendon_spline1, tendon_spline2 = geo_names
+    tp1 = tendon.prop.create_in("15-10", mat_nos[2], "GBT5224_2014", 15.2, 10, 9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp1,"name","15-10")
+
+    tp2 = tendon.prop.create_in("15-3",  mat_nos[2], "GBT5224_2014", 15.2, 3,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp2,"name","15-3")
+
+    tp4 = tendon.prop.create_in("15-4",  mat_nos[2], "GBT5224_2014", 15.2, 4,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp4,"name","15-4")
+
+    tp5 = tendon.prop.create_in("15-5",  mat_nos[2], "GBT5224_2014", 15.2, 5,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp5,"name","15-5")
+
+    tp6 = tendon.prop.create_in("15-6",  mat_nos[2], "GBT5224_2014", 15.2, 6,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp6,"name","15-6")
+
+    tp7 = tendon.prop.create_in("15-7",  mat_nos[2], "GBT5224_2014", 15.2, 7,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp7,"name","15-7")
+
+    tp8 = tendon.prop.create_in("15-8",  mat_nos[2], "GBT5224_2014", 15.2, 8,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp8,"name","15-8")
+
+    tp9 = tendon.prop.create_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    _expect_attr(tp9,"name","15-9")
+
+    tp10 = tendon.prop.create_in_custom("15-10", mat_nos[2], 1.395000E+09, 1.7000E-01)
+    _expect_attr(tp10,"name","15-10")
+
+    tp11 = tendon.prop.create_ex("15-11", mat_nos[2], "GBT5224_2014", 15.2, 1, 1.7000E-01)
+    _expect_attr(tp11,"name","15-11")
+
+    tp12 = tendon.prop.create_ex_custom("15-12", mat_nos[2], 1.395000E+09, 1.7000E-01)
+    _expect_attr(tp12,"name","15-12")
+
+    tp13 = tendon.prop.create_pre("15-13", mat_nos[2], "GBT5224_2014", 15.2, 10)
+    _expect_attr(tp13,"name","15-13")
+
+    # TODO 命令“TdProp,15-14,PRE,3,0,1395000000.0,0.17,1.0,1.0”至少输入9个参数！
+    # tp14 = tendon.prop.create_pre_custom("15-14", mat_nos[2], 1.395000E+09, 1.7000E-01)
+    # _expect_attr(tp14,"name","15-14")
+
+    tendon.prop.rename("15-10","15-100")
+    _expect_attr(tendon.prop.get("15-100"),"name","15-100")
+    tendon.prop.delete("15-100")
+    tps = tendon.prop.all()
+    if len(tps) == 0:
+        raise Exception("获取所有钢束特性失败")
+
+    tendon_spline1,tendon_spline2,natural_tendon_name,tendon_vert_name,tendon_plan_name = geo_names
     _, tendon_eg_1, tendon_eg_2, _ = elem_group_names
+
+    shape3 = tendon.shape.create_spl3d("N3", 2, "15-4", tendon_eg_1, natural_tendon_name)
+    _expect_attr(shape3,"name","N3")
+
+    shape5 = tendon.shape.create_arc2d("N5",1,"15-4",tendon_eg_1,1,[tendon_vert_name, tendon_plan_name],)
+    _expect_attr(shape5,"name","N5")
+
+    tendon.shape.rename(shape5.name, "N555")
+    _expect_attr(tendon.shape.get("N555"),"name","N555")
+    tendon.shape.delete(shape5.name)
+
     # 钢束形状（名称标识）
     shape1 = tendon.shape.create_arc3d("N1", 2, "15-4", tendon_eg_1, tendon_spline1)
+    _expect_attr(shape1,"name","N1")
     shape2 = tendon.shape.create_arc3d("N2", 2, "15-4", tendon_eg_2, tendon_spline2)
-    
+    _expect_attr(shape2,"name","N2")
+
     # 布置钢束
     shape1.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
     shape2.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
-    
-    
+    shape3.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
+
     # ── 荷载工况──
     # 1: 防撞护栏工况（CS）
     lc_barrier = loadcase.create("防撞护栏工况", "CS")
@@ -47,15 +107,43 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
             0.0, 0.0, 0.0, 0.0, 0.0, -2.1200E+03, 0.0, 0.0, 0.0,
             1.0, 0.0, 0.0, 0.0, 0.0, -2.1200E+03, 0.0, 0.0, 0.0,
         )
+    user_lc = loadcase.create("荷载工况-用户定义的荷载","USER")
+    _expect_attr(user_lc,"name","荷载工况-用户定义的荷载")
     
+    user_lc.create_gravity(0.0, 0.0, -1.000)
+    user_lc.create_nforce(1, 0.0, 0.0, -1000000.0, 0.0, 0.0, 0.0)
+    user_lc.create_line_load(1, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, -1000000.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1000000.0, 0.0, 0.0, 0.0)
+    user_lc.create_concentrated_force(1, 0, False, [[0.0, 0.0, 0.0, 1000000.0, 0.0, 0.0]])
+    user_lc.create_displacement(1, 1, 0.001, 0, 0.0, 0, 0.0, 0, 0.0, 0, 0.0, 0)
+    user_lc.create_uniform_temperature(1, "X", -20.000)
+    user_lc.create_gradient_temperature(elem_nos[0],"Z","T",2,[1.240, 0.000, -7.000, -0.100, -2.750, 0.721, -0.100, -2.750, -0.400, 0.000])
+    user_lc.create_initial_force(1, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    user_lc.create_prestress(shape1.name, "BOTH", "ST", 1.395000E+09, 1.395000E+09)
+    lc_barrier.create_cable_force(15, "IN",1.0e6)
+    # TODO 需要创建壳单元
+    #user_lc.create_surface_load("1", "1", "VECTOR", "0", "0", "-1", "0", "0", "0", "0")
+    #user_lc.create_surface_load_vector(1, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+
+    lc1 = loadcase.create("荷载工况-桥规中的荷编号1-结构重力", "D")
+    _expect_attr(lc1,"name","荷载工况-桥规中的荷编号1-结构重力")
+
+    lc2 = loadcase.create("荷载工况-结构和非结构附属荷载", "DC")
+    _expect_attr(lc2,"name","荷载工况-结构和非结构附属荷载")
+
+    lc3 = loadcase.create("荷载工况-铺装和设备荷载", "DW")
+    _expect_attr(lc3,"name","荷载工况-铺装和设备荷载")
+
+    lc4 = loadcase.create("荷载工况-桩端摩擦力", "DD")
+    _expect_attr(lc4,"name","荷载工况-桩端摩擦力")
+
     # 2: 封端混凝土工况（CS）
-    lc_end_conc = loadcase.create("封端混凝土工况", "CS")
-    lc_end_conc.create_line_load(
+    lc5 = loadcase.create("封端混凝土工况", "CS")
+    lc5.create_line_load(
         elem_nos[0], 0, 0, 
         0.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
         1.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
     )
-    lc_end_conc.create_line_load(
+    lc5.create_line_load(
         elem_nos[13], 0, 0, 
         0.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
         1.0, 0.0, 0.0, 0.0, 0.0, -4.4900E+03, 0.0, 0.0, 0.0,
@@ -123,9 +211,15 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     lc_dead.create_gravity(0.0, 0.0, -1.000)
     
     return [
-        lc_barrier.name, lc_end_conc.name, lc_neg_temp.name,
-        lc_pavement.name, lc_pst.name, lc_temp_drop.name,
-        lc_temp_rise.name, lc_pos_temp.name, lc_dead.name,
+        lc_barrier.name,
+        lc5.name,
+        lc_neg_temp.name,
+        lc_pavement.name,
+        lc_pst.name,
+        lc_temp_drop.name,
+        lc_temp_rise.name,
+        lc_pos_temp.name,
+        lc_dead.name,
     ]
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 from pyosis.core.engine import OSISEngine
 
-def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_group_names: list[str], loadcase_names: list[str], settle_analysis_names: list[str], live_analysis_names: list[str]) -> None:
+def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_group_names: list[str], loadcase_names: list[str], settle_analysis_names: list[str], live_analysis_names: list[str], buckling_analysis_names: list[str], damping_names: list[str]) -> None:
     """创建施工阶段
     
     阶段编号：
@@ -33,6 +33,7 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     stg1.define_loadcase(1, 1, "", lc_dead)
     stg1.define_loadcase(1, 1, "", lc_pst)
     stg1.define_loadcase(1, 1, "", lc_end_conc)
+    stg1.define_analysis(1, "SETL", settle_analysis_names[0])
     
     # Stage 2: 存梁（编号 2）
     stage.create(no=2, name="CS2_存梁", duration=60.0)

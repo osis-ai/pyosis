@@ -371,7 +371,7 @@ def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal[
     pass
 
 @REGISTRY.register('Section')
-def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["FLATBOX"]="FLATBOX",
+def osis_section_flat_box(nSec: int, strName: str, eSectionType: Literal["StreamedBox"]="StreamedBox",
                           H: float=4.0, BtL: float=20.0, BtR: float=20.0, BbL: float=10.5, BbR: float=10.5, Bs: float=0.8,
                           Tt: float=0.28, Tb1: float=0.27, Tb2: float=0.27, Tw: float=0.25, Ttj: float=0.5, Tbj: float=0.27, Twj: float=0.4,
                           nCellNum: int=5, Bi1: float=4.7, Bi2: float=6.85, Bi3: float=6, Bi4: float=6.85,
