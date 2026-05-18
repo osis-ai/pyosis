@@ -140,7 +140,7 @@ def build_sections(engine: OSISEngine) -> list[int]:
     _expect_attr(ctb_section,"name","常规箱梁截面")
 
     # 创建扁平箱梁截面
-    cfb_section = section.create_flat_box(
+    cfb_section = section.create_streamed_box(
         "扁平箱梁截面",4.0,20.0,20.0,
         10.5,10.5,0.8,0.28,0.27,
         0.27,0.25,0.5,0.27,0.4,
