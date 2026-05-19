@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Literal
 
 from .load_to_mass import (
@@ -28,18 +28,54 @@ from .seismic import (
 )
 from ..core.client import osis_client
 
-
+@dataclass(frozen=False)
+class LoadToMassLcPara:
+  """荷载转换质量中的单个荷载工况参数"""
+  load_case: str
+  mass_factor: float
+  g: float
+  mass_dir: list[int] = field(default_factory=lambda: [1, 1, 1])  # [X, Y, Z]
+  trans_node_force: bool = True   # transNForce
+  trans_beam_force: bool = True   # transBForce
+  trans_surface_force: bool = False  # transSForce
+  @classmethod
+  def _from_dict(cls, d: dict) -> LoadToMassLcPara:
+      return cls(
+          load_case=d.get("loadCase"),
+          mass_factor=d.get("massFactor"),
+          g=d.get("G"),
+          mass_dir=list(d.get("massDir") or [1, 1, 1]),
+          trans_node_force=bool(d.get("transNForce")),
+          trans_beam_force=bool(d.get("transBForce")),
+          trans_surface_force=bool(d.get("transSForce")),
+      )
 # ──────────────────────────────────────────────
 # 管理类
 # ──────────────────────────────────────────────
 @dataclass(frozen=False)
 class LoadToMass:
     name: str
+    no: int
+    analysis_type: int = 0
+    ok: bool = False
+    related_stages: list[int] = field(default_factory=list)
+    lc_paras_count: int = 0
+    lc_paras: list[LoadToMassLcPara] = field(default_factory=list)
 
     @classmethod
     def _from_dict(cls, d: dict) -> LoadToMass:
         return cls(
             name=d.get("name"),
+            no=d.get("no"),
+            analysis_type=d.get("analysisType", 0),
+            ok=bool(d.get("ok")),
+            related_stages=list(d.get("relatedStages") or []),
+            lc_paras_count=d.get("lcParasCount", 0),
+            lc_paras=[
+                LoadToMassLcPara._from_dict(p)
+                for p in (d.get("lcParas") or [])
+                if isinstance(p, dict)
+            ],
         )
 
 class LoadToMassManager:

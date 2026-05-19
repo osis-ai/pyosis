@@ -25,6 +25,7 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     """
     tendon = engine.tendon
     loadcase = engine.load
+    dynamic = engine.dynamic
     
     # ── 钢束特性──
     tp1 = tendon.prop.create_in("15-10", mat_nos[2], "GBT5224_2014", 15.2, 10, 9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
@@ -209,7 +210,19 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     # 9: 主梁单元自重（CS）
     lc_dead = loadcase.create("主梁单元自重", "CS")
     lc_dead.create_gravity(0.0, 0.0, -1.000)
-    
+
+    # 荷载质量转换
+    dynamic.load_to_mass.create_ltm("荷载转换质量1")
+    dynamic.load_to_mass.create_ltm("荷载转换质量2")
+    dynamic.load_to_mass.add_ltm("荷载转换质量1", lc1.name, 1.0, 9.806)
+
+    ltm = dynamic.load_to_mass.get("荷载转换质量1")
+    _expect_attr(ltm,"name","荷载转换质量1")
+    dynamic.load_to_mass.delete_ltm("荷载转换质量1")
+    ltms = dynamic.load_to_mass.all()
+    if len(ltms) != 1:
+        raise ValueError(f"期望剩余 1 个荷载转换质量，实际 {len(ltms)}")
+
     return [
         lc_barrier.name,
         lc5.name,
