@@ -53,12 +53,18 @@ def build_nodes(engine: OSISEngine) -> list[int]:
     if len(nodes) != 15:
         raise ValueError("node.all()应存在 15 条节点")
     # 获取指定编号的节点
-    node_by_no = node.get(n15.no)
-    _expect_attr(node_by_no, "no", n15.no)
-    # 删除节点
-    node.delete(n15.no)
+    got = node.get(n15.no)
+    _expect_attr(got, "no", n15.no)
+
+    new_no = n15.no + 1
+    node.renumber(n15.no, new_no)
+    if node.count() != 15:
+        raise ValueError(f"node.count() 不符，期望 15，实际 {node.count()}")
+
+    node.delete(new_no)   # 删改号后的 16，不是 got.no
     if len(node.all()) != 14:
-        raise ValueError("node.all应存在 14 条节点")
+        raise ValueError("node.all() 应存在 14 条节点")
+
 
 
     return [n1.no, n2.no, n3.no, n4.no, n5.no, n6.no, n7.no,
