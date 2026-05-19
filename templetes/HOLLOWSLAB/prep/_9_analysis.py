@@ -83,16 +83,6 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     lane2 = live.lane.create_tcb("车道2",eg_main_beam,15.0800,1.80,eOriention=1,eRef=0,ref_elems=eg_main_beam,offsetY=0.0,offsetZ=0.0)
     _expect_attr(lane2,"name","车道2")
 
-    # live.grade.rename("简支空心板移动荷载", "简支空心板移动荷载1")
-    # live.grade.get("简支空心板移动荷载1")
-    # live.grade.all()
-    # live.grade.delete("简支空心板移动荷载1")
-
-    # live.lane.rename("车道2", "车道222")
-    # live.lane.get("车道222")
-    # live.lane.all()
-    # live.lane.count()
-    # live.lane.delete("车道222")
     # 活载工况（名称标识）
     lc1 = live.case.create("车道荷载包络", "JTGD60_2015", 1)
     lc2 = live.case.create("车道荷载包络2", "JTGD60_2015", 1)
@@ -104,14 +94,35 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     
     # 子工况
     lc1.create_sub(sub_name="车道荷载工况1",grade_name=grade1.name,scalar=1.0,calc_mu=True,bridge_type="CUSTOM",mu_params=[7.557770],lane_names=[lane1.name])
-    lc2.create_sub(sub_name="车道荷载工况2",grade_name=grade2.name,scalar=1.0,calc_mu=True,bridge_type="CUSTOM",mu_params=[7.557770],lane_names=[lane1.name])
+    lc2.create_sub(sub_name="车道荷载工况2",grade_name=grade2.name,scalar=1.0,calc_mu=True,bridge_type="CUSTOM",mu_params=[7.557770],lane_names=[lane2.name])
+    
+    lc2.modify_sub(
+        sub_name="车道荷载工况2",
+        grade_name=grade2.name,
+        scalar=2.0,
+        calc_mu=True,
+        bridge_type="SIMPLE",
+        mu_params=[15.08, 3.45e10, 0.5, 2500.0],  # 桥长、弹模、惯性矩、质量
+        lane_names=[lane2.name],
+    )
 
-    lc2.rename_sub("车道荷载工况2", "车道荷载工况222")
-    lc2.set_lane_count("车道荷载工况222", 0, 1)
-    lc2.delete_sub("车道荷载工况222")
+    lc2.rename_sub("车道荷载工况2", "车道荷载工况333")
+    lc2.set_lane_count("车道荷载工况333", 0, 1)
+    lc2.delete_sub("车道荷载工况333")
     
     # 加载车道数范围
     lc1.set_lane_count("车道荷载工况1", 0, 1)
+
+    live.grade.rename("简支空心板移动荷载", "简支空心板移动荷载1")
+    live.grade.get("简支空心板移动荷载1")
+    live.grade.all()
+
+
+
+    live.lane.rename("车道2", "车道222")
+    live.lane.get("车道222")
+    live.lane.all()
+    live.lane.count()
 
     live_analysis_names = [lc1.name]
     return live_analysis_names
