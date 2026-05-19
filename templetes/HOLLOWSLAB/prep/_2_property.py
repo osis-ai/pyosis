@@ -95,12 +95,23 @@ def build_property(engine: OSISEngine) -> list[str]:
     all_geometry = geometry.all()
     if len(all_geometry) <= 0:
         raise ValueError("geometry.all() 为空，期望至少存在 1 条几何曲线")
+    got = geometry.get("样条曲线一般边界LIVE")
+    _expect_attr(got, "name", "样条曲线一般边界LIVE")
+    if geometry.count() != len(all_geometry):
+        raise ValueError(
+            f"count() 与 all() 数量不一致: count={geometry.count()}, all={len(all_geometry)}"
+        )
+    if geometry.count() != 9:
+        raise ValueError(f"几何曲线数量应为 9，实际 {geometry.count()}")
 
     # 删除
     geometry.delete("样条曲线一般边界LIVE")
     geometry.delete("样条曲线一般边界TENDON")
     geometry.delete("自然边界LIVE")
     geometry.delete("2D圆弧TENDON")
+
+    if geometry.count() != 5:
+        raise ValueError(f"删除后几何曲线数量应为 5，实际 {geometry.count()}")
 
     # 从 Spline 对象获取名称和坐标
     geo_names = [spline1.name,spline2.name,natural_tendon.name,arc2d1.name,arc2d2.name]
