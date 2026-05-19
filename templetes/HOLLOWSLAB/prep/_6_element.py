@@ -91,6 +91,8 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     element.all()
     element.renumber(e15.no, e15.no + 1 )
     element.get(e15.no + 1)
+    # element.delete(e15.no)
+    element.count()
 
     elem_nos = [e1.no, e2.no, e3.no, e4.no, e5.no, e6.no, e7.no,
                 e8.no, e9.no, e10.no, e11.no, e12.no, e13.no, e14.no, e18.no, e16.no]
@@ -109,7 +111,48 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     eg3.add(elem_nos[0:13])
     eg4 = element.group.create("主梁单元")
     eg4.add(elem_nos[0:13])
-    
+    # 添加单元组
+    eg5 = element.group.create("封端混凝土单元5")
+    # 添加单元
+    eg5.add([1, 14])
+    # 替换单元
+    new_eg5 = eg5.replace(["14by13"])
+    if new_eg5.elements != [1, 13]:
+      raise ValueError(f"替换后应为 ['14by13']，实际 {new_eg5.elements}")
+    # 移除单元
+    new_eg5.remove([13])
+    _expect_attr(new_eg5, "element_count", 1)
+    if 13 in new_eg5.elements:
+      raise ValueError("单元 13 应已从封端混凝土单元组移除")
+    if 1 not in new_eg5.elements:
+      raise ValueError("单元 1 应仍在封端混凝土单元组中")
+
+    # 添加全部单元
+    eg5_group = new_eg5.add_all()
+    _expect_attr(eg5_group, "element_count", len(element.all()))
+    # 移除全部单元
+    eg5_group.remove_all()
+    _expect_attr(eg5_group, "element_count", 0)
+    # 重命名单元组
+    eg5_group.rename("封端混凝土单元6")
+    _expect_attr(eg5_group, "name", "封端混凝土单元6")
+
+    # 获取全部单元组
+    all_groups = element.group.all()
+    if element.group.count() != len(all_groups):
+      raise ValueError(
+          f"count() 与 all() 数量不一致: count={element.group.count()}, all={len(all_groups)}"
+      )
+    # 获取单元组
+    got = element.group.get("封端混凝土单元6")
+    _expect_attr(got, "name", "封端混凝土单元6")
+    # 删除单元组
+    element.group.delete("封端混凝土单元6")
+    if element.group.count() != 4:
+      raise ValueError(f"删除后单元组数量应为 4，实际 {element.group.count()}")
+    if "封端混凝土单元6" in [g.name for g in element.group.all()]:
+      raise ValueError("封端混凝土单元6 应已从单元组列表中删除")
+
     elem_groups_names = [eg1.name, eg2.name, eg3.name, eg4.name]
     return elem_nos, elem_groups_names
 
