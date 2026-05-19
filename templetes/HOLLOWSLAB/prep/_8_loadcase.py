@@ -70,7 +70,14 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
 
     tendon.prop.rename("15-10","15-100")
     _expect_attr(tendon.prop.get("15-100"),"name","15-100")
+
+    # 钢束特性数量
+    tendon.prop.count()
+    # 获取钢束特性
+    tendon.prop.get("15-100")
+    # 删除钢束特性
     tendon.prop.delete("15-100")
+    # 全部钢束特性
     tps = tendon.prop.all()
     if len(tps) == 0:
         raise Exception("获取所有钢束特性失败")
@@ -83,6 +90,10 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
 
     shape5 = tendon.shape.create_arc2d("N5",1,"15-4",tendon_eg_1,1,[tendon_vert_name, tendon_plan_name],)
     _expect_attr(shape5,"name","N5")
+
+    tendon.shape.all()
+    tendon.shape.count()
+    tendon.shape.get(shape5.name)
 
     tendon.shape.rename(shape5.name, "N555")
     _expect_attr(tendon.shape.get("N555"),"name","N555")
@@ -98,7 +109,8 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     shape1.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
     shape2.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
     shape3.layout("ELEMENT", 1, 0, 0, 0.0, 0.0, 0.0)
-
+    # 清除钢束形状
+    shape3.wipe()
     # ── 荷载工况──
     # 1: 防撞护栏工况（CS）
     lc_barrier = loadcase.create("防撞护栏工况", "CS")
@@ -121,6 +133,9 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     user_lc.create_initial_force(1, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     user_lc.create_prestress(shape1.name, "BOTH", "ST", 1.395000E+09, 1.395000E+09)
     lc_barrier.create_cable_force(15, "IN",1.0e6)
+    # 修改荷载工况
+    user_lc.modify(eType="NFORCE", old_entity=1, new_entity=2)
+
     # TODO 需要创建壳单元
     #user_lc.create_surface_load("1", "1", "VECTOR", "0", "0", "-1", "0", "0", "0", "0")
     #user_lc.create_surface_load_vector(1, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
