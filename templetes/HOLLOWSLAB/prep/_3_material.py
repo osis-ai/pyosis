@@ -43,6 +43,16 @@ def build_materials(engine: OSISEngine) -> list[int]:
     mat5 = material.create_custom("自定义材料")
     _expect_attr(mat5, "name", "自定义材料")
 
+    mats = material.all()
+    if len(mats) <= 0:
+        raise Exception("material.all() 为空")
+    # 获取材料数量
+    if material.count() != 5:
+        raise ValueError("material.count() 不符，期望 5，实际 {material.count()}")
+    # 获取材料
+    got = material.get(mat5.no)
+    _expect_attr(got, "name", mat5.name)
+
     # 修改材料编码
     new_mat5 = material.renumber(mat5.no,mat5.no+1)
     _expect_attr(new_mat5, "no", mat5.no+1)
