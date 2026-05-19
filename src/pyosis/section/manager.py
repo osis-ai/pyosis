@@ -13,7 +13,14 @@ from typing import Literal
 from enum import Enum
 
 from ..core.client import osis_client
-
+from .composite import (
+    osis_section_composite_steel_i,
+    osis_section_composite_steel_trough,
+    osis_section_composite_steel_box,
+    osis_section_composite_custom,
+    osis_section_part_polygon,
+    osis_section_part_line,
+)
 from .common import (
     osis_section_Lshape,
     osis_section_circle,
@@ -145,7 +152,7 @@ class Rebar:
 # ──────────────────────────────────────────────
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class Section:
     """截面基类
 
@@ -240,6 +247,49 @@ class Section:
         ok, err = osis_export_section_pic(self.no)
         if not ok:
             raise RuntimeError(f"导出截面 {self.no} 图片失败: {err}")
+    
+    # def add_composite_part_polygon(
+    #     self,
+    #     part_index: int,
+    #     part_mat_type: Literal["Concrete", "Steel"],
+    #     part_e: float,
+    #     part_mu: float,
+    #     part_density: float,
+    #     contour_matrix: str,
+    #     contour_width: str,
+    # ) -> None:
+    #     """添加自定义组合截面面域分部"""
+    #     ok, err = osis_section_part_polygon(
+    #         self.no, part_index, part_mat_type,
+    #         part_e, part_mu, part_density, "Polygon",
+    #         contour_matrix, contour_width,
+    #     )
+    #     if not ok:
+    #         raise RuntimeError(
+    #             f"截面 {self.no} 添加面域 Part {part_index} 失败: {err}"
+    #         )
+    #
+    # def add_composite_part_line(
+    #     self,
+    #     part_index: int,
+    #     part_mat_type: Literal["Concrete", "Steel"],
+    #     part_e: float,
+    #     part_mu: float,
+    #     part_density: float,
+    #     point_matrix: str,
+    #     line_matrix: str,
+    #     width_matrix: str,
+    # ) -> None:
+    #     """添加自定义组合截面线域分部。"""
+    #     ok, err = osis_section_part_line(
+    #         self.no, part_index, part_mat_type,
+    #         part_e, part_mu, part_density, "Line",
+    #         point_matrix, line_matrix, width_matrix,
+    #     )
+    #     if not ok:
+    #         raise RuntimeError(
+    #             f"截面 {self.no} 添加线域 Part {part_index} 失败: {err}"
+    #         )
 
     # ── 组合截面材料 ──────────────────────────
 
@@ -919,6 +969,161 @@ class SectionManager:
         if not ok:
             raise RuntimeError(f"创建工字形钢截面 {no} 失败: {err}")
         return self.get(no)
+    def create_composite_steel_i(
+        self,
+        name: str,
+        bt: float,
+        bc: float,
+        tt1: float,
+        tt2: float,
+        tt3: float,
+        tc1: float,
+        tc2: float,
+        b1: float,
+        b2: float,
+        x1: float,
+        x2: float,
+        x3: float,
+        girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
+        h1: float = 2.0,
+        bf1: float = 1.0,
+        bb1: float = 1.0,
+        tf1: float = 0.02,
+        tb1: float = 0.02,
+        tw1: float = 0.012,
+        web_rib_pos1: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
+        middle_same_with_side: Literal[0, 1] = 1,
+        h2: float = 0.0,
+        bf2: float = 0.0,
+        bb2: float = 0.0,
+        tf2: float = 0.0,
+        tb2: float = 0.0,
+        tw2: float = 0.0,
+        web_rib_pos2: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
+        no: int | None = None,
+    ) -> Section:
+        """创建工字型钢组合截面（COMPOSITESTEELI）。"""
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_steel_i(
+            no, name, "COMPOSITESTEELI",
+            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
+            girder_num,
+            h1, bf1, bb1, tf1, tb1, tw1, web_rib_pos1,
+            middle_same_with_side,
+            h2, bf2, bb2, tf2, tb2, tw2, web_rib_pos2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建工字型钢组合截面 {no} 失败: {err}")
+        return self.get(no)
+    def create_composite_steel_trough(
+        self,
+        name: str,
+        bt: float,
+        bc: float,
+        tt1: float,
+        tt2: float,
+        tt3: float,
+        tc1: float,
+        tc2: float,
+        b1: float,
+        b2: float,
+        x1: float,
+        x2: float,
+        x3: float,
+        h1: float,
+        bb: float,
+        bf1: float,
+        tf1: float,
+        tb: float,
+        tw1: float,
+        right_same_with_left: Literal[0, 1] = 1,
+        has_steel_i: Literal[0, 1] = 0,
+        h2: float = 0.0,
+        bf2: float = 0.0,
+        bf3: float = 0.0,
+        tf2: float = 0.0,
+        tf3: float = 0.0,
+        tw2: float = 0.0,
+        no: int | None = None,
+    ) -> Section:
+        """创建槽型钢组合截面（COMPOSITESTEELTROUGH）。"""
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_steel_trough(
+            no, name, "COMPOSITESTEELTROUGH",
+            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
+            h1, bb, bf1, tf1, tb, tw1,
+            right_same_with_left, has_steel_i,
+            h2, bf2, bf3, tf2, tf3, tw2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建槽型钢组合截面 {no} 失败: {err}")
+        return self.get(no)
+    def create_composite_steel_box(
+        self,
+        name: str,
+        bt: float,
+        bc: float,
+        tt1: float,
+        tt2: float,
+        tt3: float,
+        tc1: float,
+        tc2: float,
+        b1: float,
+        b2: float,
+        x1: float,
+        x2: float,
+        x3: float,
+        girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
+        h1: float = 2.0,
+        bf1: float = 1.0,
+        bct: float = 0.0,
+        bb: float = 1.0,
+        bcb: float = 0.0,
+        tf1: float = 0.02,
+        tb: float = 0.02,
+        tw1: float = 0.012,
+        same_layout: Literal[0, 1] = 1,
+        h2: float = 0.0,
+        bf2: float = 0.0,
+        bf3: float = 0.0,
+        tf2: float = 0.0,
+        tf3: float = 0.0,
+        tw2: float = 0.0,
+        no: int | None = None,
+    ) -> Section:
+        """创建箱型钢组合截面（COMPOSITESTEELBOX）。"""
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_steel_box(
+            no, name, "COMPOSITESTEELBOX",
+            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
+            girder_num,
+            h1, bf1, bct, bb, bcb, tf1, tb, tw1, same_layout,
+            h2, bf2, bf3, tf2, tf3, tw2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建箱型钢组合截面 {no} 失败: {err}")
+        return self.get(no)
+    
+    # def create_composite_custom(
+    #     self,
+    #     name: str,
+    #     part_num: int,
+    #     base_e: float,
+    #     base_mu: float,
+    #     no: int | None = None,
+    # ) -> Section:
+    #     """创建自定义组合截面（COMPOSITECUSTOM）。"""
+    #     if no is None:
+    #         no = self._next_no()
+    #     ok, err = osis_section_composite_custom(
+    #         no, name, "COMPOSITECUSTOM", part_num, base_e, base_mu,
+    #     )
+    #     if not ok:
+    #         raise RuntimeError(f"创建自定义组合截面 {no} 失败: {err}")
+    #     return self.get(no)
 
     def create_steel_box(
         self,

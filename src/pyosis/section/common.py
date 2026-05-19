@@ -389,7 +389,7 @@ def osis_section_streamed_box(nSec: int, strName: str, eSectionType: Literal["ST
     Args:
         nSec (int): 截面编号，从1开始编号。
         strName (str): 截面名称。
-        eSectionType (str): 截面类型，固定为 STREAMEDBOX
+        eSectionType (str): 截面类型，固定为 STREAMEDBOX。
         H (float): 截面高度。
         BtL (float): 设计线左顶板宽。
         BtR (float): 设计线右顶板宽。

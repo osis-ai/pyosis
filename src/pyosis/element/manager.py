@@ -24,6 +24,9 @@ from .interface import (
     osis_element_del,
     osis_element_mod,
     osis_element_group,
+    osis_taperele,
+    osis_element_tapereledel,
+    osis_element_taperelemod,
 )
 
 
@@ -379,6 +382,48 @@ class TaperEleGroupManager:
             raise RuntimeError(f"{resp['error']}")
         taper_ele_groups = [TaperEleGroup._from_dict(d) for d in resp.get("data", []) if "name" in d]
         return taper_ele_groups
+
+    def create(
+        self,
+        name: str,
+        z_type: Literal["0", "1"],
+        z_trans: float = 1.0,
+        z_pos: Literal["0", "1"] = "0",
+        z_dis: float = 0.0,
+        y_type: Literal["0", "1"] = "0",
+        y_trans: float = 1.0,
+        y_pos: Literal["0", "1"] = "0",
+        y_dis: float = 0.0,
+        *eles: str,
+
+    ) -> TaperEleGroup:
+        """创建变截面单元组"""
+        ok, err = osis_taperele(
+            name,
+            z_type,
+            z_trans,
+            z_pos,
+            z_dis,
+            y_type,
+            y_trans,
+            y_pos,
+            y_dis,
+            *eles,
+        )
+        if not ok:
+            raise RuntimeError(f"创建变截面单元组 {name} 失败: {err}")
+        return self.get(name)
+
+    def delete(self, name: str) -> None:
+        ok, err = osis_element_tapereledel(name)
+        if not ok:
+            raise RuntimeError(f"删除变截面单元组 {name} 失败: {err}")
+
+    def rename(self, old_name: str, new_name: str) -> TaperEleGroup:
+        ok, err = osis_element_taperelemod(old_name, new_name)
+        if not ok:
+            raise RuntimeError(f"重命名变截面单元组 {old_name} -> {new_name} 失败: {err}")
+        return self.get(new_name)
 
     def get(self, name: str | list[str]) -> TaperEleGroup | list[TaperEleGroup | None] | None:
         """根据名称获取变截面单元组

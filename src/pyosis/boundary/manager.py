@@ -293,7 +293,7 @@ class ElstcSptBoundary(Boundary):
             is_occupied=d.get("isOccupied"),
             is_selected=d.get("isSelected"),
             is_ploted=d.get("isPloted"),
-            constraints=list(d.get("constraints")),
+            # constraints=list(d.get("constraints")),
             coor_no=d.get("coorNO"),
             k_values=list(d.get("k")),
             elastic_k=list(d.get("elasticK")),
@@ -333,8 +333,8 @@ class GeneralElstcSptBoundary(Boundary):
             flag_m=d.get("flagM"),
             flag_c=d.get("flagC"),
             stiffness_matrix=list(d.get("stiffnessMatrix")),
-            mass_matrix=list(d.get("massMatrix")),
-            damping_matrix=list(d.get("dampingMatrix")),
+            # mass_matrix=list(d.get("massMatrix")),
+            # damping_matrix=list(d.get("dampingMatrix")),
         )
 
     def __repr__(self) -> str:
