@@ -216,6 +216,12 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     cscp_section = section.create_steel_custom_plate("自定义钢梁截面", ["TopFlange"])
     _expect_attr(cscp_section,"name","自定义钢梁截面")
 
+    cscp_section.add_steel_plate(
+        "STEEL", "TopFlange",
+        0.0, 0.0, 1.0, 0.0, 0.02,
+        1, 1, 0.0, "Both",
+    )
+
     # 创建小箱梁截面
     small_section = section.create_smallbox("小箱梁截面", "MIDDLE", 1.6, 1.65, 1.2, 0.0, 1.0, 0.18, 0.2, 0.2, 4.0, 0.18, 0.25, 0.2, 0.15, 0.25, 0.05, 0.05, False, 0.0, 0.0, 0.05)
     _expect_attr(small_section,"name","小箱梁截面")

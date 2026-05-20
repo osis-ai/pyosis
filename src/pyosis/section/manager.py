@@ -47,6 +47,7 @@ from .steel import (
     osis_section_steel_canti_box_ibf,
     osis_section_steel_custom,
     osis_section_steel_custom_plate,
+    osis_steel_plate,
 )
 from .param import (
     osis_section_offset,
@@ -82,47 +83,47 @@ from .rib import (
 
 
 class SectionType(Enum):
-    UNASSIGNED = 0                    # 未分配
-    LSHAPE = 1                        # L形与倒L形
-    TSHAPE = 2                        # T形与倒T形
-    ISHAPE = 3                        # 工字形
-    CIRCLE = 4                        # 圆形与圆管形
-    RECTANGLE = 5                     # 实腹与空腹矩形（可倒圆/斜角）
-    ROUNDEDEND = 6                    # 实腹与空腹圆端形
-    HOLLOWSLAB = 7                    # 空心板梁
-    SMALLBOX = 8                      # 小箱梁
-    TGIRDER = 9                       # T梁
-    CONVENTIONALBOX = 10              # 常规箱梁
-    STREAMEDBOX = 11                  # 扁平箱梁
-    DOUBLESIDEBOX = 12                # 双边箱梁
-    RIBBEDSLAB = 13                   # 肋板式
-    CUSTOM = 14                       # 常规自定义截面
+    UNASSIGNED = 0  # 未分配
+    LSHAPE = 1  # L形与倒L形
+    TSHAPE = 2  # T形与倒T形
+    ISHAPE = 3  # 工字形
+    CIRCLE = 4  # 圆形与圆管形
+    RECTANGLE = 5  # 实腹与空腹矩形（可倒圆/斜角）
+    ROUNDEDEND = 6  # 实腹与空腹圆端形
+    HOLLOWSLAB = 7  # 空心板梁
+    SMALLBOX = 8  # 小箱梁
+    TGIRDER = 9  # T梁
+    CONVENTIONALBOX = 10  # 常规箱梁
+    STREAMEDBOX = 11  # 扁平箱梁
+    DOUBLESIDEBOX = 12  # 双边箱梁
+    RIBBEDSLAB = 13  # 肋板式
+    CUSTOM = 14  # 常规自定义截面
 
-    STEELI = 21                       # 工字钢梁截面
-    STEELBOX = 22                     # 箱型钢梁截面
-    STEELBOXTHREECELL = 23            # 单箱单/三室钢梁截面
-    STEELBOXITF = 24                  # 单箱单室斜顶板钢梁界面
-    STEELCANTIBOX = 25                # 悬臂单箱单/双室钢梁界面
-    STEELCANTIBOXIBF = 26             # 悬臂单箱单/双室斜底板钢梁截面
-    STEELCUSTOM = 27                  # 钢梁自定义截面，采用几何点线形式输入
-    STEELCUSTOMPLATE = 28             # 钢梁自定义截面，采用参数板形式输入
+    STEELI = 21  # 工字钢梁截面
+    STEELBOX = 22  # 箱型钢梁截面
+    STEELBOXTHREECELL = 23  # 单箱单/三室钢梁截面
+    STEELBOXITF = 24  # 单箱单室斜顶板钢梁界面
+    STEELCANTIBOX = 25  # 悬臂单箱单/双室钢梁界面
+    STEELCANTIBOXIBF = 26  # 悬臂单箱单/双室斜底板钢梁截面
+    STEELCUSTOM = 27  # 钢梁自定义截面，采用几何点线形式输入
+    STEELCUSTOMPLATE = 28  # 钢梁自定义截面，采用参数板形式输入
 
-    COMPOSITESTEELI = 41              # 钢-工字型组合截面
-    COMPOSITESTEELTROUGH = 42         # 钢-槽型组合截面
-    COMPOSITESTEELBOX = 43            # 钢-箱型组合截面
-    COMPOSITECUSTOM = 44              # 自定义组合截面
+    COMPOSITESTEELI = 41  # 钢-工字型组合截面
+    COMPOSITESTEELTROUGH = 42  # 钢-槽型组合截面
+    COMPOSITESTEELBOX = 43  # 钢-箱型组合截面
+    COMPOSITECUSTOM = 44  # 自定义组合截面
 
-    NUMERICAL = 51                    # 数值截面
+    NUMERICAL = 51  # 数值截面
 
 @dataclass(frozen=False)
 class Rebar:
     """钢筋基类"""
-    has_bent_up_rebar: bool            # 是否有弯起钢筋
-    has_shear_stirrup: bool            # 是否有抗剪箍筋
-    has_torsional_stirrup: bool         # 是否有扭转箍筋
-    has_web_vertical_rebar: bool        # 是否有腹板竖筋
-    longitudinal_rebars: list[dict]      # 纵筋
-    longitudinal_rebars_count: int      # 纵筋数量
+    has_bent_up_rebar: bool  # 是否有弯起钢筋
+    has_shear_stirrup: bool  # 是否有抗剪箍筋
+    has_torsional_stirrup: bool  # 是否有扭转箍筋
+    has_web_vertical_rebar: bool  # 是否有腹板竖筋
+    longitudinal_rebars: list[dict]  # 纵筋
+    longitudinal_rebars_count: int  # 纵筋数量
     @staticmethod
     def empty() -> Rebar:
         """无钢筋信息时的占位对象（内部使用）"""
@@ -133,7 +134,7 @@ class Rebar:
             has_web_vertical_rebar=False,
             longitudinal_rebars=[],
             longitudinal_rebars_count=0,
-        )   
+        )
     @classmethod
     def _from_dict(cls, d: dict) -> Rebar:
         """从接口 dict 构造 Rebar 对象（内部使用）"""
@@ -146,9 +147,8 @@ class Rebar:
             has_web_vertical_rebar=bool(d.get("hasWebVerticalRebar")),
             longitudinal_rebars=list(lr) if isinstance(lr, list) else [],
             longitudinal_rebars_count=int(cnt) if cnt is not None else 0,
-        )   
+        )
 
-# ──────────────────────────────────────────────
 # Section 基类
 # ──────────────────────────────────────────────
 
@@ -161,25 +161,25 @@ class Section:
     字段与 HTTP 接口 GetAllSectionInfo 返回的 JSON 一一对应。
     """
 
-    no: int                              # 截面编号
-    name: str                            # 截面名称
-    section_type: SectionType            # 截面类型
-    prop: dict                           # 截面属性
-    prop_factor: dict                    # 截面因子
-    offset_type_y: int                   # 偏移类型 Y
-    offset_value_y: float                # 偏移值 Y
-    offset_type_z: int                   # 偏移类型 Z
-    offset_value_z: float                # 偏移值 Z
-    stress_points: list[dict]            # 应力点
-    boundary: dict                       # 边界
-    height: float                        # 高度
-    modeling_point_x: float              # 模型点 X
-    modeling_point_y: float              # 模型点 Y
-    contour: list[dict]                  # 轮廓
-    has_concrete_section: bool           # 是否有混凝土截面
-    has_steel_section: bool              # 是否有钢截面
-    related_elements: list[int]          # 相关单元
-    rebar: Rebar                         # 钢筋
+    no: int  # 截面编号
+    name: str  # 截面名称
+    section_type: SectionType  # 截面类型
+    prop: dict  # 截面属性
+    prop_factor: dict  # 截面因子
+    offset_type_y: int  # 偏移类型 Y
+    offset_value_y: float  # 偏移值 Y
+    offset_type_z: int  # 偏移类型 Z
+    offset_value_z: float  # 偏移值 Z
+    stress_points: list[dict]  # 应力点
+    boundary: dict  # 边界
+    height: float  # 高度
+    modeling_point_x: float  # 模型点 X
+    modeling_point_y: float  # 模型点 Y
+    contour: list[dict]  # 轮廓
+    has_concrete_section: bool  # 是否有混凝土截面
+    has_steel_section: bool  # 是否有钢截面
+    related_elements: list[int]  # 相关单元
+    rebar: Rebar  # 钢筋
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
         """从接口 dict 构造 Section 对象（内部使用）"""
@@ -211,7 +211,7 @@ class Section:
             has_concrete_section=d.get("hasConcreteSection"),
             has_steel_section=d.get("hasSteelSection"),
             related_elements=list(rel) if isinstance(rel, list) else [],
-            rebar = rebar_obj,
+            rebar=rebar_obj,
         )
 
     def __repr__(self) -> str:
@@ -220,11 +220,11 @@ class Section:
     # ── 实例方法 ──────────────────────────────
 
     def set_offset(
-        self,
-        offset_type_y: Literal["Left", "Middle", "Right", "Manual"] = "Middle",
-        offset_value_y: float = 0.0,
-        offset_type_z: Literal["Top", "Center", "Bottom", "Manual"] = "Center",
-        offset_value_z: float = 0.0,
+            self,
+            offset_type_y: Literal["Left", "Middle", "Right", "Manual"] = "Middle",
+            offset_value_y: float = 0.0,
+            offset_type_z: Literal["Top", "Center", "Bottom", "Manual"] = "Center",
+            offset_value_z: float = 0.0,
     ) -> None:
         """设置截面偏移。"""
         ok, err = osis_section_offset(
@@ -234,30 +234,30 @@ class Section:
             raise RuntimeError(f"设置截面 {self.no} 偏移失败: {err}")
 
     def set_mesh(
-        self,
-        mesh_method: Literal[0, 1] = 0,
-        mesh_size: float = 0.0,
+            self,
+            mesh_method: Literal[0, 1] = 0,
+            mesh_size: float = 0.0,
     ) -> None:
         """设置截面网格。"""
         ok, err = osis_section_mesh(self.no, mesh_method, mesh_size)
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 网格失败: {err}")
-        
+
     def export(self):
         """生成截面图片，会在 image/section/ 目录下生成一张 {nSec}.jpg"""
         ok, err = osis_export_section_pic(self.no)
         if not ok:
             raise RuntimeError(f"导出截面 {self.no} 图片失败: {err}")
-    
+
     def add_composite_part_polygon(
-        self,
-        part_index: int,
-        part_mat_type: Literal["Concrete", "Steel"],
-        part_e: float,
-        part_mu: float,
-        part_density: float,
-        contour_matrix: str,
-        contour_width: str,
+            self,
+            part_index: int,
+            part_mat_type: Literal["Concrete", "Steel"],
+            part_e: float,
+            part_mu: float,
+            part_density: float,
+            contour_matrix: str,
+            contour_width: str,
     ) -> None:
         """添加自定义组合截面面域分部"""
         ok, err = osis_section_part_polygon(
@@ -271,15 +271,15 @@ class Section:
             )
 
     def add_composite_part_line(
-        self,
-        part_index: int,
-        part_mat_type: Literal["Concrete", "Steel"],
-        part_e: float,
-        part_mu: float,
-        part_density: float,
-        point_matrix: str,
-        line_matrix: str,
-        width_matrix: str,
+            self,
+            part_index: int,
+            part_mat_type: Literal["Concrete", "Steel"],
+            part_e: float,
+            part_mu: float,
+            part_density: float,
+            point_matrix: str,
+            line_matrix: str,
+            width_matrix: str,
     ) -> None:
         """添加自定义组合截面线域分部。"""
         ok, err = osis_section_part_line(
@@ -322,12 +322,12 @@ class Section:
     # ── 纵向钢筋 ──────────────────────────────
 
     def add_rebar_point(
-        self,
-        n_rebar_no: int,
-        n_material_no: int,
-        d_coor_y: float,
-        d_coor_z: float,
-        diameter: str,
+            self,
+            n_rebar_no: int,
+            n_material_no: int,
+            d_coor_y: float,
+            d_coor_z: float,
+            diameter: str,
     ) -> None:
         """定义或修改纵向钢筋（点输入）
 
@@ -343,16 +343,16 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 纵向钢筋 {n_rebar_no} 失败: {err}")
 
     def add_rebar_line_a(
-        self,
-        n_rebar_no: int,
-        n_material_no: int,
-        y_ref: Literal["Left", "Center"] = "Left",
-        y_ref_value: float = 0.0,
-        z_ref: Literal["Top", "Bottom"] = "Top",
-        z_ref_value: float = 0.0,
-        n_num: int = 1,
-        d_interval: float = 0.1,
-        diameter: str = "D16",
+            self,
+            n_rebar_no: int,
+            n_material_no: int,
+            y_ref: Literal["Left", "Center"] = "Left",
+            y_ref_value: float = 0.0,
+            z_ref: Literal["Top", "Bottom"] = "Top",
+            z_ref_value: float = 0.0,
+            n_num: int = 1,
+            d_interval: float = 0.1,
+            diameter: str = "D16",
     ) -> None:
         """定义或修改纵向钢筋（直线-输入方法 A）
 
@@ -376,19 +376,19 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 纵向钢筋(LineA) {n_rebar_no} 失败: {err}")
 
     def add_rebar_line_b(
-        self,
-        n_rebar_no: int,
-        n_material_no: int,
-        d_start_y: float,
-        d_start_z: float,
-        d_end_y: float,
-        d_end_z: float,
-        n_method: Literal[0, 1] = 1,
-        n_num: int = 1,
-        d_interval: float = 0.1,
-        layout_ref: Literal["StartPoint", "MidPoint", "EndPoint"] = "StartPoint",
-        n_has_end_rebar: Literal[0, 1] = 1,
-        diameter: str = "D16",
+            self,
+            n_rebar_no: int,
+            n_material_no: int,
+            d_start_y: float,
+            d_start_z: float,
+            d_end_y: float,
+            d_end_z: float,
+            n_method: Literal[0, 1] = 1,
+            n_num: int = 1,
+            d_interval: float = 0.1,
+            layout_ref: Literal["StartPoint", "MidPoint", "EndPoint"] = "StartPoint",
+            n_has_end_rebar: Literal[0, 1] = 1,
+            diameter: str = "D16",
     ) -> None:
         """定义或修改纵向钢筋（直线-输入方法 B）
 
@@ -427,11 +427,11 @@ class Section:
     # ── 抗剪钢筋 ──────────────────────────────
 
     def add_rebar_s_bent_up(
-        self,
-        n_material_no: int,
-        d_interval: float,
-        d_area: float,
-        d_angle: float,
+            self,
+            n_material_no: int,
+            d_interval: float,
+            d_area: float,
+            d_angle: float,
     ) -> None:
         """定义或修改弯起钢筋
 
@@ -446,10 +446,10 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 弯起钢筋失败: {err}")
 
     def add_rebar_s_shear_stirrup(
-        self,
-        n_material_no: int,
-        d_interval: float,
-        d_area: float,
+            self,
+            n_material_no: int,
+            d_interval: float,
+            d_area: float,
     ) -> None:
         """定义或修改抗剪箍筋
 
@@ -463,13 +463,13 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 抗剪箍筋失败: {err}")
 
     def add_rebar_s_web_vertical(
-        self,
-        n_material_no: int,
-        d_interval: float,
-        d_area: float,
-        d_angle: float,
-        d_effective_stress: float,
-        d_reduction_factor: float,
+            self,
+            n_material_no: int,
+            d_interval: float,
+            d_area: float,
+            d_angle: float,
+            d_effective_stress: float,
+            d_reduction_factor: float,
     ) -> None:
         """定义或修改腹板竖筋
 
@@ -489,11 +489,11 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 腹板竖筋失败: {err}")
 
     def add_rebar_s_torsional_stirrup(
-        self,
-        n_material_no: int,
-        d_interval: float,
-        d_longi_area: float,
-        d_stirrup_area: float,
+            self,
+            n_material_no: int,
+            d_interval: float,
+            d_longi_area: float,
+            d_stirrup_area: float,
     ) -> None:
         """定义或修改扭转箍筋
 
@@ -510,10 +510,7 @@ class Section:
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 扭转箍筋失败: {err}")
 
-    def delete_rebar_s(
-        self,
-        e_rebar_type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"],
-    ) -> None:
+    def delete_rebar_s(self,e_rebar_type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"]) -> None:
         """删除抗剪钢筋
 
         Args:
@@ -556,13 +553,13 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} T形加劲肋 {str_name} 失败: {err}")
 
     def add_rib_u(
-        self,
-        str_name: str,
-        d_h: float,
-        d_b1: float,
-        d_b2: float,
-        d_t: float,
-        d_r: float,
+            self,
+            str_name: str,
+            d_h: float,
+            d_b1: float,
+            d_b2: float,
+            d_t: float,
+            d_r: float,
     ) -> None:
         """定义或修改 U 形加劲肋
 
@@ -579,13 +576,13 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} U形加劲肋 {str_name} 失败: {err}")
 
     def add_rib_l(
-        self,
-        str_name: str,
-        e_type: Literal["LL", "LR"] = "LL",
-        d_h: float = 0.1,
-        d_b: float = 0.1,
-        d_t: float = 0.01,
-        d_r: float = 0.01,
+            self,
+            str_name: str,
+            e_type: Literal["LL", "LR"] = "LL",
+            d_h: float = 0.1,
+            d_b: float = 0.1,
+            d_t: float = 0.01,
+            d_r: float = 0.01,
     ) -> None:
         """定义或修改 L 形加劲肋
 
@@ -623,24 +620,24 @@ class Section:
             raise RuntimeError(f"删除截面 {self.no} 加劲肋 {str_name} 失败: {err}")
 
     def add_rib_layout(
-        self,
-        e_girder_type: Literal[
-            "STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL",
-        ],
-        e_plate_type: Literal[
-            "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
-            "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
-            "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
-            "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
-            "SideWeb", "SideWebL", "SideWebR",
-            "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
-            "PlateWithoutRib",
-        ],
-        n_layout_no: int,
-        str_rib_name: str,
-        d_position_distance: float,
-        d_interval: float,
-        n_interval_num: int,
+            self,
+            e_girder_type: Literal[
+                "STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL",
+            ],
+            e_plate_type: Literal[
+                "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
+                "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
+                "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
+                "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
+                "SideWeb", "SideWebL", "SideWebR",
+                "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
+                "PlateWithoutRib",
+            ],
+            n_layout_no: int,
+            str_rib_name: str,
+            d_position_distance: float,
+            d_interval: float,
+            n_interval_num: int,
     ) -> None:
         """定义或修改加劲肋布置信息
 
@@ -673,20 +670,20 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 加劲肋布置 {n_layout_no} 失败: {err}")
 
     def delete_rib_layout(
-        self,
-        e_girder_type: Literal[
-            "STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL",
-        ],
-        e_plate_type: Literal[
-            "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
-            "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
-            "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
-            "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
-            "SideWeb", "SideWebL", "SideWebR",
-            "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
-            "PlateWithoutRib",
-        ],
-        n_layout_no: int,
+            self,
+            e_girder_type: Literal[
+                "STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL",
+            ],
+            e_plate_type: Literal[
+                "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
+                "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
+                "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
+                "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
+                "SideWeb", "SideWebL", "SideWebR",
+                "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
+                "PlateWithoutRib",
+            ],
+            n_layout_no: int,
     ) -> None:
         """删除加劲肋布置信息
 
@@ -705,6 +702,37 @@ class Section:
         if not ok:
             raise RuntimeError(f"清除截面 {self.no} 加劲肋失败: {err}")
 
+    def add_steel_plate(
+            self,
+            girder_type: Literal["STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL"],
+            plate_position: Literal[
+                "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
+                "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
+                "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
+                "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
+                "SideWeb", "SideWebL", "SideWebR",
+                "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
+                "PlateWithoutRib",
+            ],
+            start_x: float,
+            start_y: float,
+            end_x: float,
+            end_y: float,
+            thickness: float,
+            is_symmetric: Literal[0, 1] = 1,
+            rib_start_position: Literal[0, 1] = 1,
+            rib_start_distance: float = 0.0,
+            rib_location: Literal["Left", "Right", "Both"] = "Both",
+    ) -> None:
+        """定义或修改自定义钢梁截面的板件"""
+        ok, err = osis_steel_plate(
+            self.no, girder_type, plate_position,
+            start_x, start_y, end_x, end_y, thickness,
+            is_symmetric, rib_start_position, rib_start_distance, rib_location,
+        )
+        if not ok:
+            raise RuntimeError(f"添加截面 {self.no} 板件 {plate_position} 失败: {err}")
+
     # 这个方法放在管理类
     # def delete(self) -> None:
     #     """删除当前截面"""
@@ -722,7 +750,9 @@ class Section:
         if not ok:
             raise RuntimeError(f"修改截面编号 {self.no} -> {new_no} 失败: {err}")
 
-    def create_numerical(self, no: int, name: str, strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float, dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float, dPeriI: float) -> None:
+    def create_numerical(self, no: int, name: str, strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float,
+                         dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float,
+                         dPeriI: float) -> None:
         """创建圆形/圆管形截面
         Args:
             no: 截面编号
@@ -741,7 +771,8 @@ class Section:
             dPeriO: 截面外轮廓周长
             dPeriI: 截面内轮廓周长
         """
-        ok, err = osis_section_numerical(no, name, "Numerical", strArea, dSy, dSz, dIxx, dIyy, dIzz, dIww, dCentY, dCentZ, dDy, dDz, dPeriO, dPeriI)
+        ok, err = osis_section_numerical(no, name, "Numerical", strArea, dSy, dSz, dIxx, dIyy, dIzz, dIww, dCentY,
+                                         dCentZ, dDy, dDz, dPeriO, dPeriI)
         if not ok:
             raise RuntimeError(f"创建数值截面 {no} 失败: {err}")
 
@@ -791,14 +822,14 @@ class SectionManager:
     # ── 增删改 ────────────────────────────────
 
     def create_Lshape(
-        self,
-        name: str,
-        n_dir: Literal[0, 1] = 1,
-        h: float = 0.1,
-        b: float = 0.1,
-        tf1: float = 0.016,
-        tf2: float = 0.016,
-        no: int | None = None,
+            self,
+            name: str,
+            n_dir: Literal[0, 1] = 1,
+            h: float = 0.1,
+            b: float = 0.1,
+            tf1: float = 0.016,
+            tf2: float = 0.016,
+            no: int | None = None,
     ) -> Section:
         """创建L形截面(LShape)。
 
@@ -819,12 +850,12 @@ class SectionManager:
         return self.get(no)
 
     def create_circle(
-        self,
-        name: str,
-        e_circle_type: Literal["Hollow", "Solid"] = "Solid",
-        d: float = 0.5,
-        tw: float = 0.02,
-        no: int | None = None,
+            self,
+            name: str,
+            e_circle_type: Literal["Hollow", "Solid"] = "Solid",
+            d: float = 0.5,
+            tw: float = 0.02,
+            no: int | None = None,
     ) -> Section:
         """创建圆形截面(Circle)。
 
@@ -843,14 +874,14 @@ class SectionManager:
         return self.get(no)
 
     def create_Tshape(
-        self,
-        name: str,
-        n_dir: Literal[0, 1] = 1,
-        h: float = 0.3,
-        b: float = 0.2,
-        tf: float = 0.016,
-        tw: float = 0.016,
-        no: int | None = None,
+            self,
+            name: str,
+            n_dir: Literal[0, 1] = 1,
+            h: float = 0.3,
+            b: float = 0.2,
+            tf: float = 0.016,
+            tw: float = 0.016,
+            no: int | None = None,
     ) -> Section:
         """创建T形截面(TShape)。
 
@@ -871,15 +902,15 @@ class SectionManager:
         return self.get(no)
 
     def create_Ishape(
-        self,
-        name: str,
-        h: float = 0.3,
-        bt: float = 0.13,
-        bb: float = 0.13,
-        tt: float = 0.016,
-        tb: float = 0.016,
-        tw: float = 0.016,
-        no: int | None = None,
+            self,
+            name: str,
+            h: float = 0.3,
+            bt: float = 0.13,
+            bb: float = 0.13,
+            tt: float = 0.016,
+            tb: float = 0.016,
+            tw: float = 0.016,
+            no: int | None = None,
     ) -> Section:
         """创建I形截面（工字形截面）(IShape)。
 
@@ -901,28 +932,28 @@ class SectionManager:
         return self.get(no)
 
     def create_rect(
-        self,
-        name: str,
-        transition_type: Literal["Chamfer", "Fillet"] = "Fillet",
-        sec_type: Literal["Solid", "Hollow"] = "Solid",
-        b: float = 6.5,
-        h: float = 3.2,
-        xo1: float = 1.0,
-        yo1: float = 0.5,
-        r: float = 0.5,
-        t1: float = 1.0,
-        t2: float = 1.0,
-        xi1: float = 0.5,
-        yi1: float = 0.25,
-        has_diaphragm: bool = False,
-        tw: float = 1.0,
-        xi2: float = 0.5,
-        yi2: float = 0.25,
-        has_groove: bool = False,
-        b1: float = 1.2,
-        b2: float = 0.8,
-        h_groove: float = 0.2,
-        no: int | None = None,
+            self,
+            name: str,
+            transition_type: Literal["Chamfer", "Fillet"] = "Fillet",
+            sec_type: Literal["Solid", "Hollow"] = "Solid",
+            b: float = 6.5,
+            h: float = 3.2,
+            xo1: float = 1.0,
+            yo1: float = 0.5,
+            r: float = 0.5,
+            t1: float = 1.0,
+            t2: float = 1.0,
+            xi1: float = 0.5,
+            yi1: float = 0.25,
+            has_diaphragm: bool = False,
+            tw: float = 1.0,
+            xi2: float = 0.5,
+            yi2: float = 0.25,
+            has_groove: bool = False,
+            b1: float = 1.2,
+            b2: float = 0.8,
+            h_groove: float = 0.2,
+            no: int | None = None,
     ) -> Section:
         """创建矩形截面(RECT)。
 
@@ -961,17 +992,17 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_i(
-        self,
-        name: str,
-        # 暂时去掉默认值
-        h: float,
-        bt: float,
-        bb: float,
-        tt: float,
-        tb: float,
-        tw: float,
-        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-        no: int | None = None,
+            self,
+            name: str,
+            # 暂时去掉默认值
+            h: float,
+            bt: float,
+            bb: float,
+            tt: float,
+            tb: float,
+            tw: float,
+            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+            no: int | None = None,
     ) -> Section:
         """创建工字形钢截面(STEELI)。
 
@@ -992,38 +1023,39 @@ class SectionManager:
         if not ok:
             raise RuntimeError(f"创建工字形钢截面 {no} 失败: {err}")
         return self.get(no)
+
     def create_composite_steel_i(
-        self,
-        name: str,
-        bt: float,
-        bc: float,
-        tt1: float,
-        tt2: float,
-        tt3: float,
-        tc1: float,
-        tc2: float,
-        b1: float,
-        b2: float,
-        x1: float,
-        x2: float,
-        x3: float,
-        girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
-        h1: float = 2.0,
-        bf1: float = 1.0,
-        bb1: float = 1.0,
-        tf1: float = 0.02,
-        tb1: float = 0.02,
-        tw1: float = 0.012,
-        web_rib_pos1: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
-        middle_same_with_side: Literal[0, 1] = 1,
-        h2: float = 0.0,
-        bf2: float = 0.0,
-        bb2: float = 0.0,
-        tf2: float = 0.0,
-        tb2: float = 0.0,
-        tw2: float = 0.0,
-        web_rib_pos2: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
-        no: int | None = None,
+            self,
+            name: str,
+            bt: float,
+            bc: float,
+            tt1: float,
+            tt2: float,
+            tt3: float,
+            tc1: float,
+            tc2: float,
+            b1: float,
+            b2: float,
+            x1: float,
+            x2: float,
+            x3: float,
+            girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
+            h1: float = 2.0,
+            bf1: float = 1.0,
+            bb1: float = 1.0,
+            tf1: float = 0.02,
+            tb1: float = 0.02,
+            tw1: float = 0.012,
+            web_rib_pos1: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
+            middle_same_with_side: Literal[0, 1] = 1,
+            h2: float = 0.0,
+            bf2: float = 0.0,
+            bb2: float = 0.0,
+            tf2: float = 0.0,
+            tb2: float = 0.0,
+            tw2: float = 0.0,
+            web_rib_pos2: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
+            no: int | None = None,
     ) -> Section:
         """创建工字型钢组合截面（COMPOSITESTEELI）。"""
         if no is None:
@@ -1039,36 +1071,37 @@ class SectionManager:
         if not ok:
             raise RuntimeError(f"创建工字型钢组合截面 {no} 失败: {err}")
         return self.get(no)
+
     def create_composite_steel_trough(
-        self,
-        name: str,
-        bt: float,
-        bc: float,
-        tt1: float,
-        tt2: float,
-        tt3: float,
-        tc1: float,
-        tc2: float,
-        b1: float,
-        b2: float,
-        x1: float,
-        x2: float,
-        x3: float,
-        h1: float,
-        bb: float,
-        bf1: float,
-        tf1: float,
-        tb: float,
-        tw1: float,
-        right_same_with_left: Literal[0, 1] = 1,
-        has_steel_i: Literal[0, 1] = 0,
-        h2: float = 0.0,
-        bf2: float = 0.0,
-        bf3: float = 0.0,
-        tf2: float = 0.0,
-        tf3: float = 0.0,
-        tw2: float = 0.0,
-        no: int | None = None,
+            self,
+            name: str,
+            bt: float,
+            bc: float,
+            tt1: float,
+            tt2: float,
+            tt3: float,
+            tc1: float,
+            tc2: float,
+            b1: float,
+            b2: float,
+            x1: float,
+            x2: float,
+            x3: float,
+            h1: float,
+            bb: float,
+            bf1: float,
+            tf1: float,
+            tb: float,
+            tw1: float,
+            right_same_with_left: Literal[0, 1] = 1,
+            has_steel_i: Literal[0, 1] = 0,
+            h2: float = 0.0,
+            bf2: float = 0.0,
+            bf3: float = 0.0,
+            tf2: float = 0.0,
+            tf3: float = 0.0,
+            tw2: float = 0.0,
+            no: int | None = None,
     ) -> Section:
         """创建槽型钢组合截面（COMPOSITESTEELTROUGH）。"""
         if no is None:
@@ -1083,38 +1116,39 @@ class SectionManager:
         if not ok:
             raise RuntimeError(f"创建槽型钢组合截面 {no} 失败: {err}")
         return self.get(no)
+
     def create_composite_steel_box(
-        self,
-        name: str,
-        bt: float,
-        bc: float,
-        tt1: float,
-        tt2: float,
-        tt3: float,
-        tc1: float,
-        tc2: float,
-        b1: float,
-        b2: float,
-        x1: float,
-        x2: float,
-        x3: float,
-        girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
-        h1: float = 2.0,
-        bf1: float = 1.0,
-        bct: float = 0.0,
-        bb: float = 1.0,
-        bcb: float = 0.0,
-        tf1: float = 0.02,
-        tb: float = 0.02,
-        tw1: float = 0.012,
-        same_layout: Literal[0, 1] = 1,
-        h2: float = 0.0,
-        bf2: float = 0.0,
-        bf3: float = 0.0,
-        tf2: float = 0.0,
-        tf3: float = 0.0,
-        tw2: float = 0.0,
-        no: int | None = None,
+            self,
+            name: str,
+            bt: float,
+            bc: float,
+            tt1: float,
+            tt2: float,
+            tt3: float,
+            tc1: float,
+            tc2: float,
+            b1: float,
+            b2: float,
+            x1: float,
+            x2: float,
+            x3: float,
+            girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
+            h1: float = 2.0,
+            bf1: float = 1.0,
+            bct: float = 0.0,
+            bb: float = 1.0,
+            bcb: float = 0.0,
+            tf1: float = 0.02,
+            tb: float = 0.02,
+            tw1: float = 0.012,
+            same_layout: Literal[0, 1] = 1,
+            h2: float = 0.0,
+            bf2: float = 0.0,
+            bf3: float = 0.0,
+            tf2: float = 0.0,
+            tf3: float = 0.0,
+            tw2: float = 0.0,
+            no: int | None = None,
     ) -> Section:
         """创建箱型钢组合截面（COMPOSITESTEELBOX）。"""
         if no is None:
@@ -1129,15 +1163,16 @@ class SectionManager:
         if not ok:
             raise RuntimeError(f"创建箱型钢组合截面 {no} 失败: {err}")
         return self.get(no)
-    
+
     def create_composite_custom(
-        self,
-        name: str,
-        part_num: int,
-        base_e: float,
-        base_mu: float,
-        no: int | None = None,
+            self,
+            name: str,
+            part_num: int,
+            base_e: float,
+            base_mu: float,
+            no: int | None = None,
     ) -> Section:
+        raise RuntimeError(f"暂不支持创建自定义组合截面")
         """创建自定义组合截面（COMPOSITECUSTOM）。"""
         if no is None:
             no = self._next_no()
@@ -1149,18 +1184,18 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_box(
-        self,
-        name: str,
-        h: float,
-        bt: float,
-        bct: float,
-        bb: float,
-        bcb: float,
-        tt: float,
-        tb: float,
-        tw: float,
-        same_layout: Literal[0, 1] = 1,
-        no: int | None = None,
+            self,
+            name: str,
+            h: float,
+            bt: float,
+            bct: float,
+            bb: float,
+            bcb: float,
+            tt: float,
+            tb: float,
+            tw: float,
+            same_layout: Literal[0, 1] = 1,
+            no: int | None = None,
     ) -> Section:
         """创建箱型钢截面(STEELBOX)。
 
@@ -1185,28 +1220,28 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_box_three_cell(
-        self,
-        name: str,
-        # 暂时去掉默认值
-        h: float,
-        bt: float,
-        bb: float,
-        i: float,
-        a1: float,
-        a2: float,
-        dt: float,
-        tt1: float,
-        tt2: float,
-        tb1: float,
-        db: float,
-        tb2: float,
-        tb3: float,
-        tw1: float,
-        dw: float,
-        has_web: Literal[0, 1] = 1,
-        tw2: float = 0.0,
-        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-        no: int | None = None,
+            self,
+            name: str,
+            # 暂时去掉默认值
+            h: float,
+            bt: float,
+            bb: float,
+            i: float,
+            a1: float,
+            a2: float,
+            dt: float,
+            tt1: float,
+            tt2: float,
+            tb1: float,
+            db: float,
+            tb2: float,
+            tb3: float,
+            tw1: float,
+            dw: float,
+            has_web: Literal[0, 1] = 1,
+            tw2: float = 0.0,
+            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+            no: int | None = None,
     ) -> Section:
         """创建单箱单/三室钢截面(STEELBOXTHREECELL)。
 
@@ -1243,26 +1278,26 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_box_itf(
-        self,
-        name: str,
-        # 暂时去掉默认值
-        h: float,
-        b: float,
-        bt: float,
-        bb: float,
-        i: float,
-        a1: float,
-        a2: float,
-        dt: float,
-        tt1: float,
-        tt2: float,
-        tt3: float,
-        tb1: float,
-        db: float,
-        tb2: float,
-        tb3: float,
-        tw1: float,
-        no: int | None = None,
+            self,
+            name: str,
+            # 暂时去掉默认值
+            h: float,
+            b: float,
+            bt: float,
+            bb: float,
+            i: float,
+            a1: float,
+            a2: float,
+            dt: float,
+            tt1: float,
+            tt2: float,
+            tt3: float,
+            tb1: float,
+            db: float,
+            tb2: float,
+            tb3: float,
+            tw1: float,
+            no: int | None = None,
     ) -> Section:
         """创建单箱单室斜顶板钢截面(STEELBOXITF)。
 
@@ -1297,25 +1332,25 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_canti_box(
-        self,
-        name: str,
-        # 暂时去掉默认值
-        h: float,
-        bt: float,
-        bb: float,
-        i: float,
-        a: float,
-        dt: float,
-        tt1: float,
-        tt2: float,
-        tb1: float,
-        tw1: float,
-        has_web: Literal[0, 1] = 1,
-        tw2: float = 0.0,
-        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-        h_end: float = 0.0,
-        t_end: float = 0.0,
-        no: int | None = None,
+            self,
+            name: str,
+            # 暂时去掉默认值
+            h: float,
+            bt: float,
+            bb: float,
+            i: float,
+            a: float,
+            dt: float,
+            tt1: float,
+            tt2: float,
+            tb1: float,
+            tw1: float,
+            has_web: Literal[0, 1] = 1,
+            tw2: float = 0.0,
+            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+            h_end: float = 0.0,
+            t_end: float = 0.0,
+            no: int | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室钢截面(STEELCANTIBOX)。
 
@@ -1349,27 +1384,27 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_canti_box_ibf(
-        self,
-        name: str,
-        # 暂时去掉默认值
-        h: float,
-        bt: float,
-        bb: float,
-        bc: float,
-        i: float,
-        a: float,
-        dt: float,
-        tt1: float,
-        tt2: float,
-        tb1: float,
-        tb2: float,
-        tw1: float,
-        has_web: Literal[0, 1] = 1,
-        tw2: float = 0.0,
-        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-        h_end: float = 0.0,
-        t_end: float = 0.0,
-        no: int | None = None,
+            self,
+            name: str,
+            # 暂时去掉默认值
+            h: float,
+            bt: float,
+            bb: float,
+            bc: float,
+            i: float,
+            a: float,
+            dt: float,
+            tt1: float,
+            tt2: float,
+            tb1: float,
+            tb2: float,
+            tw1: float,
+            has_web: Literal[0, 1] = 1,
+            tw2: float = 0.0,
+            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+            h_end: float = 0.0,
+            t_end: float = 0.0,
+            no: int | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室斜底板钢截面(STEELCANTIBOXIBF)。
 
@@ -1405,11 +1440,11 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_custom(
-        self,
-        name: str,
-        point_matrix: str = "",
-        line_matrix: str = "",
-        no: int | None = None,
+            self,
+            name: str,
+            point_matrix: str = "",
+            line_matrix: str = "",
+            no: int | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过点线关系输入）(STEELCUSTOM)。
 
@@ -1427,10 +1462,10 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_custom_plate(
-        self,
-        name: str,
-        plate_positions: list[str] | None = None,
-        no: int | None = None,
+            self,
+            name: str,
+            plate_positions: list[str] | None = None,
+            no: int | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过参数板输入）(STEELCUSTOMPLATE)。
 
@@ -1449,30 +1484,30 @@ class SectionManager:
         return self.get(no)
 
     def create_smallbox(
-        self,
-        name: str,
-        e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
-        h: float = 1.6,
-        bs: float = 1.65,
-        bm: float = 1.2,
-        bc: float = 0.0,
-        bb: float = 1.0,
-        tt: float = 0.18,
-        tb: float = 0.2,
-        tw: float = 0.2,
-        i: float = 4.0,
-        tc: float = 0.18,
-        tc1: float = 0.25,
-        x: float = 0.2,
-        xi1: float = 0.15,
-        tt1: float = 0.25,
-        xi2: float = 0.05,
-        yi2: float = 0.05,
-        b_slope: bool = False,
-        i1: float = 0.0,
-        i2: float = 0.0,
-        r: float = 0.05,
-        no: int | None = None,
+            self,
+            name: str,
+            e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
+            h: float = 1.6,
+            bs: float = 1.65,
+            bm: float = 1.2,
+            bc: float = 0.0,
+            bb: float = 1.0,
+            tt: float = 0.18,
+            tb: float = 0.2,
+            tw: float = 0.2,
+            i: float = 4.0,
+            tc: float = 0.18,
+            tc1: float = 0.25,
+            x: float = 0.2,
+            xi1: float = 0.15,
+            tt1: float = 0.25,
+            xi2: float = 0.05,
+            yi2: float = 0.05,
+            b_slope: bool = False,
+            i1: float = 0.0,
+            i2: float = 0.0,
+            r: float = 0.05,
+            no: int | None = None,
     ) -> Section:
         """创建小箱梁截面(SMALLBOX)。
 
@@ -1512,29 +1547,29 @@ class SectionManager:
         return self.get(no)
 
     def create_hollowslab(
-        self,
-        name: str,
-        e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
-        h: float = 0.95,
-        bs: float = 1.0,
-        bm: float = 0.57,
-        bj: float = 0.05,
-        tt: float = 0.12,
-        tb: float = 0.12,
-        tw: float = 0.16,
-        tc: float = 0.12,
-        tc1: float = 0.16,
-        bc: float = 0.38,
-        xi1: float = 0.15,
-        yi1: float = 0.08,
-        xi2: float = 0.12,
-        yi2: float = 0.08,
-        xo3: float = 0.05,
-        yo3: float = 0.05,
-        xo4: float = 0.08,
-        yo4: float = 0.08,
-        h1: float = 0.12,
-        no: int | None = None,
+            self,
+            name: str,
+            e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
+            h: float = 0.95,
+            bs: float = 1.0,
+            bm: float = 0.57,
+            bj: float = 0.05,
+            tt: float = 0.12,
+            tb: float = 0.12,
+            tw: float = 0.16,
+            tc: float = 0.12,
+            tc1: float = 0.16,
+            bc: float = 0.38,
+            xi1: float = 0.15,
+            yi1: float = 0.08,
+            xi2: float = 0.12,
+            yi2: float = 0.08,
+            xo3: float = 0.05,
+            yo3: float = 0.05,
+            xo4: float = 0.08,
+            yo4: float = 0.08,
+            h1: float = 0.12,
+            no: int | None = None,
     ) -> Section:
         """创建空心板截面(HOLLOWSLAB)。
 
@@ -1574,21 +1609,21 @@ class SectionManager:
         return self.get(no)
 
     def create_rounded_end(
-        self,
-        name: str,
-        e_filling_type: Literal["Solid", "Hollow"] = "Solid",
-        b: float = 7.0,
-        h: float = 3.0,
-        r: float = 2.0,
-        b_has_diaphragm: bool = False,
-        b_inner: float = 4.0,
-        t: float = 1.0,
-        xi1: float = 0.5,
-        yi1: float = 0.25,
-        tw: float = 1.0,
-        xi2: float = 0.5,
-        yi2: float = 0.25,
-        no: int | None = None,
+            self,
+            name: str,
+            e_filling_type: Literal["Solid", "Hollow"] = "Solid",
+            b: float = 7.0,
+            h: float = 3.0,
+            r: float = 2.0,
+            b_has_diaphragm: bool = False,
+            b_inner: float = 4.0,
+            t: float = 1.0,
+            xi1: float = 0.5,
+            yi1: float = 0.25,
+            tw: float = 1.0,
+            xi2: float = 0.5,
+            yi2: float = 0.25,
+            no: int | None = None,
     ) -> Section:
         """创建圆端形截面(ROUNDEDEND)。
 
@@ -1619,57 +1654,57 @@ class SectionManager:
         return self.get(no)
 
     def create_conventionalbox(
-        self,
-        name: str,
-        h: float = 2.7,
-        bt_l: float = 6.375,
-        bt_r: float = 6.375,
-        bb_l: float = 3.5,
-        bb_r: float = 3.5,
-        bs: float = 0.5,
-        tt: float = 0.28,
-        tb: float = 0.32,
-        tw1: float = 0.5,
-        tw2: float = 0.5,
-        n_cell_num: int = 1,
-        bi1: float = 5.05,
-        bi2: float = 4.5,
-        bi3: float = 5.05,
-        bi4: float = 5.05,
-        xi1: float = 1.5,
-        tt1: float = 0.7,
-        xi2: float = 0.0,
-        tt2: float = 0.0,
-        xi3: float = 1.0,
-        yi3: float = 0.5,
-        xi4: float = 0.5,
-        tt4: float = 0.35,
-        xi5: float = 0.6,
-        yi5: float = 0.3,
-        xi6: float = 1.0,
-        tt6: float = 0.5,
-        xi7: float = 0.6,
-        yi7: float = 0.3,
-        bc_l: float = 2.875,
-        tc_l: float = 0.2,
-        bc1_l: float = 1.325,
-        tc1_l: float = 0.7,
-        tc2_l: float = 0.4,
-        b_symmetry: bool = True,
-        bc_r: float = 2.875,
-        tc_r: float = 0.2,
-        bc1_r: float = 1.325,
-        tc1_r: float = 0.7,
-        tc2_r: float = 0.4,
-        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-        i: float = 0.0,
-        i1: float = 0.0,
-        i2: float = 0.0,
-        i3: float = 0.0,
-        i4: float = 0.0,
-        r1: float = 0.0,
-        r2: float = 0.0,
-        no: int | None = None,
+            self,
+            name: str,
+            h: float = 2.7,
+            bt_l: float = 6.375,
+            bt_r: float = 6.375,
+            bb_l: float = 3.5,
+            bb_r: float = 3.5,
+            bs: float = 0.5,
+            tt: float = 0.28,
+            tb: float = 0.32,
+            tw1: float = 0.5,
+            tw2: float = 0.5,
+            n_cell_num: int = 1,
+            bi1: float = 5.05,
+            bi2: float = 4.5,
+            bi3: float = 5.05,
+            bi4: float = 5.05,
+            xi1: float = 1.5,
+            tt1: float = 0.7,
+            xi2: float = 0.0,
+            tt2: float = 0.0,
+            xi3: float = 1.0,
+            yi3: float = 0.5,
+            xi4: float = 0.5,
+            tt4: float = 0.35,
+            xi5: float = 0.6,
+            yi5: float = 0.3,
+            xi6: float = 1.0,
+            tt6: float = 0.5,
+            xi7: float = 0.6,
+            yi7: float = 0.3,
+            bc_l: float = 2.875,
+            tc_l: float = 0.2,
+            bc1_l: float = 1.325,
+            tc1_l: float = 0.7,
+            tc2_l: float = 0.4,
+            b_symmetry: bool = True,
+            bc_r: float = 2.875,
+            tc_r: float = 0.2,
+            bc1_r: float = 1.325,
+            tc1_r: float = 0.7,
+            tc2_r: float = 0.4,
+            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+            i: float = 0.0,
+            i1: float = 0.0,
+            i2: float = 0.0,
+            i3: float = 0.0,
+            i4: float = 0.0,
+            r1: float = 0.0,
+            r2: float = 0.0,
+            no: int | None = None,
     ) -> Section:
         """创建常规箱梁截面(CONVENTIONALBOX)。
 
@@ -1710,60 +1745,60 @@ class SectionManager:
         return self.get(no)
 
     def create_streamed_box(
-        self,
-        name: str,
-        h: float = 4.0,
-        bt_l: float = 20.0,
-        bt_r: float = 20.0,
-        bb_l: float = 10.5,
-        bb_r: float = 10.5,
-        bs: float = 0.8,
-        tt: float = 0.28,
-        tb1: float = 0.27,
-        tb2: float = 0.27,
-        tw: float = 0.25,
-        ttj: float = 0.5,
-        tbj: float = 0.27,
-        twj: float = 0.4,
-        n_cell_num: int = 5,
-        bi1: float = 4.7,
-        bi2: float = 6.85,
-        bi3: float = 6.0,
-        bi4: float = 6.85,
-        xi1: float = 0.6,
-        tt1: float = 0.6,
-        xi2: float = 1.0,
-        tt2: float = 0.7,
-        xi3: float = 0.2,
-        yi3: float = 0.2,
-        xi4: float = 1.0,
-        tt4: float = 0.7,
-        xi5: float = 0.6,
-        yi5: float = 0.3,
-        xi6: float = 0.5,
-        tt6: float = 0.7,
-        xi7: float = 0.5,
-        yi7: float = 0.3,
-        bc_l: float = 4.0,
-        tc_l: float = 0.2,
-        bc1_l: float = 0.5,
-        tc1_l: float = 0.7,
-        tc2_l: float = 0.4,
-        b_symmetry: bool = True,
-        bc_r: float = 4.0,
-        tc_r: float = 0.2,
-        bc1_r: float = 0.5,
-        tc1_r: float = 0.7,
-        tc2_r: float = 0.4,
-        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-        i: float = 0.0,
-        i1: float = 0.0,
-        i2: float = 0.0,
-        i3: float = 0.0,
-        i4: float = 0.0,
-        r1: float = 0.5,
-        r2: float = 0.2,
-        no: int | None = None,
+            self,
+            name: str,
+            h: float = 4.0,
+            bt_l: float = 20.0,
+            bt_r: float = 20.0,
+            bb_l: float = 10.5,
+            bb_r: float = 10.5,
+            bs: float = 0.8,
+            tt: float = 0.28,
+            tb1: float = 0.27,
+            tb2: float = 0.27,
+            tw: float = 0.25,
+            ttj: float = 0.5,
+            tbj: float = 0.27,
+            twj: float = 0.4,
+            n_cell_num: int = 5,
+            bi1: float = 4.7,
+            bi2: float = 6.85,
+            bi3: float = 6.0,
+            bi4: float = 6.85,
+            xi1: float = 0.6,
+            tt1: float = 0.6,
+            xi2: float = 1.0,
+            tt2: float = 0.7,
+            xi3: float = 0.2,
+            yi3: float = 0.2,
+            xi4: float = 1.0,
+            tt4: float = 0.7,
+            xi5: float = 0.6,
+            yi5: float = 0.3,
+            xi6: float = 0.5,
+            tt6: float = 0.7,
+            xi7: float = 0.5,
+            yi7: float = 0.3,
+            bc_l: float = 4.0,
+            tc_l: float = 0.2,
+            bc1_l: float = 0.5,
+            tc1_l: float = 0.7,
+            tc2_l: float = 0.4,
+            b_symmetry: bool = True,
+            bc_r: float = 4.0,
+            tc_r: float = 0.2,
+            bc1_r: float = 0.5,
+            tc1_r: float = 0.7,
+            tc2_r: float = 0.4,
+            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+            i: float = 0.0,
+            i1: float = 0.0,
+            i2: float = 0.0,
+            i3: float = 0.0,
+            i4: float = 0.0,
+            r1: float = 0.5,
+            r2: float = 0.2,
+            no: int | None = None,
     ) -> Section:
         """创建扁平箱梁截面(STREAMEDBOX)。
 
@@ -1807,34 +1842,34 @@ class SectionManager:
         return self.get(no)
 
     def create_double_side_box(
-        self,
-        name: str,
-        h: float = 3.8,
-        bt: float = 36.0,
-        bt_bottom: float = 14.8,
-        bs: float = 2.1,
-        bb: float = 4.4,
-        tt: float = 0.3,
-        tb1: float = 0.3,
-        tb2: float = 0.3,
-        tw: float = 0.5,
-        b_wind: float = 1.0,
-        n_wind: float = 1.0,
-        bi: float = 8.0,
-        xi1: float = 1.0,
-        tt1: float = 0.6,
-        xi2: float = 1.0,
-        tt2: float = 0.7,
-        xi3: float = 0.6,
-        yi3: float = 0.3,
-        xo4: float = 1.0,
-        tt4: float = 0.7,
-        b1: float = 0.3,
-        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-        i: float = 0.0,
-        i1: float = 0.0,
-        i2: float = 0.0,
-        no: int | None = None,
+            self,
+            name: str,
+            h: float = 3.8,
+            bt: float = 36.0,
+            bt_bottom: float = 14.8,
+            bs: float = 2.1,
+            bb: float = 4.4,
+            tt: float = 0.3,
+            tb1: float = 0.3,
+            tb2: float = 0.3,
+            tw: float = 0.5,
+            b_wind: float = 1.0,
+            n_wind: float = 1.0,
+            bi: float = 8.0,
+            xi1: float = 1.0,
+            tt1: float = 0.6,
+            xi2: float = 1.0,
+            tt2: float = 0.7,
+            xi3: float = 0.6,
+            yi3: float = 0.3,
+            xo4: float = 1.0,
+            tt4: float = 0.7,
+            b1: float = 0.3,
+            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+            i: float = 0.0,
+            i1: float = 0.0,
+            i2: float = 0.0,
+            no: int | None = None,
     ) -> Section:
         """创建双边箱截面(DOUBLESIDEBOX)。
 
@@ -1879,23 +1914,23 @@ class SectionManager:
         return self.get(no)
 
     def create_ribbed_slab(
-        self,
-        name: str,
-        h: float = 2.8,
-        bt: float = 21.5,
-        bt_bottom: float = 17.7,
-        tt: float = 0.3,
-        b: float = 0.2,
-        h_rib: float = 1.25,
-        b1: float = 1.8,
-        b2: float = 0.2,
-        x: float = 1.5,
-        y: float = 0.3,
-        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-        i: float = 0.0,
-        i1: float = 0.0,
-        i2: float = 0.0,
-        no: int | None = None,
+            self,
+            name: str,
+            h: float = 2.8,
+            bt: float = 21.5,
+            bt_bottom: float = 17.7,
+            tt: float = 0.3,
+            b: float = 0.2,
+            h_rib: float = 1.25,
+            b1: float = 1.8,
+            b2: float = 0.2,
+            x: float = 1.5,
+            y: float = 0.3,
+            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+            i: float = 0.0,
+            i1: float = 0.0,
+            i2: float = 0.0,
+            no: int | None = None,
     ) -> Section:
         """创建肋板式截面(RIBBEDSLAB)。
 
@@ -1927,25 +1962,25 @@ class SectionManager:
         return self.get(no)
 
     def create_TGirder(
-        self,
-        name: str,
-        e_girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
-        h: float = 2.5,
-        bs: float = 1.125,
-        bm: float = 0.85,
-        bc: float = 0.0,
-        tt1: float = 0.16,
-        tt2: float = 0.25,
-        x: float = 0.6,
-        tw: float = 0.2,
-        bh: float = 0.6,
-        hh: float = 0.35,
-        yh: float = 0.25,
-        b_slope: bool = False,
-        i1: float = 0.0,
-        i2: float = 0.0,
-        r: float = 0.05,
-        no: int | None = None,
+            self,
+            name: str,
+            e_girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
+            h: float = 2.5,
+            bs: float = 1.125,
+            bm: float = 0.85,
+            bc: float = 0.0,
+            tt1: float = 0.16,
+            tt2: float = 0.25,
+            x: float = 0.6,
+            tw: float = 0.2,
+            bh: float = 0.6,
+            hh: float = 0.35,
+            yh: float = 0.25,
+            b_slope: bool = False,
+            i1: float = 0.0,
+            i2: float = 0.0,
+            r: float = 0.05,
+            no: int | None = None,
     ) -> Section:
         """创建T梁截面(TGIRDER)。
 
@@ -1980,10 +2015,10 @@ class SectionManager:
         return self.get(no)
 
     def create_custom(
-        self,
-        name: str,
-        contour_matrix: str = "",
-        no: int | None = None,
+            self,
+            name: str,
+            contour_matrix: str = "",
+            no: int | None = None,
     ) -> Section:
         """创建自定义截面(CUSTOM)。
 
@@ -2004,18 +2039,16 @@ class SectionManager:
         ok, err = osis_section_del(no)
         if not ok:
             raise RuntimeError(f"删除截面 {no} 失败: {err}")
-        
 
     def renumber(self, old_no: int, new_no: int) -> None:
         """修改截面编号"""
         ok, err = osis_section_mod(old_no, new_no)
         if not ok:
             raise RuntimeError(f"修改截面编号 {old_no} -> {new_no} 失败: {err}")
-        
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int], expected_cls: type[Section]=Section) -> Section | list[Section | None]:
+    def get(self, no: int | list[int], expected_cls: type[Section] = Section) -> Section | list[Section | None]:
         """根据编号获取单个或多个截面 (O(k))"""
         if isinstance(no, int):
             no = [no]
@@ -2032,7 +2065,7 @@ class SectionManager:
         elif len(secs) == 1:
             return secs[0]
         return secs
-    
+
     def all(self) -> list[Section]:
         """获取所有截面"""
         return self._load()
