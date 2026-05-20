@@ -501,7 +501,7 @@ class PostManager:
     # 快捷功能
     # ═══════════════════════════════════════════
 
-    def combination_and_check():
+    def combination_and_check(self):
         '''
         自动组合与验算
         '''
