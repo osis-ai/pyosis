@@ -298,7 +298,7 @@ class SeisRspSpecManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetSeisRspSpecInfoByNames", {"name": names})
+        resp = osis_client("GetSeisRspSpecByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         rsp = [SeisRspSpec._from_dict(d) if d else None for d in resp.get("data", [])]
@@ -337,6 +337,7 @@ class SeisRspSpecManager:
             name: str,
             spec_type: Literal["N", "A", "V", "D"],
             g: float,
+            input_type: int,
             code: str = "JTGT_2231_01_2020",
             bridge_type: Literal["A", "B", "C", "D"] = "A",
             is_long_span: Literal[0, 1] = 0,
@@ -355,6 +356,7 @@ class SeisRspSpecManager:
             name: 反应谱名称
             spec_type: 谱类型，N=无量纲加速度谱，A=加速度谱，V=速度谱，D=位移谱
             g: 输入g值
+            input_type:类型，1 = 按规范生成
             code: 规范名称，如 "JTGT_2231_01_2020"
             bridge_type: 桥梁类别，A/B/C/D
             is_long_span: 0=非高速公路和一级公路上的B类大桥特大桥，1=高速公路和一级公路上的B类大桥特大桥
@@ -368,7 +370,7 @@ class SeisRspSpecManager:
             delta_t: 周期间隔
         """
         ok, err = osis_seis_rsp_spec_code(
-            name, spec_type, g,
+            name, spec_type, g, input_type,
             code, bridge_type, is_long_span, level, intensity,
             site, direction, period, ksi, t, delta_t
         )
