@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 from enum import Enum
 
+from . import osis_section_numerical
 from ..core.client import osis_client
 from .composite import (
     osis_section_composite_steel_i,
@@ -248,48 +249,48 @@ class Section:
         if not ok:
             raise RuntimeError(f"导出截面 {self.no} 图片失败: {err}")
     
-    # def add_composite_part_polygon(
-    #     self,
-    #     part_index: int,
-    #     part_mat_type: Literal["Concrete", "Steel"],
-    #     part_e: float,
-    #     part_mu: float,
-    #     part_density: float,
-    #     contour_matrix: str,
-    #     contour_width: str,
-    # ) -> None:
-    #     """添加自定义组合截面面域分部"""
-    #     ok, err = osis_section_part_polygon(
-    #         self.no, part_index, part_mat_type,
-    #         part_e, part_mu, part_density, "Polygon",
-    #         contour_matrix, contour_width,
-    #     )
-    #     if not ok:
-    #         raise RuntimeError(
-    #             f"截面 {self.no} 添加面域 Part {part_index} 失败: {err}"
-    #         )
-    #
-    # def add_composite_part_line(
-    #     self,
-    #     part_index: int,
-    #     part_mat_type: Literal["Concrete", "Steel"],
-    #     part_e: float,
-    #     part_mu: float,
-    #     part_density: float,
-    #     point_matrix: str,
-    #     line_matrix: str,
-    #     width_matrix: str,
-    # ) -> None:
-    #     """添加自定义组合截面线域分部。"""
-    #     ok, err = osis_section_part_line(
-    #         self.no, part_index, part_mat_type,
-    #         part_e, part_mu, part_density, "Line",
-    #         point_matrix, line_matrix, width_matrix,
-    #     )
-    #     if not ok:
-    #         raise RuntimeError(
-    #             f"截面 {self.no} 添加线域 Part {part_index} 失败: {err}"
-    #         )
+    def add_composite_part_polygon(
+        self,
+        part_index: int,
+        part_mat_type: Literal["Concrete", "Steel"],
+        part_e: float,
+        part_mu: float,
+        part_density: float,
+        contour_matrix: str,
+        contour_width: str,
+    ) -> None:
+        """添加自定义组合截面面域分部"""
+        ok, err = osis_section_part_polygon(
+            self.no, part_index, part_mat_type,
+            part_e, part_mu, part_density, "Polygon",
+            contour_matrix, contour_width,
+        )
+        if not ok:
+            raise RuntimeError(
+                f"截面 {self.no} 添加面域 Part {part_index} 失败: {err}"
+            )
+
+    def add_composite_part_line(
+        self,
+        part_index: int,
+        part_mat_type: Literal["Concrete", "Steel"],
+        part_e: float,
+        part_mu: float,
+        part_density: float,
+        point_matrix: str,
+        line_matrix: str,
+        width_matrix: str,
+    ) -> None:
+        """添加自定义组合截面线域分部。"""
+        ok, err = osis_section_part_line(
+            self.no, part_index, part_mat_type,
+            part_e, part_mu, part_density, "Line",
+            point_matrix, line_matrix, width_matrix,
+        )
+        if not ok:
+            raise RuntimeError(
+                f"截面 {self.no} 添加线域 Part {part_index} 失败: {err}"
+            )
 
     # ── 组合截面材料 ──────────────────────────
 
@@ -721,6 +722,28 @@ class Section:
         if not ok:
             raise RuntimeError(f"修改截面编号 {self.no} -> {new_no} 失败: {err}")
 
+    def create_numerical(self, no: int, name: str, strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float, dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float, dPeriI: float) -> None:
+        """创建圆形/圆管形截面
+        Args:
+            no: 截面编号
+            name: 截面名称
+            strArea: 截面面积
+            dSy: 局部坐标系y轴方向的剪切常数
+            dSz: 局部坐标系z轴方向的剪切常数
+            dIxx: 绕局部坐标系x轴的惯性矩
+            dIyy: 绕局部坐标系y轴的惯性矩
+            dIzz: 绕局部坐标系z轴的惯性矩
+            dIww: 翘曲惯性矩
+            dCentY: 质心在局部坐标系y轴方向的坐标值
+            dCentZ: 质心在局部坐标系z轴方向的坐标值
+            dDy: 沿局部坐标系y轴方向的截面偏心
+            dDz: 沿局部坐标系z轴方向的截面偏心
+            dPeriO: 截面外轮廓周长
+            dPeriI: 截面内轮廓周长
+        """
+        ok, err = osis_section_numerical(no, name, "Numerical", strArea, dSy, dSz, dIxx, dIyy, dIzz, dIww, dCentY, dCentZ, dDy, dDz, dPeriO, dPeriI)
+        if not ok:
+            raise RuntimeError(f"创建数值截面 {no} 失败: {err}")
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -1107,23 +1130,23 @@ class SectionManager:
             raise RuntimeError(f"创建箱型钢组合截面 {no} 失败: {err}")
         return self.get(no)
     
-    # def create_composite_custom(
-    #     self,
-    #     name: str,
-    #     part_num: int,
-    #     base_e: float,
-    #     base_mu: float,
-    #     no: int | None = None,
-    # ) -> Section:
-    #     """创建自定义组合截面（COMPOSITECUSTOM）。"""
-    #     if no is None:
-    #         no = self._next_no()
-    #     ok, err = osis_section_composite_custom(
-    #         no, name, "COMPOSITECUSTOM", part_num, base_e, base_mu,
-    #     )
-    #     if not ok:
-    #         raise RuntimeError(f"创建自定义组合截面 {no} 失败: {err}")
-    #     return self.get(no)
+    def create_composite_custom(
+        self,
+        name: str,
+        part_num: int,
+        base_e: float,
+        base_mu: float,
+        no: int | None = None,
+    ) -> Section:
+        """创建自定义组合截面（COMPOSITECUSTOM）。"""
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_custom(
+            no, name, "COMPOSITECUSTOM", part_num, base_e, base_mu,
+        )
+        if not ok:
+            raise RuntimeError(f"创建自定义组合截面 {no} 失败: {err}")
+        return self.get(no)
 
     def create_steel_box(
         self,

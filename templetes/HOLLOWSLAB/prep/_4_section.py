@@ -285,6 +285,21 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     # 删除截面
     section.delete(c_sec.no+1)
     
+    # 数值截面
+    circle_sec1.create_numerical(
+        99,
+        "数值截面-测试",
+        "0.50",       # strArea 面积
+        0.0, 0.0,     # dSy, dSz
+        0.0, 0.01, 0.01, 0.0,  # dIxx, dIyy, dIzz, dIww
+        0.0, 0.0,     # dCentY, dCentZ
+        0.0, 0.0,     # dDy, dDz
+        2.0, 0.0,     # dPeriO, dPeriI
+    )
+    got = section.get(99)
+    _expect_attr(got, "name", "数值截面-测试")
+    section.delete(99)
+
     all_section = section.all()
     if len(all_section) == 0:
         raise ValueError("section.all() 为空")

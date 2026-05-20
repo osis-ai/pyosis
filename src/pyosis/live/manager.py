@@ -501,6 +501,8 @@ class LiveGradeManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
+        raise RuntimeError(f"暂不支持创建LiveGrade对象")
+        # TODO 需要修改DB文件grade字段值
         ok, err = osis_livegrade_crowd(name, "JTGD60_2015", "CROWD", eBridgeType, dPara)
         if not ok:
             raise RuntimeError(f"创建人群荷载等级 {name} 失败: {err}")

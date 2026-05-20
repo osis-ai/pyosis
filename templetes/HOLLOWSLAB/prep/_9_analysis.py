@@ -46,10 +46,33 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
     # b = stab.get(buckl_name)
 
 def build_damping(engine: OSISEngine) -> list[str]:
+    damp = engine.prop.damping
+
+    # 振型阻尼
+    damp.create_modal("阻尼-振型-测试", 0.05)
+    got = damp.get("阻尼-振型-测试")
+    if got is None:
+        raise ValueError(f"获取'阻尼-振型-测试'失败")
+    _expect_attr(got, "name", "阻尼-振型-测试")
+
+    all_damp = damp.all()
+    if not any(d.name == "阻尼-振型-测试" for d in all_damp):
+        raise ValueError(f"damping.all() 中应包含 阻尼-振型-测试!r")
+
+    damp.delete("阻尼-振型-测试")
+
+    damp.create_rayleigh_custom("阻尼-Rayleigh-自定义-测试", alpha=0.5, beta=0.002)
+    got = damp.get("阻尼-Rayleigh-自定义-测试")
+    if got is None:
+        raise ValueError(f"获取'阻尼-Rayleigh-自定义-测试'失败")
+    _expect_attr(got, "name", "阻尼-Rayleigh-自定义-测试")
+    damp.rename("阻尼-Rayleigh-自定义-测试","阻尼-Rayleigh-自定义-测试1")
+    damp.all()
+    damp.delete("阻尼-Rayleigh-自定义-测试1")
+
     damp_name = "阻尼-公式"
-    engine.prop.damping.create_rayleigh_formula(
-        damp_name, ksii=0.05, ksij=0.05, wi=1.0, wj=10.0,
-    )
+    damp.create_rayleigh_formula(damp_name, ksii=0.05, ksij=0.05, wi=1.0, wj=10.0,)
+    return [damp_name]
 
 def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     """创建活载分析（活载等级、车道、工况）

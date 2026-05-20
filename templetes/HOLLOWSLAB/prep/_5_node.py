@@ -16,6 +16,7 @@ def build_nodes(engine: OSISEngine) -> list[int]:
     - 1-15: 沿桥梁纵向的节点
     """
     node = engine.node
+    prop = engine.prop
     
     # 显式编号创建节点
     n1  = node.create(0.0300, 0.0000, 0.0000, no=1)
@@ -48,6 +49,24 @@ def build_nodes(engine: OSISEngine) -> list[int]:
     _expect_attr(n14, "no", 14)
     n15 = node.create(15.9700, 0.0000, 0.0000, no=15)
     _expect_attr(n15, "no", 15)
+    # 创建三点坐标系
+    prop.coord.create_three_point(
+        99,
+        n1.x, n1.y, n1.z,
+        n2.x, n2.y, n2.z,
+        n1.x, 1.0, 0.0,   # 第三点 y 方向偏移 1m，避免共线
+    )
+    prop.coord.renumber("99","100")
+    prop.coord.delete(100)
+    # 测试：两点+旋转角空间坐标系（沿桥轴 n1→n2，编号 98）
+    prop.coord.create_two_point_rotation(
+        98,
+        n1.x, n1.y, n1.z,
+        n2.x, n2.y, n2.z,
+        0.0,
+    )
+    prop.coord.renumber("98", "97")
+    prop.coord.delete(97)
     # 获取所有节点
     nodes = node.all()
     if len(nodes) != 15:

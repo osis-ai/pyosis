@@ -19,10 +19,28 @@ def build_materials(engine: OSISEngine) -> list[int]:
     """
     material = engine.material
     
-    # 收缩徐变模型（编号 1）
+    # 收缩徐变模型（编号 1，供 C50 使用）
     creep_shrink = engine.prop.creep_shrink.create(1, "收缩徐变", 75.00, 7, 5.000, 3)
     _expect_attr(creep_shrink, "no", 1)
-
+    # 获取收缩徐变模型
+    cs = engine.prop.creep_shrink.get(1)
+    if cs is None:
+      raise ValueError("creep_shrink.get(1) 返回 None")
+    _expect_attr(cs, "no", 1)
+    _expect_attr(cs, "name", "收缩徐变")
+    # 获取全部收缩徐变模型
+    all_cs = engine.prop.creep_shrink.all()
+    if len(all_cs) != 1:
+      raise ValueError(f"creep_shrink.all() 期望 1 条，实际 {len(all_cs)}")
+    # 创建新的收缩徐变模型
+    cs2 = engine.prop.creep_shrink.create(2, "测试收缩徐变", 70.0, 7, 5.0, 3)
+    _expect_attr(cs2, "no", 2)
+    # 重编号
+    engine.prop.creep_shrink.renumber(2,3)
+    # 删除
+    engine.prop.creep_shrink.delete(3)
+    if len(engine.prop.creep_shrink.all()) != 1:
+      raise ValueError("删除 no=2 后应只剩 1 条")
     # 材料 1: C50 混凝土
     mat1 = material.create_conc("C50", "JTG3362_2018", "C50", nCrepShrk=1, dDmp=0.050, no=1)
     _expect_attr(mat1, "name", "C50")
@@ -66,7 +84,12 @@ def build_materials(engine: OSISEngine) -> list[int]:
     no_list = [new_mat5.no]
     for no in no_list:
         material.delete(no)
-
+    # 创建荷载-位移曲线
+    engine.prop.pu_curve.create(99,"P-U曲线-测试",0,3,[0.0, 0.01, 0.02],[0.0, 100.0, 150.0])
+    # 重编号
+    engine.prop.pu_curve.renumber(99,100)
+    # 删除
+    engine.prop.pu_curve.delete(100)
     return [mat1.no, mat2.no, mat3.no, mat4.no]
 
 if __name__ == "__main__":
