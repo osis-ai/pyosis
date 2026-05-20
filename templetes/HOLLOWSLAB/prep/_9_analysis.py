@@ -49,8 +49,8 @@ def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
         raise ValueError(f"remove 后仍包含 {eg_test.name!r}")
     if eg_main.name not in (e.setl_grp_nos or []):
         raise ValueError(f"remove 后应仍保留 {eg_main.name!r}")
-
-    st.group.delete(eg_test.name)
+    st.group.rename("_沉降测试组", "_沉降测试组1")
+    st.group.delete("_沉降测试组1")
     if st.group.get("_沉降测试组") is not None:
         raise ValueError("删除 '_沉降测试组' 后 get 应返回 None")
     if st.group.count() != 1:

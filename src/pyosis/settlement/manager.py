@@ -199,16 +199,16 @@ class SettlementGroupManager:
         if not ok:
             raise RuntimeError(f"删除沉降组 {name} 失败: {err}")
 
-    # def renumber(self, old_no: int, new_no: int) -> None:
-    #     """修改沉降组编号
-    #
-    #     Args:
-    #         old_no: 旧编号
-    #         new_no: 新编号
-    #     """
-    #     ok, err = osis_setl_grp_mod(old_no, new_no)
-    #     if not ok:
-    #         raise RuntimeError(f"修改沉降组编号 {old_no} -> {new_no} 失败: {err}")
+    def rename(self, old_name: str, new_name: str) -> None:
+        """修改沉降组名称
+
+        Args:
+            old_name: 旧名称
+            new_name: 新名称
+        """
+        ok, err = osis_setl_grp_mod(old_name, new_name)
+        if not ok:
+            raise RuntimeError(f"修改沉降组名称 {old_name} -> {new_name} 失败: {err}")
 
     def get(self, name: str | list[str]) -> SettlementGroup | list[SettlementGroup | None] | None:
         """根据名称获取单个或多个沉降组
