@@ -86,7 +86,11 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     shell_thk_no,
     bIsThin=1,
     )
-
+    # thickness delete 测试：临时编号，测完即删
+    engine.thickness.create(99, 0.25, 0.25)
+    engine.thickness.renumber("99","100")
+    engine.thickness.delete(100)
+    
     element.all()
     element.renumber(e15.no, e15.no + 1 )
     element.get(e15.no + 1)

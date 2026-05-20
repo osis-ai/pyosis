@@ -49,6 +49,7 @@ def osis_seis_rsp_spec_code(
     strName: str,
     strType: Literal["N", "A", "V", "D"],
     dG: float,
+    inputType: int,
     strCode: str = "JTGT_2231_01_2020",
     strBridgeType: Literal["A", "B", "C", "D"] = "A",
     nIsLongSpan: Literal[0, 1] = 0,

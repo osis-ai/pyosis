@@ -230,13 +230,55 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     dynamic.load_to_mass.create_ltm("荷载转换质量1")
     dynamic.load_to_mass.create_ltm("荷载转换质量2")
     dynamic.load_to_mass.add_ltm("荷载转换质量1", lc1.name, 1.0, 9.806)
-
     ltm = dynamic.load_to_mass.get("荷载转换质量1")
-    _expect_attr(ltm,"name","荷载转换质量1")
+    _expect_attr(ltm, "name", "荷载转换质量1")
+    if not any(p.load_case == lc1.name for p in (ltm.lc_paras or [])):
+        raise ValueError(f"add_ltm 后应包含 {lc1.name!r}")
+    # remove_ltm 测试
+    dynamic.load_to_mass.remove_ltm("荷载转换质量1", lc1.name)
+    ltm = dynamic.load_to_mass.get("荷载转换质量1")
+    if ltm is None:
+        raise ValueError("remove_ltm 后 get 失败")
+    if any(p.load_case == lc1.name for p in (ltm.lc_paras or [])):
+        raise ValueError(f"remove_ltm 后不应再包含 {lc1.name!r}")
+    # 后续 delete / renumber
+    if ltm.no > 0:
+        dynamic.load_to_mass.renumber_ltm(ltm.no, 99)
     dynamic.load_to_mass.delete_ltm("荷载转换质量1")
     ltms = dynamic.load_to_mass.all()
     if len(ltms) != 1:
         raise ValueError(f"期望剩余 1 个荷载转换质量，实际 {len(ltms)}")
+    # 模态分析
+    dynamic.mod_opt.set_modal_opt(5)
+    
+    # 地震反应谱
+    rsp = dynamic.seis_rsp_spec_mod
+    rsp_name = "_反应谱测试"
+    rsp.create_rsp_spec_code(rsp_name,
+      "A",
+      9.8,
+      1,
+      code="JTGT2231_01_2020",
+      bridge_type="A",
+      is_long_span=0,
+      level=0,
+      intensity=0.05,
+      site=0,
+      direction=0,
+      period=0.35,
+      ksi=0.05,
+      t=6.0,
+      delta_t=0.1,)
+    got = rsp.get(rsp_name)
+    if got is None or got.name != rsp_name:
+        raise ValueError(f"获取 {rsp_name!r} 失败")
+    if got.no > 0:
+        rsp.renumber_rsp_spec(got.no, 99)
+        got2 = rsp.get(rsp_name)
+        if got2 is None or got2.no != 99:
+            raise ValueError("renumber 后编号不符")
+    rsp.all()
+    rsp.delete_rsp_spec(rsp_name)
 
     return [
         lc_barrier.name,
