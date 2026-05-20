@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Literal
 
+from ..core import osis_run
+
 from .combine import (
     osis_combine_create,
     osis_combine_post,
@@ -495,6 +497,18 @@ class PostManager:
         if not ok:
             raise RuntimeError(f"删除验算作用 ({item}) 失败: {err}")
 
+    # ═══════════════════════════════════════════
+    # 快捷功能
+    # ═══════════════════════════════════════════
+
+    def combination_and_check():
+        '''
+        自动组合与验算
+        '''
+        ok, err = osis_run("CombinationAndCheck")
+        if not ok:
+            raise RuntimeError(f"自动组合与验算失败: {err}")
+        
     # ═══════════════════════════════════════════
     # 结果显示
     # ═══════════════════════════════════════════
