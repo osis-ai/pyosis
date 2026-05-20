@@ -48,6 +48,7 @@ from ..general.interface import (
     osis_solve,
 )
 from .command import osis_run
+from .client import set_osis_port, set_osis_url
 
 
 class OSISEngine:
@@ -81,7 +82,7 @@ class OSISEngine:
         - matrix(), output_result_for_calc_book()
     """
 
-    def __init__(self) -> None:
+    def __init__(self, url="http://localhost", port=18080) -> None:
         # 引用全局单例管理器
         self._material = material_manager
         self._section = section_manager
@@ -102,6 +103,12 @@ class OSISEngine:
         self._dynamic = dynamic_manager
         self._post = post_manager
         self._result = result_manager
+
+        # OSIS端口与网址
+        self._port = port
+        self._url = url
+        set_osis_url(self._url)
+        set_osis_port(self._port)
 
     # ──────────────────────────────────────────
     # 子管理器属性
