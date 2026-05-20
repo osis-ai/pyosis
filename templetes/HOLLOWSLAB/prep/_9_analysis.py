@@ -9,15 +9,59 @@ def _expect_attr(obj: Any, attr: str, expected: Any) -> None:
     if actual != expected:
         raise ValueError(f"荷载工况属性 {attr} 不符: 期望 {expected!r}, 实际 {actual!r}")
 
-def build_settle_analysis(engine: OSISEngine, node_nos: list[int]):
-    """创建沉降分析（当前模板未定义沉降组）"""
+def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
+    """创建沉降分析"""
     st = engine.settlement
     support_nodes = [node_nos[0], node_nos[-1]]
-    eg = st.group.create("空心板支座沉降", -0.005, support_nodes)
+
+    # 1) 业务沉降组
+    eg_main = st.group.create("空心板支座沉降", -0.005, support_nodes)
+    got_main = st.group.get("空心板支座沉降")
+    if got_main is None or got_main.name != "空心板支座沉降":
+        raise ValueError("获取 '空心板支座沉降' 失败")
+
     # 2) 沉降荷载工况
     e = st.create("沉降分析工况")
+    got_case = st.get("沉降分析工况")
+    if got_case is None or got_case.name != "沉降分析工况":
+        raise ValueError("获取 '沉降分析工况' 失败")
+
     # 3) 把沉降组纳入该工况
-    e.include(eg.name)
+    e.include(eg_main.name)
+    if eg_main.name not in (e.setl_grp_nos or []):
+        raise ValueError(f"include 后应包含 {eg_main.name!r}")
+
+    # 4) 测试 remove：临时沉降组，测完删除
+    eg_test = st.group.create("_沉降测试组", -0.001, [node_nos[0]])
+    got_test = st.group.get("_沉降测试组")
+    if got_test is None or got_test.name != "_沉降测试组":
+        raise ValueError("获取 '_沉降测试组' 失败")
+
+    all_groups = st.group.all()
+    if not any(g.name == "_沉降测试组" for g in all_groups):
+        raise ValueError("st.group.all() 中应包含 '_沉降测试组'")
+    if st.group.count() != 2:
+        raise ValueError(f"st.group.count() 应为 2，实际 {st.group.count()}")
+
+    e.include(eg_test.name)
+    e.remove(eg_test.name)
+    if eg_test.name in (e.setl_grp_nos or []):
+        raise ValueError(f"remove 后仍包含 {eg_test.name!r}")
+    if eg_main.name not in (e.setl_grp_nos or []):
+        raise ValueError(f"remove 后应仍保留 {eg_main.name!r}")
+
+    st.group.delete(eg_test.name)
+    if st.group.get("_沉降测试组") is not None:
+        raise ValueError("删除 '_沉降测试组' 后 get 应返回 None")
+    if st.group.count() != 1:
+        raise ValueError(f"删除测试组后 st.group.count() 应为 1，实际 {st.group.count()}")
+
+    all_cases = st.all()
+    if not any(c.name == "沉降分析工况" for c in all_cases):
+        raise ValueError("st.all() 中应包含 '沉降分析工况'")
+    if st.count() != 1:
+        raise ValueError(f"st.count() 应为 1，实际 {st.count()}")
+
     return [e.name]
 
 def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> list[str]:
@@ -37,13 +81,50 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
     stab = engine.stability
     buckl_name = "屈曲分析工况"
 
+    # 1) 业务屈曲工况
     stab.create(buckl_name, num=5, accum=0, scalar=1.0, load_type=0)
     stab.include(buckl_name, "a", lc_dead, 1.0, 0)
     stab.include(buckl_name, "a", lc_pst, 1.0, 0)
 
-    # 可选：测 replace / delete / get / all
-    # stab.replace(buckl_name, lc_pavement, 1.0, 0, lc_dead, 1.0, 0)
-    # b = stab.get(buckl_name)
+    # 2) get
+    got = stab.get(buckl_name)
+    if got is None:
+        raise ValueError(f"获取 {buckl_name!r} 失败")
+
+    # 3) all
+    all_buckl = stab.all()
+    if not any(b.name == buckl_name for b in all_buckl):
+        raise ValueError(f"stab.all() 中应包含 {buckl_name!r}")
+
+    # 4) replace
+    test_name = "_屈曲replace测试"
+    stab.create(test_name, num=3, accum=0, scalar=1.0, load_type=0)
+
+    stab.include(test_name, "a", lc_temp_drop, 1.0, 0)
+    got_test = stab.get(test_name)
+    if got_test is None:
+        raise ValueError(f"获取 {test_name!r} 失败")
+    if not any(
+        isinstance(p, dict)
+        and (p.get("loadCase") == lc_temp_drop or p.get("name") == lc_temp_drop)
+        for p in (got_test.lcParas or [])
+    ):
+        raise ValueError(
+            f"include 后应包含 {lc_temp_drop!r}, lcParas={got_test.lcParas!r}"
+        )
+
+    stab.replace(test_name, lc_temp_rise, 1.0, 0, lc_temp_drop, 1.0, 0)
+    got_test = stab.get(test_name)
+    if got_test is None:
+        raise ValueError(f"replace 后获取'{test_name!r}'失败")
+    if got_test.name != test_name:
+        raise ValueError(f"replace 后名称应为'{test_name!r}'，实际'{got_test.name!r}'")
+    
+    stab.delete(test_name)
+    if stab.get(test_name) is not None:
+        raise ValueError(f"delete 后 get({test_name!r}) 应返回 None")
+
+    return [buckl_name]
 
 def build_damping(engine: OSISEngine) -> list[str]:
     damp = engine.prop.damping

@@ -43,8 +43,37 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     stg3.define_loadcase(1, 1, "", lc_pavement)
     stg3.define_loadcase(1, 1, "", lc_barrier)
     
-    # Stage 4: 徐变十年（编号 4）
-    stage.create(no=4, name="CS4_徐变十年", duration=3650.0)
+    # Stage 4: 徐变（编号 4）
+    stage.create(no=4, name="CS4_徐变", duration=3650.0)
+    stage.delete(4)
+    if stage.get(4) is not None:
+        raise ValueError("delete(4) 后 get(4) 应返回 None")
+    # insert：在阶段 3 后插入临时阶段（编号应为 4）
+    stg_ins = stage.insert("_阶段插入测试", ref_no=3, position=1, duration=1.0)
+    if stg_ins is None or stg_ins.name != "_阶段插入测试":
+        raise ValueError("insert 失败")
+    got4 = stage.get(4)
+    if got4 is None or got4.name != "_阶段插入测试":
+        raise ValueError(f"insert 后 get(4) 应为 '_阶段插入测试'，实际 {getattr(got4, 'name', None)!r}")
+    # get
+    got1 = stage.get(1)
+    if got1 is None or got1.name != "CS1_主梁预制、张拉预应力":
+        raise ValueError("get(1) 失败")
+    
+    # all
+    all_stg = stage.all()
+    if not any(s.name == "_阶段插入测试" for s in all_stg):
+        raise ValueError("all() 中应包含 '_阶段插入测试'")
+    if len(all_stg) != 4:
+        raise ValueError(f"insert 后应有 4 个阶段，实际 {len(all_stg)}")
+    # remove：仅移除 insert 插入的阶段
+    stage.remove(4)
+    if stage.get(4) is not None:
+        raise ValueError("remove(4) 后 get(4) 应返回 None")
+    if any(s.name == "_阶段插入测试" for s in stage.all()):
+        raise ValueError("remove 后 all() 不应再包含 '_阶段插入测试'")
+    # 恢复业务阶段 4
+    stage.create(no=4, name="CS4_徐变", duration=3650.0)
     
     # Stage 5: 运营阶段（编号 5）
     stg5 = stage.create(no=5, name="CS5_运营阶段", duration=0.0)

@@ -615,7 +615,7 @@ class ElementManager:
         ok, err = osis_element_shell(no, "SHELL", bIsThin, nMat, nThk, node1, node2, node3, node4)
         if not ok:
             raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
-        return self.get(no)  # type: ignore[return-value]
+        return self.get(no)
 
     def delete(self, no: int) -> None:
         """删除单元"""

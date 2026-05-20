@@ -72,21 +72,20 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
         mat_nos[0], sec_nos[3], "UL",18
     )
     _expect_attr(e18,"no",18)
-    # 创建壳单元，需要创建壳厚度，然后使用壳厚度编号创建壳单元
-    # TODO get（no）会出现下标越界的情况
-    # x_mid = 0.5 * (14.3200 + 15.3200)
-    # y_off = 0.5
-    # n_shell = engine.node.create(x_mid, y_off, 0.0, no=15)
-    # shell_thk_no = 1
-    # engine.thickness.create(shell_thk_no, 0.30, 0.30)
-    # element.create_shell(
-    # node_nos[12],
-    # node_nos[13],
-    # n_shell.no,
-    # mat_nos[0],
-    # shell_thk_no,
-    # bIsThin=1,
-    # )
+    # 创建壳单元
+    x_mid = 0.5 * (14.3200 + 15.3200)
+    y_off = 0.5
+    n_shell = engine.node.create(x_mid, y_off, 0.0, no=15)
+    shell_thk_no = 1
+    engine.thickness.create(shell_thk_no, 0.30, 0.30)
+    element.create_shell(
+    node_nos[12],
+    node_nos[13],
+    n_shell.no,
+    mat_nos[0],
+    shell_thk_no,
+    bIsThin=1,
+    )
 
     element.all()
     element.renumber(e15.no, e15.no + 1 )
