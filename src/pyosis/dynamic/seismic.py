@@ -18,6 +18,7 @@ def osis_seis_rsp_spec_import(
     strName: str,
     strType: Literal["N", "A", "V", "D"],
     dG: float,
+    inputType: int,
     nNum: int,
     spectrum_data: list[tuple[float, float]],
 ):

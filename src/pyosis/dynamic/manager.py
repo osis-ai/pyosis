@@ -327,8 +327,13 @@ class SeisRspSpecManager:
             g: 输入g值
             spectrum_data: 反应谱数据列表，每个元素为 (周期, 谱值) 元组
         """
-        n_num = len(spectrum_data)
-        ok, err = osis_seis_rsp_spec_import(name, spec_type, g, n_num, spectrum_data)
+        if spectrum_data and isinstance(spectrum_data[0], tuple):
+            n_num = len(spectrum_data)
+            flat = [v for pair in spectrum_data for v in pair]
+        else:
+            flat = list(spectrum_data)
+            n_num = len(flat) // 2
+        ok, err = osis_seis_rsp_spec_import(name, spec_type, g, 0, n_num, flat)
         if not ok:
             raise RuntimeError(f"创建地震反应谱 {name} 失败: {err}")
 
@@ -519,6 +524,7 @@ class RspecAnalManager:
             old_no: 旧编号
             new_no: 新编号
         """
+        raise RuntimeError(f"暂不支持修改反应谱工况编号")
         ok, err = osis_rspec_anal_mod(old_no, new_no)
         if not ok:
             raise RuntimeError(f"修改反应谱工况编号 {old_no} -> {new_no} 失败: {err}")
