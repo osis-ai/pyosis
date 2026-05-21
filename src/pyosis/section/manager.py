@@ -338,7 +338,7 @@ class Section:
             d_coor_z: 中心点 Z 坐标
             diameter: 钢筋直径，范围 D4-D50
         """
-        ok, err = osis_rebar_l_point(self.no, n_rebar_no, "Point", n_material_no, d_coor_y, d_coor_z, diameter)
+        ok, err = osis_rebar_l_point(self.no, n_rebar_no, "POINT", n_material_no, d_coor_y, d_coor_z, diameter)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 纵向钢筋 {n_rebar_no} 失败: {err}")
 
@@ -368,7 +368,7 @@ class Section:
             diameter: 钢筋直径，范围 D4-D50
         """
         ok, err = osis_rebar_l_line_a(
-            self.no, n_rebar_no, "LineA", n_material_no,
+            self.no, n_rebar_no, "LINEA", n_material_no,
             y_ref, y_ref_value, z_ref, z_ref_value,
             n_num, d_interval, diameter,
         )
@@ -407,7 +407,7 @@ class Section:
             diameter: 钢筋直径，范围 D4-D50
         """
         ok, err = osis_rebar_l_line_b(
-            self.no, n_rebar_no, "LineB", n_material_no,
+            self.no, n_rebar_no, "LINEB", n_material_no,
             d_start_y, d_start_z, d_end_y, d_end_z,
             n_method, n_num, d_interval, layout_ref, n_has_end_rebar, diameter,
         )
