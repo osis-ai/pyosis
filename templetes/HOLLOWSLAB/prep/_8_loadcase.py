@@ -253,6 +253,13 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     
     # 地震反应谱
     rsp = dynamic.seis_rsp_spec_mod
+    rsp_import_name = "_反应谱导入测试"
+    rsp.create_rsp_spec(rsp_import_name, "A", 9.8, [(0.1, 0.5), (0.2, 0.8), (0.5, 1.2), (1.0, 0.9)])
+
+    got_import = rsp.get(rsp_import_name)
+    if got_import is None or got_import.name != rsp_import_name:
+        raise ValueError(f"获取 {rsp_import_name!r} 失败")
+    rsp.delete_rsp_spec(rsp_import_name)
     rsp_name = "_反应谱测试"
     rsp.create_rsp_spec_code(rsp_name,
       "A",
