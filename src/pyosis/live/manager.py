@@ -267,6 +267,13 @@ class LiveCase:
                 - SUSPENSION: 悬索桥
                 - CUSTOM: 自定义，直接输入基频
             mu_params: 冲击系数计算参数列表（根据桥型不同参数不同）
+                * SIMPLE	            = 桥长、弹模、惯性矩、质量
+                * CONTINUOUS	        = 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
+                * ARCH	                = 拱厚变化系数、拱桥矢跨比、桥长、弹模、惯性矩，质量
+                * CABLE_STAYED	        = 计算常数、主跨跨径
+                * CABLE_STAYED_AUX	    = 计算常数、主跨跨径
+                * SUSPENSION	        = 主跨跨径、弹模、惯性矩、主缆水平拉力、质量
+                * CUSTOM	            = 用户直接输入基频
             lane_names: 车道名称列表
 
         Returns:
@@ -316,6 +323,13 @@ class LiveCase:
                 - SUSPENSION: 悬索桥
                 - CUSTOM: 自定义，直接输入基频
             mu_params: 冲击系数计算参数列表（根据桥型不同参数不同）
+                * SIMPLE	            = 桥长、弹模、惯性矩、质量
+                * CONTINUOUS	        = 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
+                * ARCH	                = 拱厚变化系数、拱桥矢跨比、桥长、弹模、惯性矩，质量
+                * CABLE_STAYED	        = 计算常数、主跨跨径
+                * CABLE_STAYED_AUX	    = 计算常数、主跨跨径
+                * SUSPENSION	        = 主跨跨径、弹模、惯性矩、主缆水平拉力、质量
+                * CUSTOM	            = 用户直接输入基频
             lane_names: 车道名称列表
 
         Returns:
