@@ -337,6 +337,8 @@ class Section:
             d_coor_y: 中心点 Y 坐标
             d_coor_z: 中心点 Z 坐标
             diameter: 钢筋直径，范围 D4-D50
+        Notes:
+            基于截面坐标的原点去计算相对于顶底板线的位置
         """
         ok, err = osis_rebar_l_point(self.no, n_rebar_no, "Point", n_material_no, d_coor_y, d_coor_z, diameter)
         if not ok:
@@ -366,6 +368,8 @@ class Section:
             n_num: 数量
             d_interval: 间距
             diameter: 钢筋直径，范围 D4-D50
+        Notes:
+            基于距离顶、底的距离来定位
         """
         ok, err = osis_rebar_l_line_a(
             self.no, n_rebar_no, "LineA", n_material_no,
@@ -405,6 +409,8 @@ class Section:
             layout_ref: 分布参考，StartPoint=起点，MidPoint=中点，EndPoint=终点
             n_has_end_rebar: 1=有端筋，0=无端筋
             diameter: 钢筋直径，范围 D4-D50
+        Notes:
+            基于截面坐标的原点去计算相对于顶底板线的位置
         """
         ok, err = osis_rebar_l_line_b(
             self.no, n_rebar_no, "LineB", n_material_no,

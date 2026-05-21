@@ -94,7 +94,9 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     element.all()
     element.renumber(e15.no, e15.no + 1 )
     element.get(e15.no + 1)
-    # element.delete(e15.no)
+    element.delete(e17.no)
+    if element.get(e17.no) is not None:
+      raise ValueError(f"delete({e17.no}) 后 get 应返回 None")
     element.count()
 
     elem_nos = [e1.no, e2.no, e3.no, e4.no, e5.no, e6.no, e7.no,

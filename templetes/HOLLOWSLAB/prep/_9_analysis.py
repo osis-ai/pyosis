@@ -221,12 +221,19 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     live.grade.get("简支空心板移动荷载1")
     live.grade.all()
 
+    live.grade.delete(grade4.name)
+    if live.grade.get(grade4.name) is not None:
+        raise ValueError(f"delete({grade4.name!r}) 后 get 应返回 None")
 
-
+    # 重命名车道
     live.lane.rename("车道2", "车道222")
     live.lane.get("车道222")
     live.lane.all()
     live.lane.count()
+    # 删除车道
+    live.lane.delete("车道222")
+    if live.lane.get("车道222") is not None:
+        raise ValueError("delete('车道222') 后 get 应返回 None")
 
     live_analysis_names = [lc1.name]
     return live_analysis_names
@@ -255,7 +262,11 @@ def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
     if got is None:
         raise ValueError(f"获取 {case_name!r} 失败")
 
-    # rspec.renumber_rspec_anal(got.no,99)
+    if got.no > 0:
+        rspec.renumber_rspec_anal(got.no, 99)
+        got2 = rspec.get(case_name)
+        if got2 is None or got2.no != 99:
+            raise ValueError("renumber_rspec_anal 后编号应为 99")
     rspec.delete_rspec_anal(case_name)
     rsp.delete_rsp_spec(spec_name)
 
