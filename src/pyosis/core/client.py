@@ -24,6 +24,23 @@ session = requests.Session()
 session.mount("http://", adapter)
 session.mount("https://", adapter)  # 如果你后续用HTTPS
 
+DEFAULT_PORT = 18080
+DEFAULT_URL = "http://localhost"
+
+def set_osis_url(url):
+    '''
+    设置OSIS默认网址
+    '''
+    global DEFAULT_URL
+    DEFAULT_URL = url
+
+def set_osis_port(port):
+    '''
+    设置要连接的OSIS端口
+    '''
+    global DEFAULT_PORT
+    DEFAULT_PORT = port
+
 # ========== 通用客户端函数（复用连接池） ==========
 def osis_client(func_name: str, payload: dict, base_url=None) -> dict:
     """
@@ -34,7 +51,7 @@ def osis_client(func_name: str, payload: dict, base_url=None) -> dict:
     Returns:
         异常时返回 (False, 错误信息)
     """
-    base_url = base_url or os.environ.get("OSIS_URL", "http://localhost:18080")
+    base_url = base_url or os.environ.get("OSIS_URL", f"{DEFAULT_URL}:{DEFAULT_PORT}")
     url = f"{base_url}/{func_name}"
 
     try:
