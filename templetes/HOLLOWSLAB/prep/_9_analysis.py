@@ -240,7 +240,7 @@ def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
     case_name = "_反应谱工况测试"
 
     rsp.create_rsp_spec_code(
-        spec_name, "A", 9.8, 1, code="JTGT2231_01_2020",
+        spec_name, "A", 9.8, code="JTGT2231_01_2020",
         intensity=0.05, site=0, delta_t=0.1,
     )
 

@@ -264,7 +264,6 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     rsp.create_rsp_spec_code(rsp_name,
       "A",
       9.8,
-      1,
       code="JTGT2231_01_2020",
       bridge_type="A",
       is_long_span=0,

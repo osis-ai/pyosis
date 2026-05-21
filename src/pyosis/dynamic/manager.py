@@ -373,7 +373,7 @@ class SeisRspSpecManager:
             delta_t: 周期间隔
         """
         ok, err = osis_seis_rsp_spec_code(
-            name, spec_type, g,
+            name, spec_type, g,1,
             code, bridge_type, is_long_span, level, intensity,
             site, direction, period, ksi, t, delta_t
         )

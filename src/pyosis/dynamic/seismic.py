@@ -18,9 +18,9 @@ def osis_seis_rsp_spec_import(
     strName: str,
     strType: Literal["N", "A", "V", "D"],
     dG: float,
+    inputType: int,
     nNum: int,
     spectrum_data: list[tuple[float, float]],
-    inputType: int = 0,
 ):
     """定义或修改导入类型地震反应谱。
 
@@ -28,9 +28,9 @@ def osis_seis_rsp_spec_import(
         strName (str): 名称
         strType (str): 谱类型，N=无量纲加速度谱，A=加速度谱，V=速度谱，D=位移谱
         dG (float): 输入g值
+        inputtype：类型，0 = 导入
         nNum (int): 点数
         spectrum_data (list): 反应谱数据列表，每个元素为 (周期, 谱值) 元组
-        inputtype：类型，0 = 导入
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
@@ -51,6 +51,7 @@ def osis_seis_rsp_spec_code(
     strName: str,
     strType: Literal["N", "A", "V", "D"],
     dG: float,
+    inputType: int = 1,
     strCode: str = "JTGT_2231_01_2020",
     strBridgeType: Literal["A", "B", "C", "D"] = "A",
     nIsLongSpan: Literal[0, 1] = 0,
@@ -62,7 +63,6 @@ def osis_seis_rsp_spec_code(
     dKsi: float = 0.05,
     dT: float = 6.0,
     dDeltaT: float = 0.01,
-    inputType: int = 1,
 ):
     """定义或修改按规范生成类型地震反应谱。
 
@@ -70,6 +70,7 @@ def osis_seis_rsp_spec_code(
         strName (str): 名称
         strType (str): 谱类型，N=无量纲加速度谱，A=加速度谱，V=速度谱，D=位移谱
         dG (float): 输入g值
+        inputtype：类型，1 = 按规范生成
         strCode (str): 规范名称，如 "JTGT_2231_01_2020"
         strBridgeType (str): 桥梁类别，A/B/C/D
         nIsLongSpan (int): 0=非高速公路和一级公路上的B类大桥特大桥，1=高速公路和一级公路上的B类大桥特大桥
@@ -81,7 +82,6 @@ def osis_seis_rsp_spec_code(
         dKsi (float): 阻尼比
         dT (float): 最长周期
         dDeltaT (float): 周期间隔
-        inputtype：类型，1 = 按规范生成
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
