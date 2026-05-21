@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from ..material.manager import MaterialManager, material_manager
@@ -82,7 +83,12 @@ class OSISEngine:
         - matrix(), output_result_for_calc_book()
     """
 
-    def __init__(self, url="http://localhost", port=18080) -> None:
+    def __init__(self, port=None, url="http://localhost") -> None:
+        '''
+        Args:
+            port (int): OSIS 端口号，为 `None` 自动尝试加载 `OSIS_HTTP_PORT` 环境变量，加载失败将设为默认值 18080
+            url (str): OSIS 网址
+        '''
         # 引用全局单例管理器
         self._material = material_manager
         self._section = section_manager
@@ -105,7 +111,10 @@ class OSISEngine:
         self._result = result_manager
 
         # OSIS端口与网址
-        self._port = port
+        if port is None:
+            self._port = os.environ.get("OSIS_HTTP_PORT", 18080)     # 如果设置了环境变量
+        else:
+            self._port = port
         self._url = url
         set_osis_url(self._url)
         set_osis_port(self._port)
