@@ -1,6 +1,8 @@
 from pyosis.core.engine import OSISEngine
 from typing import Tuple, Any
 
+from pyosis.general import osis_matrix
+
 
 def _expect_attr(obj: Any, attr: str, expected: Any) -> None:
     if not hasattr(obj, attr):
@@ -102,6 +104,53 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     if element.get(e17.no) is not None:
       raise ValueError(f"delete({e17.no}) 后 get 应返回 None")
     element.count()
+
+    # 变截面组
+    osis_matrix("TaperC1", [
+        [1, 0.0, 0.0],
+        [1, 1.0, 0.0],
+        [1, 1.0, 0.5],
+        [1, 0.0, 0.5],
+    ])
+    osis_matrix("TaperC2", [
+        [1, 0.0, 0.0],
+        [1, 1.0, 0.0],
+        [1, 1.0, 0.4],
+        [1, 0.0, 0.4],
+    ])
+    sec_t1 = engine.section.create_custom("_过渡截面1", contour_matrix="TaperC1", no=301)
+    sec_t2 = engine.section.create_custom("_过渡截面2", contour_matrix="TaperC2", no=302)
+    sec_t1.set_offset("Middle", 0.0, "Top", 0.0)
+    sec_t2.set_offset("Middle", 0.0, "Top", 0.0)
+    n_t1 = engine.node.create(0.0, -1.0, 0.0)
+    n_t2 = engine.node.create(1.0, -1.0, 0.0)
+    n_t3 = engine.node.create(2.0, -1.0, 0.0)
+    e_t1 = element.create_beam3d(
+        n_t1.no, n_t2.no,
+        mat_nos[0], 301, 302,   # 与 OSIS 示例一致：i/j 都是过渡截面对
+        1, 1, 0.0, 0, 0.0, 0, no=20,
+    )
+    e_t2 = element.create_beam3d(
+        n_t2.no, n_t3.no,
+        mat_nos[0], 301, 302,
+        1, 1, 0.0, 0, 0.0, 0, no=21,
+    )
+    tg = element.taper_group.create(
+        "_变截面测试组",
+        "0",
+        1.0, "0", 0.0,
+        "0", 1.0, "0", 0.0,
+        "20", "21",
+    )
+    # 测完清理
+    # element.taper_group.delete("_变截面测试组")
+    # element.delete(20)
+    # element.delete(21)
+    # engine.node.delete(n_t1.no)
+    # engine.node.delete(n_t2.no)
+    # engine.node.delete(n_t3.no)
+    # engine.section.delete(301)
+    # engine.section.delete(302)
 
     elem_nos = [e1.no, e2.no, e3.no, e4.no, e5.no, e6.no, e7.no,
                 e8.no, e9.no, e10.no, e11.no, e12.no, e13.no, e14.no, e18.no, e16.no]

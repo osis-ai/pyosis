@@ -606,6 +606,7 @@ class LoadCase:
         Returns:
             更新后的 LoadCase 对象
         """
+        raise Exception("暂不支持添加单元面荷载（方向向量）到工况")
         ok, err = osis_load_surface_load_vector(
             "ESRFC", self.name, strEntity, strPlanei, strDir,
             strXi, strYi, strZi, strP1i, strP2i, strP3i, strP4i

@@ -64,9 +64,8 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     tp13 = tendon.prop.create_pre("15-13", mat_nos[2], "GBT5224_2014", 15.2, 10)
     _expect_attr(tp13,"name","15-13")
 
-    # TODO 命令“TdProp,15-14,PRE,3,0,1395000000.0,0.17,1.0,1.0”至少输入9个参数！
-    # tp14 = tendon.prop.create_pre_custom("15-14", mat_nos[2], 1.395000E+09, 1.7000E-01)
-    # _expect_attr(tp14,"name","15-14")
+    tp14 = tendon.prop.create_pre_custom("15-14", mat_nos[2], 1.395000E+09, 1.7000E-01)
+    _expect_attr(tp14,"name","15-14")
 
     tendon.prop.rename("15-10","15-100")
     _expect_attr(tendon.prop.get("15-100"),"name","15-100")
@@ -136,9 +135,6 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     # 修改荷载工况
     user_lc.modify(eType="NFORCE", old_entity=1, new_entity=2)
 
-    # TODO 需要创建壳单元
-    #user_lc.create_surface_load("1", "1", "VECTOR", "0", "0", "-1", "0", "0", "0", "0")
-    #user_lc.create_surface_load_vector(1, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
     # 面荷载 — 依赖 _6 中已创建的壳单元
     shells = [e for e in engine.element.all() if e.element_type.name == "SHELL"]
     if not shells:
