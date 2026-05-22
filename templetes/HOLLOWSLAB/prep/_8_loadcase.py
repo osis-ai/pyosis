@@ -258,7 +258,6 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     if any(p.load_case == lc1.name for p in (ltm.lc_paras or [])):
         raise ValueError(f"remove_ltm 后不应再包含 {lc1.name!r}")
     # 后续 delete / rename
-    # if ltm.no > 0:
     dynamic.load_to_mass.rename_ltm(ltm.name, "_荷载转换质量1")
     dynamic.load_to_mass.delete_ltm("_荷载转换质量1")
     ltms = dynamic.load_to_mass.all()
@@ -294,13 +293,19 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     got = rsp.get(rsp_name)
     if got is None or got.name != rsp_name:
         raise ValueError(f"获取 {rsp_name!r} 失败")
-    # if got.no > 0:
     rsp.rename_rsp_spec(got.name, "_" + got.name)
     got2 = rsp.get("_" + got.name)
     if got2 is None or got2.name != "_" + got.name:
         raise ValueError("rename 后名称不符")
     rsp.all()
     rsp.delete_rsp_spec(rsp_name)
+
+    all_lc = loadcase.all()
+    if loadcase.count() != len(all_lc):
+        raise ValueError("loadcase.count() 与 all() 不一致")
+    got_lc = loadcase.get(lc_dead.name)
+    if got_lc is None or got_lc.name != lc_dead.name:
+        raise ValueError("loadcase.get 失败")
 
     return [
         lc_barrier.name,

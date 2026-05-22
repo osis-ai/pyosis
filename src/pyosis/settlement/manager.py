@@ -313,16 +313,16 @@ class SettlementManager:
         if not ok:
             raise RuntimeError(f"删除沉降荷载工况 {name} 失败: {err}")
 
-    def renumber(self, old_no: int, new_no: int) -> None:
-        """修改沉降荷载工况编号
+    def rename(self, old_name: str, new_name: str) -> None:
+        """修改沉降荷载工况名称
 
         Args:
-            old_no: 旧编号
-            new_no: 新编号
+            old_name: 旧名称
+            new_name: 新名称
         """
-        ok, err = osis_setl_anal_mod(old_no, new_no)
+        ok, err = osis_setl_anal_mod(old_name, new_name)
         if not ok:
-            raise RuntimeError(f"修改沉降荷载工况编号 {old_no} -> {new_no} 失败: {err}")
+            raise RuntimeError(f"修改沉降荷载工况名称 {old_name} -> {new_name} 失败: {err}")
 
     def get(self, name: str | list[str]) -> Settlement | list[Settlement | None] | None:
         """根据名称获取单个或多个沉降工况

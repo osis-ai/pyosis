@@ -292,6 +292,8 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     section.get(new_no)
     # 删除截面
     section.delete(new_no)
+    if section.get(new_no) is not None:
+        raise ValueError("delete 后 get 应为 None")
     
     # 数值截面
     circle_sec1.create_numerical(
@@ -307,6 +309,8 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     got = section.get(99)
     _expect_attr(got, "name", "数值截面-测试")
     section.delete(99)
+    if section.get(99) is not None:
+        raise ValueError("delete 后 get 应为 None")
 
     all_section = section.all()
     if len(all_section) == 0:

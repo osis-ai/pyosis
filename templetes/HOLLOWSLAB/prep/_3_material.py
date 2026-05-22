@@ -40,8 +40,10 @@ def build_materials(engine: OSISEngine) -> list[int]:
     engine.prop.creep_shrink.renumber(2,3)
     # 删除
     engine.prop.creep_shrink.delete(3)
+    if engine.prop.creep_shrink.get(3) is not None:
+        raise ValueError("creep_shrink delete 后 get(3) 应为 None")
     if len(engine.prop.creep_shrink.all()) != 1:
-      raise ValueError("删除 no=2 后应只剩 1 条")
+      raise ValueError("删除 no=3 后应只剩 1 条")
     # 材料 1: C50 混凝土
     mat1 = material.create_conc("C50", "JTG3362_2018", "C50", nCrepShrk=1, dDmp=0.050, no=1)
     _expect_attr(mat1, "name", "C50")

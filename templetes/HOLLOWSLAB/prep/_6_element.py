@@ -105,7 +105,10 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
       raise ValueError(f"delete({e17.no}) 后 get 应返回 None")
     element.count()
 
-    # 变截面组
+    # 变截面单元组(临时资源，测完全部 delete)
+    taper_name = "_变截面测试组"
+    taper_name_new = "_变截面测试组2"
+    # 1) Custom 过渡截面对（对齐 OSIS 命令流：30001/30002 模式）
     osis_matrix("TaperC1", [
         [1, 0.0, 0.0],
         [1, 1.0, 0.0],
@@ -122,12 +125,13 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     sec_t2 = engine.section.create_custom("_过渡截面2", contour_matrix="TaperC2", no=302)
     sec_t1.set_offset("Middle", 0.0, "Top", 0.0)
     sec_t2.set_offset("Middle", 0.0, "Top", 0.0)
+    # 2) 独立节点链 + 2 根变截面梁（i/j 均为 301→302，且 ≥2 个单元）
     n_t1 = engine.node.create(0.0, -1.0, 0.0)
     n_t2 = engine.node.create(1.0, -1.0, 0.0)
     n_t3 = engine.node.create(2.0, -1.0, 0.0)
     e_t1 = element.create_beam3d(
         n_t1.no, n_t2.no,
-        mat_nos[0], 301, 302,   # 与 OSIS 示例一致：i/j 都是过渡截面对
+        mat_nos[0], 301, 302,
         1, 1, 0.0, 0, 0.0, 0, no=20,
     )
     e_t2 = element.create_beam3d(
@@ -135,22 +139,44 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
         mat_nos[0], 301, 302,
         1, 1, 0.0, 0, 0.0, 0, no=21,
     )
-    tg = element.taper_group.create(
-        "_变截面测试组",
-        "0",
-        1.0, "0", 0.0,
-        "0", 1.0, "0", 0.0,
-        "20", "21",
-    )
-    # 测完清理
-    # element.taper_group.delete("_变截面测试组")
-    # element.delete(20)
-    # element.delete(21)
-    # engine.node.delete(n_t1.no)
-    # engine.node.delete(n_t2.no)
-    # engine.node.delete(n_t3.no)
-    # engine.section.delete(301)
-    # engine.section.delete(302)
+    _expect_attr(e_t1, "no", 20)
+    _expect_attr(e_t2, "no", 21)
+    # 3) create
+    tg = element.taper_group.create(taper_name,"0",1.0, "0", 0.0,"0", 1.0, "0", 0.0,"20", "21")
+    _expect_attr(tg, "name", taper_name)
+    # 4) get
+    got_tg = element.taper_group.get(taper_name)
+    if got_tg is None:
+        raise ValueError(f"taper_group.get({taper_name!r}) 失败")
+    _expect_attr(got_tg, "name", taper_name)
+    if got_tg.elements != [20, 21]:
+        raise ValueError(f"taper_group 应包含单元 [20, 21]，实际 {got_tg.elements!r}")
+    # 5) all
+    all_tg = element.taper_group.all()
+    if not any(g.name == taper_name for g in all_tg):
+        raise ValueError(f"taper_group.all() 应包含 {taper_name!r}")
+    # 6) rename
+    tg_renamed = element.taper_group.rename(taper_name, taper_name_new)
+    _expect_attr(tg_renamed, "name", taper_name_new)
+    if element.taper_group.get(taper_name) is not None:
+        raise ValueError("rename 后旧名称 get 应返回 None")
+    got_tg2 = element.taper_group.get(taper_name_new)
+    if got_tg2 is None:
+        raise ValueError(f"rename 后 get({taper_name_new!r}) 失败")
+    # 7) delete 变截面组
+    element.taper_group.delete(taper_name_new)
+    if element.taper_group.get(taper_name_new) is not None:
+        raise ValueError("taper_group.delete 后 get 应返回 None")
+    # 8) 清理临时单元 / 节点 / 截面
+    element.delete(20)
+    element.delete(21)
+    if element.get(20) is not None or element.get(21) is not None:
+        raise ValueError("临时变截面单元 delete 后 get 应返回 None")
+    engine.node.delete(n_t1.no)
+    engine.node.delete(n_t2.no)
+    engine.node.delete(n_t3.no)
+    engine.section.delete(301)
+    engine.section.delete(302)
 
     elem_nos = [e1.no, e2.no, e3.no, e4.no, e5.no, e6.no, e7.no,
                 e8.no, e9.no, e10.no, e11.no, e12.no, e13.no, e14.no, e18.no, e16.no]

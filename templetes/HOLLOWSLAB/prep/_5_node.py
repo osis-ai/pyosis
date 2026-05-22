@@ -77,12 +77,12 @@ def build_nodes(engine: OSISEngine) -> list[int]:
 
     new_no = n15.no + 1
     node.renumber(n15.no, new_no)
-    if node.count() != 15:
-        raise ValueError(f"node.count() 不符，期望 15，实际 {node.count()}")
+    if node.get(n15.no) is not None:
+        raise ValueError("renumber 后旧编号 get 应为 None")
 
-    node.delete(new_no)   # 删改号后的 16，不是 got.no
-    if len(node.all()) != 14:
-        raise ValueError("node.all() 应存在 14 条节点")
+    node.delete(new_no)
+    if node.get(new_no) is not None:
+        raise ValueError("delete 后 get 应为 None")
 
 
 

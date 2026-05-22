@@ -102,12 +102,12 @@ def osis_setl_anal_del(strName: str):
 
 
 @REGISTRY.register("SetlAnalMod")
-def osis_setl_anal_mod(nOld: int, nNew: int):
-    """修改沉降荷载工况编号。
+def osis_setl_anal_mod(old_name: str, new_name: str):
+    """修改沉降荷载工况名称
 
     Args:
-        nOld (int): 旧编号
-        nNew (int): 新编号
+        old_name (str): 旧名称
+        new_name (str): 新名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

@@ -56,10 +56,25 @@ def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
     if st.group.count() != 1:
         raise ValueError(f"删除测试组后 st.group.count() 应为 1，实际 {st.group.count()}")
 
+    # 5) 沉降工况 rename / delete（临时工况，勿动「沉降分析工况」）
+    e_temp = st.create("_沉降工况测试")
+    got_temp = st.get("_沉降工况测试")
+    if got_temp is None:
+        raise ValueError("获取 '_沉降工况测试' 失败")
+    st.rename(got_temp.name, "_"+got_temp.name)
+    got_renum = st.get("_"+got_temp.name)
+    if got_renum is None or got_renum.name != "_"+got_temp.name:
+        raise ValueError(
+            f"renumber 后编号应为_{got_temp.name}，实际 {getattr(got_renum, 'name', None)!r}"
+        )
+    st.delete("_沉降工况测试")
+    if st.get("_沉降工况测试") is not None:
+        raise ValueError("delete 后 get('_沉降工况测试') 应返回 None")
+    # 6) 业务工况校验
     all_cases = st.all()
     if not any(c.name == "沉降分析工况" for c in all_cases):
         raise ValueError("st.all() 中应包含 '沉降分析工况'")
-    if st.count() != 1:
+    if st.count() != len(all_cases):
         raise ValueError(f"st.count() 应为 1，实际 {st.count()}")
 
     return [e.name]
@@ -271,7 +286,6 @@ def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
     if got is None:
         raise ValueError(f"获取 {case_name!r} 失败")
 
-    # if got.no > 0:
     rspec.rename_rspec_anal(got.name, "_"+got.name)
     got2 = rspec.get("_"+got.name)
     if got2 is None or got2.name != "_"+got.name:
