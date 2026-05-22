@@ -115,12 +115,12 @@ def osis_seis_rsp_spec_del(strName: str):
 
 
 @REGISTRY.register("SeisRspSpecMod")
-def osis_seis_rsp_spec_mod(nOld: int, nNew: int):
-    """修改地震反应谱编号。
+def osis_seis_rsp_spec_mod(old_name: str, new_name: str):
+    """修改地震反应谱名称。
 
     Args:
-        nOld (int): 旧编号
-        nNew (int): 新编号
+        old_name (int): 旧名称
+        new_name (int): 新名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
@@ -184,12 +184,12 @@ def osis_rspec_anal_del(strName: str):
 
 
 @REGISTRY.register("RSpecAnalMod")
-def osis_rspec_anal_mod(nOld: int, nNew: int):
-    """修改反应谱工况编号。
+def osis_rspec_anal_mod(old_name: str, new_name: str):
+    """修改反应谱工况名称。
 
     Args:
-        nOld (int): 旧编号
-        nNew (int): 新编号
+        old_name (str): 旧名称
+        new_name (str): 新名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

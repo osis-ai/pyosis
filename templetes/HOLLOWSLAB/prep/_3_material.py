@@ -28,6 +28,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
       raise ValueError("creep_shrink.get(1) 返回 None")
     _expect_attr(cs, "no", 1)
     _expect_attr(cs, "name", "收缩徐变")
+    engine.prop.creep_shrink.get(creep_shrink.no)
     # 获取全部收缩徐变模型
     all_cs = engine.prop.creep_shrink.all()
     if len(all_cs) != 1:

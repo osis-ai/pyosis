@@ -285,11 +285,13 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     _expect_attr(c_sec,"name","自定义截面")
 
     # 修改截面编号
-    section.renumber(c_sec.no,c_sec.no+1)
-    _expect_attr(section.get(c_sec.no+1),"name","自定义截面")
-
+    old_no = c_sec.no
+    new_no = old_no + 1
+    c_sec.renumber(new_no)
+    _expect_attr(section.get(new_no), "name", "自定义截面")
+    section.get(new_no)
     # 删除截面
-    section.delete(c_sec.no+1)
+    section.delete(new_no)
     
     # 数值截面
     circle_sec1.create_numerical(
@@ -395,6 +397,18 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     sec1.add_rebar_s_torsional_stirrup(mat_no, 0.1, 0.01, 0.01)
     sec1.delete_rebar_s("BentUpRebar")
     
+    # sec1.add_rebar_circle(
+    #   n_rebar_no=4,
+    #   n_material_no=mat_no,
+    #   d_center_y=0.0,
+    #   d_center_z=0.0,
+    #   d_radius=0.30,
+    #   n_method=1,
+    #   n_num=8,
+    #   d_interval=0.0,
+    #   diameter="D16",
+    # )
+    # sec1.delete_rebar(4)
 
     sec1.add_rebar_line_a(8, mat_no, "Left", 0.0, "Top", 0.0, 1, 0.1, "D16")
 

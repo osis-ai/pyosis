@@ -67,7 +67,7 @@ from .rebar import (
     osis_rebar_s_shear_stirrup,
     osis_rebar_s_web_vertical,
     osis_rebar_s_torsional_stirrup,
-    osis_rebar_s_del,
+    osis_rebar_s_del, osis_rebar_l_circle,
 )
 from .rib import (
     osis_rib_flat,
@@ -419,6 +419,28 @@ class Section:
         )
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 纵向钢筋(LineB) {n_rebar_no} 失败: {err}")
+    def add_rebar_circle(
+        self,
+        n_rebar_no: int,
+        n_material_no: int,
+        d_center_y: float,
+        d_center_z: float,
+        d_radius: float,
+        n_method: Literal[0, 1],
+        n_num: int,
+        d_interval: float,
+        diameter: str,
+        ) -> None:
+        """添加纵向钢筋（圆形输入）"""
+        ok, err = osis_rebar_l_circle(
+            self.no, n_rebar_no, "Circle", n_material_no,
+            d_center_y, d_center_z, d_radius,
+            n_method, n_num, d_interval, diameter,
+        )
+        if not ok:
+            raise RuntimeError(
+                f"添加截面 {self.no} 纵向钢筋(Circle) {n_rebar_no} 失败: {err}"
+            )
 
     def delete_rebar(self, n_rebar_no: int) -> None:
         """删除纵向钢筋

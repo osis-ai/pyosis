@@ -139,7 +139,27 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     # TODO 需要创建壳单元
     #user_lc.create_surface_load("1", "1", "VECTOR", "0", "0", "-1", "0", "0", "0", "0")
     #user_lc.create_surface_load_vector(1, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    # 面荷载 — 依赖 _6 中已创建的壳单元
+    shells = [e for e in engine.element.all() if e.element_type.name == "SHELL"]
+    if not shells:
+        raise ValueError("create_surface_load 测试需要壳单元，请确认 _6 已 create_shell")
+    shell_no = shells[0].no
 
+    user_lc.create_surface_load(
+        strEntity=str(shell_no),
+        strPlanei="1",
+        strDir="X",
+        strGlobalI="0",
+        strP1i="0", strP2i="0", strP3i="0", strP4i="0",
+    )
+     # 删除荷载（LoadCase.delete）
+    user_lc.delete("ESRFC", entity=str(shell_no))
+    # user_lc.create_surface_load_vector(
+    #     strEntity=str(shell_no),
+    #     strPlanei="1",
+    #     strXi="0", strYi="0", strZi="-1",
+    #     strP1i="0", strP2i="0", strP3i="0", strP4i="0",
+    # )
     lc1 = loadcase.create("荷载工况-桥规中的荷编号1-结构重力", "D")
     _expect_attr(lc1,"name","荷载工况-桥规中的荷编号1-结构重力")
 
@@ -241,10 +261,10 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
         raise ValueError("remove_ltm 后 get 失败")
     if any(p.load_case == lc1.name for p in (ltm.lc_paras or [])):
         raise ValueError(f"remove_ltm 后不应再包含 {lc1.name!r}")
-    # 后续 delete / renumber
-    if ltm.no > 0:
-        dynamic.load_to_mass.renumber_ltm(ltm.no, 99)
-    dynamic.load_to_mass.delete_ltm("荷载转换质量1")
+    # 后续 delete / rename
+    # if ltm.no > 0:
+    dynamic.load_to_mass.rename_ltm(ltm.name, "_荷载转换质量1")
+    dynamic.load_to_mass.delete_ltm("_荷载转换质量1")
     ltms = dynamic.load_to_mass.all()
     if len(ltms) != 1:
         raise ValueError(f"期望剩余 1 个荷载转换质量，实际 {len(ltms)}")
@@ -278,11 +298,11 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     got = rsp.get(rsp_name)
     if got is None or got.name != rsp_name:
         raise ValueError(f"获取 {rsp_name!r} 失败")
-    if got.no > 0:
-        rsp.renumber_rsp_spec(got.no, 99)
-        got2 = rsp.get(rsp_name)
-        if got2 is None or got2.no != 99:
-            raise ValueError("renumber 后编号不符")
+    # if got.no > 0:
+    rsp.rename_rsp_spec(got.name, "_" + got.name)
+    got2 = rsp.get("_" + got.name)
+    if got2 is None or got2.name != "_" + got.name:
+        raise ValueError("rename 后名称不符")
     rsp.all()
     rsp.delete_rsp_spec(rsp_name)
 

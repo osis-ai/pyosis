@@ -146,16 +146,16 @@ class StabilityManager:
         if not ok:
             raise RuntimeError(f"删除屈曲工况 {name} 失败: {err}")
 
-    def renumber(self, old_no: int, new_no: int) -> None:
-        """修改屈曲工况编号。
+    def rename(self, old_name: str, new_name: str) -> None:
+        """修改屈曲工况名称。
 
         Args:
-            old_no: 旧编号
-            new_no: 新编号
+            old_name: 旧名称
+            new_name: 新名称
         """
-        ok, err = osis_buckl_anal_mod(old_no, new_no)
+        ok, err = osis_buckl_anal_mod(old_name, new_name)
         if not ok:
-            raise RuntimeError(f"修改屈曲工况编号 {old_no} -> {new_no} 失败: {err}")
+            raise RuntimeError(f"修改屈曲工况名称 {old_name} -> {new_name} 失败: {err}")
 
     # ── 荷载工况管理 ──────────────────────────────
 

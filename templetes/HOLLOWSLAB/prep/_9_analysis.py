@@ -120,6 +120,11 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
     if got_test.name != test_name:
         raise ValueError(f"replace 后名称应为'{test_name!r}'，实际'{got_test.name!r}'")
     
+    # 5) renumber
+    stab.rename(got_test.name, "_"+got_test.name)
+    got_renum = stab.get("_"+got_test.name)
+    if got_renum is None or got_renum.name != "_"+got_test.name:
+        raise ValueError(f"rename 后名称应为_{got_test.name}，实际 {getattr(got_renum, 'name', None)!r}")
     stab.delete(test_name)
     if stab.get(test_name) is not None:
         raise ValueError(f"delete 后 get({test_name!r}) 应返回 None")
@@ -191,6 +196,7 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     lc1 = live.case.create("车道荷载包络", "JTGD60_2015", 1)
     lc2 = live.case.create("车道荷载包络2", "JTGD60_2015", 1)
 
+    live.case.get("车道荷载包络")
     if live.case.count() == 0:
         raise Exception("获取活载工况数量错误")
     # 横向布载折减系数
@@ -234,7 +240,10 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     live.lane.delete("车道222")
     if live.lane.get("车道222") is not None:
         raise ValueError("delete('车道222') 后 get 应返回 None")
-
+    live.case.rename(lc2.name, "车道荷载包络2_重命名")
+    got_lc2 = live.case.get("车道荷载包络2_重命名")
+    if got_lc2 is None:
+        raise ValueError("live.case.rename 后 get 失败")
     live_analysis_names = [lc1.name]
     return live_analysis_names
 
@@ -262,13 +271,13 @@ def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
     if got is None:
         raise ValueError(f"获取 {case_name!r} 失败")
 
-    if got.no > 0:
-        rspec.renumber_rspec_anal(got.no, 99)
-        got2 = rspec.get(case_name)
-        if got2 is None or got2.no != 99:
-            raise ValueError("renumber_rspec_anal 后编号应为 99")
+    # if got.no > 0:
+    rspec.rename_rspec_anal(got.name, "_"+got.name)
+    got2 = rspec.get("_"+got.name)
+    if got2 is None or got2.name != "_"+got.name:
+        raise ValueError("rename_rspec_anal 后编号应为 99")
     rspec.delete_rspec_anal(case_name)
-    rsp.delete_rsp_spec(spec_name)
+    rsp.delete_rsp_spec("_"+got.name)
 
 if __name__ == "__main__":
     from ._0_engine import engine

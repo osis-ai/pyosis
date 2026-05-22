@@ -43,12 +43,12 @@ def osis_buckl_anal_del(strName: str):
 
 
 @REGISTRY.register("BucklAnalMod")
-def osis_buckl_anal_mod(nOld: int, nNew: int):
-    """修改屈曲工况编号。
+def osis_buckl_anal_mod(ole_name: str, new_name: str):
+    """修改屈曲工况名称。
 
     Args:
-        nOld (int): 旧编号
-        nNew (int): 新编号
+        ole_name (str): 旧名称
+        new_name (str): 新名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

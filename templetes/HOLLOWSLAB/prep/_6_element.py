@@ -72,20 +72,24 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
         mat_nos[0], sec_nos[3], "UL",18
     )
     _expect_attr(e18,"no",18)
-    # 创建壳单元
-    x_mid = 0.5 * (14.3200 + 15.3200)
+    # 创建四节点壳单元（面荷载 ESRFC 需要第 4 节点）
+    x1, x2 = 15.3200, 15.5400
     y_off = 0.5
-    n_shell = engine.node.create(x_mid, y_off, 0.0, no=15)
     shell_thk_no = 1
     engine.thickness.create(shell_thk_no, 0.30, 0.30)
-    element.create_shell(
-    node_nos[12],
-    node_nos[13],
-    n_shell.no,
-    mat_nos[0],
-    shell_thk_no,
-    bIsThin=1,
+    n_top_r = engine.node.create(x2, y_off, 0.0)
+    n_top_l = engine.node.create(x1, y_off, 0.0)
+    e_shell = element.create_shell(
+        node_nos[12],   # 节点 13，左下
+        node_nos[13],   # 节点 14，右下
+        n_top_r.no,     # 右上
+        mat_nos[0],
+        shell_thk_no,
+        bIsThin=1,
+        node4=n_top_l.no,  # 左上
+        no=19,
     )
+    _expect_attr(e_shell, "no", 19)
     # thickness delete 测试：临时编号，测完即删
     engine.thickness.create(99, 0.25, 0.25)
     engine.thickness.renumber("99","100")

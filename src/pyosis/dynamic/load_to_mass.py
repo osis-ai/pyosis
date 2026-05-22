@@ -42,12 +42,12 @@ def osis_ltm_anal_del(strName: str):
 
 
 @REGISTRY.register("LTMAnalMod")
-def osis_ltm_anal_mod(nOld: int, nNew: int):
-    """修改荷载转换质量编号。
+def osis_ltm_anal_mod(old_name: str, new_name: str):
+    """修改荷载转换质量名称。
 
     Args:
-        nOld (int): 旧编号
-        nNew (int): 新编号
+        old_name (str): 旧名称
+        new_name (str): 新名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

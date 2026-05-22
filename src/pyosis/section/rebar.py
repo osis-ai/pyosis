@@ -78,7 +78,42 @@ def osis_rebar_l_line_b(SecNo: int, RebarLNo: int, RebarLType: Literal["LineB"],
             - str: 失败原因（如果操作失败）
     """
     pass
+@REGISTRY.register("RebarL")
+def osis_rebar_l_circle(
+    SecNo: int,
+    RebarLNo: int,
+    RebarLType: Literal["Circle"],
+    MaterialNo: int,
+    CenterY: float,
+    CenterZ: float,
+    Radius: float,
+    Method: Literal[0, 1],
+    Num: int,
+    Interval: float,
+    Diameter: str,
+):
+    """定义或修改纵向钢筋，通过圆形输入。
 
+    Args:
+        SecNo (int): 截面编号。
+        RebarLNo (int): 钢筋编号。
+        RebarLType (str): 钢筋类型，固定为 Circle。
+        MaterialNo (int): 钢筋材料编号。
+        CenterY (float): 圆心 Y 坐标。
+        CenterZ (float): 圆心 Z 坐标。
+        Radius (float): 圆的半径。
+        Method (int): 1=输入数量，0=输入间距。
+        Num (int): 数量。
+        Interval (float): 间距。
+        Diameter (str): 钢筋直径，范围为 D4–D50。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+    
 @REGISTRY.register("RebarLDel")
 def osis_rebar_l_del(SecNo: int, RebarLNo: int):
     """删除纵向钢筋。

@@ -138,16 +138,16 @@ class LoadToMassManager:
         if not ok:
             raise RuntimeError(f"删除荷载转换质量 {name} 失败: {err}")
 
-    def renumber_ltm(self, old_no: int, new_no: int) -> None:
-        """修改荷载转换质量编号。
+    def rename_ltm(self, old_name: str, new_name: str) -> None:
+        """修改荷载转换质量名称。
 
         Args:
-            old_no: 旧编号
-            new_no: 新编号
+            old_name: 旧名称
+            new_name: 新名称
         """
-        ok, err = osis_ltm_anal_mod(old_no, new_no)
+        ok, err = osis_ltm_anal_mod(old_name, new_name)
         if not ok:
-            raise RuntimeError(f"修改荷载转换质量编号 {old_no} -> {new_no} 失败: {err}")
+            raise RuntimeError(f"修改荷载转换质量名称 {old_name} -> {new_name} 失败: {err}")
 
     def add_ltm(
         self,
@@ -390,16 +390,16 @@ class SeisRspSpecManager:
         if not ok:
             raise RuntimeError(f"删除地震反应谱 {name} 失败: {err}")
 
-    def renumber_rsp_spec(self, old_no: int, new_no: int) -> None:
-        """修改地震反应谱编号。
+    def rename_rsp_spec(self, old_name: str, new_name: str) -> None:
+        """修改地震反应谱名称。
 
         Args:
-            old_no: 旧编号
-            new_no: 新编号
+            old_name: 旧名称
+            new_name: 新名称
         """
-        ok, err = osis_seis_rsp_spec_mod(old_no, new_no)
+        ok, err = osis_seis_rsp_spec_mod(old_name, new_name)
         if not ok:
-            raise RuntimeError(f"修改地震反应谱编号 {old_no} -> {new_no} 失败: {err}")
+            raise RuntimeError(f"修改地震反应谱名称 {old_name} -> {new_name} 失败: {err}")
 
 @dataclass(frozen=False)
 class RspecAnal:
@@ -515,17 +515,16 @@ class RspecAnalManager:
         if not ok:
             raise RuntimeError(f"删除反应谱工况 {name} 失败: {err}")
 
-    def renumber_rspec_anal(self, old_no: int, new_no: int) -> None:
-        """修改反应谱工况编号。
+    def rename_rspec_anal(self, old_name: str, new_name: str) -> None:
+        """修改反应谱工况名称。
 
         Args:
-            old_no: 旧编号
-            new_no: 新编号
+            old_name: 旧名称
+            new_name: 新名称
         """
-        raise RuntimeError(f"暂不支持修改反应谱工况编号")
-        ok, err = osis_rspec_anal_mod(old_no, new_no)
+        ok, err = osis_rspec_anal_mod(old_name, new_name)
         if not ok:
-            raise RuntimeError(f"修改反应谱工况编号 {old_no} -> {new_no} 失败: {err}")
+            raise RuntimeError(f"修改反应谱工况名称 {old_name} -> {new_name} 失败: {err}")
 
 class DynamicManager:
     """动力分析管理器
