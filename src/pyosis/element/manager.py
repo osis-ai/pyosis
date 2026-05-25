@@ -386,18 +386,47 @@ class TaperEleGroupManager:
     def create(
         self,
         name: str,
-        z_type: Literal["0", "1"],
+        z_type: Literal[0, 1],
         z_trans: float = 1.0,
-        z_pos: Literal["0", "1"] = "0",
+        z_pos: Literal[0, 1] = 0,
         z_dis: float = 0.0,
-        y_type: Literal["0", "1"] = "0",
+        y_type: Literal[0, 1] = 0,
         y_trans: float = 1.0,
-        y_pos: Literal["0", "1"] = "0",
+        y_pos: Literal[0, 1] = 0,
         y_dis: float = 0.0,
         *eles: str,
 
     ) -> TaperEleGroup:
-        """创建变截面单元组"""
+        """
+        生成或修改变截面单元组
+
+        Args:
+            name (str): 变截面单元组名称
+            z_type (int): 截面Z向过渡类型，
+                * 0=线性
+                * 1=多项式
+            z_trans (float): ZType=0时默认1.0
+            z_pos (int):
+                * 0=i
+                * 1=j
+                * ZType=0时默认i
+            z_dis (float): 对称面距，ZType=0时默认0.0
+            y_type (int): 截面Y向过渡类型
+                * 0=线性
+                * 1=多项式
+            y_trans (float): YType=0时默认1.0
+            y_pos (int):
+                * 0=i
+                * 1=j
+                * YType=0时默认i
+            y_dis (float): 对称面距，YType=0时默认0.0
+            *eles (str): 单元组编号，示例：1,3,5to10
+
+        Returns:
+            tuple (bool, str): 返回一个元组，包含：
+                - bool: 操作是否成功
+                - str: 失败原因
+        """
         ok, err = osis_taperele(
             name,
             z_type,
