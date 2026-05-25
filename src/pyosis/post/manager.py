@@ -178,7 +178,7 @@ class PostManager:
         Raises:
             RuntimeError: 设置失败时抛出异常
         """
-        ok, err = osis_code("Code", code)
+        ok, err = osis_code(code)
         if not ok:
             raise RuntimeError(f"设置验算规范 {code} 失败: {err}")
 

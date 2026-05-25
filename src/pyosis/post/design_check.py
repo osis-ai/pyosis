@@ -8,14 +8,11 @@ from ..core import REGISTRY
 
 
 @REGISTRY.register('Code')
-def osis_code(eRowType: Literal["Code"], ePara: Literal["JTG", "JTG18", "JTGD64"]):
+def osis_code(eCode: Literal["JTG", "JTG18", "JTGD64"]):
     """设置验算规范（仅能设置一个；软件侧若未下发本命令则默认为 JTG18）。
 
-    命令列顺序：Cd,Code,Para（原 Code,Para）
-
     Args:
-        eRowType (str): 固定为 Code
-        ePara (str): 规范代号，不区分大小写。可选值：
+        eCode (str): 规范代号，不区分大小写。可选值：
             * JTG — JTG 3362-2018
             * JTG18 — JTG 3362-2018
             * JTGD64 — JTG D64-2015
