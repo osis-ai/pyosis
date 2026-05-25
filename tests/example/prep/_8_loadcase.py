@@ -121,7 +121,94 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
         )
     user_lc = loadcase.create("荷载工况-用户定义的荷载","USER")
     _expect_attr(user_lc,"name","荷载工况-用户定义的荷载")
-    
+
+    lc_cs = loadcase.create("测试工况-CS-施工阶段荷载", "CS")
+    _expect_attr(lc_cs, "name", "测试工况-CS-施工阶段荷载")
+
+    lc_d = loadcase.create("测试工况-D-结构重力", "D")
+    _expect_attr(lc_d, "name", "测试工况-D-结构重力")
+
+    lc_ps = loadcase.create("测试工况-PS-预加力", "PS")
+    _expect_attr(lc_ps, "name", "测试工况-PS-预加力")
+
+    lc_ev = loadcase.create("测试工况-EV-土的重力", "EV")
+    _expect_attr(lc_ev, "name", "测试工况-EV-土的重力")
+
+    lc_eh = loadcase.create("测试工况-EH-土侧压力", "EH")
+    _expect_attr(lc_eh, "name", "测试工况-EH-土侧压力")
+
+    lc_sh = loadcase.create("测试工况-SH-收缩", "SH")
+    _expect_attr(lc_sh, "name", "测试工况-SH-收缩")
+
+    lc_cr = loadcase.create("测试工况-CR-徐变", "CR")
+    _expect_attr(lc_cr, "name", "测试工况-CR-徐变")
+
+    lc_b = loadcase.create("测试工况-B-水浮力", "B")
+    _expect_attr(lc_b, "name", "测试工况-B-水浮力")
+
+    lc_stl = loadcase.create("测试工况-STL-基础变位", "STL")
+    _expect_attr(lc_stl, "name", "测试工况-STL-基础变位")
+
+    lc_l = loadcase.create("测试工况-L-汽车荷载", "L")
+    _expect_attr(lc_l, "name", "测试工况-L-汽车荷载")
+
+    lc_if = loadcase.create("测试工况-IF-汽车冲击力", "IF")
+    _expect_attr(lc_if, "name", "测试工况-IF-汽车冲击力")
+
+    lc_cf = loadcase.create("测试工况-CF-汽车离心力", "CF")
+    _expect_attr(lc_cf, "name", "测试工况-CF-汽车离心力")
+
+    lc_ls = loadcase.create("测试工况-LS-汽车引起的土侧压力", "LS")
+    _expect_attr(lc_ls, "name", "测试工况-LS-汽车引起的土侧压力")
+
+    lc_brk = loadcase.create("测试工况-BRK-汽车制动力", "BRK")
+    _expect_attr(lc_brk, "name", "测试工况-BRK-汽车制动力")
+
+    lc_crl = loadcase.create("测试工况-CRL-人群荷载", "CRL")
+    _expect_attr(lc_crl, "name", "测试工况-CRL-人群荷载")
+
+    lc_fl = loadcase.create("测试工况-FL-疲劳荷载", "FL")
+    _expect_attr(lc_fl, "name", "测试工况-FL-疲劳荷载")
+
+    lc_w1 = loadcase.create("测试工况-W1-活载风", "W1")
+    _expect_attr(lc_w1, "name", "测试工况-W1-活载风")
+
+    lc_w2 = loadcase.create("测试工况-W2-极限风", "W2")
+    _expect_attr(lc_w2, "name", "测试工况-W2-极限风")
+
+    lc_sf = loadcase.create("测试工况-SF-流水压力", "SF")
+    _expect_attr(lc_sf, "name", "测试工况-SF-流水压力")
+
+    lc_ip = loadcase.create("测试工况-IP-冰压力", "IP")
+    _expect_attr(lc_ip, "name", "测试工况-IP-冰压力")
+
+    lc_wf1 = loadcase.create("测试工况-WF1-W1引起的波浪力", "WF1")
+    _expect_attr(lc_wf1, "name", "测试工况-WF1-W1引起的波浪力")
+
+    lc_wf2 = loadcase.create("测试工况-WF2-W2引起的波浪力", "WF2")
+    _expect_attr(lc_wf2, "name", "测试工况-WF2-W2引起的波浪力")
+
+    lc_t = loadcase.create("测试工况-T-均匀温度", "T")
+    _expect_attr(lc_t, "name", "测试工况-T-均匀温度")
+
+    lc_tg = loadcase.create("测试工况-TG-梯度温度", "TG")
+    _expect_attr(lc_tg, "name", "测试工况-TG-梯度温度")
+
+    lc_fr = loadcase.create("测试工况-FR-支座摩阻力", "FR")
+    _expect_attr(lc_fr, "name", "测试工况-FR-支座摩阻力")
+
+    lc_cfs = loadcase.create("测试工况-CFS-船舶撞击", "CFS")
+    _expect_attr(lc_cfs, "name", "测试工况-CFS-船舶撞击")
+
+    lc_cfd = loadcase.create("测试工况-CFD-漂流物撞击", "CFD")
+    _expect_attr(lc_cfd, "name", "测试工况-CFD-漂流物撞击")
+
+    lc_cfv = loadcase.create("测试工况-CFV-汽车撞击", "CFV")
+    _expect_attr(lc_cfv, "name", "测试工况-CFV-汽车撞击")
+
+    lc_e = loadcase.create("测试工况-E-地震作用", "E")
+    _expect_attr(lc_e, "name", "测试工况-E-地震作用")
+
     user_lc.create_gravity(0.0, 0.0, -1.000)
     user_lc.create_nforce(1, 0.0, 0.0, -1000000.0, 0.0, 0.0, 0.0)
     user_lc.create_line_load(1, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, -1000000.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1000000.0, 0.0, 0.0, 0.0)
