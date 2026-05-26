@@ -205,13 +205,13 @@ def osis_element_group(strName: str="单元组1", eOP: Literal["c", "a", "s", "r
 @REGISTRY.register("TaperEle")
 def osis_taperele(
     nIndex: str,
-    strZType: Literal["0", "1"],
+    strZType: Literal[0, 1],
     dZTrans: float = 1.0,
-    strZpos: Literal["0", "1"] = "0",
+    strZpos: Literal[0, 1] = 0,
     dZdis: float = 0.0,
-    strYtype: Literal["0", "1"]="0",
+    strYtype: Literal[0, 1]=0,
     dYtrans: float = 1.0,
-    strYpos: Literal["0", "1"] = "0",
+    strYpos: Literal[0, 1] = 0,
     dYdis: float = 0.0,
     *eles: str,
 
@@ -221,25 +221,25 @@ def osis_taperele(
 
     Args:
         nIndex (str): 变截面单元组名称
-        strZType (str): 截面Z向过渡类型，
+        strZType (int): 截面Z向过渡类型，
             * 0=线性
             * 1=多项式
         dZTrans (float): ZType=0时默认1.0
-        strZpos (str):
+        strZpos (int):
             * 0=i
             * 1=j
             * ZType=0时默认i
         dZdis (float): 对称面距，ZType=0时默认0.0
-        strYtype (str): 截面Y向过渡类型
+        strYtype (int): 截面Y向过渡类型
             * 0=线性
             * 1=多项式
         dYtrans (float): YType=0时默认1.0
-        strYpos (str):
+        strYpos (int):
             * 0=i
             * 1=j
             * YType=0时默认i
         dYdis (float): 对称面距，YType=0时默认0.0
-        *eles (str): 单元组编号，示例：1,3,5to10
+        *eles (int | str | list): 单元组编号，示例：1,3,5to10
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
