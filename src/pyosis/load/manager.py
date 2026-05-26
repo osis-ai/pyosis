@@ -331,44 +331,41 @@ class LoadCase:
     def create_displacement(
             self,
             nEntity: int,
-            bDX: int = 1,
-            dDX: float = 0.0,
-            bDY: int = 0,
-            dDY: float = 0.0,
-            bDZ: int = 0,
-            dDZ: float = 0.0,
-            bRX: int = 0,
-            dRX: float = 0.0,
-            bRY: int = 0,
-            dRY: float = 0.0,
-            bRZ: int = 0,
-            dRZ: float = 0.0,
+            bX: int = 1,
+            Dx: float = 0.0,
+            bY: int = 0,
+            Dy: float = 0.0,
+            bZ: int = 0,
+            Dz: int = 0,
+            bRx: int = 0,
+            Rx: float = 0.0,
+            bRy: int = 0,
+            Ry: float = 0.0,
+            bRz: int = 0,
+            Rz: float = 0.0,
     ) -> LoadCase:
         """添加强迫位移
 
         Args:
-            nEntity: 节点编号
-            bDX, dDX: X向平动是否施加 (0/1)、位移值
-            bDY, dDY: Y向平动是否施加 (0/1)、位移值
-            bDZ, dDZ: Z向平动是否施加 (0/1)、位移值
-            bRX, dRX: 绕X转角是否施加 (0/1)、转角值
-            bRY, dRY: 绕Y转角是否施加 (0/1)、转角值
-            bRZ, dRZ: 绕Z转角是否施加 (0/1)、转角值
+            nEntity：节点编号
+            bX：UX方向，0 = 自由，1 = 强迫位移
+            Dx：强制位移在坐标系x方向的分量
+            bY：UY方向，0 = 自由，1 = 强迫位移
+            Dy：强制位移在坐标系y方向的分量
+            bZ：UZ方向，0 = 自由，1 = 强迫位移
+            Dz：强制位移在坐标系z方向的分量
+            bRx：RX方向，0 = 自由，1 = 强迫位移
+            Rx：绕坐标系x轴的强制旋转角度分量
+            bRy：RY方向，0 = 自由，1 = 强迫位移
+            Ry：绕坐标系y轴的强制旋转角度分量
+            bRz：RZ方向，0 = 自由，1 = 强迫位移
+            Rz：绕坐标系z轴的强制旋转角度分量
 
         Returns:
             更新后的 LoadCase 对象
         """
         ok, err = osis_load_displacement(
-            "DISPLACEMENT",
-            self.name,
-            nEntity,
-            bDX, dDX,
-            bDY, dDY,
-            bDZ, dDZ,
-            bRX, dRX,
-            bRY, dRY,
-            bRZ, dRZ,
-        )
+            "DISPLACEMENT",self.name,nEntity,bX,Dx,bY,Dy,bZ,Dz,bRx,Rx,bRy,Ry,bRz,Rz)
         if not ok:
             raise RuntimeError(f"添加强迫位移到工况 {self.name} 失败: {err}")
         return self.refresh()
@@ -606,7 +603,7 @@ class LoadCase:
         Returns:
             更新后的 LoadCase 对象
         """
-        raise Exception("暂不支持添加单元面荷载（方向向量）到工况")
+        # raise Exception("暂不支持添加单元面荷载（方向向量）到工况")
         ok, err = osis_load_surface_load_vector(
             "ESRFC", self.name, strEntity, strPlanei, strDir,
             strXi, strYi, strZi, strP1i, strP2i, strP3i, strP4i

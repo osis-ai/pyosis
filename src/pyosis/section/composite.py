@@ -57,6 +57,10 @@ def osis_section_composite_steel_i(
         H1, Bf1, Bb1, Tf1, Tb1, Tw1, WebRibPos1: 边梁
         MiddleSameWithSide: 中梁构造同边梁，1=相同，0=不同
         H2, Bf2, Bb2, Tf2, Tb2, Tw2, WebRibPos2: 中梁（MiddleSameWithSide=1 时 H2 等可填 0）
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
     """
     pass
 
@@ -116,7 +120,16 @@ def osis_section_composite_steel_trough(
         Tw1: 主梁腹板厚
         RightSameWithLeft: 右腹板加劲肋布置是否与左侧相同，1=相同，0=不同
         HasSteelI: 是否有小纵梁，1=有，0=无
-        H2, Bf2, Bf3, Tf2, Tf3, Tw2: 小纵梁（HasSteelI=0 时可填 0）
+        H2:小纵梁梁高,
+        Bf2:小纵梁上翼缘宽,
+        Bf3:小纵梁下翼缘宽,
+        Tf2:小纵梁上翼缘厚,
+        Tf3:小纵梁下翼缘厚,
+        Tw2:小纵梁腹板厚
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
     """
     pass
 @REGISTRY.register("Section")
@@ -179,7 +192,16 @@ def osis_section_composite_steel_box(
         Tb: 主梁下翼缘厚
         Tw1: 主梁腹板厚
         SameLayout: 下翼缘加劲肋布置与上翼缘是否相同，1=相同，0=不同
-        H2, Bf2, Bf3, Tf2, Tf3, Tw2: 小纵梁/次梁（单梁时可填 0）
+        H2:小纵梁梁高
+        Bf2:小纵梁上翼缘宽
+        Bf3:小纵梁下翼缘宽
+        Tf2:小纵梁上翼缘厚
+        Tf3:小纵梁下翼缘厚
+        Tw2:小纵梁腹板厚
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
     """
     pass
 
@@ -192,7 +214,19 @@ def osis_section_composite_custom(
     BaseE: float,
     BaseMu: float,
 ):
-    """定义或修改自定义组合截面（COMPOSITECUSTOM）。"""
+    """定义或修改自定义组合截面（COMPOSITECUSTOM）。
+    Args:
+        Index:编号
+        Name:截面名
+        Type:CustomComp=自定义组合截面
+        PartNum:截面分部数量
+        BaseE:基准材料的弹性模量
+        BaseMu:基准材料的泊松比
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
     pass
 
 
@@ -206,9 +240,22 @@ def osis_section_part_polygon(
     PartDensity: float,
     PartGeoType: Literal["Polygon"],
     ContourMatrix: str,
-    ContourWidth: str,
 ):
-    """自定义组合截面 - 面域 Part（Polygon）。"""
+    """定义或修改自定义组合截面的面域Part信息。
+    Args:
+        SecIndex：截面编号
+        PartIndex：Part编号
+        PartMatType：=Concrete为混凝土，可布置钢筋，=Steel为钢，不可布置钢筋
+        PartE：分部弹性模量
+        PartMu：分部泊松比
+        PartDensity：分部重度
+        PartGeoType：分部几何类型，=Polygon为面域
+        ContourMatrix：轮廓点矩阵，大小为n*3，n为点的个数，第一列为点所在的轮廓线编号，第二列为点的x坐标，第三列为点的y坐标
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
     pass
 
 
@@ -225,5 +272,30 @@ def osis_section_part_line(
     LineMatrix: str,
     WidthMatrix: str,
 ):
-    """自定义组合截面 - 线域 Part（Line）。"""
+    """定义或修改自定义组合截面的线域Part信息。
+    Args:
+        SecIndex：截面编号
+        PartIndex：Part编号
+        PartMatType：=Concrete为混凝土，可布置钢筋，=Steel为钢，不可布置钢筋
+        PartE：分部弹性模量
+        PartMu：分部泊松比
+        PartDensity：分部重度
+        PartGeoType：分部几何类型，=Line为线域
+        PointMatrix：n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标
+        LineMatrix：n行2列，几何线矩阵，第一列为点所在的轮廓线编号，第二列为点的编号
+        WidthMatrix：n行1列，轮廓线宽度矩阵，n为轮廓线数量，与ContourMatrix中最大编号须保持一致
+
+
+
+        ContourMatrix：轮廓点矩阵，大小为n*3，n为点的个数，第一列为点所在的轮廓线编号（从1开始一次递增），第二列为点的x坐标，第三列为点的y坐标
+        ContourWidth：轮廓线宽度矩阵，大小为n*1，n为轮廓线数量，与ContourMatrix中最大编号须保持一致
+
+        PointMatrix：n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标
+        LineMatrix：n行2列，几何线矩阵，第一列为点所在的轮廓线编号，第二列为点的编号
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
     pass

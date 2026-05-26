@@ -726,7 +726,7 @@ class Section:
 
     def clear_ribs(self) -> None:
         """删除截面加劲肋及加劲肋布置信息"""
-        ok, err = osis_clear_section_rib(self.no)
+        ok, err = osis_clear_section_rib(self.no, self.name)
         if not ok:
             raise RuntimeError(f"清除截面 {self.no} 加劲肋失败: {err}")
 

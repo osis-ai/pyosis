@@ -62,7 +62,7 @@ def osis_loadcase(strName: str="自定义工况1", eLoadCaseType: Literal["USER"
     pass
 
 @REGISTRY.register('LoadCaseDel')
-def osis_loadcase_del(strName: str="自定义工况1"):
+def osis_loadcase_del(strName: str):
     '''
     删除荷载工况
 
@@ -75,7 +75,7 @@ def osis_loadcase_del(strName: str="自定义工况1"):
     pass
 
 @REGISTRY.register("LCMod")
-def osis_loadcase_mod(strOldName: str="自定义工况1", strNewName: str="自定义工况2"):
+def osis_loadcase_mod(strOldName: str, strNewName: str):
     '''
     定义或修改荷载工况
 

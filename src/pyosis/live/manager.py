@@ -23,7 +23,7 @@ from .grade import (
     osis_livegrade_crowd,
     osis_livegrade_fatigue,
     osis_livegrade_del,
-    osis_livegrade_mod,
+    osis_livegrade_mod, osis_livegrade_custom,
 )
 from .analysis import (
     osis_live_analysis,
@@ -547,6 +547,41 @@ class LiveGradeManager:
         ok, err = osis_livegrade_fatigue(name, "JTGD60_2015", eLiveLoadType, dPara)
         if not ok:
             raise RuntimeError(f"创建疲劳荷载等级 {name} 失败: {err}")
+        return self.get(name)
+
+    def create_custom(self,
+        name: str,
+        eCode: Literal["CUSTOM"] = "CUSTOM",
+        eLiveLoadType: Literal["VG"] = "VG",
+        nGrpNum: int = 1,
+        veh_grp_layout: list[tuple[float, float]] = (),
+    ) -> LiveGrade:
+        """创建自定义活载等级
+        Args:
+            name: 活载等级名称
+            eCode: 规范类型，固定为 CUSTOM
+            eLiveLoadType: 活载类型，轴载组为 VG
+            nGrpNum: 轴载组数
+            veh_grp_layout: 距左侧轴的轴距, 轴载
+
+        Returns:
+            创建的 LiveGrade 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        layout_flat: list[float] = []
+        for pair in veh_grp_layout:
+            if len(pair) != 2:
+                raise ValueError(
+                    f"veh_grp_layout 每项须为 (轴距, 轴载)，当前: {pair!r}"
+                )
+            layout_flat.extend((float(pair[0]), float(pair[1])))
+        ok, err = osis_livegrade_custom(
+            name, eCode, eLiveLoadType, nGrpNum, layout_flat
+        )
+        if not ok:
+            raise RuntimeError(f"创建自定义活载等级 {name} 失败: {err}")
         return self.get(name)
 
     def delete(self, name: str) -> None:

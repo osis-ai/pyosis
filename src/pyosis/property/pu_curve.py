@@ -18,8 +18,8 @@ def osis_pu_curve(nIndex: int, strName: str, eType: int, nNum: int, displacement
             * 0 = 力
             * 1 = 力矩
         nNum (int): 曲线点数
-        displacement (list): i个点的位移值
-        force (list): i个点的力（矩）值
+        displacement (list): 第i个点的位移值
+        force (list): 第i个点的力（矩）值
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
@@ -29,11 +29,11 @@ def osis_pu_curve(nIndex: int, strName: str, eType: int, nNum: int, displacement
     pass
 
 @REGISTRY.register('PUCurveDel')
-def osis_pu_curve_del(nNO: int=1):
-    """删除荷载-位移曲线
+def osis_pu_curve_del(nNO: int):
+    """删除位移-内力曲线
 
     Args:
-        nNO (int): 荷载-位移曲线编号
+        nNO (int): 位移-力（矩）曲线编号
 
     Returns:
         tuple (bool, str):
@@ -43,7 +43,7 @@ def osis_pu_curve_del(nNO: int=1):
     pass
 
 @REGISTRY.register('PUCurveMod')
-def osis_pu_curve_mod(nOld: int=1, nNew: int=2):
+def osis_pu_curve_mod(nOld: int, nNew: int):
     """修改一个荷载-位移曲线的编号。荷载-位移曲线编号存在时，交换
 
     Args:

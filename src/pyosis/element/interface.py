@@ -138,9 +138,9 @@ def osis_element_shell(nEle: int=1, eElementType: str="CABLE", bIsThin: bool=1, 
     Args:
         nEle (int): 单元编号。从 1 开始编号，所有类型的单元均使用同一编号序列。
         eElementType (str): 不能修改，固定为 SHELL，不区分大小写
-        bIsThin (bool): 
+        bIsThin (bool): 0 = 厚壳，1 = 薄壳
         nMat (int): 材料编号。
-        nThk (int): 
+        nThk (int): 厚度编号
         nNode1 (int): 节点1编号。
         nNode1 (int): 节点2编号。
         nNode1 (int): 节点3编号。
@@ -152,11 +152,11 @@ def osis_element_shell(nEle: int=1, eElementType: str="CABLE", bIsThin: bool=1, 
     pass
 
 @REGISTRY.register("ElementDel")
-def osis_element_del(nEle: int=1):
+def osis_element_del(nEle: int):
     """删除一个单元
 
     Args:
-        nEle (int): 单元编号，从 1 开始计数
+        nEle (int): 单元编号
 
     Returns:
         tuple (bool, str):
@@ -166,7 +166,7 @@ def osis_element_del(nEle: int=1):
     pass
 
 @REGISTRY.register("ElementMod")
-def osis_element_mod(nOld: int=1, nNew: int=2):
+def osis_element_mod(nOld: int, nNew: int):
     """修改一个单元的编号。单元编号存在时，交换
 
     Args:
@@ -264,13 +264,13 @@ def osis_element_tapereledel(strIndex: str) -> tuple[bool, str]:
     pass
 
 @REGISTRY.register("TaperEleMod")
-def osis_element_taperelemod(strOldIndex: str, strNewIndex: str) -> tuple[bool, str]:
+def osis_element_taperelemod(old_name: str, new_name: str) -> tuple[bool, str]:
     """
     修改变截面组名称
 
     Args:
-        strOldIndex (str):
-        strNewIndex (str):
+        old_name (str):
+        new_name (str):
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

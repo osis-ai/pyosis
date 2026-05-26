@@ -24,7 +24,7 @@ def osis_creep_shrink(nNO: int=1, strName: str="收缩徐变1", dAvgHumidity: fl
     pass
 
 @REGISTRY.register('CrpShrkDel')
-def osis_creep_shrink_del(nNO: int=1):
+def osis_creep_shrink_del(nNO: int):
     """删除收缩徐变特性
 
     Args:
@@ -38,7 +38,7 @@ def osis_creep_shrink_del(nNO: int=1):
     pass
 
 @REGISTRY.register('CrpShrkMod')
-def osis_creep_shrink_mod(nOld: int=1, nNew: int=2):
+def osis_creep_shrink_mod(nOld: int, nNew: int):
     """修改一个收缩徐变特性的编号。收缩徐变特性编号存在时，交换
 
     Args:

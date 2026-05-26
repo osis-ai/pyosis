@@ -91,7 +91,7 @@ def osis_live_analysis_inc(strName: str, eOP: Literal["a", "m"], strLiveSubName:
             * CABLE_STAYED          = 斜拉桥（无辅助墩）
             * CABLE_STAYED_AUS      = 斜拉桥（有辅助墩）
             * SUSPENSION            = 悬索桥
-            * CUSTOM = 自定义，用户直接输入基频
+            * BRIDGE_TYPE_CUSTOM = 自定义，用户直接输入基频
         param (list): 计算冲击系数的参数或冲击系数
             * SIMPLE	            = 桥长、弹模、惯性矩、质量
             * CONTINUOUS	        = 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
@@ -99,7 +99,7 @@ def osis_live_analysis_inc(strName: str, eOP: Literal["a", "m"], strLiveSubName:
             * CABLE_STAYED	        = 计算常数、主跨跨径
             * CABLE_STAYED_AUX	    = 计算常数、主跨跨径
             * SUSPENSION	        = 主跨跨径、弹模、惯性矩、主缆水平拉力、质量
-            * CUSTOM	            = 用户直接输入基频
+            * BRIDGE_TYPE_CUSTOM	            = 用户直接输入基频
 
         lane (list): 车道线名
 

@@ -1,7 +1,7 @@
 from ..core import REGISTRY
 
 @REGISTRY.register('Node')
-def osis_node(nNO: int=1, x: float=0.0, y: float=0.0, z: float=0.0):
+def osis_node(nNO: int, x: float=0.0, y: float=0.0, z: float=0.0):
     """创建一个节点
 
     Args:
@@ -18,7 +18,7 @@ def osis_node(nNO: int=1, x: float=0.0, y: float=0.0, z: float=0.0):
     pass
 
 @REGISTRY.register('NodeDel')
-def osis_node_del(nNO: int=1):
+def osis_node_del(nNO: int):
     """删除一个节点
 
     Args:
@@ -32,7 +32,7 @@ def osis_node_del(nNO: int=1):
     pass
 
 @REGISTRY.register('NodeMod')
-def osis_node_mod(nOld: int=1, nNew: int=2):
+def osis_node_mod(nOld: int, nNew: int):
     """修改一个节点的编号。节点编号存在时，交换
 
     Args:

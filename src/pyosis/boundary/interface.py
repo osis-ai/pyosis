@@ -46,7 +46,7 @@ def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL",
     pass
 
 @REGISTRY.register("Boundary")
-def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSLV", nNode: int = 1, bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1):
+def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSLV", nNode: int = 1, bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1, bCoincident: bool = 1):
     '''
     ## 定义或修改主从约束
     pyosis.boundary.osis_boundary_master_slave
@@ -61,6 +61,7 @@ def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSL
         bRX (bool): 0 = 释放，1 = 约束
         bRY (bool): 0 = 释放，1 = 约束
         bRZ (bool): 0 = 释放，1 = 约束
+        bCoincident: 0 = 仅同位移约束，默认1
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''
@@ -69,7 +70,7 @@ def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSL
 @REGISTRY.register("Boundary")
 def osis_boundary_rigid(nBd: int, eBoundaryType: Literal["RIGID"], nNodeI: int):
     '''
-    ## 定义或修改主从约束
+    ## 定义或修改刚性连接
     
     Args:
         nBd (int): 编号
@@ -95,10 +96,10 @@ def osis_boundary_release(nBd: int, eBoundaryType: Literal["RELEASE"],
     
     Args:
         nBd (int): 编号
-        eBoundaryType (str): 固定为 MSTSLV
+        eBoundaryType (str): 固定为 RELEASE
         \\*_state (bool): 
-            * 0 = 释放
-            * 1 = 约束
+            * 0 = 完全释放
+            * 1 = 完全约束
         F\\*i and M\\*i (float): 部分约束的大小，0-1之间，表示释放后残余的约束能力的百分比
     Returns:
         tuple (bool, str): 是否成功，失败原因

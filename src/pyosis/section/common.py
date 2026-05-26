@@ -6,7 +6,7 @@ from typing import Any, Dict, Literal
 from ..core import REGISTRY
 
 @REGISTRY.register('Section')
-def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]="LSHAPE", nDir: Literal[0, 1]=1, H: float=0.1, B: float=0.1, Tf1: float=0.016, Tf2: float=0.016):
+def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]="LSHAPE", nDir: Literal[0, 1]=0, H: float=0.1, B: float=0.1, Tf1: float=0.016, Tf2: float=0.016):
     """创建或修改L形截面(LShape)。
 
     Args:
@@ -36,7 +36,7 @@ def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]
     pass
 
 @REGISTRY.register('Section')
-def osis_section_circle(nSec: int, strName: str, eSectionType: Literal["CIRCLE"]="CIRCLE", eCircleType: Literal["Hollow", "Solid"]="Solid", D: float=0.5, Tw: float=0.02):
+def osis_section_circle(nSec: int, strName: str, eSectionType: Literal["CIRCLE"]="CIRCLE", eCircleType: Literal["Hollow", "Solid"]="Solid", D: float=0.5, Tw: float=0.25):
     """创建或修改圆形截面(Circle)。
 
     Args:
@@ -242,9 +242,9 @@ def osis_section_hollowslab(nSec: int=1, strName: str="截面1-空心板", eSect
         Tt (float): 顶板厚
         Tb (float): 底板厚
         Tw (float): 腹板下端厚
-        Tc (float): 边板悬臂端部厚，eGirderPos=Middle时不变
-        Tc1 (float): 边板悬臂根部厚，eGirderPos=Middle时不变
-        Bc (float): 边板悬臂厚，eGirderPos=Middle时不变
+        Tc (float): 边板悬臂端部厚，eGirderPos=Middle时缺省
+        Tc1 (float): 边板悬臂根部厚，eGirderPos=Middle时缺省
+        Bc (float): 边板悬臂厚，eGirderPos=Middle时缺省
         xi1 (float): 倒角1宽（顶板）
         yi1 (float): 倒角1高
         xi2 (float): 倒角2宽（底板）

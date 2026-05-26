@@ -60,7 +60,7 @@ def osis_material_steel(nMat: int, strName: str, eMaterialType: Literal["STEEL"]
 
 @REGISTRY.register('Material')
 def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["PRESTRESSED"], eCode: Literal["JTG3362_2018", "JTGD62_2004"], eGrade: str, dDmp: float):
-    """创建或修改材料。
+    """创建或修改预应力材料。
 
     Args:
         nMat (int): 材料编号
@@ -85,7 +85,7 @@ def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["P
 @REGISTRY.register('Material')
 def osis_material_rebar(nMat: int, strName: str, eMaterialType: Literal["REBAR"], eCode: Literal["JTG3362_2018", "JTGD62_2004"], 
                         eGrade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"], dDmp: float):
-    """创建或修改钢筋
+    """创建或修改普通钢筋材料
 
     Args:
         nMat (int): 材料编号
@@ -108,7 +108,7 @@ def osis_material_rebar(nMat: int, strName: str, eMaterialType: Literal["REBAR"]
 
 @REGISTRY.register('Material')
 def osis_material_custom(nMat: int, strName: str, eMaterialType: Literal["CUSTOM"], dE: float=0, dG: float=0, dMu: float=0, dExpCoeff: float=0, dUnitWeight: float=0, dDensity: float=0, dDmp: float=0):
-    """创建或修改材料。
+    """创建或修改自定义材料。
 
     Args:
         nMat (int): 材料编号

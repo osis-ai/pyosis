@@ -223,8 +223,14 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     )
 
     # 创建小箱梁截面
-    small_section = section.create_smallbox("小箱梁截面", "MIDDLE", 1.6, 1.65, 1.2, 0.0, 1.0, 0.18, 0.2, 0.2, 4.0, 0.18, 0.25, 0.2, 0.15, 0.25, 0.05, 0.05, False, 0.0, 0.0, 0.05)
-    _expect_attr(small_section,"name","小箱梁截面")
+    small_section1 = section.create_smallbox("小箱梁截面-中梁", "MIDDLE", 1.6, 1.65, 1.2, 0.0, 1.0, 0.18, 0.2, 0.2, 4.0, 0.18, 0.25, 0.2, 0.15, 0.25, 0.05, 0.05, False, 0.0, 0.0, 0.05)
+    _expect_attr(small_section1,"name","小箱梁截面-中梁")
+    small_section2 = section.create_smallbox("小箱梁截面-左边梁","LEFT",1.6000,1.6500,1.2000,0.0000,1.0000,0.1800,0.2000,0.2000,4.0000,
+			0.1800,0.2500,0.2000,0.1500,0.2500,0.0500,0.0500,0,0.0000,0.0000,0.0500)
+    _expect_attr(small_section2, "name", "小箱梁截面-左边梁")
+    small_section3 = section.create_smallbox("小箱梁截面-右边梁","RIGHT",1.6000,1.6500,1.2000,0.0000,1.0000,0.1800,0.2000,0.2000,4.0000,
+			0.1800,0.2500,0.2000,0.1500,0.2500,0.0500,0.0500,0,0.0000,0.0000,0.0500)
+    _expect_attr(small_section3,"name","小箱梁截面-右边梁")
 
     # 创建空心板截面
     ch_section = section.create_hollowslab("空心板截面", "MIDDLE", 0.95, 1.0, 0.57, 0.05, 0.12, 0.12, 0.16, 0.12, 0.16, 0.38, 0.15, 0.08, 0.12, 0.08, 0.05, 0.05, 0.08, 0.08, 0.12)

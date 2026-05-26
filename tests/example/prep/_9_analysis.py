@@ -198,6 +198,13 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     grade4 = live.grade.create_fatigue("疲劳荷载等级","FATIGUE_I")
     _expect_attr(grade4,"name","疲劳荷载等级")
 
+    grade5 = live.grade.create_custom(
+        "自定义轴载","CUSTOM","VG",
+        veh_grp_layout=[(0.0, 140.0), (3.5, 140.0)],
+    )
+    _expect_attr(grade5, "name", "自定义轴载")
+
+
     eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
 
     # 车道（名称标识）

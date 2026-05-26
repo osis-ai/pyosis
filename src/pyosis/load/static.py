@@ -133,11 +133,11 @@ def osis_load_surface_load(eType: str, strLc: str, strEntity: str, strPlanei:str
     创建或修改单元面荷载，不考虑边中节点荷载插值
 
     Args:
-        eType (str):
+        eType (str): 荷载类型，Type = ESRFC
         strLc (str): 荷载工况名称
         strEntity (str): 单元编号
         strPlanei (str): 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
-        strDir (str):方向，默认为 VECTOR
+        strDir (str):方向，X,Y,Z
         strGlobalI (str):
             * 0 = 局部
             * 1 = 整体
@@ -184,32 +184,38 @@ def osis_load_displacement(
     eType: str = "DISPLACEMENT",
     strLCName: str = "自定义工况1",
     nEntity: int = 1,
-    bDX: int = 1,
-    dDX: float = 0.0,
-    bDY: int = 0,
-    dDY: float = 0.0,
-    bDZ: int = 0,
-    dDZ: float = 0.0,
-    bRX: int = 0,
-    dRX: float = 0.0,
-    bRY: int = 0,
-    dRY: float = 0.0,
-    bRZ: int = 0,
-    dRZ: float = 0.0,
+    bX:int = 1,
+    Dx: float = 0.0,
+    bY: int = 0,
+    Dy: float = 0.0,
+    bZ: int = 0,
+    Dz: int = 0,
+    bRx: int = 0,
+    Rx: float = 0.0,
+    bRy: int = 0,
+    Ry: float = 0.0,
+    bRz: int = 0,
+    Rz: float = 0.0,
 ):
     '''
-    创建或修改强迫位移（与 C++ AppendDisp 一致：工况名后为 6 组 b、d）
+    创建或修改强迫位移
 
     Args:
-        eType (str): 荷载类型，不区分大小写。固定为 DISPLACEMENT
+        Type：荷载类型，固定为 DISPLACEMENT
         strLCName (str): 荷载工况名称
-        nEntity (int): 节点编号
-        bDX, dDX: X 向平动是否施加 (0/1)、位移值
-        bDY, dDY: Y 向平动是否施加 (0/1)、位移值
-        bDZ, dDZ: Z 向平动是否施加 (0/1)、位移值
-        bRX, dRX: 绕 X 转角是否施加 (0/1)、转角值
-        bRY, dRY: 绕 Y 转角是否施加 (0/1)、转角值
-        bRZ, dRZ: 绕 Z 转角是否施加 (0/1)、转角值
+        nEntity：节点编号
+        bX：UX方向，0 = 自由，1 = 强迫位移
+        Dx：强制位移在坐标系x方向的分量
+        bY：UY方向，0 = 自由，1 = 强迫位移
+        Dy：强制位移在坐标系y方向的分量
+        bZ：UZ方向，0 = 自由，1 = 强迫位移
+        Dz：强制位移在坐标系z方向的分量
+        bRx：RX方向，0 = 自由，1 = 强迫位移
+        Rx：绕坐标系x轴的强制旋转角度分量
+        bRy：RY方向，0 = 自由，1 = 强迫位移
+        Ry：绕坐标系y轴的强制旋转角度分量
+        bRz：RZ方向，0 = 自由，1 = 强迫位移
+        Rz：绕坐标系z轴的强制旋转角度分量
 
     Returns:
         tuple (bool, str): 是否成功，失败原因
@@ -234,7 +240,7 @@ def osis_load_initial(
     dMZJ: float = 0,
 ):
     '''
-    创建或修改初始内力（与 C++ AppendInitial 一致：I 端与 J 端各 6 个分量）
+    创建或修改初始内力
 
     Args:
         eType (str): 荷载类型，不区分大小写。固定为 INITIAL
@@ -314,6 +320,12 @@ def osis_load_gtemp(eType: str="GTEMP", strLCName: str="自定义工况1", nEnti
             - T2 (float): H2处对应温度
     Returns:
         tuple (bool, str): 是否成功，失败原因
+
+    Notes:
+        R：从梁截面建模位置到温度变化点的距离
+        T：从梁顶到温度变化点的距离
+        C：从截面中心到温度变化点的距离
+        B：从梁底到温度变化点的距离
     '''
     pass
 

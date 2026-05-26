@@ -73,8 +73,25 @@ def osis_livegrade_fatigue(strName: str="活载-FATIGUE", eCode: str="JTGD60_201
     '''
     pass
 
+@REGISTRY.register("LiveGrade")
+def osis_livegrade_custom(strName: str, eCode: Literal["CUSTOM"] = "CUSTOM", eLiveLoadType: Literal["VG"] = "VG", nGrpNum: int = 1,
+                          veh_grp_layout=[]):
+    """定义或修改活载等级。
+
+    Args:
+        strName: 活载名称
+        eCode: 规范类型，固定为 CUSTOM
+        eLiveLoadType: 活载类型，轴载组为 VG
+        nGrpNum: 轴载组数
+        veh_grp_layout: 距左侧轴的轴距, 轴载
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    """
+    pass
+
 @REGISTRY.register("LiveGradeDel")
-def osis_livegrade_del(strName: str="活载1"):
+def osis_livegrade_del(strName: str):
     '''
     删除活载等级
     
@@ -89,7 +106,7 @@ def osis_livegrade_del(strName: str="活载1"):
 @REGISTRY.register("LiveGradeMod")
 def osis_livegrade_mod(strOldName: str, strNewName: str):
     '''
-    修改编号
+    修改名称
     
     Args:
         strOldName (str): 旧名称

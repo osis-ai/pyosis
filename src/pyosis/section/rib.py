@@ -135,10 +135,10 @@ def osis_rib_layout(
     Args:
         SecIndex (int): 所属截面的编号。
         GirderType (str): 钢梁类型。
-            * STEELISIDE = 组合梁的边工字钢梁
-            * STEELIMIDDLE = 组合梁的中工字钢梁
-            * STEELBOX = 组合梁的钢箱梁
-            * STEELTROUGH = 组合梁的槽型钢梁
+            * COMPISIDE = 组合梁的边工字钢梁
+            * COMPIMIDDLE = 组合梁的中工字钢梁
+            * COMPBOX = 组合梁的钢箱梁
+            * COMPTROUGH = 组合梁的槽型钢梁
             * STEEL = 一般钢梁截面
         PlateType (str): 板件所在位置。
             * 顶板：TopFlange、TopFlange1~TopFlange5
@@ -181,10 +181,10 @@ def osis_rib_layout_del(
     Args:
         SecIndex (int): 所属截面的编号。
         GirderType (str): 钢梁类型。
-            * STEELISIDE = 组合梁的边工字钢梁
-            * STEELIMIDDLE = 组合梁的中工字钢梁
-            * STEELBOX = 组合梁的钢箱梁
-            * STEELTROUGH = 组合梁的槽型钢梁
+            * COMPISIDE = 组合梁的边工字钢梁
+            * COMPIMIDDLE = 组合梁的中工字钢梁
+            * COMPBOX = 组合梁的钢箱梁
+            * COMPTROUGH = 组合梁的槽型钢梁
             * STEEL = 一般钢梁截面
         PlateType (str): 板件所在位置。
             * 顶板：TopFlange、TopFlange1~TopFlange5
@@ -205,11 +205,12 @@ def osis_rib_layout_del(
 
 
 @REGISTRY.register("ClearSectionRib")
-def osis_clear_section_rib(SecNo: int):
+def osis_clear_section_rib(SecNo: int,name: str):
     """删除截面加劲肋及加劲肋布置信息
 
     Args:
         SecNo (int): 截面编号。
+        name: 加劲肋名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
