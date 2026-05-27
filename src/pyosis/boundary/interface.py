@@ -46,7 +46,7 @@ def osis_boundary_general(nBd: int, eBoundaryType: Literal["GENERAL"]="GENERAL",
     pass
 
 @REGISTRY.register("Boundary")
-def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSLV", nNode: int = 1, bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1, bCoincident: bool = 1):
+def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSLV", nNode: int = 1, bX: bool = 1, bY: bool = 1, bZ: bool = 1, bRX: bool = 1, bRY: bool = 1, bRZ: bool = 1, bCoincident: Literal[0, 1] | None = 1):
     '''
     ## 定义或修改主从约束
     pyosis.boundary.osis_boundary_master_slave
@@ -61,7 +61,7 @@ def osis_boundary_master_slave(nBd: int, eBoundaryType: Literal["MSTSLV"]="MSTSL
         bRX (bool): 0 = 释放，1 = 约束
         bRY (bool): 0 = 释放，1 = 约束
         bRZ (bool): 0 = 释放，1 = 约束
-        bCoincident: 0 = 仅同位移约束，默认1
+        bCoincident: 0 = 仅同位移约束，默认1,可缺省
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''

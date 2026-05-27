@@ -659,11 +659,12 @@ class BoundaryManager:
         bRY: Literal[0, 1] = 1,
         bRZ: Literal[0, 1] = 1,
         no: int | None = None,
+        bCoincident: int | None = 1,
     ) -> MstSlvBoundary:
         """创建主从约束"""
         if no is None:
             no = self._next_no()
-        ok, err = osis_boundary_master_slave(no, "MSTSLV", nNode, bX, bY, bZ, bRX, bRY, bRZ)
+        ok, err = osis_boundary_master_slave(no, "MSTSLV", nNode, bX, bY, bZ, bRX, bRY, bRZ,bCoincident)
         if not ok:
             raise RuntimeError(f"创建主从约束 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]

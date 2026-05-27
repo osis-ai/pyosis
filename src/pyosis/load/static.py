@@ -189,7 +189,7 @@ def osis_load_displacement(
     bY: int = 0,
     Dy: float = 0.0,
     bZ: int = 0,
-    Dz: int = 0,
+    Dz: float = 0.0,
     bRx: int = 0,
     Rx: float = 0.0,
     bRy: int = 0,

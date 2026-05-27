@@ -199,8 +199,7 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     _expect_attr(grade4,"name","疲劳荷载等级")
 
     grade5 = live.grade.create_custom(
-        "自定义轴载","CUSTOM","VG",
-        veh_grp_layout=[(0.0, 140.0), (3.5, 140.0)],
+        "自定义轴载",veh_grp_layout=[(0.0, 140.0), (3.5, 140.0)],
     )
     _expect_attr(grade5, "name", "自定义轴载")
 

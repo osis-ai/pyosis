@@ -551,8 +551,6 @@ class LiveGradeManager:
 
     def create_custom(self,
         name: str,
-        eCode: Literal["CUSTOM"] = "CUSTOM",
-        eLiveLoadType: Literal["VG"] = "VG",
         nGrpNum: int = 1,
         veh_grp_layout: list[tuple[float, float]] = (),
     ) -> LiveGrade:
@@ -578,7 +576,7 @@ class LiveGradeManager:
                 )
             layout_flat.extend((float(pair[0]), float(pair[1])))
         ok, err = osis_livegrade_custom(
-            name, eCode, eLiveLoadType, nGrpNum, layout_flat
+            name, "CUSTOM","VG",nGrpNum, layout_flat
         )
         if not ok:
             raise RuntimeError(f"创建自定义活载等级 {name} 失败: {err}")
