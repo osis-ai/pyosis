@@ -85,7 +85,7 @@ class ControlManager:
             path (str): 完整文件名
          
         Notes: 
-            path 中如果不输入绝对路径的话，默认使用程序执行文件所在的路径，比如“D:\Rbin\X.sml”。
+            path 中如果不输入绝对路径的话，默认使用程序执行文件所在的路径，比如“D:\\Rbin\\X.sml”。
         """
         ok, err = osis_run(f"/input,{path}")
         if not ok:
