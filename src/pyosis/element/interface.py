@@ -213,7 +213,7 @@ def osis_taperele(
     dYtrans: float = 1.0,
     strYpos: Literal[0, 1] = 0,
     dYdis: float = 0.0,
-    *eles: str,
+    *eles: int | str | list,
 
 ) -> tuple[bool, str]:
     """
@@ -249,7 +249,7 @@ def osis_taperele(
     pass
 
 @REGISTRY.register("TaperEleDel")
-def osis_element_tapereledel(strIndex: str) -> tuple[bool, str]:
+def osis_tapereledel(strIndex: str) -> tuple[bool, str]:
     """
     删除变截面单元组
 
@@ -264,7 +264,7 @@ def osis_element_tapereledel(strIndex: str) -> tuple[bool, str]:
     pass
 
 @REGISTRY.register("TaperEleMod")
-def osis_element_taperelemod(old_name: str, new_name: str) -> tuple[bool, str]:
+def osis_taperelemod(old_name: str, new_name: str) -> tuple[bool, str]:
     """
     修改变截面组名称
 

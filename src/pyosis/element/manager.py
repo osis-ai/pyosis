@@ -25,8 +25,8 @@ from .interface import (
     osis_element_mod,
     osis_element_group,
     osis_taperele,
-    osis_element_tapereledel,
-    osis_element_taperelemod,
+    osis_tapereledel,
+    osis_taperelemod,
 )
 
 
@@ -394,7 +394,7 @@ class TaperEleGroupManager:
         y_trans: float = 1.0,
         y_pos: Literal[0, 1] = 0,
         y_dis: float = 0.0,
-        *eles: str,
+        *eles: int | str | list,
 
     ) -> TaperEleGroup:
         """
@@ -420,7 +420,7 @@ class TaperEleGroupManager:
                 * 1=j
                 * YType=0时默认i
             y_dis (float): 对称面距，YType=0时默认0.0
-            *eles (str): 单元组编号，示例：1,3,5to10
+            *eles (int | str | list): 单元组编号，示例：1,3,5to10
 
         Returns:
             tuple (bool, str): 返回一个元组，包含：
@@ -444,12 +444,12 @@ class TaperEleGroupManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        ok, err = osis_element_tapereledel(name)
+        ok, err = osis_tapereledel(name)
         if not ok:
             raise RuntimeError(f"删除变截面单元组 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> TaperEleGroup:
-        ok, err = osis_element_taperelemod(old_name, new_name)
+        ok, err = osis_taperelemod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名变截面单元组 {old_name} -> {new_name} 失败: {err}")
         return self.get(new_name)
