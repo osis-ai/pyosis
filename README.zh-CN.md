@@ -262,7 +262,7 @@ for name, df in results.items():
 - **荷载工况**：`LCEF`（单元内力）、`LCED`（单元位移）、`LCND`（节点位移）、`LCBF`（边界反力）、`LCTL`（钢束损失）、`LCS`（单元应力）
 - **包络**：`EnvBF`（边界反力）、`EnvEF`（单元内力）、`EnvES`（单元应变）、`EnvS`（单元应力）、`EnvND`（节点位移）
 
-需要安装 pandas：`pip install pandas`
+需要安装 pandas：`python -m install pandas`
 
 ## 完整示例
 
@@ -320,14 +320,6 @@ lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
 engine.solve()
 ```
 
-## 注意事项
-
-1. **需要先登录 OSIS**：执行代码前请确保 OSIS 软件已启动并登录，pyosis 通过 HTTP 与 OSIS 通信。
-2. **异常处理**：所有操作失败时会抛出 `RuntimeError`，建议在实际工程中加上异常处理。
-3. **无状态设计**：Manager 不缓存数据，每次调用查询方法（`all()`、`get()`、`filter()`）都会通过 HTTP 从 OSIS 获取最新数据。这保证了数据一致性，但会产生网络开销。在循环中建议本地缓存查询结果。
-4. **编号唯一性**：显式指定 `no` 时，如果编号已存在，行为取决于 OSIS 底层实现（通常覆盖或报错）。
-
 ## 更多资源
 
 - [tests/](tests/)：包含各模块的示例代码
-- [templetes/](templetes/)：包含完整桥梁建模模板项目

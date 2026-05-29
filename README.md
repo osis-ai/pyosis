@@ -45,10 +45,10 @@ engine.control.set_calc_tendon(True)
 engine.control.set_calc_creep(True)
 
 # Create sections
-sec = engine.section.create_circle("Circle Section", d=0.5, tw=0.02)
+sec = engine.section.create_circle("CircleSection", d=0.5, tw=0.02)
 
 # Create materials
-mat = engine.material.create_conc("C30 Concrete", eCode="JTG3362_2018", eGrade="C30")
+mat = engine.material.create_conc("C30Concrete", eCode="JTG3362_2018", eGrade="C30")
 
 # Create nodes
 n1 = engine.node.create(0, 0, 0)
@@ -141,11 +141,11 @@ Some managers contain sub-managers, accessed via attributes:
 
 ```python
 # Element groups
-grp = engine.element.group.create("Main Girder Elements")
+grp = engine.element.group.create("MainGirderElements")
 grp.add([1, 2, 3])
 
 # Boundary groups
-bg = engine.boundary.group.create("Abutment Boundaries")
+bg = engine.boundary.group.create("AbutmentBoundaries")
 bg.add([1, 2])
 
 # Various boundary types
@@ -164,13 +164,13 @@ prop = engine.tendon.prop.create_in(
 )
 shape = engine.tendon.shape.create_arc3d(
     "N1", n_num=2, prop="15-10",
-    element_group="Main Girder Elements", curve_name="curve1"
+    element_group="MainGirderElements", curve_name="curve1"
 )
 
 # Live loads
-grade = engine.live.grade.create("Highway-Class I")
-lane = engine.live.lane.create("Lane 1")
-case = engine.live.case.create("Live Load Case 1")
+grade = engine.live.grade.create("HighwayClassI")
+lane = engine.live.lane.create("Lane1")
+case = engine.live.case.create("LiveLoadCase 1")
 ```
 
 ### Property & Thickness Management
@@ -233,10 +233,10 @@ Some `create_*` functions support explicit numbering via the `no` parameter. If 
 
 ```python
 # Auto-assigned number
-sec = engine.section.create_circle("Section 1", d=0.5)
+sec = engine.section.create_circle("Section1", d=0.5)
 
 # Explicit number
-sec = engine.section.create_circle("Section 1", d=0.5, no=100)
+sec = engine.section.create_circle("Section1", d=0.5, no=100)
 ```
 
 ## Result Export
@@ -248,11 +248,11 @@ After solving, you can export various analysis results using `engine.result`. Al
 df = engine.result.loadcase("Self-weight", "LCEF")
 
 # Export envelope results (element forces)
-df = engine.result.env("Basic Combination Envelope", "EnvEF")
+df = engine.result.env("BasicCombinationEnvelope", "EnvEF")
 
 # Export design check results
 df = engine.result.check(
-    "混凝土", "正截面抗弯验算", "Basic Combination"
+    "混凝土", "正截面抗弯验算", "基本组合"
 )
 
 # Batch export all check results from Check folder
@@ -265,7 +265,7 @@ Supported result types:
 - **Load case**: `LCEF` (element force), `LCED` (element displacement), `LCND` (node displacement), `LCBF` (boundary reaction), `LCTL` (tendon loss), `LCS` (element stress)
 - **Envelope**: `EnvBF` (boundary reaction), `EnvEF` (element force), `EnvES` (element strain), `EnvS` (element stress), `EnvND` (node displacement)
 
-Requires `pandas` to be installed: `pip install pandas`
+Requires `pandas` to be installed: `python -m install pandas`
 
 ## Complete Example
 
@@ -288,12 +288,12 @@ engine.control.set_inc_tendon(True)
 engine.control.set_nonlinear(geom=False, link=False)
 
 # Sections
-engine.section.create_circle("Circle Section 1", d=0.219, tw=0.012, no=1)
-engine.section.create_circle("Circle Section 2", d=0.180, tw=0.008, no=2)
+engine.section.create_circle("CircleSection1", d=0.219, tw=0.012, no=1)
+engine.section.create_circle("CircleSection2", d=0.180, tw=0.008, no=2)
 
 # Materials
 engine.material.create_steel(
-    "Steel 1", eCode="JTGD64_2015", eGrade="Q345", dDmp=0.05, no=1
+    "Steel1", eCode="JTGD64_2015", eGrade="Q345", dDmp=0.05, no=1
 )
 
 # Nodes
@@ -312,7 +312,7 @@ engine.boundary.get(1).assign("a", [1, 2])
 
 # Loads
 lc = engine.load.create(
-    "Custom Load Case 1",
+    "CustomLoadCase1",
     load_case_type="USER",
     prompt="Two forces applied at nodes 3 and 4"
 )
@@ -323,14 +323,6 @@ lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
 engine.solve()
 ```
 
-## Important Notes
-
-1. **OSIS must be running**: Before executing code, ensure the OSIS software is launched and logged in. pyosis communicates with OSIS via HTTP.
-2. **Exception handling**: All operations throw `RuntimeError` on failure. It is recommended to add exception handling in production code.
-3. **Stateless design**: Managers do not cache data. Every query method (`all()`, `get()`, `filter()`) fetches fresh data from OSIS via HTTP. This ensures consistency but incurs network overhead. Cache results locally when iterating in loops.
-4. **Number uniqueness**: When explicitly specifying `no`, if the number already exists, the behavior depends on the OSIS underlying implementation (usually overwrites or raises an error).
-
 ## More Resources
 
 - [tests/](tests/): Example code for each module
-- [templetes/](templetes/): Complete bridge modeling template projects
