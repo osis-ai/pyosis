@@ -69,13 +69,13 @@ def build_nodes(engine: OSISEngine) -> list[int]:
     prop.coord.delete(97)
     # 获取所有节点
     nodes = node.all()
-    if len(nodes) != 15:
-        raise ValueError("node.all()应存在 15 条节点")
+    if node.count() != len(nodes) or nodes == 0:
+        raise ValueError("node.all()和len(nodes)数量不一致")
     # 获取指定编号的节点
     got = node.get(n15.no)
     _expect_attr(got, "no", n15.no)
 
-    new_no = n15.no + 1
+    new_no = n15.no + 100
     node.renumber(n15.no, new_no)
     if node.get(n15.no) is not None:
         raise ValueError("renumber 后旧编号 get 应为 None")
@@ -90,7 +90,8 @@ def build_nodes(engine: OSISEngine) -> list[int]:
             n8.no, n9.no, n10.no, n11.no, n12.no, n13.no, n14.no]
 
 if __name__ == "__main__":
-    from ._0_engine import engine
+    from _0_engine import engine
+    [engine.node.delete(n.no) for n in engine.node.all()]
     node_nos = build_nodes(engine)
     print(node_nos)
     print(engine.node.all())

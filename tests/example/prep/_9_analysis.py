@@ -94,6 +94,7 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
     ) = loadcase_names
 
     stab = engine.stability
+    [stab.delete(case.name) for case in stab.all()]
     buckl_name = "屈曲分析工况"
 
     # 1) 业务屈曲工况
@@ -184,7 +185,16 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     - 活载工况：名称标识
     """
     live = engine.live
-    
+    for case in live.case.all():
+        got = live.case.get(case.name)
+        if got is not None:
+            for sub in list(got.sub_load_cases):
+                got.delete_sub(sub.name)
+        live.case.delete(case.name)
+    for lane in live.lane.all():
+        live.lane.delete(lane.name)
+    for grade in live.grade.all():
+        live.grade.delete(grade.name)
     # 活载等级（名称标识）
     grade1 = live.grade.create_highway("简支空心板移动荷载", "JTGD60_2015", "HIGHWAY_I")
     _expect_attr(grade1,"name","简支空心板移动荷载")
@@ -300,8 +310,11 @@ def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
     rsp.delete_rsp_spec("_"+got.name)
 
 if __name__ == "__main__":
-    from ._0_engine import engine
-    
+    from _0_engine import engine
+
+    [engine.settlement.delete(case.name) for case in engine.settlement.all()]
+    [engine.settlement.group.delete(grp.name) for grp in engine.settlement.group.all()]
+
     ele_groups = engine.element.group.all()
     print("element groups", ele_groups)
     elem_group_names = [g.name for g in ele_groups]
@@ -309,10 +322,15 @@ if __name__ == "__main__":
     # live_names = build_live_analysis(engine, elem_group_names)
     # print(live_names)
     # print(engine.live.case.all())
-    lc_names = [lc.name for lc in engine.load.all()]
+    _order = ["防撞护栏工况","封端混凝土工况","负温度梯度","铺装工况","预应力","整体降温","整体升温","正温度梯度","主梁单元自重",]
+    by_name = {lc.name: lc.name for lc in engine.load.all()}
+    lc_names = [by_name[n] for n in _order]
+    buckling_names = build_buckling_analysis(engine, lc_names)
+
+    # lc_names = [lc.name for lc in engine.load.all()]
     settle_names = build_settle_analysis(engine, [n.no for n in engine.node.all()])
     live_names = build_live_analysis(engine, elem_group_names)
-    buckling_names = build_buckling_analysis(engine, lc_names)
+    # buckling_names = build_buckling_analysis(engine, lc_names)
     build_damping(engine)
     print("settle", settle_names)
     print("live", live_names)

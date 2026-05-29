@@ -119,7 +119,7 @@ def build_property(engine: OSISEngine) -> list[str]:
     return geo_names
 
 if __name__ == "__main__":
-    from ._0_engine import engine
+    from _0_engine import engine
     geo_names = build_property(engine)
     print(geo_names)
     print(engine.geometry.all())

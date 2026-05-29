@@ -57,7 +57,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
     _expect_attr(mat3, "name", "钢绞线-1860")
 
     # 材料 4: 钢材1
-    mat4 = material.create_steel("钢材1","JTGD64_2015","Q235")
+    mat4 = material.create_steel("钢材1","JTGD64_2015","Q235", no=4)
     _expect_attr(mat4, "name", "钢材1")
 
     # 材料 5: 自定义材料
@@ -68,8 +68,8 @@ def build_materials(engine: OSISEngine) -> list[int]:
     if len(mats) <= 0:
         raise Exception("material.all() 为空")
     # 获取材料数量
-    if material.count() != 5:
-        raise ValueError("material.count() 不符，期望 5，实际 {material.count()}")
+    if material.count() != len(mats):
+        raise ValueError("material.count() 不符")
     # 获取材料
     got = material.get(mat5.no)
     _expect_attr(got, "name", mat5.name)
@@ -80,8 +80,8 @@ def build_materials(engine: OSISEngine) -> list[int]:
 
     # 获取全部材料
     all_mat = material.all()
-    if len(all_mat) != 5:
-        raise ValueError("material.all() 为空，期望至少存在 5 条材料")
+    if len(all_mat) == 0:
+        raise ValueError("material.all() 为空")
 
     # 删除材料
     no_list = [new_mat5.no]

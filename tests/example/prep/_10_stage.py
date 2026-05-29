@@ -18,7 +18,6 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
         live_analysis_names: 移动荷载分析工况名称
     """
     stage = engine.stage
-    
     eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
     bg_abutment1, bg_abutment2 = boundary_group_names
     lc_barrier, lc_end_conc, lc_neg_temp, lc_pavement, lc_pst, lc_temp_drop, lc_temp_rise, lc_pos_temp, lc_dead = loadcase_names
@@ -84,27 +83,22 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     stg5.define_analysis(1, "LIVE", la_lane)
 
 if __name__ == "__main__":
-    from ._0_engine import engine
-    
-    ele_groups = engine.element.group.all()
-    print("element groups", ele_groups)
-    elem_group_names = [g.name for g in ele_groups]
+    from _0_engine import engine
 
-    bd_groups = engine.boundary.group.all()
-    print("boundary groups", bd_groups)
-    bd_group_names = [g.name for g in bd_groups]
-    
-    loadcases = engine.load.all()
-    print("loadcases", loadcases)
-    lc_names = [lc.name for lc in loadcases]
+    [engine.stage.delete(stg.no) for stg in engine.stage.all()]
 
-    settles = engine.settlement.all()
-    print("settlements", settles)
-    settle_analysis = [sa.name for sa in settles]
+    elem_group_names = [g.name for g in engine.element.group.all()]
+    bd_group_names = [g.name for g in engine.boundary.group.all()]
 
-    lives = engine.live.case.all()
-    print("lives", lives)
-    live_analysis = [la.name for la in lives]
-    
-    build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_analysis, live_analysis)
+    _lc_order = [
+        "防撞护栏工况", "封端混凝土工况", "负温度梯度", "铺装工况", "预应力",
+        "整体降温", "整体升温", "正温度梯度", "主梁单元自重",
+    ]
+    by_lc = {lc.name: lc.name for lc in engine.load.all()}
+    lc_names = [by_lc[n] for n in _lc_order]
+
+    settle_analysis = ["沉降分析工况"]
+    live_analysis = ["车道荷载包络"]
+
+    build_stages(engine,elem_group_names,bd_group_names,lc_names,settle_analysis,live_analysis,["屈曲分析工况"],[],)
     print(engine.stage.all())

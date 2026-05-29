@@ -407,8 +407,12 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     ]
 
 if __name__ == "__main__":
-    from ._0_engine import engine
-    
+    from _0_engine import engine
+
+    [engine.tendon.shape.delete(shape.name) for shape in engine.tendon.shape.all()]
+    [engine.load.delete(case.name) for case in engine.load.all()]
+    [engine.dynamic.seis_rsp_spec_mod.delete_rsp_spec(spec.name) for spec in engine.dynamic.seis_rsp_spec_mod.all()]
+
     # 从 engine 获取已有数据
     mats = engine.material.all()
     print("materials: ", mats)
@@ -419,9 +423,11 @@ if __name__ == "__main__":
     elem_groups = engine.element.group.all()
     print("element groups: ", elem_groups)
     elem_group_names = [eg.name for eg in elem_groups]
-    geos = engine.geometry.all()
-    print("geometrys: ", geos)
-    geo_names = [s.name for s in geos]  # 几何名称固定
+
+    from _2_property import build_property
+
+    geo_names = build_property(engine)
+    print("geo_names:", geo_names)
     
     lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
     print(lc_names)

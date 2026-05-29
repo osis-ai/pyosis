@@ -241,7 +241,18 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     return elem_nos, elem_groups_names
 
 if __name__ == "__main__":
-    from ._0_engine import engine
+    from _0_engine import engine
+
+    # 1) 先删钢束形状（释放对单元组的占用）
+    tendon = engine.tendon
+    [tendon.shape.delete(shape.name) for shape in list(tendon.shape.all())]
+
+    # 2) 再删单元组
+    [engine.element.group.delete(eg.name) for eg in list(engine.element.group.all())]
+
+    # 3) 最后删单元
+    [engine.element.delete(e.no) for e in engine.element.all()]
+
     mats = engine.material.all()
     print("materials: ", mats)
     mat_nos = [m.no for m in mats]
