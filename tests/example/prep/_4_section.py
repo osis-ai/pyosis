@@ -37,7 +37,15 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     # 创建圆形截面
     circle_sec2 = section.create_circle("圆形截面", "Solid", 0.5, 0.25, no=4)
     _expect_attr(circle_sec2, "name", "圆形截面")
-
+    # 单室圆形箱梁
+    circle_sec3 = section.create_circle("单室圆形箱梁", "Hollow", 6.0000,0.3500, no=411)
+    _expect_attr(circle_sec3, "name", "单室圆形箱梁")
+    # 实心圆形截面
+    circle_sec4 = section.create_circle("实心圆形截面", "Solid", 1.5000,0.7500, no=412)
+    _expect_attr(circle_sec4, "name", "实心圆形截面")
+    # 空心圆形截面（圆环）
+    circle_sec5 = section.create_circle("空心圆形截面（圆环）", "Solid", 2.0000,0.2000, no=413)
+    _expect_attr(circle_sec5, "name", "空心圆形截面（圆环）")
     # 创建T形截面
     t_sec1 = section.create_Tshape("T形截面", 0, 0.3, 0.2, 0.016, 0.025, no=5)
     _expect_attr(t_sec1, "name", "T形截面")
@@ -56,7 +64,10 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     # 热轧工字钢_I40a
     i_sec2 = section.create_Ishape("热轧工字钢_I40a", 400.0000,142.0000,142.0000,16.5000,16.5000,10.5000, no=77)
     _expect_attr(i_sec2, "name", "热轧工字钢_I40a")
-
+    # 空心I形截面
+    i_sec3 = section.create_Ishape("空心I形截面", 2.0000,1.5000,1.5000,0.2500,0.2500,0.2000, no=78)
+    _expect_attr(i_sec3, "name", "空心I形截面")
+    # 宽翼缘H型钢
     h_sec1 = section.create_steel_i("宽翼缘H型钢",400.0000,300.0000,300.0000,20.0000,20.0000,12.0000,"Right", no=8)
     _expect_attr(h_sec1,"name","宽翼缘H型钢")
 
@@ -115,6 +126,42 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
                                      0.5000, 0.5000, 1.0000, 1.0000, 0.5000, 0.2500,
                                      1, 1.0000, 0.5000, 0.2500, 1, 1.2000, 0.8000, 0.2000, no=18)
     _expect_attr(rect_sec10, "name", "一般截面斜倒角-空腹-隔板-凹槽")
+    # 方钢管200x200x10
+    rect_sec11 = section.create_rect("方钢管200x200x10", "Fillet", "Hollow", 0.2000,0.2000,0.0000,0.0000,0.0200,0.0100,0.0100,0.0000,0.0000,
+			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=181)
+    _expect_attr(rect_sec11, "name", "方钢管200x200x10")
+    # 起始截面
+    rect_sec12 = section.create_rect("起始截面", "Chamfer", "Solid", 2.0000,1.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,
+			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=182)
+    _expect_attr(rect_sec12, "name", "起始截面")
+    # 结束截面
+    rect_sec13 = section.create_rect("结束截面", "Chamfer", "Solid", 2.0000,3.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,
+			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=183)
+    _expect_attr(rect_sec13, "name", "结束截面")
+    # _曲线变截面组_3
+    rect_sec14 = section.create_rect("_曲线变截面组_3", "Chamfer", "Solid", 2.0000,1.2500,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,
+			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=184)
+    _expect_attr(rect_sec14, "name", "_曲线变截面组_3")
+    # 矩形钢管200x200x10
+    rect_sec15 = section.create_rect("矩形钢管200x200x10", "Fillet", "Hollow", 0.2000,0.2000,0.0000,0.0000,0.0200,0.0100,0.0100,0.0000,0.0000,
+			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=185)
+    _expect_attr(rect_sec15, "name", "矩形钢管200x200x10")
+    # 实心矩形截面
+    rect_sec16 = section.create_rect("实心矩形截面", "Chamfer", "Solid", 2.0000, 1.0000, 0.2000, 0.1000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0000,
+    0, 0.0000, 0.0000, 0.0000, 0, 0.0000, 0.0000, 0.0000, no=186)
+    _expect_attr(rect_sec16, "name", "实心矩形截面")
+    # 主弦管
+    rect_sec17 = section.create_rect("主弦管", "Chamfer", "Solid", 0.4000,0.4000,0.0000,0.0000,0.0200,0.0200,0.0200,0.0000,0.0000,
+    			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=187)
+    _expect_attr(rect_sec17, "name", "主弦管")
+    # 斜腹管
+    rect_sec18 = section.create_rect("斜腹管", "Chamfer", "Solid", 0.3000,0.3000,0.0000,0.0000,0.0160,0.0160,0.0160,0.0000,0.0000,
+			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=188)
+    _expect_attr(rect_sec18, "name", "斜腹管")
+    # 单室矩形箱梁
+    rect_sec19 = section.create_rect("单室矩形箱梁", "Chamfer", "Hollow", 3.0000,1.8000,0.0000,0.0000,0.0000,0.2500,0.2500,0.0000,0.0000,
+			0,0.0000,0.0000,0.0000,0,0.0000,0.0000,0.0000, no=189)
+    _expect_attr(rect_sec19, "name", "单室矩形箱梁")
     # 创建实腹圆端形-实部
     rounded_sec1 = section.create_rounded_end("实腹圆端形-实部", "Solid", 7.0000, 3.0000, 2.0000, 0, 4.0000, 1.0000,
                                               0.5000, 0.2500, 1.0000, 0.5000, 0.2500, no=19)
@@ -155,6 +202,13 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     # 创建工字形钢截面3
     si_sec3 = section.create_steel_i("工字形钢截面3", 5, 15, 15, 1, 1, 1, "Both",no=27)
     _expect_attr(si_sec3, "name", "工字形钢截面3")
+    # 对称工字截面
+    si_sec4 = section.create_steel_i("对称工字截面", 1200.0000,600.0000,600.0000,30.0000,30.0000,20.0000, "Right", no=271)
+    _expect_attr(si_sec4, "name", "对称工字截面")
+    # 焊接工字梁
+    si_sec5 = section.create_steel_i("焊接工字梁", 1.2000,0.5000,0.5000,0.0200,0.0200,0.0120, "Right",
+                                     no=272)
+    _expect_attr(si_sec5, "name", "焊接工字梁")
     # 加劲肋
     si_sec3.add_rib_t("T形加劲肋", 0.1, 0.01, 0.01, 0.01)
     si_sec3.add_rib_u("U形加劲肋", 0.15, 0.08, 0.08, 0.012, 0.004)
@@ -256,7 +310,12 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     # 创建箱型钢截面2
     sb_sec2 = section.create_steel_box("箱型钢截面2", 2.0, 2.0, 0.5, 2.0, 0.5, 0.2, 0.2, 2.0, 1, no=33)
     _expect_attr(sb_sec2, "name", "箱型钢截面2")
-    # 加劲肋布置信息
+    # 箱型截面
+    sb_sec3 = section.create_steel_box("箱型截面", 1850.0000,2400.0000,100.0000,2800.0000,300.0000,35.0000,60.0000,28.0000,1, no=331)
+    _expect_attr(sb_sec3, "name", "箱型截面")
+    # 焊接箱形梁-2变厚
+    sb_sec4 = section.create_steel_box("焊接箱形梁-2变厚", 1850.0000,2400.0000,100.0000,2800.0000,300.0000,35.0000,60.0000,28.0000,1, no=332)
+    _expect_attr(sb_sec4, "name", "焊接箱形梁-2变厚")
 
     # 创建三室钢截面1
     tc_sec1 = section.create_steel_box_three_cell("三室钢截面1", 2.5, 12.0, 12.0, 0.02, 1.0, 1.0, 0.5, 0.016, 0.016,
@@ -2345,8 +2404,36 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
         [5, 6, 0.0120],[6, 7, 0.0120],[7, 8, 0.0200],[8, 9, 0.0200],[9, 10, 0.0200],[10, 11, 0.0200]]
     osis_matrix("PointMatrix7", point_matrix7)
     osis_matrix("LineMatrix7", line_matrix7)
-    csc_section6 = section.create_steel_custom("焊接槽形梁", "PointMatrix7", "LineMatrix7", no=491)
-    _expect_attr(csc_section6, "name", "焊接槽形梁")
+    csc_section7 = section.create_steel_custom("焊接槽形梁", "PointMatrix7", "LineMatrix7", no=491)
+    _expect_attr(csc_section7, "name", "焊接槽形梁")
+    # 焊接十字形截面
+    point_matrix8 = [[0, -0.6000, 0.0000],[1, -0.6000, 0.0120],[2, -0.1000, 0.0120],[3, -0.1000, 0.0000],
+                                    [4,  0.1000, 0.0000],[5,  0.1000, 0.0120],[6,  0.6000, 0.0120],[7,  0.6000, 0.0000],
+                                    [8, -0.1000, 0.0120],[9, -0.1000, 1.2000],[10, 0.1000, 1.2000],[11, 0.1000, 0.0120]]
+    line_matrix8 = [[0, 1, 0.0120],[1, 2, 0.0200],[2, 3, 0.0120],[3, 4, 0.0200],[4, 5, 0.0120],[5, 6, 0.0200],
+                    [6, 7, 0.0120],[8, 9, 0.0200],[9, 10, 0.0120],[10, 11, 0.0200],[11, 8, 0.0120]]
+    osis_matrix("PointMatrix8", point_matrix8)
+    osis_matrix("LineMatrix8", line_matrix8)
+    csc_section8 = section.create_steel_custom("焊接十字形截面", "PointMatrix8", "LineMatrix8", no=492)
+    _expect_attr(csc_section8, "name", "焊接十字形截面")
+
+    # 焊接双肢截面
+    point_matrix9 = [[0, -0.6000, 0.0000],[1, -0.6000, 0.0120],[2, -0.1000, 0.0120],[3, -0.1000, 0.0000],
+                     [4,  0.1000, 0.0000],[5,  0.1000, 0.0120],[6,  0.6000, 0.0120],[7,  0.6000, 0.0000],
+                     [8, -0.1000, 0.0120],[9, -0.1000, 1.2000],[10, 0.1000, 1.2000],[11, 0.1000, 0.0120]]
+    line_matrix9 = [[0, 1, 0.0120],[1, 2, 0.0200],[2, 3, 0.0120],[3, 4, 0.0200],[4, 5, 0.0120],
+                    [5, 6, 0.0200],[6, 7, 0.0120],[8, 9, 0.0200],[9, 10, 0.0120],[10, 11, 0.0200],[11, 8, 0.0120]]
+    osis_matrix("PointMatrix9", point_matrix9)
+    osis_matrix("LineMatrix9", line_matrix9)
+    csc_section9 = section.create_steel_custom("焊接双肢截面", "PointMatrix9", "LineMatrix9", no=493)
+    _expect_attr(csc_section9, "name", "焊接双肢截面")
+    # 相贯节点区域
+    point_matrix10 = [[0, 0.0000, 0.0000],[1, 0.2000, 0.0000],[2, 0.2000, 0.2000],[3, 0.0000, 0.2000]]
+    line_matrix10 = [[0, 1, 0.0200],[1, 2, 0.0200],[2, 3, 0.0200],[3, 0, 0.0200]]
+    osis_matrix("PointMatrix10", point_matrix10)
+    osis_matrix("LineMatrix10", line_matrix10)
+    csc_section10 = section.create_steel_custom("相贯节点区域", "PointMatrix10", "LineMatrix10", no=494)
+    _expect_attr(csc_section10, "name", "相贯节点区域")
     # 创建自定义钢梁截面
     cscp_section = section.create_steel_custom_plate("自定义钢梁截面", ["TopFlange"], no=50)
     _expect_attr(cscp_section, "name", "自定义钢梁截面")
@@ -2462,19 +2549,20 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
                                     0.25,
                                     False, 0.0, 0.0, 0.05, no=65)
     _expect_attr(t_sec2, "name", "T梁截面right")
-    # 创建T梁截面middle
-    t_sec3 = section.create_TGirder("T梁截面middle", "Middle", 2.5, 1.125, 0.85, 0.0, 0.16, 0.25, 0.6, 0.2, 0.6, 0.35,
-                                    0.25,
-                                    False, 0.0, 0.0, 0.05, no=66)
-    _expect_attr(t_sec3, "name", "T梁截面middle")
-
+    # 创建标准T梁截面
+    t_sec3 = section.create_TGirder("标准T梁截面", "Middle", 1.8000,0.0000,0.8500,0.5000,0.2000,0.2500,0.1500,0.2500,
+			0.4000,0.2000,0.1000,0,0.0200,0.0200,0.0500, no=66)
+    _expect_attr(t_sec3, "name", "标准T梁截面")
+    # 空心T形截面
+    t_sec4 = section.create_TGirder("空心T形截面", "Middle", 2.0000,2.5000,1.2000,0.5000,0.2500,0.3000,0.2000,0.1500,
+			0.6000,0.4000,0.1000,0,0.0000,0.0000,0.0500, no=661)
+    _expect_attr(t_sec4, "name", "空心T形截面")
+    # 预应力T梁-中梁,
+    # t_sec4 = section.create_TGirder("预应力T梁-中梁,", "Middle", 1.8000,0.0000,0.8500,0.5000,0.1800,0.2500,0.2000,0.2000,
+	# 		0.5000,0.3000,0.0500,0,0.0200,-0.0200,0.1000, no=662)
+    # _expect_attr(t_sec4, "name", "预应力T梁-中梁,")
     # 创建自定义截面
-    contour_matrix = [
-        [1, 0, 0],
-        [1, 1, 0],
-        [1, 1, 1],
-        [1, 0, 1],
-    ]
+    contour_matrix = [[1, 0, 0],[1, 1, 0],[1, 1, 1],[1, 0, 1]]
     osis_matrix("ContourMatrix", contour_matrix)
     c_sec = section.create_custom("自定义截面", contour_matrix="ContourMatrix", no=67)
     _expect_attr(c_sec, "name", "自定义截面")
@@ -2484,16 +2572,92 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
         [1, 0.5000, -1.2000],[1, 0.5000, -0.3000],[1, 2.0000, -0.3000],[1, 2.0000, 0.0000],[2, -1.5000, -0.1000],
         [2, -1.5000, -0.2500],[2, 1.5000, -0.2500],[2, 1.5000, -0.1000]]
     osis_matrix("contour_points_matrix1", contour_points_matrix1)
-    c_sec1 = section.create_custom("倒T形截面-不对称", contour_matrix="ContourMatrix", no=671)
+    c_sec1 = section.create_custom("倒T形截面-不对称", contour_matrix="contour_points_matrix1", no=671)
     _expect_attr(c_sec1, "name", "倒T形截面-不对称")
-
+    # 十字形截面
     contour_points_matrix2 = [[1, -2.0000, -0.5000],[1, -2.0000,  0.5000],[1, -0.5000,  0.5000],[1, -0.5000,  2.0000],
                              [1,  0.5000,  2.0000],[1,  0.5000,  0.5000],[1,  2.0000,  0.5000],[1,  2.0000, -0.5000],
                              [1,  0.5000, -0.5000],[1,  0.5000, -2.0000],[1, -0.5000, -2.0000],[1, -0.5000, -0.5000]]
-    osis_matrix("contour_points_matrix1", contour_points_matrix2)
-    c_sec2 = section.create_custom("十字形截面", contour_matrix="ContourMatrix", no=671)
+    osis_matrix("contour_points_matrix2", contour_points_matrix2)
+    c_sec2 = section.create_custom("十字形截面", contour_matrix="contour_points_matrix2", no=672)
     _expect_attr(c_sec2, "name", "十字形截面")
-
+    # 单室梯形箱梁截面
+    contour_points_matrix3 = [[1, -5.0000, 2.5000],[1, -5.0000, 0.0000],[1, -3.0000, -1.5000],[1, -3.0000, -2.0000],
+                             [1, 3.0000, -2.0000],[1, 3.0000, -1.5000],[1, 5.0000, 0.0000],[1, 5.0000, 2.5000],
+                             [2, -4.7000, 2.2000],[2, -4.7000, 0.3000],[2, -2.7000, -1.2000],[2, -2.7000, -1.7000],
+                             [2, 2.7000, -1.7000],[2, 2.7000, -1.2000],[2, 4.7000, 0.3000],[2, 4.7000, 2.2000]]
+    osis_matrix("contour_points_matrix3", contour_points_matrix3)
+    c_sec3 = section.create_custom("单室梯形箱梁截面", contour_matrix="contour_points_matrix3", no=673)
+    _expect_attr(c_sec3, "name", "单室梯形箱梁截面")
+    # 单室梯形箱梁截面_高5m
+    contour_points_matrix4 = [[1, -5.0000, 2.5000],[1, -5.0000, 0.0000],[1, -3.0000, -2.5000],[1, -3.0000, -3.0000],
+                              [1, 3.0000, -3.0000],[1, 3.0000, -2.5000],[1, 5.0000, 0.0000],[1, 5.0000, 2.5000],
+                              [2, -4.7000, 2.2000],[2, -4.7000, 0.3000],[2, -2.7000, -2.2000],[2, -2.7000, -2.7000],
+                              [2, 2.7000, -2.7000],[2, 2.7000, -2.2000],[2, 4.7000, 0.3000],[2, 4.7000, 2.2000]]
+    osis_matrix("contour_points_matrix4", contour_points_matrix4)
+    c_sec4 = section.create_custom("单室梯形箱梁截面_高5m", contour_matrix="contour_points_matrix4", no=674)
+    _expect_attr(c_sec4, "name", "单室梯形箱梁截面_高5m")
+    # 卵形箱梁截面
+    contour_points_matrix5 = [[1, -3.0000, 0.0000],[1, -2.5000, -1.2000],[1, -1.5000, -1.8000],[1, 0.0000, -2.0000],
+                             [1, 1.5000, -1.8000],[1, 2.5000, -1.2000],[1, 3.0000, 0.0000],[1, 0.0000, 2.0000],
+                             [2, -2.4000, 0.0000],[2, -2.0000, -0.8000],[2, -1.2000, -1.2000],[2, 0.0000, -1.4000],
+                             [2, 1.2000, -1.2000],[2, 2.0000, -0.8000],[2, 2.4000, 0.0000],[2, 0.0000, 1.4000]]
+    osis_matrix("contour_points_matrix5", contour_points_matrix5)
+    c_sec5 = section.create_custom("卵形箱梁截面", contour_matrix="contour_points_matrix5", no=675)
+    _expect_attr(c_sec5, "name", "卵形箱梁截面")
+    # 实心三角形截面
+    contour_points_matrix6 = [[1, 0.0000, 0.0000],[1, 2.0000, 0.0000],[1, 1.0000, 1.7321]]
+    osis_matrix("contour_points_matrix6", contour_points_matrix6)
+    c_sec6 = section.create_custom("实心三角形截面", contour_matrix="contour_points_matrix6", no=676)
+    _expect_attr(c_sec6, "name", "实心三角形截面")
+    # 实心正六边形截面
+    contour_points_matrix7 = [[1, 1.2000, 0.0000],[1, 0.6000, 1.0392],[1, -0.6000, 1.0392],[1, -1.2000, 0.0000],
+                             [1, -0.6000, -1.0392],[1, 0.6000, -1.0392]]
+    osis_matrix("contour_points_matrix7", contour_points_matrix7)
+    c_sec7 = section.create_custom("实心正六边形截面", contour_matrix="contour_points_matrix7", no=677)
+    _expect_attr(c_sec7, "name", "实心正六边形截面")
+    # 马蹄形隧道衬砌
+    contour_points_matrix8 = [[1, -3.0000, 0.0000],[1, -2.5980, 1.5000],[1, -1.5000, 2.5980],[1, 0.0000, 3.0000],
+                             [1, 1.5000, 2.5980],[1, 2.5980, 1.5000],[1, 3.0000, 0.0000],[1, 3.0000, -2.0000],
+                             [1, 2.5000, -2.5000],[1, 2.0000, -2.8000],[1, 0.0000, -3.0000],[1, -2.0000, -2.8000],
+                             [1, -2.5000, -2.5000],[1, -3.0000, -2.0000],[2, -2.4000, 0.0000],[2, -2.0780, 1.2000],
+                             [2, -1.2000, 2.0780],[2, 0.0000, 2.4000],[2, 1.2000, 2.0780],[2, 2.0780, 1.2000],
+                             [2, 2.4000, 0.0000],[2, 2.4000, -1.6000],[2, 0.0000, -2.4000],[2, -2.4000, -1.6000]]
+    osis_matrix("contour_points_matrix8", contour_points_matrix8)
+    c_sec8 = section.create_custom("马蹄形隧道衬砌", contour_matrix="contour_points_matrix8", no=678)
+    _expect_attr(c_sec8, "name", "马蹄形隧道衬砌")
+    # 槽形截面
+    contour_points_matrix9 = [[1, -1.5000, 0.0000],[1, -1.5000, -0.2500],[1, -0.1000, -0.2500],[1, -0.1000, -2.0000],
+        [1, 0.1000, -2.0000],[1, 0.1000, -0.2500],[1, 1.5000, -0.2500],[1, 1.5000, 0.0000]]
+    osis_matrix("contour_points_matrix9",contour_points_matrix9)
+    c_sec9 = engine.section.create_custom("槽形截面", contour_matrix="contour_points_matrix9", no=679)
+    _expect_attr(c_sec9, "name", "槽形截面")
+    # 薄壁箱梁_变厚度
+    contour_points_matrix10 = [[1, -5.2500, 0.0000],[1, -5.2500, -0.1500],[1, -3.7500, -0.4000],[1, -3.7500, -3.4000],
+                              [1, 3.7500, -3.4000],[1, 3.7500, -0.4000],[1, 5.2500, -0.1500],[1, 5.2500, 0.0000],
+                              [2, -0.2500, -0.4500],[2, -1.0500, -0.2500],[2, -2.4500, -0.2500],[2, -3.2500, -0.4500],
+                              [2, -3.2500, -2.9800],[2, -2.7500, -3.1800],[2, -0.7500, -3.1800],[2, -0.2500, -2.9800],
+                              [3, 0.2500, -0.4500],[3, 1.0500, -0.2500],[3, 2.4500, -0.2500],[3, 3.2500, -0.4500],
+                              [3, 3.2500, -2.9800],[3, 2.7500, -3.1800],[3, 0.7500, -3.1800],[3, 0.2500, -2.9800]]
+    osis_matrix("contour_points_matrix10", contour_points_matrix10)
+    c_sec10 = engine.section.create_custom("薄壁箱梁_变厚度", contour_matrix="contour_points_matrix10", no=680)
+    _expect_attr(c_sec10, "name", "薄壁箱梁_变厚度")
+    # 单室梯形箱梁截面
+    contour_points_matrix11 = [[1, -5.0000, 2.5000],[1, -5.0000, 0.0000],[1, -3.0000, -1.5000],[1, -3.0000, -2.0000],
+                              [1, 3.0000, -2.0000],[1, 3.0000, -1.5000],[1, 5.0000, 0.0000],[1, 5.0000, 2.5000],
+                              [2, -4.7000, 2.2000],[2, -4.7000, 0.3000],[2, -2.7000, -1.2000],[2, -2.7000, -1.7000],
+                              [2, 2.7000, -1.7000],[2, 2.7000, -1.2000],[2, 4.7000, 0.3000],[2, 4.7000, 2.2000]]
+    osis_matrix("contour_points_matrix11", contour_points_matrix11)
+    c_sec11 = engine.section.create_custom("单室梯形箱梁截面", contour_matrix="contour_points_matrix11", no=681)
+    _expect_attr(c_sec11, "name", "单室梯形箱梁截面")
+    # 单室梯形箱梁截面_高5m
+    contour_points_matrix12 = [[1, -5.0000, 2.5000],[1, -5.0000, 0.0000],[1, -3.0000, -2.5000],[1, -3.0000, -3.0000],
+                              [1, 3.0000, -3.0000],[1, 3.0000, -2.5000],[1, 5.0000, 0.0000],[1, 5.0000, 2.5000],
+                              [2, -4.7000, 2.2000],[2, -4.7000, 0.3000],[2, -2.7000, -2.2000],[2, -2.7000, -2.7000],
+                              [2, 2.7000, -2.7000],[2, 2.7000, -2.2000],[2, 4.7000, 0.3000],[2, 4.7000, 2.2000]]
+    osis_matrix("contour_points_matrix12", contour_points_matrix12)
+    c_sec12 = engine.section.create_custom("单室梯形箱梁截面_高5m", contour_matrix="contour_points_matrix12", no=682)
+    _expect_attr(c_sec12, "name", "单室梯形箱梁截面_高5m")
     # 修改截面编号
     old_no = c_sec.no
     new_no = old_no + 100
@@ -2504,7 +2668,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     section.delete(new_no)
     if section.get(new_no) is not None:
         raise ValueError("delete 后 get 应为 None")
-
+    # π形截面
     contour_points_matrix = [[1, -2.0000, 1.5000],[1, -2.0000, 1.2000],[1, -0.8000, 1.2000],[1, -0.8000, 0.0000],
         [1, -0.4000, 0.0000],[1, -0.4000, 1.2000],[1, 0.4000, 1.2000],[1, 0.4000, 0.0000],[1, 0.8000, 0.0000],
         [1, 0.8000, 1.2000],[1, 2.0000, 1.2000],[1, 2.0000, 1.5000]]
@@ -2513,18 +2677,19 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     _expect_attr(cpm_sec, "name", "π形截面")
 
     # 数值截面
-    circle_sec1.create_numerical(
-        99,
-        "数值截面-测试",
-        "0.50",  # strArea 面积
-        0.0, 0.0,  # dSy, dSz
-        0.0, 0.01, 0.01, 0.0,  # dIxx, dIyy, dIzz, dIww
-        0.0, 0.0,  # dCentY, dCentZ
-        0.0, 0.0,  # dDy, dDz
-        2.0, 0.0,  # dPeriO, dPeriI
-    )
+    # circle_sec1.create_numerical(
+    #     99,
+    #     "数值截面-测试",
+    #     "0.50",  # strArea 面积
+    #     0.0, 0.0,  # dSy, dSz
+    #     0.0, 0.01, 0.01, 0.0,  # dIxx, dIyy, dIzz, dIww
+    #     0.0, 0.0,  # dCentY, dCentZ
+    #     0.0, 0.0,  # dDy, dDz
+    #     2.0, 0.0,  # dPeriO, dPeriI
+    # )
+    circle_sec1.create_numerical(99,"槽钢C200×75×9×11.5",3.224e-02,1.913e-02,1.311e-02,6.400e-04,1.913e-01,2.560e-02,3.950e-04,1.950e-02,1.000e-01,0.000e+00,0.000e+00,6.280e-01,0.000e+00)
     got = section.get(99)
-    _expect_attr(got, "name", "数值截面-测试")
+    _expect_attr(got, "name", "槽钢C200×75×9×11.5")
     section.delete(99)
     if section.get(99) is not None:
         raise ValueError("delete 后 get 应为 None")
@@ -2577,7 +2742,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     sec3.set_offset("Middle", 0.0000, "Top", 0.0000)
     sec3.set_mesh(0, 0.1000)
 
-    # 截面 4: 墩顶截面（复制）
+    # 截面 4: 墩顶截面
     sec4 = section.create_hollowslab(
         "墩顶截面", "MIDDLE",
         0.9500, 1.0000, 0.6200, 0.0000,
@@ -2590,7 +2755,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     sec4.set_offset("Middle", 0.0000, "Top", 0.0000)
     sec4.set_mesh(0, 0.1000)
 
-    # 截面 5: 加厚截面（复制）
+    # 截面 5: 加厚截面
     sec5 = section.create_hollowslab(
         "加厚截面", "MIDDLE",
         0.9500, 1.0000, 0.5700, 0.0500,
