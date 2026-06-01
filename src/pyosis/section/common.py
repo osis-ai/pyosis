@@ -37,7 +37,7 @@ def osis_section_Lshape(nSec: int, strName: str, eSectionType: Literal["LSHAPE"]
 
 @REGISTRY.register('Section')
 def osis_section_circle(nSec: int, strName: str, eSectionType: Literal["CIRCLE"]="CIRCLE", eCircleType: Literal["Hollow", "Solid"]="Solid", D: float=0.5, Tw: float=0.25):
-    """创建或修改圆形截面(Circle)。
+    """创建或修改圆形/圆管形截面。
 
     Args:
         nSec (int): 截面编号，从1开始编号，所有类型的截面均使用同一编号序列。

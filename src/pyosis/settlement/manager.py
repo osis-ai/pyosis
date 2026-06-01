@@ -247,6 +247,13 @@ class SettlementGroupManager:
         """获取沉降组总数"""
         return len(self._load())
 
+    def clear(self)->None:
+        """清空所有沉降组"""
+        try:
+            [self.delete(sg.name) for sg in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有沉降组失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return f"SettlementGroupManager()"
 
@@ -361,6 +368,13 @@ class SettlementManager:
     def count(self) -> int:
         """获取沉降工况总数"""
         return len(self._load())
+
+    def clear(self)->None:
+        """清空所有沉降工况"""
+        try:
+            [self.delete(s.name) for s in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有沉降工况失败: {e}，被占用,无法删除")
 
     def __repr__(self) -> str:
         return f"SettlementManager()"

@@ -227,6 +227,13 @@ class NodeManager:
         nodes = self._load()
         return len(nodes)
 
+    def clear(self)->None:
+        """清空所有节点"""
+        try:
+            [self.delete(n.no) for n in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有节点失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         # self._load()
         return f"NodeManager()"

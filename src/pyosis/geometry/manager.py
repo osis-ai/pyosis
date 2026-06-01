@@ -311,6 +311,13 @@ class GeometryManager:
         """获取样条曲线总数"""
         return len(self._load())
 
+    def clear(self)->None:
+        """清空所有样条曲线"""
+        try:
+            [self.delete(g.name) for g in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有样条曲线失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return "GeometryManager()"
 

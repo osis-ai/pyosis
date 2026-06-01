@@ -178,6 +178,13 @@ class CreepShrinkManager:
         if not ok:
             raise RuntimeError(f"修改收缩徐变编号 {old} -> {new} 失败: {err}")
 
+    def clear(self)->None:
+        """清空所有收缩徐变特性"""
+        try:
+            [self.delete(c.no) for c in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有收缩徐变特性失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return "CreepShrinkManager()"
 
@@ -272,6 +279,13 @@ class DampingManager:
     def all(self) -> list[Damping]:
         """获取所有阻尼模型"""
         return self._load()
+
+    def clear(self)->None:
+        """清空所有阻尼模型"""
+        try:
+            [self.delete(d.name) for d in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有阻尼模型失败: {e}，被占用,无法删除")
 
     def __repr__(self) -> str:
         return "DampingManager()"

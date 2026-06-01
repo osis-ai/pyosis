@@ -85,7 +85,8 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
 if __name__ == "__main__":
     from _0_engine import engine
 
-    [engine.stage.delete(stg.no) for stg in engine.stage.all()]
+    # [engine.stage.delete(stg.no) for stg in engine.stage.all()]
+    engine.stage.clear()
 
     elem_group_names = [g.name for g in engine.element.group.all()]
     bd_group_names = [g.name for g in engine.boundary.group.all()]
@@ -95,6 +96,8 @@ if __name__ == "__main__":
         "整体降温", "整体升温", "正温度梯度", "主梁单元自重",
     ]
     by_lc = {lc.name: lc.name for lc in engine.load.all()}
+    if not by_lc:
+        raise Exception("荷载工况为空")
     lc_names = [by_lc[n] for n in _lc_order]
 
     settle_analysis = ["沉降分析工况"]

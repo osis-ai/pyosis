@@ -380,6 +380,14 @@ class MaterialManager:
         materials = self._load()
         return len(materials)
 
+    def clear(self)->None:
+        """清空所有材料"""
+        try:
+            [self.delete(m.no) for m in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有材料失败: {e},被占用,无法删除")
+
+
     def __repr__(self) -> str:
         return f"MaterialManager()"
 

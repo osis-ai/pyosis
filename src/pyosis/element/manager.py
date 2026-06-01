@@ -362,6 +362,13 @@ class ElementGroupManager:
         """
         return len(self._load())
 
+    def clear(self)->None:
+        """清空所有单元组"""
+        try:
+            [self.delete(eg.name) for eg in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有单元组失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return f"ElementGroupManager()"
 
@@ -486,6 +493,13 @@ class TaperEleGroupManager:
     def all(self) -> list[TaperEleGroup]:
         """获取所有变截面单元组"""
         return self._load()
+
+    def clear(self)->None:
+        """清空所有变截面单元组"""
+        try:
+            [self.delete(tegroup.name) for tegroup in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有变截面单元组失败: {e}，被占用,无法删除")
 
     def __repr__(self) -> str:
         return f"TaperEleGroupManager()"
@@ -719,7 +733,8 @@ class ElementManager:
         elements = self._load()
         return len(elements)
 
-
+    def clear(self)->None:
+        [self.delete(e.no) for e in self.all()]
     # ── 子管理器 ──────────────────────────────
 
     @property

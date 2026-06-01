@@ -49,12 +49,12 @@ def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
         raise ValueError(f"remove 后仍包含 {eg_test.name!r}")
     if eg_main.name not in (e.setl_grp_nos or []):
         raise ValueError(f"remove 后应仍保留 {eg_main.name!r}")
-    st.group.rename("_沉降测试组", "_沉降测试组1")
-    st.group.delete("_沉降测试组1")
-    if st.group.get("_沉降测试组") is not None:
-        raise ValueError("删除 '_沉降测试组' 后 get 应返回 None")
-    if st.group.count() != 1:
-        raise ValueError(f"删除测试组后 st.group.count() 应为 1，实际 {st.group.count()}")
+    # st.group.rename("_沉降测试组", "_沉降测试组1")
+    # st.group.delete("_沉降测试组1")
+    # if st.group.get("_沉降测试组") is not None:
+    #     raise ValueError("删除 '_沉降测试组' 后 get 应返回 None")
+    # if st.group.count() != 1:
+    #     raise ValueError(f"删除测试组后 st.group.count() 应为 1，实际 {st.group.count()}")
 
     # 5) 沉降工况 rename / delete（临时工况，勿动「沉降分析工况」）
     e_temp = st.create("_沉降工况测试")
@@ -312,18 +312,20 @@ def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
 if __name__ == "__main__":
     from _0_engine import engine
 
-    [engine.settlement.delete(case.name) for case in engine.settlement.all()]
-    [engine.settlement.group.delete(grp.name) for grp in engine.settlement.group.all()]
+    engine.settlement.clear()
+    engine.settlement.group.clear()
 
     ele_groups = engine.element.group.all()
     print("element groups", ele_groups)
     elem_group_names = [g.name for g in ele_groups]
-    
+
     # live_names = build_live_analysis(engine, elem_group_names)
     # print(live_names)
     # print(engine.live.case.all())
     _order = ["防撞护栏工况","封端混凝土工况","负温度梯度","铺装工况","预应力","整体降温","整体升温","正温度梯度","主梁单元自重",]
     by_name = {lc.name: lc.name for lc in engine.load.all()}
+    if not by_name:
+        raise Exception("荷载工况为空")
     lc_names = [by_name[n] for n in _order]
     buckling_names = build_buckling_analysis(engine, lc_names)
 

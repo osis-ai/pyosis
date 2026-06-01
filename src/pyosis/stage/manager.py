@@ -349,6 +349,13 @@ class StageManager:
         """
         return len(self._load())
 
+    def clear(self)->None:
+        """清空所有施工阶段"""
+        try:
+            [self.delete(s.no) for s in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有施工阶段失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return f"StageManager()"
 

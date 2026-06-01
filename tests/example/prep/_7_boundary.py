@@ -131,8 +131,8 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
 if __name__ == "__main__":
     from _0_engine import engine
 
-    [engine.boundary.delete(bd.no) for bd in engine.boundary.all()]
-    [engine.boundary.group.delete(bg.name) for bg in engine.boundary.group.all()]
+    engine.boundary.clear()
+    engine.boundary.group.clear()
 
     nodes = engine.node.all()
     print("nodes: ", nodes)

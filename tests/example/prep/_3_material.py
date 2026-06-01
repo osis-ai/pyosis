@@ -97,6 +97,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
 
 if __name__ == "__main__":
     from _0_engine import engine
+    engine.material.clear()
     mat_nos = build_materials(engine)
     print(mat_nos)
     print(engine.material.all())

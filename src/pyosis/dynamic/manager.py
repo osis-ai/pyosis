@@ -401,6 +401,13 @@ class SeisRspSpecManager:
         if not ok:
             raise RuntimeError(f"修改地震反应谱名称 {old_name} -> {new_name} 失败: {err}")
 
+    def clear(self)->None:
+        """清空所有地震反应谱"""
+        try:
+            [self.delete_rsp_spec(srs.name) for srs in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有地震反应谱失败: {e}，被占用,无法删除")
+
 @dataclass(frozen=False)
 class RspecAnal:
     analysisType: int #分析类型枚举

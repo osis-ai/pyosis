@@ -146,6 +146,13 @@ class StabilityManager:
         if not ok:
             raise RuntimeError(f"删除屈曲工况 {name} 失败: {err}")
 
+    def clear(self)->None:
+        """清空所有屈曲工况"""
+        try:
+            [self.delete(s.name) for s in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有屈曲工况失败: {e}，被占用,无法删除")
+
     def rename(self, old_name: str, new_name: str) -> None:
         """修改屈曲工况名称。
 

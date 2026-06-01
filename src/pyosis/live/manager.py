@@ -659,6 +659,13 @@ class LiveGradeManager:
         """
         return len(self._load())
 
+    def clear(self)->None:
+        """清空所有活载等级"""
+        try:
+            [self.delete(lg.name) for lg in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有活载等级失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return f"LiveGradeManager()"
 
@@ -867,6 +874,13 @@ class LaneManager:
         """
         return len(self._load())
 
+    def clear(self)->None:
+        """清空所有车道"""
+        try:
+            [self.delete(l.name) for l in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有车道失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return f"LaneManager()"
 
@@ -994,6 +1008,10 @@ class LiveCaseManager:
             活载工况数量
         """
         return len(self._load())
+
+    def clear(self)->None:
+        """清空所有荷载工况"""
+        [self.delete(lc.name) for lc in self.all()]
 
     def __repr__(self) -> str:
         return f"LiveCaseManager()"

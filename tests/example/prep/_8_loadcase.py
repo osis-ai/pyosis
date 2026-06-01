@@ -409,9 +409,9 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
 if __name__ == "__main__":
     from _0_engine import engine
 
-    [engine.tendon.shape.delete(shape.name) for shape in engine.tendon.shape.all()]
-    [engine.load.delete(case.name) for case in engine.load.all()]
-    [engine.dynamic.seis_rsp_spec_mod.delete_rsp_spec(spec.name) for spec in engine.dynamic.seis_rsp_spec_mod.all()]
+    engine.tendon.shape.clear()
+    engine.load.clear()
+    engine.dynamic.seis_rsp_spec_mod.clear()
 
     # 从 engine 获取已有数据
     mats = engine.material.all()

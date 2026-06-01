@@ -2677,19 +2677,21 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     _expect_attr(cpm_sec, "name", "π形截面")
 
     # 数值截面
-    # circle_sec1.create_numerical(
-    #     99,
-    #     "数值截面-测试",
-    #     "0.50",  # strArea 面积
-    #     0.0, 0.0,  # dSy, dSz
-    #     0.0, 0.01, 0.01, 0.0,  # dIxx, dIyy, dIzz, dIww
-    #     0.0, 0.0,  # dCentY, dCentZ
-    #     0.0, 0.0,  # dDy, dDz
-    #     2.0, 0.0,  # dPeriO, dPeriI
-    # )
-    circle_sec1.create_numerical(99,"槽钢C200×75×9×11.5",3.224e-02,1.913e-02,1.311e-02,6.400e-04,1.913e-01,2.560e-02,3.950e-04,1.950e-02,1.000e-01,0.000e+00,0.000e+00,6.280e-01,0.000e+00)
+    circle_sec1.create_numerical(
+        99,
+        "数值截面-测试",
+        "0.50",  # strArea 面积
+        0.0, 0.0,  # dSy, dSz
+        0.0, 0.01, 0.01, 0.0,  # dIxx, dIyy, dIzz, dIww
+        0.0, 0.0,  # dCentY, dCentZ
+        0.0, 0.0,  # dDy, dDz
+        2.0, 0.0,  # dPeriO, dPeriI
+    )
+    # section.create_numerical(99,"槽钢C200×75×9×11.5",3.224e-02,1.913e-02,1.311e-02,6.400e-04,1.913e-01,2.560e-02,3.950e-04,1.950e-02,1.000e-01,0.000e+00,0.000e+00,6.280e-01,0.000e+00)
+    # section.create_numerical(991,"等边角钢",2.675e-02,2.568e+00,2.140e+00,6.914e-06,6.292e-04,6.848e-04,0.000e+00,1.457e-01,3.752e-01,0.000e+00,0.000e+00,2.000e+00,0.000e+00)
+
     got = section.get(99)
-    _expect_attr(got, "name", "槽钢C200×75×9×11.5")
+    _expect_attr(got, "name", "数值截面-测试")
     section.delete(99)
     if section.get(99) is not None:
         raise ValueError("delete 后 get 应为 None")
@@ -2803,7 +2805,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
 
 if __name__ == "__main__":
     from _0_engine import engine
-
+    engine.section.clear()
     mat_nos = [1, 2, 3, 4]
     sec_nos = build_sections(engine,mat_nos)
     print(sec_nos)

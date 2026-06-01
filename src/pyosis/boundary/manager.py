@@ -577,6 +577,13 @@ class BoundaryGroupManager:
         """获取边界组总数"""
         return len(self._load())
 
+    def clear(self) -> None:
+        """清空所有边界组"""
+        try:
+            [self.delete(bg.name) for bg in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有边界组失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return f"BoundaryGroupManager()"
 
@@ -853,6 +860,13 @@ class BoundaryManager:
     def count(self) -> int:
         """获取边界总数"""
         return len(self._load())
+
+    def clear(self) -> None:
+        """清空所有边界"""
+        try:
+            [self.delete(b.no) for b in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有边界失败: {e}，被占用,无法删除")
 
     # ── 子管理器 ──────────────────────────────
 

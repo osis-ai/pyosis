@@ -1176,6 +1176,13 @@ class TendonPropManager:
         """
         return len(self._load())
 
+    def clear(self)->None:
+        """清空所有钢束特性"""
+        try:
+            [self.delete(tp.name) for tp in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有钢束特性失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return f"TendonPropManager(count={self.count()})"
 
@@ -1363,6 +1370,13 @@ class TendonShapeManager:
             钢束形状数量
         """
         return len(self._load())
+
+    def clear(self)->None:
+        """清空所有钢束形状"""
+        try:
+            [self.delete(ts.name) for ts in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有钢束形状失败: {e}，被占用,无法删除")
 
     def __repr__(self) -> str:
         return f"TendonShapeManager(count={self.count()})"
@@ -1577,6 +1591,13 @@ class LoadCaseManager:
             工况数量
         """
         return len(self._load())
+
+    def clear(self)->None:
+        """清空所有荷载工况"""
+        try:
+            [self.delete(lc.name) for lc in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有荷载工况失败: {e}，被占用,无法删除")
 
     def __repr__(self) -> str:
         return f"LoadCaseManager()"

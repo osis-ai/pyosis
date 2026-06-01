@@ -91,7 +91,7 @@ def build_nodes(engine: OSISEngine) -> list[int]:
 
 if __name__ == "__main__":
     from _0_engine import engine
-    [engine.node.delete(n.no) for n in engine.node.all()]
+    engine.node.clear()
     node_nos = build_nodes(engine)
     print(node_nos)
     print(engine.node.all())
