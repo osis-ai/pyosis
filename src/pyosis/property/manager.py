@@ -178,12 +178,16 @@ class CreepShrinkManager:
         if not ok:
             raise RuntimeError(f"修改收缩徐变编号 {old} -> {new} 失败: {err}")
 
-    def clear(self)->None:
+    def clear(self) -> None:
         """清空所有收缩徐变特性"""
         try:
             [self.delete(c.no) for c in self.all()]
         except Exception as e:
             raise Exception(f"清空所有收缩徐变特性失败: {e}，被占用,无法删除")
+
+    def count(self) -> int:
+        objs = self.all()
+        return len(objs)
 
     def __repr__(self) -> str:
         return "CreepShrinkManager()"
@@ -213,30 +217,33 @@ class Damping:
 class DampingManager:
     """阻尼管理器"""
 
-    def create_modal(self, name: str, ksi: float) -> None:
+    def create_modal(self, name: str, ksi: float) -> Damping:
         """创建或修改振型阻尼"""
         ok, err = osis_damping_modal(name, "modal", ksi)
         if not ok:
             raise RuntimeError(f"创建振型阻尼 {name} 失败: {err}")
+        return self.get(name)
 
     def create_rayleigh_custom(
         self, name: str, alpha: float, beta: float,
-    ) -> None:
+    ) -> Damping:
         """创建或修改Rayleigh阻尼（自定义因子）"""
         ok, err = osis_damping_rayleigh_custom(name, "ryl", 1, alpha, beta)
         if not ok:
             raise RuntimeError(f"创建Rayleigh阻尼 {name} 失败: {err}")
+        return self.get(name)
 
     def create_rayleigh_formula(
         self,
         name: str,
         ksii: float, ksij: float,
         wi: float, wj: float,
-    ) -> None:
+    ) -> Damping:
         """创建或修改Rayleigh阻尼（公式计算因子）"""
         ok, err = osis_damping_rayleigh_formula(name, "ryl", 0, ksii, ksij, wi, wj)
         if not ok:
             raise RuntimeError(f"创建Rayleigh阻尼 {name} 失败: {err}")
+        return self.get(name)
 
     def delete(self, name: str) -> None:
         """删除阻尼模型"""
@@ -286,6 +293,10 @@ class DampingManager:
             [self.delete(d.name) for d in self.all()]
         except Exception as e:
             raise Exception(f"清空所有阻尼模型失败: {e}，被占用,无法删除")
+
+    def count(self) -> int:
+        objs = self.all()
+        return len(objs)
 
     def __repr__(self) -> str:
         return "DampingManager()"
@@ -392,6 +403,15 @@ class PropertyManager:
         ok, err = osis_assign_component_thickness(thickness, op, elems)
         if not ok:
             raise RuntimeError(f"分配构件厚度失败: {err}")
+
+    def count(self) -> int:
+        return {
+            # "coords": self._coord.count(),
+            "creep_shrinks": self._creep_shrink.count(),
+            "dampings": self._damping.count(),
+            # "pu_curves": self._pu_curve.count(),
+        }
+
 
     def __repr__(self) -> str:
         return "PropertyManager()"

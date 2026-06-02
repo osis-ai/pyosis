@@ -203,6 +203,12 @@ class LoadToMassManager:
         if not ok:
             raise RuntimeError(f"修改荷载转换质量名称 {old_name} -> {new_name} 失败: {err}")
 
+    def count(self):
+        return len(self.all())
+    
+    def __repr__(self):
+        return "LoadToMassManager()"
+
 class ModOptManager:
     """模态分析管理器"""
     def set_modal_opt(self, num: int = 1) -> None:
@@ -320,12 +326,12 @@ class SeisRspSpecManager:
         return self._load()
 
     def create(
-            self,
-            name: str,
-            spec_type: Literal["N", "A", "V", "D"],
-            g: float,
-            spectrum_data: list[tuple[float, float]],
-    ) -> None:
+        self,
+        name: str,
+        spec_type: Literal["N", "A", "V", "D"],
+        g: float,
+        spectrum_data: list[tuple[float, float]],
+    ) -> SeisRspSpec:
         """创建导入类型地震反应谱。
 
         Args:
@@ -343,24 +349,25 @@ class SeisRspSpecManager:
         ok, err = osis_seis_rsp_spec_import(name, spec_type, g, 0, n_num, flat)
         if not ok:
             raise RuntimeError(f"创建地震反应谱 {name} 失败: {err}")
+        return self.get(name)
 
     def create_code(
-            self,
-            name: str,
-            spec_type: Literal["N", "A", "V", "D"],
-            g: float,
-            code: str = "JTGT_2231_01_2020",
-            bridge_type: Literal["A", "B", "C", "D"] = "A",
-            is_long_span: Literal[0, 1] = 0,
-            level: Literal[0, 1] = 0,
-            intensity: float = 0.2,
-            site: Literal[0, 1, 2, 3, 4] = 2,
-            direction: Literal[0, 1] = 0,
-            period: float = 0.35,
-            ksi: float = 0.05,
-            t: float = 6.0,
-            delta_t: float = 0.01,
-    ) -> None:
+        self,
+        name: str,
+        spec_type: Literal["N", "A", "V", "D"],
+        g: float,
+        code: str = "JTGT_2231_01_2020",
+        bridge_type: Literal["A", "B", "C", "D"] = "A",
+        is_long_span: Literal[0, 1] = 0,
+        level: Literal[0, 1] = 0,
+        intensity: float = 0.2,
+        site: Literal[0, 1, 2, 3, 4] = 2,
+        direction: Literal[0, 1] = 0,
+        period: float = 0.35,
+        ksi: float = 0.05,
+        t: float = 6.0,
+        delta_t: float = 0.01,
+    ) -> SeisRspSpec:
         """创建按规范生成类型地震反应谱。
 
         Args:
@@ -386,6 +393,7 @@ class SeisRspSpecManager:
         )
         if not ok:
             raise RuntimeError(f"创建规范地震反应谱 {name} 失败: {err}")
+        return self.get(name)
 
     def delete(self, name: str) -> None:
         """删除地震反应谱。
@@ -408,13 +416,19 @@ class SeisRspSpecManager:
         if not ok:
             raise RuntimeError(f"修改地震反应谱名称 {old_name} -> {new_name} 失败: {err}")
 
-    def clear(self)->None:
+    def clear(self) -> None:
         """清空所有地震反应谱"""
         try:
             [self.delete(srs.name) for srs in self.all()]
         except Exception as e:
             raise Exception(f"清空所有地震反应谱失败: {e}，被占用,无法删除")
-
+        
+    def count(self) -> int:
+        return len(self.all())
+    
+    def __repr__(self):
+        return "SeisRspSpecManager()"
+    
 @dataclass(frozen=False)
 class RspecAnal:
     analysisType: int #分析类型枚举
@@ -488,17 +502,17 @@ class RspecAnalManager:
         return self._load()
 
     def create(
-            self,
-            name: str,
-            spectrum: str,
-            direction: Literal[1, 0] = 1,
-            angle: float = 0.0,
-            scalar: float = 1.0,
-            interpolated: Literal[1, 0] = 1,
-            cmb: Literal["SRSS", "CQC"] = "CQC",
-            damping_name: str = "",
-            num: int = 1,
-    ) -> None:
+        self,
+        name: str,
+        spectrum: str,
+        direction: Literal[1, 0] = 1,
+        angle: float = 0.0,
+        scalar: float = 1.0,
+        interpolated: Literal[1, 0] = 1,
+        cmb: Literal["SRSS", "CQC"] = "CQC",
+        damping_name: str = "",
+        num: int = 1,
+    ) -> RspecAnal:
         """定义或修改反应谱工况。
 
         Args:
@@ -518,6 +532,7 @@ class RspecAnalManager:
         )
         if not ok:
             raise RuntimeError(f"创建反应谱工况 {name} 失败: {err}")
+        return self.get(name)
 
     def delete(self, name: str) -> None:
         """删除反应谱工况。
@@ -547,6 +562,12 @@ class RspecAnalManager:
         except Exception as e:
             raise Exception(f"清空所有反应谱失败: {e}，被占用,无法删除")
 
+    def count(self) -> int:
+        return len(self.all())
+    
+    def __repr__(self):
+        return "RspecAnalManager()"
+
 class DynamicManager:
     """动力分析管理器
 
@@ -555,15 +576,15 @@ class DynamicManager:
     用法:
     >>> from pyosis.dynamic import dynamic_manager
     >>> # 荷载转换质量
-    >>> dynamic_manager.load_to_mass.create_ltm("LTM1")
-    >>> dynamic_manager.load_to_mass.add_ltm("LTM1", "D", 1.0, 9.806)
+    >>> dynamic_manager.load_to_mass.create("LTM1")
+    >>> dynamic_manager.load_to_mass.add("LTM1", "D", 1.0, 9.806)
     >>> # 模态分析
-    >>> dynamic_manager.mod_opt.set_modal_opt(10)
+    >>> dynamic_manager.modal.set_modal_opt(10)
     >>> # 地震反应谱
     >>> data = [(0.1, 0.5), (0.2, 0.8)]
-    >>> dynamic_manager.seis_rsp_spec_mod.create_rsp_spec("RS1", "A", 9.806, data)
+    >>> dynamic_manager.seismic.create("RS1", "A", 9.806, data)
     >>> # 反应谱工况
-    >>> dynamic_manager.rspec_anal.create_rspec_anal("RA1", "RS1", num=10)
+    >>> dynamic_manager.response_spectrum.create("RA1", "RS1", num=10)
     """
 
     def __init__(self) -> None:
@@ -587,6 +608,17 @@ class DynamicManager:
     @property
     def response_spectrum(self) -> RspecAnalManager:
         return self._response_spectrum
+    
+    def count(self):
+        return {
+            "load_to_masses": self._load_to_mass.count(),
+            # "modal": self._modal.count(),
+            "seismic": self._seismic.count(),
+            "response_spectrum": self.response_spectrum.count(),
+        }
+
+    def __repr__(self):
+        return "DynamicManager()"
 
 
 # ──────────────────────────────────────────────
