@@ -2,7 +2,7 @@
 
 设计理念：
 - 隐藏 HTTP 接口细节，提供原生 Python 风格 API
-- 支持荷载转换质量、自振模态分析、地震反应谱分析
+- 支持荷载转换质量、自振模态分析、(地震)反应谱分析
 """
 
 from __future__ import annotations
@@ -77,6 +77,52 @@ class LoadToMass:
                 if isinstance(p, dict)
             ],
         )
+    
+    def add(
+        self,
+        lc_name: str,
+        mass_factor: float,
+        g: float,
+        bx: Literal[0, 1] = 1,
+        by: Literal[0, 1] = 1,
+        bz: Literal[0, 1] = 1,
+        bnf: Literal[0, 1] = 1,
+        bbf: Literal[0, 1] = 1,
+        bsf: Literal[0, 1] = 1,
+    ) -> None:
+        """添加荷载转换质量项。
+
+        Args:
+            lc_name: 荷载工况名称
+            mass_factor: 质量系数
+            g: 重力加速度值
+            bx: 质量方向，0=不考虑X向，1=考虑X向
+            by: 质量方向，0=不考虑Y向，1=考虑Y向
+            bz: 质量方向，0=不考虑Z向，1=考虑Z向
+            bnf: 0=不转换节点荷载，1=转换节点荷载
+            bbf: 0=不转换梁荷载，1=转换梁荷载
+            bsf: 0=不转换面荷载，1=转换面荷载
+
+        Note:
+            - 无论荷载工况是否被激活，均可转化为质量
+        """
+        ok, err = osis_ltm_anal_inc(
+            self.name, "a", lc_name, mass_factor, g, bx, by, bz, bnf, bbf, bsf
+        )
+        if not ok:
+            raise RuntimeError(f"添加荷载转换质量项 {lc_name} 到 {self.name} 失败: {err}")
+
+    def remove(self, lc_name: str) -> None:
+        """移除荷载转换质量项。
+
+        Args:
+            name: 荷载转换质量标识
+            lc_name: 荷载工况名称
+        """
+        ok, err = osis_ltm_anal_inc(self.name, "r", lc_name, 0.0, 0.0)
+        if not ok:
+            raise RuntimeError(f"移除荷载转换质量项 {lc_name} 从 {self.name} 失败: {err}")
+
 
 class LoadToMassManager:
     """荷载转换质量管理器
@@ -116,7 +162,7 @@ class LoadToMassManager:
         """获取所有荷载转换质量"""
         return self._load()
 
-    def create_ltm(self, name: str) -> None:
+    def create(self, name: str) -> LoadToMass:
         """创建或修改荷载转换质量总体信息。
 
         Args:
@@ -127,8 +173,9 @@ class LoadToMassManager:
         ok, err = osis_ltm_anal(name)
         if not ok:
             raise RuntimeError(f"创建荷载转换质量 {name} 失败: {err}")
+        return self.get(name)
 
-    def delete_ltm(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """删除荷载转换质量。
 
         Args:
@@ -138,7 +185,14 @@ class LoadToMassManager:
         if not ok:
             raise RuntimeError(f"删除荷载转换质量 {name} 失败: {err}")
 
-    def rename_ltm(self, old_name: str, new_name: str) -> None:
+    def clear(self)->None:
+        """清空荷载转换质量"""
+        try:
+            [self.delete(ltm.name) for ltm in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有荷载转换质量失败: {e}，被占用,无法删除")
+
+    def rename(self, old_name: str, new_name: str) -> None:
         """修改荷载转换质量名称。
 
         Args:
@@ -148,53 +202,6 @@ class LoadToMassManager:
         ok, err = osis_ltm_anal_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"修改荷载转换质量名称 {old_name} -> {new_name} 失败: {err}")
-
-    def add_ltm(
-        self,
-        name: str,
-        lc_name: str,
-        mass_factor: float,
-        g: float,
-        bx: Literal[0, 1] = 1,
-        by: Literal[0, 1] = 1,
-        bz: Literal[0, 1] = 1,
-        bnf: Literal[0, 1] = 1,
-        bbf: Literal[0, 1] = 1,
-        bsf: Literal[0, 1] = 1,
-    ) -> None:
-        """添加荷载转换质量项。
-
-        Args:
-            name: 荷载转换质量标识
-            lc_name: 荷载工况名称
-            mass_factor: 质量系数
-            g: 重力加速度值
-            bx: 质量方向，0=不考虑X向，1=考虑X向
-            by: 质量方向，0=不考虑Y向，1=考虑Y向
-            bz: 质量方向，0=不考虑Z向，1=考虑Z向
-            bnf: 0=不转换节点荷载，1=转换节点荷载
-            bbf: 0=不转换梁荷载，1=转换梁荷载
-            bsf: 0=不转换面荷载，1=转换面荷载
-
-        Note:
-            - 无论荷载工况是否被激活，均可转化为质量
-        """
-        ok, err = osis_ltm_anal_inc(
-            name, "a", lc_name, mass_factor, g, bx, by, bz, bnf, bbf, bsf
-        )
-        if not ok:
-            raise RuntimeError(f"添加荷载转换质量项 {lc_name} 到 {name} 失败: {err}")
-
-    def remove_ltm(self, name: str, lc_name: str) -> None:
-        """移除荷载转换质量项。
-
-        Args:
-            name: 荷载转换质量标识
-            lc_name: 荷载工况名称
-        """
-        ok, err = osis_ltm_anal_inc(name, "r", lc_name, 0.0, 0.0)
-        if not ok:
-            raise RuntimeError(f"移除荷载转换质量项 {lc_name} 从 {name} 失败: {err}")
 
 class ModOptManager:
     """模态分析管理器"""
@@ -312,7 +319,7 @@ class SeisRspSpecManager:
         """获取所有地震反应谱"""
         return self._load()
 
-    def create_rsp_spec(
+    def create(
             self,
             name: str,
             spec_type: Literal["N", "A", "V", "D"],
@@ -337,7 +344,7 @@ class SeisRspSpecManager:
         if not ok:
             raise RuntimeError(f"创建地震反应谱 {name} 失败: {err}")
 
-    def create_rsp_spec_code(
+    def create_code(
             self,
             name: str,
             spec_type: Literal["N", "A", "V", "D"],
@@ -380,7 +387,7 @@ class SeisRspSpecManager:
         if not ok:
             raise RuntimeError(f"创建规范地震反应谱 {name} 失败: {err}")
 
-    def delete_rsp_spec(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """删除地震反应谱。
 
         Args:
@@ -390,7 +397,7 @@ class SeisRspSpecManager:
         if not ok:
             raise RuntimeError(f"删除地震反应谱 {name} 失败: {err}")
 
-    def rename_rsp_spec(self, old_name: str, new_name: str) -> None:
+    def rename(self, old_name: str, new_name: str) -> None:
         """修改地震反应谱名称。
 
         Args:
@@ -404,7 +411,7 @@ class SeisRspSpecManager:
     def clear(self)->None:
         """清空所有地震反应谱"""
         try:
-            [self.delete_rsp_spec(srs.name) for srs in self.all()]
+            [self.delete(srs.name) for srs in self.all()]
         except Exception as e:
             raise Exception(f"清空所有地震反应谱失败: {e}，被占用,无法删除")
 
@@ -480,7 +487,7 @@ class RspecAnalManager:
         """获取所有反应谱工况"""
         return self._load()
 
-    def create_rspec_anal(
+    def create(
             self,
             name: str,
             spectrum: str,
@@ -512,7 +519,7 @@ class RspecAnalManager:
         if not ok:
             raise RuntimeError(f"创建反应谱工况 {name} 失败: {err}")
 
-    def delete_rspec_anal(self, name: str) -> None:
+    def delete(self, name: str) -> None:
         """删除反应谱工况。
 
         Args:
@@ -522,7 +529,7 @@ class RspecAnalManager:
         if not ok:
             raise RuntimeError(f"删除反应谱工况 {name} 失败: {err}")
 
-    def rename_rspec_anal(self, old_name: str, new_name: str) -> None:
+    def rename(self, old_name: str, new_name: str) -> None:
         """修改反应谱工况名称。
 
         Args:
@@ -532,6 +539,13 @@ class RspecAnalManager:
         ok, err = osis_rspec_anal_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"修改反应谱工况名称 {old_name} -> {new_name} 失败: {err}")
+        
+    def clear(self)->None:
+        """清空所有反应谱"""
+        try:
+            [self.delete(rspec.name) for rspec in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有反应谱失败: {e}，被占用,无法删除")
 
 class DynamicManager:
     """动力分析管理器
@@ -554,25 +568,25 @@ class DynamicManager:
 
     def __init__(self) -> None:
         self._load_to_mass = LoadToMassManager()
-        self._mod_opt = ModOptManager()
-        self._seis_rsp_spec = SeisRspSpecManager()
-        self._rspec_anal = RspecAnalManager()
+        self._modal = ModOptManager()
+        self._seismic = SeisRspSpecManager()
+        self._response_spectrum = RspecAnalManager()
 
     @property
     def load_to_mass(self)-> LoadToMassManager:
         return self._load_to_mass
 
     @property
-    def mod_opt(self) -> ModOptManager:
-        return self._mod_opt
+    def modal(self) -> ModOptManager:
+        return self._modal
 
     @property
-    def seis_rsp_spec_mod(self) -> SeisRspSpecManager:
-        return self._seis_rsp_spec
+    def seismic(self) -> SeisRspSpecManager:
+        return self._seismic
 
     @property
-    def rspec_anal(self) -> RspecAnalManager:
-        return self._rspec_anal
+    def response_spectrum(self) -> RspecAnalManager:
+        return self._response_spectrum
 
 
 # ──────────────────────────────────────────────
