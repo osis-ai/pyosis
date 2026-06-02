@@ -229,31 +229,32 @@ class ElementGroup:
 
 @dataclass(frozen=False)
 class TaperEleGroup:
-  """变截面单元组对象"""
-  name: str = ""
-  z_type: int = 0
-  z_trans: float = 0.0
-  z_pos: float = 0.0
-  z_dis: float = 0.0
-  y_type: int = 0
-  y_trans: float = 0.0
-  y_pos: float = 0.0
-  y_dis: float = 0.0
-  elements: list[int] = field(default_factory=list)
-  @classmethod
-  def _from_dict(cls, d: dict) -> TaperEleGroup:
-      return cls(
-          name=d.get("name"),
-          z_type=d.get("zType"),
-          z_trans=d.get("zTrans"),
-          z_pos= d.get("zPos"),
-          z_dis=d.get("zDis"),
-          y_type=d.get("yType"),
-          y_trans=d.get("yTrans"),
-          y_pos=d.get("yPos"),
-          y_dis=d.get("yDis"),
-          elements=d.get("elements"),
-      )
+    """变截面单元组对象"""
+    name: str = ""
+    z_type: int = 0
+    z_trans: float = 0.0
+    z_pos: float = 0.0
+    z_dis: float = 0.0
+    y_type: int = 0
+    y_trans: float = 0.0
+    y_pos: float = 0.0
+    y_dis: float = 0.0
+    elements: list[int] = field(default_factory=list)
+    
+    @classmethod
+    def _from_dict(cls, d: dict) -> TaperEleGroup:
+        return cls(
+            name=d.get("name"),
+            z_type=d.get("zType"),
+            z_trans=d.get("zTrans"),
+            z_pos= d.get("zPos"),
+            z_dis=d.get("zDis"),
+            y_type=d.get("yType"),
+            y_trans=d.get("yTrans"),
+            y_pos=d.get("yPos"),
+            y_dis=d.get("yDis"),
+            elements=d.get("elements"),
+        )
 
 class ElementGroupManager:
     """单元组管理器
