@@ -1425,6 +1425,10 @@ class TendonManager:
             "shapes": self.shape.count()
         }
 
+    def clear(self) -> None:
+        self.shape.clear()
+        self.prop.clear()
+
     def __repr__(self) -> str:
         return f"TendonManager()"
 

@@ -10,8 +10,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal
+from dataclasses import dataclass, field
+from typing import Literal, Optional
 
 from .coordinate import (
     osis_coord_sys_three_point,
@@ -39,6 +39,54 @@ from .pu_curve import (
 from .component_thickness import osis_assign_component_thickness
 from ..core.client import osis_client
 
+@dataclass(frozen=False)
+class Point3D:
+    x: float
+    y: float
+    z: float
+
+    @classmethod
+    def _from_dict(cls, d: dict | None) -> Optional["Point3D"]:
+        if not d:
+            return None
+        return cls(
+            x=float(d.get("x", 0.0)),
+            y=float(d.get("y", 0.0)),
+            z=float(d.get("z", 0.0)),
+        )
+
+
+@dataclass(frozen=False)
+class Coordinate:
+    """空间坐标系对象"""
+    no: int
+    name: str
+    coor_sys_type: str
+    property_type: int
+    p1: Point3D
+    p2: Optional[Point3D] = None
+    p3: Optional[Point3D] = None
+    angle1: Optional[float] = None
+    angle2: Optional[float] = None
+    related_boundary: list[int] = field(default_factory=list)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> "Coordinate":
+        return cls(
+            no=d.get("no"),
+            name=d.get("name", ""),
+            coor_sys_type=d.get("coorSysType", ""),
+            property_type=d.get("propertyType", 0),
+            p1=Point3D._from_dict(d.get("p1")) or Point3D(0.0, 0.0, 0.0),
+            p2=Point3D._from_dict(d.get("p2")),
+            p3=Point3D._from_dict(d.get("p3")),
+            angle1=d.get("angle1"),
+            angle2=d.get("angle2"),
+            related_boundary=list(d.get("relatedBoundary", [])),
+        )
+
+    def __repr__(self) -> str:
+        return f"Coordinate(no={self.no}, name={self.name!r}, type={self.coor_sys_type})"
 
 # ──────────────────────────────────────────────
 # 子管理器
@@ -90,6 +138,48 @@ class CoordinateManager:
         if not ok:
             raise RuntimeError(f"修改坐标系编号 {old} -> {new} 失败: {err}")
 
+    def all(self) -> list[Coordinate]:
+        """获取全部空间坐标系"""
+        resp = osis_client("GetAllCoorSysInfo", {})
+        if not resp.get("success"):
+            raise RuntimeError(resp.get("error", "GetAllCoorSysInfo 失败"))
+        return [
+            Coordinate._from_dict(d)
+            for d in resp.get("data", [])
+            if isinstance(d, dict) and "no" in d
+        ]
+
+    def get(self, no: int | list[int]) -> Coordinate | list[Coordinate | None] | None:
+        """根据编号获取空间坐标系"""
+        if isinstance(no, int):
+            nos = [no]
+        elif isinstance(no, list):
+            nos = no
+        else:
+            raise TypeError(f"不支持的编号类型: {type(no)}")
+
+        resp = osis_client("GetCoorSysInfoByNos", {"no": nos})
+        if not resp.get("success"):
+            raise RuntimeError(resp.get("error", "GetCoorSysInfoByNos 失败"))
+
+        coords = [
+            Coordinate._from_dict(d) if isinstance(d, dict) and d.get("no") is not None else None
+            for d in resp.get("data", [])
+        ]
+
+        if len(coords) == 0:
+            return None
+        elif len(coords) == 1:
+            return coords[0]
+        return coords
+
+    def clear(self) -> None:
+        """清空所有空间坐标系"""
+        try:
+            [self.delete(c.no) for c in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有空间坐标系失败: {e}，被占用,无法删除")
+
     def __repr__(self) -> str:
         return "CoordinateManager()"
 
@@ -114,7 +204,7 @@ class CreepShrink:
             name=d.get("name"),
             no=d.get("no"),
             shrink_birth=d.get("shrinkBirth"),
-            related_material=list(d.get("relatedMaterial")),
+            related_material=list(d.get("relatedMaterial") or []),
             type_coeff = d.get("typeCoeff"),
         )
 
@@ -290,6 +380,31 @@ class DampingManager:
     def __repr__(self) -> str:
         return "DampingManager()"
 
+@dataclass(frozen=False)
+class PuCurve:
+    """荷载-位移曲线对象"""
+    no: int
+    name: str
+    property_type: int
+    curve_type: int          # 0=力, 1=力矩
+    num: int
+    displacement: list[float]
+    force: list[float]
+    related_element: list[int]
+    @classmethod
+    def _from_dict(cls, d: dict) -> "PuCurve":
+        return cls(
+            no=d.get("no"),
+            name=d.get("name", ""),
+            property_type=d.get("propertyType", 0),
+            curve_type=d.get("curveType", 0),
+            num=d.get("num", 0),
+            displacement=list(d.get("displacement", [])),
+            force=list(d.get("force", [])),
+            related_element=list(d.get("relatedElement", [])),
+        )
+    def __repr__(self) -> str:
+        return f"PuCurve(no={self.no}, name={self.name!r}, type={self.curve_type})"
 
 class PuCurveManager:
     """荷载-位移曲线管理器"""
@@ -328,6 +443,43 @@ class PuCurveManager:
         ok, err = osis_pu_curve_mod(old, new)
         if not ok:
             raise RuntimeError(f"修改荷载-位移曲线编号 {old} -> {new} 失败: {err}")
+
+    def all(self) -> list[PuCurve]:
+        resp = osis_client("GetAllPuCurveInfo", {})
+        if not resp.get("success"):
+            raise RuntimeError(resp.get("error", "GetAllPuCurveInfo 失败"))
+        return [
+            PuCurve._from_dict(d)
+            for d in resp.get("data", [])
+            if isinstance(d, dict) and "no" in d
+        ]
+
+    def get(self, no: int | list[int]) -> PuCurve | list[PuCurve | None] | None:
+        if isinstance(no, int):
+            nos = [no]
+        elif isinstance(no, list):
+            nos = no
+        else:
+            raise TypeError(f"不支持的编号类型: {type(no)}")
+        resp = osis_client("GetPuCurveInfoByNos", {"no": nos})
+        if not resp.get("success"):
+            raise RuntimeError(resp.get("error", "GetPuCurveInfoByNos 失败"))
+        curves = [
+            PuCurve._from_dict(d) if isinstance(d, dict) and d.get("no") is not None else None
+            for d in resp.get("data", [])
+        ]
+        if len(curves) == 0:
+            return None
+        if len(curves) == 1:
+            return curves[0]
+        return curves
+
+    def clear(self) -> None:
+        """清空所有荷载-位移曲线"""
+        try:
+            [self.delete(c.no) for c in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有荷载-位移曲线失败: {e}，被占用,无法删除")
 
     def __repr__(self) -> str:
         return "PuCurveManager()"
@@ -392,6 +544,12 @@ class PropertyManager:
         ok, err = osis_assign_component_thickness(thickness, op, elems)
         if not ok:
             raise RuntimeError(f"分配构件厚度失败: {err}")
+
+    def clear(self)->None:
+        self.coord.clear()
+        self.creep_shrink.clear()
+        self.damping.clear()
+        self.pu_curve.clear()
 
     def __repr__(self) -> str:
         return "PropertyManager()"

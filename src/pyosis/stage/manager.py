@@ -52,26 +52,15 @@ class Stage:
 
     @classmethod
     def _from_dict(cls, d: dict) -> Stage:
-        """从接口 dict 构造 Stage 对象（内部使用）"""
-        element_groups = [
-            e.get("name")
-            for e in d.get("elementGroups", [])
-            if isinstance(e, dict) and "name" in e
-        ]
-        boundary_groups = [
-            b.get("name")
-            for b in d.get("boundaryGroups", [])
-            if isinstance(b, dict) and "name" in b
-        ]
         load_cases = [
             lc.get("lcName")
-            for lc in d.get("loadCases", [])
-            if isinstance(lc, dict) and "lcName" in lc
+            for lc in d.get("loadCases") or []
+            if isinstance(lc, dict) and lc.get("lcName")
         ]
         analysis_cases = [
             a.get("analName")
-            for a in d.get("analysisCases", [])
-            if isinstance(a, dict) and "analName" in a
+            for a in d.get("analysisCases") or []
+            if isinstance(a, dict) and a.get("analName")
         ]
         return cls(
             no=d.get("no"),
@@ -79,11 +68,25 @@ class Stage:
             duration=d.get("duration"),
             accumulation=d.get("accumulation"),
             pre_stage_no=d.get("preStageNo"),
-            element_groups=element_groups,
-            boundary_groups=boundary_groups,
+            element_groups=cls._group_names(d.get("elementGroups")),
+            boundary_groups=cls._group_names(d.get("boundaryGroups")),
             load_cases=load_cases,
             analysis_cases=analysis_cases,
         )
+
+    @staticmethod
+    def _group_names(groups_data) -> list[str]:
+        """从 elementGroups / boundaryGroups 嵌套结构提取组名"""
+        if not isinstance(groups_data, dict):
+            return []
+        names: list[str] = []
+        for key in ("active", "inactive"):
+            for item in groups_data.get(key) or []:
+                if isinstance(item, dict):
+                    name = item.get("name")
+                    if name:
+                        names.append(name)
+        return names
 
     def define_element(
         self,

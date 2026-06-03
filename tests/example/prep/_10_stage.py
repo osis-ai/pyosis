@@ -56,6 +56,8 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
         raise ValueError(f"insert 后 get(4) 应为 '_阶段插入测试'，实际 {getattr(got4, 'name', None)!r}")
     # get
     got1 = stage.get(1)
+    if eg_main_beam not in got1.element_groups:
+        raise ValueError(f"element_groups 应含 {eg_main_beam!r}, 实际 {got1.element_groups!r}")
     if got1 is None or got1.name != "CS1_主梁预制、张拉预应力":
         raise ValueError("get(1) 失败")
     

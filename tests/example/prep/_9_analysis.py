@@ -280,18 +280,18 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
 
 def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
     dynamic = engine.dynamic
-    rsp = dynamic.seis_rsp_spec_mod
-    rspec = dynamic.rspec_anal
+    rsp = dynamic.seismic
+    rspec = dynamic.response_spectrum
 
     spec_name = "_反应谱测试谱"
     case_name = "_反应谱工况测试"
 
-    rsp.create_rsp_spec_code(
+    rsp.create_code(
         spec_name, "A", 9.8, code="JTGT2231_01_2020",
         intensity=0.05, site=0, delta_t=0.1,
     )
 
-    rspec.create_rspec_anal(
+    rspec.create(
         case_name,
         spectrum=spec_name,
         damping_name=damping_names[0],
@@ -302,12 +302,12 @@ def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
     if got is None:
         raise ValueError(f"获取 {case_name!r} 失败")
 
-    rspec.rename_rspec_anal(got.name, "_"+got.name)
+    rspec.rename(got.name, "_"+got.name)
     got2 = rspec.get("_"+got.name)
     if got2 is None or got2.name != "_"+got.name:
-        raise ValueError("rename_rspec_anal 后编号应为 99")
-    rspec.delete_rspec_anal(case_name)
-    rsp.delete_rsp_spec("_"+got.name)
+        raise ValueError("rename 后编号应为 99")
+    rspec.delete(case_name)
+    rsp.delete("_"+got.name)
 
 if __name__ == "__main__":
     from _0_engine import engine

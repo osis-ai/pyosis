@@ -57,7 +57,29 @@ def build_nodes(engine: OSISEngine) -> list[int]:
         n1.x, 1.0, 0.0,   # 第三点 y 方向偏移 1m，避免共线
     )
     prop.coord.renumber("99","100")
-    prop.coord.delete(100)
+    # ── 坐标系 all / get / clear 测试 ──
+    coord = prop.coord
+    all_coords = coord.all()
+    if len(all_coords) != 1:
+        raise ValueError(f"coord.all() 期望 1 条，实际 {len(all_coords)}")
+    c100 = coord.get(100)
+    if c100 is None:
+        raise ValueError("coord.get(100) 返回 None")
+    _expect_attr(c100, "no", 100)
+    _expect_attr(c100, "coor_sys_type", "TRIPT")
+    if c100.p1.x != n1.x or c100.p2.x != n2.x:
+        raise ValueError("坐标系点位与节点不一致")
+    c_none = coord.get(999)
+    if c_none is not None:
+        raise ValueError("coord.get(999) 应为 None")
+    cs = coord.get([100, 999])
+    if cs[0].no != 100 or cs[1] is not None:
+        raise ValueError("coord.get([100, 999]) 返回不符合预期")
+    # 测 clear，会删掉 no=100
+    coord.clear()
+    if len(coord.all()) != 0:
+        raise ValueError("coord.clear() 后应为空")
+    # prop.coord.delete(100)
     # 测试：两点+旋转角空间坐标系（沿桥轴 n1→n2，编号 98）
     prop.coord.create_two_point_rotation(
         98,

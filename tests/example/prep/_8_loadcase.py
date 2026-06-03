@@ -330,40 +330,40 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     lc_dead.create_gravity(0.0, 0.0, -1.000)
 
     # 荷载质量转换
-    dynamic.load_to_mass.create_ltm("荷载转换质量1")
-    dynamic.load_to_mass.create_ltm("荷载转换质量2")
-    dynamic.load_to_mass.add_ltm("荷载转换质量1", lc1.name, 1.0, 9.806)
+    ltm1 = dynamic.load_to_mass.create("荷载转换质量1")
+    dynamic.load_to_mass.create("荷载转换质量2")
+    ltm1.add(lc1.name, 1.0, 9.806)
     ltm = dynamic.load_to_mass.get("荷载转换质量1")
     _expect_attr(ltm, "name", "荷载转换质量1")
-    if not any(p.load_case == lc1.name for p in (ltm.lc_paras or [])):
-        raise ValueError(f"add_ltm 后应包含 {lc1.name!r}")
-    # remove_ltm 测试
-    dynamic.load_to_mass.remove_ltm("荷载转换质量1", lc1.name)
+    if ltm.get(lc1.name) is None:
+        raise ValueError(f"add 后应包含 {lc1.name!r}")
+    # remove 测试
+    ltm.remove(lc1.name)
     ltm = dynamic.load_to_mass.get("荷载转换质量1")
     if ltm is None:
-        raise ValueError("remove_ltm 后 get 失败")
-    if any(p.load_case == lc1.name for p in (ltm.lc_paras or [])):
-        raise ValueError(f"remove_ltm 后不应再包含 {lc1.name!r}")
+        raise ValueError("remove 后 get 失败")
+    if ltm.get(lc1.name) is not None:
+        raise ValueError(f"remove 后不应再包含 {lc1.name!r}")
     # 后续 delete / rename
-    dynamic.load_to_mass.rename_ltm(ltm.name, "_荷载转换质量1")
-    dynamic.load_to_mass.delete_ltm("_荷载转换质量1")
+    dynamic.load_to_mass.rename(ltm.name, "_荷载转换质量1")
+    dynamic.load_to_mass.delete("_荷载转换质量1")
     ltms = dynamic.load_to_mass.all()
     if len(ltms) != 1:
         raise ValueError(f"期望剩余 1 个荷载转换质量，实际 {len(ltms)}")
     # 模态分析
-    dynamic.mod_opt.set_modal_opt(5)
+    dynamic.modal.set_modal_opt(5)
     
     # 地震反应谱
-    rsp = dynamic.seis_rsp_spec_mod
+    rsp = dynamic.seismic
     rsp_import_name = "_反应谱导入测试"
-    rsp.create_rsp_spec(rsp_import_name, "A", 9.8, [(0.1, 0.5), (0.2, 0.8), (0.5, 1.2), (1.0, 0.9)])
+    rsp.create(rsp_import_name, "A", 9.8, [(0.1, 0.5), (0.2, 0.8), (0.5, 1.2), (1.0, 0.9)])
 
     got_import = rsp.get(rsp_import_name)
     if got_import is None or got_import.name != rsp_import_name:
         raise ValueError(f"获取 {rsp_import_name!r} 失败")
-    rsp.delete_rsp_spec(rsp_import_name)
+    rsp.delete(rsp_import_name)
     rsp_name = "_反应谱测试"
-    rsp.create_rsp_spec_code(rsp_name,
+    rsp.create_code(rsp_name,
       "A",
       9.8,
       code="JTGT2231_01_2020",
@@ -380,12 +380,12 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     got = rsp.get(rsp_name)
     if got is None or got.name != rsp_name:
         raise ValueError(f"获取 {rsp_name!r} 失败")
-    rsp.rename_rsp_spec(got.name, "_" + got.name)
+    rsp.rename(got.name, "_" + got.name)
     got2 = rsp.get("_" + got.name)
     if got2 is None or got2.name != "_" + got.name:
         raise ValueError("rename 后名称不符")
     rsp.all()
-    rsp.delete_rsp_spec(rsp_name)
+    rsp.delete(rsp_name)
 
     all_lc = loadcase.all()
     if loadcase.count() != len(all_lc):

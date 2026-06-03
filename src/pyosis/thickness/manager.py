@@ -8,15 +8,70 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
 from .interface import (
     osis_shell_thickness,
     osis_shell_thickness_del,
     osis_shell_thickness_mod,
 )
+from ..core.client import osis_client
 
+
+@dataclass(frozen=True)
+class Thickness:
+    no: int
+    in_plane: float
+    out_plane: float
+    related_elements: list[int] = field(default_factory=list)
+    @classmethod
+    def _from_dict(cls, d: dict) -> "Thickness":
+        return cls(
+            no=d.get("no"),
+            in_plane=d.get("inPlane", 0.0),
+            out_plane=d.get("outPlane", 0.0),
+            related_elements=list(d.get("relatedElement") or []),
+        )
 
 class ThicknessManager:
     """厚度管理器"""
+
+    def _load(self) -> list[Thickness]:
+        resp = osis_client("GetAllShellThicknessInfo", {})
+        if not resp.get("success"):
+            raise RuntimeError(resp.get("error", "GetAllShellThicknessInfo 失败"))
+        return [
+            Thickness._from_dict(d)
+            for d in resp.get("data", [])
+            if isinstance(d, dict) and d.get("no") is not None
+        ]
+
+    def get(self, no: int | list[int]) -> Thickness | list[Thickness | None] | None:
+        nos = [no] if isinstance(no, int) else no
+        resp = osis_client("GetShellThicknessInfoByNos", {"no": nos})
+        if not resp.get("success"):
+            raise RuntimeError(resp.get("error"))
+        items = [
+            Thickness._from_dict(d) if isinstance(d, dict) and d.get("no") is not None else None
+            for d in resp.get("data", [])
+        ]
+        if len(items) == 0:
+            return None
+        if len(items) == 1:
+            return items[0]
+        return items
+
+    def all(self) -> list[Thickness]:
+        return self._load()
+
+    def count(self) -> int:
+        return len(self._load())
+
+    def clear(self) -> None:
+        try:
+            [self.delete(t.no) for t in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有厚度特性失败: {e}，被占用,无法删除")
 
     def create(
         self,
