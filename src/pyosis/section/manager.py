@@ -959,6 +959,70 @@ class SectionManager:
             raise RuntimeError(f"创建I形截面 {no} 失败: {err}")
         return self.get(no)
 
+    def create_smallbox(
+        self,
+        name: str,
+        e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
+        h: float = 1.6,
+        bs: float = 1.65,
+        bm: float = 1.2,
+        bc: float = 0.0,
+        bb: float = 1.0,
+        tt: float = 0.18,
+        tb: float = 0.2,
+        tw: float = 0.2,
+        i: float = 4.0,
+        tc: float = 0.18,
+        tc1: float = 0.25,
+        x: float = 0.2,
+        xi1: float = 0.15,
+        tt1: float = 0.25,
+        xi2: float = 0.05,
+        yi2: float = 0.05,
+        b_slope: bool = False,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        r: float = 0.05,
+        no: int | None = None,
+    ) -> Section:
+        """创建小箱梁截面(SMALLBOX)。
+
+        Args:
+            name: 截面名称
+            e_girder_pos: 截面位置，LEFT=左边梁，MIDDLE=中梁，RIGHT=右边梁
+            h: 箱梁高度
+            bs: 边翼板宽
+            bm: 中梁半宽
+            bc: 现浇湿接缝半宽
+            bb: 底板宽
+            tt: 顶板厚
+            tb: 底板厚
+            tw: 腹板厚
+            i: 腹板倾斜比
+            tc: 边梁悬臂端部厚
+            tc1: 边梁悬臂根部厚
+            x: 中梁翼板倒角宽
+            xi1: 倒角1宽（顶板）
+            tt1: 倒角1根部厚
+            xi2: 倒角2宽（底板）
+            yi2: 倒角2高
+            b_slope: 是否输入横坡
+            i1: 顶左坡
+            i2: 顶右坡
+            r: 底板倒角圆弧半径
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_smallbox(
+            no, name, "SMALLBOX", e_girder_pos, h, bs, bm, bc, bb,
+            tt, tb, tw, i, tc, tc1, x, xi1, tt1, xi2, yi2, b_slope, i1, i2, r,
+        )
+        if not ok:
+            raise RuntimeError(f"创建小箱梁截面 {no} 失败: {err}")
+        return self.get(no)
+
+
     def create_rect(
             self,
             name: str,
@@ -1017,6 +1081,512 @@ class SectionManager:
         )
         if not ok:
             raise RuntimeError(f"创建矩形截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_rounded_end(
+        self,
+        name: str,
+        e_filling_type: Literal["Solid", "Hollow"] = "Solid",
+        b: float = 7.0,
+        h: float = 3.0,
+        r: float = 2.0,
+        b_has_diaphragm: bool = False,
+        b_inner: float = 4.0,
+        t: float = 1.0,
+        xi1: float = 0.5,
+        yi1: float = 0.25,
+        tw: float = 1.0,
+        xi2: float = 0.5,
+        yi2: float = 0.25,
+        no: int | None = None,
+    ) -> Section:
+        """创建圆端形截面(ROUNDEDEND)。
+
+        Args:
+            name: 截面名称
+            e_filling_type: 填充类型，Solid=实腹，Hollow=空腹
+            b: 截面宽
+            h: 截面高
+            r: 圆弧半径
+            b_has_diaphragm: 是否有隔板
+            b_inner: 内宽
+            t: 壁厚
+            xi1: 内倒角宽
+            yi1: 内倒角高
+            tw: 隔板厚
+            xi2: 隔板倒角宽
+            yi2: 隔板倒角高
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_rounded_end(
+            no, name, "ROUNDEDEND", e_filling_type, b, h, r,
+            b_has_diaphragm, b_inner, t, xi1, yi1, tw, xi2, yi2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建圆端形截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_conventionalbox(
+        self,
+        name: str,
+        h: float = 2.7,
+        bt_l: float = 6.375,
+        bt_r: float = 6.375,
+        bb_l: float = 3.5,
+        bb_r: float = 3.5,
+        bs: float = 0.5,
+        tt: float = 0.28,
+        tb: float = 0.32,
+        tw1: float = 0.5,
+        tw2: float = 0.5,
+        n_cell_num: int = 1,
+        bi1: float = 5.05,
+        bi2: float = 4.5,
+        bi3: float = 5.05,
+        bi4: float = 5.05,
+        xi1: float = 1.5,
+        tt1: float = 0.7,
+        xi2: float = 0.0,
+        tt2: float = 0.0,
+        xi3: float = 1.0,
+        yi3: float = 0.5,
+        xi4: float = 0.5,
+        tt4: float = 0.35,
+        xi5: float = 0.6,
+        yi5: float = 0.3,
+        xi6: float = 1.0,
+        tt6: float = 0.5,
+        xi7: float = 0.6,
+        yi7: float = 0.3,
+        bc_l: float = 2.875,
+        tc_l: float = 0.2,
+        bc1_l: float = 1.325,
+        tc1_l: float = 0.7,
+        tc2_l: float = 0.4,
+        b_symmetry: bool = True,
+        bc_r: float = 2.875,
+        tc_r: float = 0.2,
+        bc1_r: float = 1.325,
+        tc1_r: float = 0.7,
+        tc2_r: float = 0.4,
+        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        i3: float = 0.0,
+        i4: float = 0.0,
+        r1: float = 0.0,
+        r2: float = 0.0,
+        no: int | None = None,
+    ) -> Section:
+        """创建常规箱梁截面(CONVENTIONALBOX)。
+
+        Args:
+            name: 截面名称
+            h: 截面高度
+            bt_l: 设计线左顶板宽
+            bt_r: 设计线右顶板宽
+            bb_l: 设计线左底板宽
+            bb_r: 设计线右底板宽
+            bs: 悬臂根部至边腹板顶内侧宽度
+            tt: 顶板厚
+            tb: 底板厚
+            tw1: 边腹板厚
+            tw2: 中腹板厚
+            n_cell_num: 箱室个数
+            bi1~bi4: 箱室1~4宽度
+            xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数
+            bc_l, tc_l, bc1_l, tc1_l, tc2_l: 左悬臂参数
+            b_symmetry: 右侧是否对称
+                * 0=非对称
+                * 1=对称
+            bc_r, tc_r, bc1_r, tc1_r, tc2_r: 右悬臂参数
+            e_slope_type: 横坡类型
+                * Integral=整体旋转找坡
+                * CastInPlace=现浇模板找坡
+            i~i4: 各坡度参数
+            r1, r2: 倒角圆弧半径
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_conventionalbox(
+            no, name, "CONVENTIONALBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
+            tt, tb, tw1, tw2, n_cell_num, bi1, bi2, bi3, bi4,
+            xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
+            bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
+            e_slope_type, i, i1, i2, i3, i4, r1, r2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_streamed_box(
+        self,
+        name: str,
+        h: float = 4.0,
+        bt_l: float = 20.0,
+        bt_r: float = 20.0,
+        bb_l: float = 10.5,
+        bb_r: float = 10.5,
+        bs: float = 0.8,
+        tt: float = 0.28,
+        tb1: float = 0.27,
+        tb2: float = 0.27,
+        tw: float = 0.25,
+        ttj: float = 0.5,
+        tbj: float = 0.27,
+        twj: float = 0.4,
+        n_cell_num: int = 5,
+        bi1: float = 4.7,
+        bi2: float = 6.85,
+        bi3: float = 6.0,
+        bi4: float = 6.85,
+        xi1: float = 0.6,
+        tt1: float = 0.6,
+        xi2: float = 1.0,
+        tt2: float = 0.7,
+        xi3: float = 0.2,
+        yi3: float = 0.2,
+        xi4: float = 1.0,
+        tt4: float = 0.7,
+        xi5: float = 0.6,
+        yi5: float = 0.3,
+        xi6: float = 0.5,
+        tt6: float = 0.7,
+        xi7: float = 0.5,
+        yi7: float = 0.3,
+        bc_l: float = 4.0,
+        tc_l: float = 0.2,
+        bc1_l: float = 0.5,
+        tc1_l: float = 0.7,
+        tc2_l: float = 0.4,
+        b_symmetry: bool = True,
+        bc_r: float = 4.0,
+        tc_r: float = 0.2,
+        bc1_r: float = 0.5,
+        tc1_r: float = 0.7,
+        tc2_r: float = 0.4,
+        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        i3: float = 0.0,
+        i4: float = 0.0,
+        r1: float = 0.5,
+        r2: float = 0.2,
+        no: int | None = None,
+    ) -> Section:
+        """创建扁平箱梁截面(STREAMEDBOX)。
+
+        Args:
+            name: 截面名称
+            h: 截面高度
+            bt_l: 设计线左顶板宽
+            bt_r: 设计线右顶板宽
+            bb_l: 设计线左底板宽
+            bb_r: 设计线右底板宽
+            bs: 悬臂根部至边腹板顶内侧宽度
+            tt: 顶板厚
+            tb1: 底板厚
+            tb2: 斜底板厚
+            tw: 腹板厚
+            ttj: 加强室顶板厚
+            tbj: 加强室底板厚
+            twj: 加强室腹板厚
+            n_cell_num: 箱室个数
+            bi1~bi4: 箱室1~4宽度
+            xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数
+            bc_l, tc_l, bc1_l, tc1_l, tc2_l: 左悬臂参数
+            b_symmetry: 右侧是否对称
+                * 0=非对称
+                * 1=对称
+            bc_r, tc_r, bc1_r, tc1_r, tc2_r: 右悬臂参数
+            e_slope_type: 横坡类型
+                * Integral=整体旋转找坡
+                * CastInPlace=现浇模板找坡
+            i~i4: 各坡度参数
+            r1, r2: 倒角圆弧半径
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_streamed_box(
+            no, name, "STREAMEDBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
+            tt, tb1, tb2, tw, ttj, tbj, twj, n_cell_num, bi1, bi2, bi3, bi4,
+            xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
+            bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
+            e_slope_type, i, i1, i2, i3, i4, r1, r2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建扁平箱梁截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_double_side_box(
+        self,
+        name: str,
+        h: float = 3.8,
+        bt: float = 36.0,
+        bt_bottom: float = 14.8,
+        bs: float = 2.1,
+        bb: float = 4.4,
+        tt: float = 0.3,
+        tb1: float = 0.3,
+        tb2: float = 0.3,
+        tw: float = 0.5,
+        b_wind: float = 1.0,
+        n_wind: float = 1.0,
+        bi: float = 8.0,
+        xi1: float = 1.0,
+        tt1: float = 0.6,
+        xi2: float = 1.0,
+        tt2: float = 0.7,
+        xi3: float = 0.6,
+        yi3: float = 0.3,
+        xo4: float = 1.0,
+        tt4: float = 0.7,
+        b1: float = 0.3,
+        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        no: int | None = None,
+    ) -> Section:
+        """创建双边箱截面(DOUBLESIDEBOX)。
+
+        Args:
+            name: 截面名称
+            h: 梁高
+            bt: 顶板顶宽
+            bt_bottom: 顶板底宽
+            bs: 边箱实心段顶板宽
+            bb: 底板宽
+            tt: 顶板厚
+            tb1: 底板厚
+            tb2: 斜底板厚
+            tw: 腹板厚
+            b_wind: 风嘴上部水平宽度
+            n_wind: 风嘴上部竖向高度
+            bi: 室内宽
+            xi1: 倒角1宽(顶板边)
+            tt1: 倒角1根部厚
+            xi2: 倒角2宽(顶板中)
+            tt2: 倒角2根部厚
+            xi3: 倒角3宽(底板中)
+            yi3: 倒角3高
+            xo4: 倒角4宽(顶板)
+            tt4: 倒角4根部厚
+            b1: 腹板内侧倒角宽
+            e_slope_type: 横坡类型
+                * Integral=整体旋转找坡
+                * CastInPlace=现浇模板找坡
+            i: 整体转梁横坡
+            i1: 顶左坡
+            i2: 顶右坡
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_double_side_box(
+            no, name, "DOUBLESIDEBOX", h, bt, bt_bottom, bs, bb,
+            tt, tb1, tb2, tw, b_wind, n_wind, bi, xi1, tt1, xi2, tt2,
+            xi3, yi3, xo4, tt4, b1, e_slope_type, i, i1, i2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建双边箱截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_ribbed_slab(
+        self,
+        name: str,
+        h: float = 2.8,
+        bt: float = 21.5,
+        bt_bottom: float = 17.7,
+        tt: float = 0.3,
+        b: float = 0.2,
+        h_rib: float = 1.25,
+        b1: float = 1.8,
+        b2: float = 0.2,
+        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+        i: float = 0.0,
+        i1: float = "",
+        i2: float = "",
+        x: float = 1.5,
+        y: float = 0.3,
+        no: int | None = None,
+    ) -> Section:
+        """创建肋板式截面(RIBBEDSLAB)。
+
+        Args:
+            name: 截面名称
+            h: 截面高度
+            bt: 顶板顶宽
+            bt_bottom: 顶板底宽
+            tt: 顶板厚
+            b: 风嘴上部水平宽度
+            h_rib: 风嘴上部竖向宽度
+            b1: 边肋底宽
+            b2: 边肋内侧倒角宽
+            e_slope_type: 横坡类型
+                * Integral= 整体旋转找坡
+                * CastInPlace = 现浇模板找坡
+            i: 整体转梁横坡，e_slope_type=CastInPlace时缺省，设置为 空字符串
+            i1: 顶左坡，e_slope_type=Integral时缺省，设置为 空字符串
+            i2: 顶右坡，e_slope_type=Integral时缺省，设置为 空字符串
+            x: 顶板倒角宽
+            y: 顶板倒角高
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_ribbed_slab(
+            no, name, "RIBBEDSLAB", h, bt, bt_bottom, tt, b, h_rib, b1, b2, x, y, e_slope_type, i, i1, i2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建肋板式截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_TGirder(
+        self,
+        name: str,
+        e_girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
+        h: float = 2.5,
+        bs: float = 1.125,
+        bm: float = 0.85,
+        bc: float = 0.0,
+        tt1: float = 0.16,
+        tt2: float = 0.25,
+        x: float = 0.6,
+        tw: float = 0.2,
+        bh: float = 0.6,
+        hh: float = 0.35,
+        yh: float = 0.25,
+        b_slope: bool = False,
+        i1: float = 0.0,
+        i2: float = 0.0,
+        r: float = 0.05,
+        no: int | None = None,
+    ) -> Section:
+        """创建T梁截面(TGIRDER)。
+
+        Args:
+            name: 截面名称
+            e_girder_pos: 截面位置
+                * Left=左边梁
+                * Middle=中梁
+                * Right=右边梁
+            h: 梁高
+            bs: 边翼板宽，e_girder_pos=Middle时需设置为空字符串""
+            bm: 中梁半宽
+            bc: 现浇湿接缝半宽
+            tt1: 翼板厚
+            tt2: 翼板根部厚
+            x: 翼板倒角宽
+            tw: 腹板厚度
+            bh: 马蹄宽度
+            hh: 马蹄高度
+            yh: 马蹄倒角高
+            b_slope: 是否输入横坡
+            i1: 顶左坡
+            i2: 顶右坡
+            r: 顶板处倒角半径
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_TGirder(
+            no, name, "TGIRDER", e_girder_pos, h, bs, bm, bc,
+            tt1, tt2, x, tw, bh, hh, yh, b_slope, i1, i2, r,
+        )
+        if not ok:
+            raise RuntimeError(f"创建T梁截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_hollowslab(
+        self,
+        name: str,
+        e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
+        h: float = 0.95,
+        bs: float = 1.0,
+        bm: float = 0.57,
+        bj: float = 0.05,
+        tt: float = 0.12,
+        tb: float = 0.12,
+        tw: float = 0.16,
+        tc: float = 0.12,
+        tc1: float = 0.16,
+        bc: float = 0.38,
+        xi1: float = 0.15,
+        yi1: float = 0.08,
+        xi2: float = 0.12,
+        yi2: float = 0.08,
+        xo3: float = 0.05,
+        yo3: float = 0.05,
+        xo4: float = 0.08,
+        yo4: float = 0.08,
+        h1: float = 0.12,
+        no: int | None = None,
+    ) -> Section:
+        """创建空心板截面(HOLLOWSLAB)。
+
+        Args:
+            name: 截面名称
+            e_girder_pos: 截面位置
+                * LEFT=左边梁
+                * MIDDLE=中梁
+                * RIGHT=右边梁
+            h: 板高
+            bs: 边板宽（e_girder_pos=MIDDLE 时需要设置为空字符串）
+            bm: 中梁半宽
+            bj: 铰缝上端缩进宽
+            tt: 顶板厚
+            tb: 底板厚
+            tw: 腹板下端厚
+            tc: 边板悬臂端部厚
+            tc1: 边板悬臂根部厚
+            bc: 边板悬臂厚
+            xi1: 倒角1宽（顶板）
+            yi1: 倒角1高
+            xi2: 倒角2宽（底板）
+            yi2: 倒角2高
+            xo3: 倒角3宽（上端）
+            yo3: 倒角3高
+            xo4: 倒角4宽（下端）
+            yo4: 倒角4高
+            h1: 下端竖直段高
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_hollowslab(
+            no, name, "HOLLOWSLAB", e_girder_pos, h, bs, bm, bj,
+            tt, tb, tw, tc, tc1, bc, xi1, yi1, xi2, yi2,
+            xo3, yo3, xo4, yo4, h1,
+        )
+        if not ok:
+            raise RuntimeError(f"创建空心板截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_custom(
+            self,
+            name: str,
+            contour_matrix: str = "",
+            no: int | None = None,
+    ) -> Section:
+        """创建自定义截面(CUSTOM)。
+
+        Args:
+            name: 截面名称
+            contour_matrix: 轮廓点矩阵名称（需先用 engine.matrix 定义）
+            no: 截面编号，不填则自动分配
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_custom(no, name, "CUSTOM", contour_matrix)
+        if not ok:
+            raise RuntimeError(f"创建自定义截面 {no} 失败: {err}")
         return self.get(no)
 
     def create_steel_i(
@@ -1509,557 +2079,6 @@ class SectionManager:
         ok, err = osis_section_steel_custom_plate(no, name, "STEELCUSTOMPLATE", plate_positions)
         if not ok:
             raise RuntimeError(f"创建自定义钢梁参数板截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_smallbox(
-            self,
-            name: str,
-            e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
-            h: float = 1.6,
-            bs: float = 1.65,
-            bm: float = 1.2,
-            bc: float = 0.0,
-            bb: float = 1.0,
-            tt: float = 0.18,
-            tb: float = 0.2,
-            tw: float = 0.2,
-            i: float = 4.0,
-            tc: float = 0.18,
-            tc1: float = 0.25,
-            x: float = 0.2,
-            xi1: float = 0.15,
-            tt1: float = 0.25,
-            xi2: float = 0.05,
-            yi2: float = 0.05,
-            b_slope: bool = False,
-            i1: float = 0.0,
-            i2: float = 0.0,
-            r: float = 0.05,
-            no: int | None = None,
-    ) -> Section:
-        """创建小箱梁截面(SMALLBOX)。
-
-        Args:
-            name: 截面名称
-            e_girder_pos: 截面位置，LEFT=左边梁，MIDDLE=中梁，RIGHT=右边梁
-            h: 箱梁高度
-            bs: 边翼板宽
-            bm: 中梁半宽
-            bc: 现浇湿接缝半宽
-            bb: 底板宽
-            tt: 顶板厚
-            tb: 底板厚
-            tw: 腹板厚
-            i: 腹板倾斜比
-            tc: 边梁悬臂端部厚
-            tc1: 边梁悬臂根部厚
-            x: 中梁翼板倒角宽
-            xi1: 倒角1宽（顶板）
-            tt1: 倒角1根部厚
-            xi2: 倒角2宽（底板）
-            yi2: 倒角2高
-            b_slope: 是否输入横坡
-            i1: 顶左坡
-            i2: 顶右坡
-            r: 底板倒角圆弧半径
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_smallbox(
-            no, name, "SMALLBOX", e_girder_pos, h, bs, bm, bc, bb,
-            tt, tb, tw, i, tc, tc1, x, xi1, tt1, xi2, yi2, b_slope, i1, i2, r,
-        )
-        if not ok:
-            raise RuntimeError(f"创建小箱梁截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_hollowslab(
-            self,
-            name: str,
-            e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
-            h: float = 0.95,
-            bs: float = 1.0,
-            bm: float = 0.57,
-            bj: float = 0.05,
-            tt: float = 0.12,
-            tb: float = 0.12,
-            tw: float = 0.16,
-            tc: float = 0.12,
-            tc1: float = 0.16,
-            bc: float = 0.38,
-            xi1: float = 0.15,
-            yi1: float = 0.08,
-            xi2: float = 0.12,
-            yi2: float = 0.08,
-            xo3: float = 0.05,
-            yo3: float = 0.05,
-            xo4: float = 0.08,
-            yo4: float = 0.08,
-            h1: float = 0.12,
-            no: int | None = None,
-    ) -> Section:
-        """创建空心板截面(HOLLOWSLAB)。
-
-        Args:
-            name: 截面名称
-            e_girder_pos: 截面位置，LEFT=左边梁，MIDDLE=中梁，RIGHT=右边梁
-            h: 板高
-            bs: 边板宽（e_girder_pos=MIDDLE 时设置为空）
-            bm: 中梁半宽
-            bj: 铰缝上端缩进宽
-            tt: 顶板厚
-            tb: 底板厚
-            tw: 腹板下端厚
-            tc: 边板悬臂端部厚
-            tc1: 边板悬臂根部厚
-            bc: 边板悬臂厚
-            xi1: 倒角1宽（顶板）
-            yi1: 倒角1高
-            xi2: 倒角2宽（底板）
-            yi2: 倒角2高
-            xo3: 倒角3宽（上端）
-            yo3: 倒角3高
-            xo4: 倒角4宽（下端）
-            yo4: 倒角4高
-            h1: 下端竖直段高
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_hollowslab(
-            no, name, "HOLLOWSLAB", e_girder_pos, h, bs, bm, bj,
-            tt, tb, tw, tc, tc1, bc, xi1, yi1, xi2, yi2,
-            xo3, yo3, xo4, yo4, h1,
-        )
-        if not ok:
-            raise RuntimeError(f"创建空心板截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_rounded_end(
-            self,
-            name: str,
-            e_filling_type: Literal["Solid", "Hollow"] = "Solid",
-            b: float = 7.0,
-            h: float = 3.0,
-            r: float = 2.0,
-            b_has_diaphragm: bool = False,
-            b_inner: float = 4.0,
-            t: float = 1.0,
-            xi1: float = 0.5,
-            yi1: float = 0.25,
-            tw: float = 1.0,
-            xi2: float = 0.5,
-            yi2: float = 0.25,
-            no: int | None = None,
-    ) -> Section:
-        """创建圆端形截面(ROUNDEDEND)。
-
-        Args:
-            name: 截面名称
-            e_filling_type: 填充类型，Solid=实腹，Hollow=空腹
-            b: 截面宽
-            h: 截面高
-            r: 圆弧半径
-            b_has_diaphragm: 是否有隔板
-            b_inner: 内宽
-            t: 壁厚
-            xi1: 内倒角宽
-            yi1: 内倒角高
-            tw: 隔板厚
-            xi2: 隔板倒角宽
-            yi2: 隔板倒角高
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_rounded_end(
-            no, name, "ROUNDEDEND", e_filling_type, b, h, r,
-            b_has_diaphragm, b_inner, t, xi1, yi1, tw, xi2, yi2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建圆端形截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_conventionalbox(
-            self,
-            name: str,
-            h: float = 2.7,
-            bt_l: float = 6.375,
-            bt_r: float = 6.375,
-            bb_l: float = 3.5,
-            bb_r: float = 3.5,
-            bs: float = 0.5,
-            tt: float = 0.28,
-            tb: float = 0.32,
-            tw1: float = 0.5,
-            tw2: float = 0.5,
-            n_cell_num: int = 1,
-            bi1: float = 5.05,
-            bi2: float = 4.5,
-            bi3: float = 5.05,
-            bi4: float = 5.05,
-            xi1: float = 1.5,
-            tt1: float = 0.7,
-            xi2: float = 0.0,
-            tt2: float = 0.0,
-            xi3: float = 1.0,
-            yi3: float = 0.5,
-            xi4: float = 0.5,
-            tt4: float = 0.35,
-            xi5: float = 0.6,
-            yi5: float = 0.3,
-            xi6: float = 1.0,
-            tt6: float = 0.5,
-            xi7: float = 0.6,
-            yi7: float = 0.3,
-            bc_l: float = 2.875,
-            tc_l: float = 0.2,
-            bc1_l: float = 1.325,
-            tc1_l: float = 0.7,
-            tc2_l: float = 0.4,
-            b_symmetry: bool = True,
-            bc_r: float = 2.875,
-            tc_r: float = 0.2,
-            bc1_r: float = 1.325,
-            tc1_r: float = 0.7,
-            tc2_r: float = 0.4,
-            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-            i: float = 0.0,
-            i1: float = 0.0,
-            i2: float = 0.0,
-            i3: float = 0.0,
-            i4: float = 0.0,
-            r1: float = 0.0,
-            r2: float = 0.0,
-            no: int | None = None,
-    ) -> Section:
-        """创建常规箱梁截面(CONVENTIONALBOX)。
-
-        Args:
-            name: 截面名称
-            h: 截面高度
-            bt_l: 设计线左顶板宽
-            bt_r: 设计线右顶板宽
-            bb_l: 设计线左底板宽
-            bb_r: 设计线右底板宽
-            bs: 悬臂根部至边腹板顶内侧宽度
-            tt: 顶板厚
-            tb: 底板厚
-            tw1: 边腹板厚
-            tw2: 中腹板厚
-            n_cell_num: 箱室个数
-            bi1~bi4: 箱室1~4宽度
-            xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数
-            bc_l, tc_l, bc1_l, tc1_l, tc2_l: 左悬臂参数
-            b_symmetry: 右侧是否对称
-            bc_r, tc_r, bc1_r, tc1_r, tc2_r: 右悬臂参数
-            e_slope_type: 横坡类型
-            i~i4: 各坡度参数
-            r1, r2: 倒角圆弧半径
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_conventionalbox(
-            no, name, "CONVENTIONALBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
-            tt, tb, tw1, tw2, n_cell_num, bi1, bi2, bi3, bi4,
-            xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
-            bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
-            e_slope_type, i, i1, i2, i3, i4, r1, r2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_streamed_box(
-            self,
-            name: str,
-            h: float = 4.0,
-            bt_l: float = 20.0,
-            bt_r: float = 20.0,
-            bb_l: float = 10.5,
-            bb_r: float = 10.5,
-            bs: float = 0.8,
-            tt: float = 0.28,
-            tb1: float = 0.27,
-            tb2: float = 0.27,
-            tw: float = 0.25,
-            ttj: float = 0.5,
-            tbj: float = 0.27,
-            twj: float = 0.4,
-            n_cell_num: int = 5,
-            bi1: float = 4.7,
-            bi2: float = 6.85,
-            bi3: float = 6.0,
-            bi4: float = 6.85,
-            xi1: float = 0.6,
-            tt1: float = 0.6,
-            xi2: float = 1.0,
-            tt2: float = 0.7,
-            xi3: float = 0.2,
-            yi3: float = 0.2,
-            xi4: float = 1.0,
-            tt4: float = 0.7,
-            xi5: float = 0.6,
-            yi5: float = 0.3,
-            xi6: float = 0.5,
-            tt6: float = 0.7,
-            xi7: float = 0.5,
-            yi7: float = 0.3,
-            bc_l: float = 4.0,
-            tc_l: float = 0.2,
-            bc1_l: float = 0.5,
-            tc1_l: float = 0.7,
-            tc2_l: float = 0.4,
-            b_symmetry: bool = True,
-            bc_r: float = 4.0,
-            tc_r: float = 0.2,
-            bc1_r: float = 0.5,
-            tc1_r: float = 0.7,
-            tc2_r: float = 0.4,
-            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-            i: float = 0.0,
-            i1: float = 0.0,
-            i2: float = 0.0,
-            i3: float = 0.0,
-            i4: float = 0.0,
-            r1: float = 0.5,
-            r2: float = 0.2,
-            no: int | None = None,
-    ) -> Section:
-        """创建扁平箱梁截面(STREAMEDBOX)。
-
-        Args:
-            name: 截面名称
-            h: 截面高度
-            bt_l: 设计线左顶板宽
-            bt_r: 设计线右顶板宽
-            bb_l: 设计线左底板宽
-            bb_r: 设计线右底板宽
-            bs: 悬臂根部至边腹板顶内侧宽度
-            tt: 顶板厚
-            tb1: 底板厚
-            tb2: 斜底板厚
-            tw: 腹板厚
-            ttj: 加强室顶板厚
-            tbj: 加强室底板厚
-            twj: 加强室腹板厚
-            n_cell_num: 箱室个数
-            bi1~bi4: 箱室1~4宽度
-            xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数
-            bc_l, tc_l, bc1_l, tc1_l, tc2_l: 左悬臂参数
-            b_symmetry: 右侧是否对称
-            bc_r, tc_r, bc1_r, tc1_r, tc2_r: 右悬臂参数
-            e_slope_type: 横坡类型
-            i~i4: 各坡度参数
-            r1, r2: 倒角圆弧半径
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_streamed_box(
-            no, name, "STREAMEDBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
-            tt, tb1, tb2, tw, ttj, tbj, twj, n_cell_num, bi1, bi2, bi3, bi4,
-            xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
-            bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
-            e_slope_type, i, i1, i2, i3, i4, r1, r2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建扁平箱梁截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_double_side_box(
-            self,
-            name: str,
-            h: float = 3.8,
-            bt: float = 36.0,
-            bt_bottom: float = 14.8,
-            bs: float = 2.1,
-            bb: float = 4.4,
-            tt: float = 0.3,
-            tb1: float = 0.3,
-            tb2: float = 0.3,
-            tw: float = 0.5,
-            b_wind: float = 1.0,
-            n_wind: float = 1.0,
-            bi: float = 8.0,
-            xi1: float = 1.0,
-            tt1: float = 0.6,
-            xi2: float = 1.0,
-            tt2: float = 0.7,
-            xi3: float = 0.6,
-            yi3: float = 0.3,
-            xo4: float = 1.0,
-            tt4: float = 0.7,
-            b1: float = 0.3,
-            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-            i: float = 0.0,
-            i1: float = 0.0,
-            i2: float = 0.0,
-            no: int | None = None,
-    ) -> Section:
-        """创建双边箱截面(DOUBLESIDEBOX)。
-
-        Args:
-            name: 截面名称
-            h: 梁高
-            bt: 顶板顶宽
-            bt_bottom: 顶板底宽
-            bs: 边箱实心段顶板宽
-            bb: 底板宽
-            tt: 顶板厚
-            tb1: 底板厚
-            tb2: 斜底板厚
-            tw: 腹板厚
-            b_wind: 风嘴上部水平宽度
-            n_wind: 风嘴上部竖向高度
-            bi: 室内宽
-            xi1: 倒角1宽(顶板边)
-            tt1: 倒角1根部厚
-            xi2: 倒角2宽(顶板中)
-            tt2: 倒角2根部厚
-            xi3: 倒角3宽(底板中)
-            yi3: 倒角3高
-            xo4: 倒角4宽(顶板)
-            tt4: 倒角4根部厚
-            b1: 腹板内侧倒角宽
-            e_slope_type: 横坡类型
-            i: 整体转梁横坡
-            i1: 顶左坡
-            i2: 顶右坡
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_double_side_box(
-            no, name, "DOUBLESIDEBOX", h, bt, bt_bottom, bs, bb,
-            tt, tb1, tb2, tw, b_wind, n_wind, bi, xi1, tt1, xi2, tt2,
-            xi3, yi3, xo4, tt4, b1, e_slope_type, i, i1, i2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建双边箱截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_ribbed_slab(
-            self,
-            name: str,
-            h: float = 2.8,
-            bt: float = 21.5,
-            bt_bottom: float = 17.7,
-            tt: float = 0.3,
-            b: float = 0.2,
-            h_rib: float = 1.25,
-            b1: float = 1.8,
-            b2: float = 0.2,
-            x: float = 1.5,
-            y: float = 0.3,
-            e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
-            i: float = 0.0,
-            i1: float = 0.0,
-            i2: float = 0.0,
-            no: int | None = None,
-    ) -> Section:
-        """创建肋板式截面(RIBBEDSLAB)。
-
-        Args:
-            name: 截面名称
-            h: 截面高度
-            bt: 顶板顶宽
-            bt_bottom: 顶板底宽
-            tt: 顶板厚
-            b: 风嘴上部水平宽度
-            h_rib: 风嘴上部竖向宽度
-            b1: 边肋底宽
-            b2: 边肋内侧倒角宽
-            x: 顶板倒角宽
-            y: 顶板倒角高
-            e_slope_type: 横坡类型
-            i: 整体转梁横坡
-            i1: 顶左坡
-            i2: 顶右坡
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_ribbed_slab(
-            no, name, "RIBBEDSLAB", h, bt, bt_bottom, tt, b, h_rib, b1, b2, x, y, e_slope_type, i, i1, i2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建肋板式截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_TGirder(
-            self,
-            name: str,
-            e_girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
-            h: float = 2.5,
-            bs: float = 1.125,
-            bm: float = 0.85,
-            bc: float = 0.0,
-            tt1: float = 0.16,
-            tt2: float = 0.25,
-            x: float = 0.6,
-            tw: float = 0.2,
-            bh: float = 0.6,
-            hh: float = 0.35,
-            yh: float = 0.25,
-            b_slope: bool = False,
-            i1: float = 0.0,
-            i2: float = 0.0,
-            r: float = 0.05,
-            no: int | None = None,
-    ) -> Section:
-        """创建T梁截面(TGIRDER)。
-
-        Args:
-            name: 截面名称
-            e_girder_pos: 截面位置，Left=左边梁，Middle=中梁，Right=右边梁
-            h: 梁高
-            bs: 边翼板宽
-            bm: 中梁半宽
-            bc: 现浇湿接缝半宽
-            tt1: 翼板厚
-            tt2: 翼板根部厚
-            x: 翼板倒角宽
-            tw: 腹板厚度
-            bh: 马蹄宽度
-            hh: 马蹄高度
-            yh: 马蹄倒角高
-            b_slope: 是否输入横坡
-            i1: 顶左坡
-            i2: 顶右坡
-            r: 顶板处倒角半径
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_TGirder(
-            no, name, "TGIRDER", e_girder_pos, h, bs, bm, bc,
-            tt1, tt2, x, tw, bh, hh, yh, b_slope, i1, i2, r,
-        )
-        if not ok:
-            raise RuntimeError(f"创建T梁截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_custom(
-            self,
-            name: str,
-            contour_matrix: str = "",
-            no: int | None = None,
-    ) -> Section:
-        """创建自定义截面(CUSTOM)。
-
-        Args:
-            name: 截面名称
-            contour_matrix: 轮廓点矩阵名称（需先用 osis_matrix 定义）
-            no: 截面编号，不填则自动分配
-        """
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_custom(no, name, "CUSTOM", contour_matrix)
-        if not ok:
-            raise RuntimeError(f"创建自定义截面 {no} 失败: {err}")
         return self.get(no)
 
     def delete(self, no: int) -> None:
