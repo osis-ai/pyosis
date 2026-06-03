@@ -98,9 +98,9 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
     buckl_name = "屈曲分析工况"
 
     # 1) 业务屈曲工况
-    stab.create(buckl_name, num=5, accum=0, scalar=1.0, load_type=0)
-    stab.include(buckl_name, "a", lc_dead, 1.0, 0)
-    stab.include(buckl_name, "a", lc_pst, 1.0, 0)
+    buck = stab.create(buckl_name, num=5, accum=0, scalar=1.0, load_type=0)
+    buck.include("a", lc_dead, 1.0, 0)
+    buck.include("a", lc_pst, 1.0, 0)
 
     # 2) get
     got = stab.get(buckl_name)
@@ -114,22 +114,20 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
 
     # 4) replace
     test_name = "_屈曲replace测试"
-    stab.create(test_name, num=3, accum=0, scalar=1.0, load_type=0)
-
-    stab.include(test_name, "a", lc_temp_drop, 1.0, 0)
+    test_buck = stab.create(test_name, num=3, accum=0, scalar=1.0, load_type=0)
+    test_buck.include("a", lc_temp_drop, 1.0, 0)
     got_test = stab.get(test_name)
     if got_test is None:
         raise ValueError(f"获取 {test_name!r} 失败")
     if not any(
-        isinstance(p, dict)
-        and (p.get("loadCase") == lc_temp_drop or p.get("name") == lc_temp_drop)
-        for p in (got_test.lcParas or [])
+            isinstance(p, dict)
+            and (p.get("loadCase") == lc_temp_drop or p.get("name") == lc_temp_drop)
+            for p in (got_test.lcParas or [])
     ):
         raise ValueError(
             f"include 后应包含 {lc_temp_drop!r}, lcParas={got_test.lcParas!r}"
         )
-
-    stab.replace(test_name, lc_temp_rise, 1.0, 0, lc_temp_drop, 1.0, 0)
+    test_buck.replace(lc_temp_rise, 1.0, 0, lc_temp_drop, 1.0, 0)
     got_test = stab.get(test_name)
     if got_test is None:
         raise ValueError(f"replace 后获取'{test_name!r}'失败")
