@@ -5,7 +5,7 @@ from ..core import REGISTRY
 @REGISTRY.register("Section")
 def osis_section_numerical(nSec: int, strName: str, eType: Literal["Numerical"], strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float, dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float, dPeriI: float) -> tuple[bool, str]:
     """
-    定义或修改圆形/圆管形截面
+    定义或修改数值截面
 
     Args:
         nSec (int): 编号

@@ -752,7 +752,35 @@ class Section:
             rib_start_distance: float = 0.0,
             rib_location: Literal["Left", "Right", "Both"] = "Both",
     ) -> None:
-        """定义或修改自定义钢梁截面的板件"""
+        """定义或修改自定义钢梁截面的板件。
+
+        Args:
+            GirderType (str): 钢梁类型。
+                * STEELISIDE = 组合梁的边工字钢梁
+                * STEELIMIDDLE = 组合梁的中工字钢梁
+                * STEELBOX = 组合梁的钢箱梁
+                * STEELTROUGH = 组合梁的槽型钢梁
+                * STEEL = 一般钢梁截面
+            PlatePostion (str): 板件所在位置。
+                * 顶板：TopFlange、TopFlange1~TopFlange5
+                * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5
+                * 底板：BottomFlange、BottomFlange1~BottomFlange5
+                * 斜底板：BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined5
+                * 边腹板：SideWeb、SideWebL、SideWebR
+                * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
+                * 无加劲肋的板件：PlateWithoutRib
+            StartX (float): 板件起始点x坐标。
+            StartY (float): 板件起始点y坐标。
+            EndX (float): 板件终点x坐标。
+            EndY (float): 板件终点y坐标。
+            Thickness (float): 板件厚度。
+            IsSymmetric (int): 板件是否关于y轴对称，1=对称，0=不对称。
+            RibStartPosition (int): 加劲肋起始位置，1=从起点开始布置，0=从终点开始布置。
+            RibStartDistance (float): 加劲肋起始位置与板件端点的距离。
+            RibLocation (str): 加劲肋布置位置。
+                * 对于非中腹板的一般板件，以起点到终点的线段为基准，在线段左侧则为Left，反之为Right，不可选择Both
+                * 对于中腹板，指加劲肋在腹板两侧布置的绝对位置，与起止点无关。
+        """
         ok, err = osis_steel_plate(
             self.no, girder_type, plate_position,
             start_x, start_y, end_x, end_y, thickness,
@@ -777,32 +805,6 @@ class Section:
         ok, err = osis_section_mod(self.no, new_no)
         if not ok:
             raise RuntimeError(f"修改截面编号 {self.no} -> {new_no} 失败: {err}")
-
-    def create_numerical(self, no: int, name: str, strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float,
-                         dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float,
-                         dPeriI: float) -> None:
-        """创建圆形/圆管形截面
-        Args:
-            no: 截面编号
-            name: 截面名称
-            strArea: 截面面积
-            dSy: 局部坐标系y轴方向的剪切常数
-            dSz: 局部坐标系z轴方向的剪切常数
-            dIxx: 绕局部坐标系x轴的惯性矩
-            dIyy: 绕局部坐标系y轴的惯性矩
-            dIzz: 绕局部坐标系z轴的惯性矩
-            dIww: 翘曲惯性矩
-            dCentY: 质心在局部坐标系y轴方向的坐标值
-            dCentZ: 质心在局部坐标系z轴方向的坐标值
-            dDy: 沿局部坐标系y轴方向的截面偏心
-            dDz: 沿局部坐标系z轴方向的截面偏心
-            dPeriO: 截面外轮廓周长
-            dPeriI: 截面内轮廓周长
-        """
-        ok, err = osis_section_numerical(no, name, "Numerical", strArea, dSy, dSz, dIxx, dIyy, dIzz, dIww, dCentY,
-                                         dCentZ, dDy, dDz, dPeriO, dPeriI)
-        if not ok:
-            raise RuntimeError(f"创建数值截面 {no} 失败: {err}")
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -850,14 +852,14 @@ class SectionManager:
     # ── 增删改 ────────────────────────────────
 
     def create_Lshape(
-            self,
-            name: str,
-            n_dir: Literal[0, 1] = 1,
-            h: float = 0.1,
-            b: float = 0.1,
-            tf1: float = 0.016,
-            tf2: float = 0.016,
-            no: int | None = None,
+        self,
+        name: str,
+        n_dir: Literal[0, 1] = 1,
+        h: float = 0.1,
+        b: float = 0.1,
+        tf1: float = 0.016,
+        tf2: float = 0.016,
+        no: int | None = None,
     ) -> Section:
         """创建L形截面(LShape)。
 
@@ -878,12 +880,12 @@ class SectionManager:
         return self.get(no)
 
     def create_circle(
-            self,
-            name: str,
-            e_circle_type: Literal["Hollow", "Solid"] = "Solid",
-            d: float = 0.5,
-            tw: float = 0.02,
-            no: int | None = None,
+        self,
+        name: str,
+        e_circle_type: Literal["Hollow", "Solid"] = "Solid",
+        d: float = 0.5,
+        tw: float = 0.02,
+        no: int | None = None,
     ) -> Section:
         """创建圆形截面(Circle)。
 
@@ -902,14 +904,14 @@ class SectionManager:
         return self.get(no)
 
     def create_Tshape(
-            self,
-            name: str,
-            n_dir: Literal[0, 1] = 1,
-            h: float = 0.3,
-            b: float = 0.2,
-            tf: float = 0.016,
-            tw: float = 0.016,
-            no: int | None = None,
+        self,
+        name: str,
+        n_dir: Literal[0, 1] = 1,
+        h: float = 0.3,
+        b: float = 0.2,
+        tf: float = 0.016,
+        tw: float = 0.016,
+        no: int | None = None,
     ) -> Section:
         """创建T形截面(TShape)。
 
@@ -930,15 +932,15 @@ class SectionManager:
         return self.get(no)
 
     def create_Ishape(
-            self,
-            name: str,
-            h: float = 0.3,
-            bt: float = 0.13,
-            bb: float = 0.13,
-            tt: float = 0.016,
-            tb: float = 0.016,
-            tw: float = 0.016,
-            no: int | None = None,
+        self,
+        name: str,
+        h: float = 0.3,
+        bt: float = 0.13,
+        bb: float = 0.13,
+        tt: float = 0.016,
+        tb: float = 0.016,
+        tw: float = 0.016,
+        no: int | None = None,
     ) -> Section:
         """创建I形截面（工字形截面）(IShape)。
 
@@ -1024,28 +1026,28 @@ class SectionManager:
 
 
     def create_rect(
-            self,
-            name: str,
-            transition_type: Literal["Chamfer", "Fillet"] = "Fillet",
-            sec_type: Literal["Solid", "Hollow"] = "Solid",
-            b: float = 6.5,
-            h: float = 3.2,
-            xo1: float = 1.0,
-            yo1: float = 0.5,
-            r: float = 0.5,
-            t1: float = 1.0,
-            t2: float = 1.0,
-            xi1: float = 0.5,
-            yi1: float = 0.25,
-            has_diaphragm: bool = False,
-            tw: float = 1.0,
-            xi2: float = 0.5,
-            yi2: float = 0.25,
-            has_groove: bool = False,
-            b1: float = 1.2,
-            b2: float = 0.8,
-            h_groove: float = 0.2,
-            no: int | None = None,
+        self,
+        name: str,
+        transition_type: Literal["Chamfer", "Fillet"] = "Fillet",
+        sec_type: Literal["Solid", "Hollow"] = "Solid",
+        b: float = 6.5,
+        h: float = 3.2,
+        xo1: float = 1.0,
+        yo1: float = 0.5,
+        r: float = 0.5,
+        t1: float = 1.0,
+        t2: float = 1.0,
+        xi1: float = 0.5,
+        yi1: float = 0.25,
+        has_diaphragm: bool = False,
+        tw: float = 1.0,
+        xi2: float = 0.5,
+        yi2: float = 0.25,
+        has_groove: bool = False,
+        b1: float = 1.2,
+        b2: float = 0.8,
+        h_groove: float = 0.2,
+        no: int | None = None,
     ) -> Section:
         """创建矩形截面(RECT)。
 
@@ -1590,17 +1592,17 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_i(
-            self,
-            name: str,
-            # 暂时去掉默认值
-            h: float,
-            bt: float,
-            bb: float,
-            tt: float,
-            tb: float,
-            tw: float,
-            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-            no: int | None = None,
+        self,
+        name: str,
+        # 暂时去掉默认值
+        h: float,
+        bt: float,
+        bb: float,
+        tt: float,
+        tb: float,
+        tw: float,
+        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+        no: int | None = None,
     ) -> Section:
         """创建工字形钢截面(STEELI)。
 
@@ -1622,178 +1624,19 @@ class SectionManager:
             raise RuntimeError(f"创建工字形钢截面 {no} 失败: {err}")
         return self.get(no)
 
-    def create_composite_steel_i(
-            self,
-            name: str,
-            bt: float,
-            bc: float,
-            tt1: float,
-            tt2: float,
-            tt3: float,
-            tc1: float,
-            tc2: float,
-            b1: float,
-            b2: float,
-            x1: float,
-            x2: float,
-            x3: float,
-            girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
-            h1: float = 2.0,
-            bf1: float = 1.0,
-            bb1: float = 1.0,
-            tf1: float = 0.02,
-            tb1: float = 0.02,
-            tw1: float = 0.012,
-            web_rib_pos1: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
-            middle_same_with_side: Literal[0, 1] = 1,
-            h2: float = 0.0,
-            bf2: float = 0.0,
-            bb2: float = 0.0,
-            tf2: float = 0.0,
-            tb2: float = 0.0,
-            tw2: float = 0.0,
-            web_rib_pos2: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
-            no: int | None = None,
-    ) -> Section:
-        """创建工字型钢组合截面（COMPOSITESTEELI）。"""
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_composite_steel_i(
-            no, name, "COMPOSITESTEELI",
-            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
-            girder_num,
-            h1, bf1, bb1, tf1, tb1, tw1, web_rib_pos1,
-            middle_same_with_side,
-            h2, bf2, bb2, tf2, tb2, tw2, web_rib_pos2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建工字型钢组合截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_composite_steel_trough(
-            self,
-            name: str,
-            bt: float,
-            bc: float,
-            tt1: float,
-            tt2: float,
-            tt3: float,
-            tc1: float,
-            tc2: float,
-            b1: float,
-            b2: float,
-            x1: float,
-            x2: float,
-            x3: float,
-            h1: float,
-            bb: float,
-            bf1: float,
-            tf1: float,
-            tb: float,
-            tw1: float,
-            right_same_with_left: Literal[0, 1] = 1,
-            has_steel_i: Literal[0, 1] = 0,
-            h2: float = 0.0,
-            bf2: float = 0.0,
-            bf3: float = 0.0,
-            tf2: float = 0.0,
-            tf3: float = 0.0,
-            tw2: float = 0.0,
-            no: int | None = None,
-    ) -> Section:
-        """创建槽型钢组合截面（COMPOSITESTEELTROUGH）。"""
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_composite_steel_trough(
-            no, name, "COMPOSITESTEELTROUGH",
-            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
-            h1, bb, bf1, tf1, tb, tw1,
-            right_same_with_left, has_steel_i,
-            h2, bf2, bf3, tf2, tf3, tw2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建槽型钢组合截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_composite_steel_box(
-            self,
-            name: str,
-            bt: float,
-            bc: float,
-            tt1: float,
-            tt2: float,
-            tt3: float,
-            tc1: float,
-            tc2: float,
-            b1: float,
-            b2: float,
-            x1: float,
-            x2: float,
-            x3: float,
-            girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
-            h1: float = 2.0,
-            bf1: float = 1.0,
-            bct: float = 0.0,
-            bb: float = 1.0,
-            bcb: float = 0.0,
-            tf1: float = 0.02,
-            tb: float = 0.02,
-            tw1: float = 0.012,
-            same_layout: Literal[0, 1] = 1,
-            h2: float = 0.0,
-            bf2: float = 0.0,
-            bf3: float = 0.0,
-            tf2: float = 0.0,
-            tf3: float = 0.0,
-            tw2: float = 0.0,
-            no: int | None = None,
-    ) -> Section:
-        """创建箱型钢组合截面（COMPOSITESTEELBOX）。"""
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_composite_steel_box(
-            no, name, "COMPOSITESTEELBOX",
-            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
-            girder_num,
-            h1, bf1, bct, bb, bcb, tf1, tb, tw1, same_layout,
-            h2, bf2, bf3, tf2, tf3, tw2,
-        )
-        if not ok:
-            raise RuntimeError(f"创建箱型钢组合截面 {no} 失败: {err}")
-        return self.get(no)
-
-    def create_composite_custom(
-            self,
-            name: str,
-            part_num: int,
-            base_e: float,
-            base_mu: float,
-            no: int | None = None,
-    ) -> Section:
-        raise RuntimeError(f"暂不支持创建自定义组合截面")
-        """创建自定义组合截面（COMPOSITECUSTOM）。"""
-        if no is None:
-            no = self._next_no()
-        ok, err = osis_section_composite_custom(
-            no, name, "COMPOSITECUSTOM", part_num, base_e, base_mu,
-        )
-        if not ok:
-            raise RuntimeError(f"创建自定义组合截面 {no} 失败: {err}")
-        return self.get(no)
-
     def create_steel_box(
-            self,
-            name: str,
-            h: float,
-            bt: float,
-            bct: float,
-            bb: float,
-            bcb: float,
-            tt: float,
-            tb: float,
-            tw: float,
-            same_layout: Literal[0, 1] = 1,
-            no: int | None = None,
+        self,
+        name: str,
+        h: float,
+        bt: float,
+        bct: float,
+        bb: float,
+        bcb: float,
+        tt: float,
+        tb: float,
+        tw: float,
+        same_layout: Literal[0, 1] = 1,
+        no: int | None = None,
     ) -> Section:
         """创建箱型钢截面(STEELBOX)。
 
@@ -1818,28 +1661,28 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_box_three_cell(
-            self,
-            name: str,
-            # 暂时去掉默认值
-            h: float,
-            bt: float,
-            bb: float,
-            i: float,
-            a1: float,
-            a2: float,
-            dt: float,
-            tt1: float,
-            tt2: float,
-            tb1: float,
-            db: float,
-            tb2: float,
-            tb3: float,
-            tw1: float,
-            dw: float,
-            has_web: Literal[0, 1] = 1,
-            tw2: float = 0.0,
-            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-            no: int | None = None,
+        self,
+        name: str,
+        # 暂时去掉默认值
+        h: float,
+        bt: float,
+        bb: float,
+        i: float,
+        a1: float,
+        a2: float,
+        dt: float,
+        tt1: float,
+        tt2: float,
+        tb1: float,
+        db: float,
+        tb2: float,
+        tb3: float,
+        tw1: float,
+        dw: float,
+        has_web: Literal[0, 1] = 1,
+        tw2: float = 0.0,
+        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+        no: int | None = None,
     ) -> Section:
         """创建单箱单/三室钢截面(STEELBOXTHREECELL)。
 
@@ -1876,26 +1719,26 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_box_itf(
-            self,
-            name: str,
-            # 暂时去掉默认值
-            h: float,
-            b: float,
-            bt: float,
-            bb: float,
-            i: float,
-            a1: float,
-            a2: float,
-            dt: float,
-            tt1: float,
-            tt2: float,
-            tt3: float,
-            tb1: float,
-            db: float,
-            tb2: float,
-            tb3: float,
-            tw1: float,
-            no: int | None = None,
+        self,
+        name: str,
+        # 暂时去掉默认值
+        h: float,
+        b: float,
+        bt: float,
+        bb: float,
+        i: float,
+        a1: float,
+        a2: float,
+        dt: float,
+        tt1: float,
+        tt2: float,
+        tt3: float,
+        tb1: float,
+        db: float,
+        tb2: float,
+        tb3: float,
+        tw1: float,
+        no: int | None = None,
     ) -> Section:
         """创建单箱单室斜顶板钢截面(STEELBOXITF)。
 
@@ -1930,25 +1773,25 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_canti_box(
-            self,
-            name: str,
-            # 暂时去掉默认值
-            h: float,
-            bt: float,
-            bb: float,
-            i: float,
-            a: float,
-            dt: float,
-            tt1: float,
-            tt2: float,
-            tb1: float,
-            tw1: float,
-            has_web: Literal[0, 1] = 1,
-            tw2: float = 0.0,
-            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-            h_end: float = 0.0,
-            t_end: float = 0.0,
-            no: int | None = None,
+        self,
+        name: str,
+        # 暂时去掉默认值
+        h: float,
+        bt: float,
+        bb: float,
+        i: float,
+        a: float,
+        dt: float,
+        tt1: float,
+        tt2: float,
+        tb1: float,
+        tw1: float,
+        has_web: Literal[0, 1] = 1,
+        tw2: float = 0.0,
+        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+        h_end: float = 0.0,
+        t_end: float = 0.0,
+        no: int | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室钢截面(STEELCANTIBOX)。
 
@@ -1982,27 +1825,27 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_canti_box_ibf(
-            self,
-            name: str,
-            # 暂时去掉默认值
-            h: float,
-            bt: float,
-            bb: float,
-            bc: float,
-            i: float,
-            a: float,
-            dt: float,
-            tt1: float,
-            tt2: float,
-            tb1: float,
-            tb2: float,
-            tw1: float,
-            has_web: Literal[0, 1] = 1,
-            tw2: float = 0.0,
-            web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-            h_end: float = 0.0,
-            t_end: float = 0.0,
-            no: int | None = None,
+        self,
+        name: str,
+        # 暂时去掉默认值
+        h: float,
+        bt: float,
+        bb: float,
+        bc: float,
+        i: float,
+        a: float,
+        dt: float,
+        tt1: float,
+        tt2: float,
+        tb1: float,
+        tb2: float,
+        tw1: float,
+        has_web: Literal[0, 1] = 1,
+        tw2: float = 0.0,
+        web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
+        h_end: float = 0.0,
+        t_end: float = 0.0,
+        no: int | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室斜底板钢截面(STEELCANTIBOXIBF)。
 
@@ -2038,18 +1881,18 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_custom(
-            self,
-            name: str,
-            point_matrix: str = "",
-            line_matrix: str = "",
-            no: int | None = None,
+        self,
+        name: str,
+        point_matrix: str = "",
+        line_matrix: str = "",
+        no: int | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过点线关系输入）(STEELCUSTOM)。
 
         Args:
             name: 截面名称
-            point_matrix: 几何点矩阵名称（需先用 osis_matrix 定义）
-            line_matrix: 几何线矩阵名称（需先用 osis_matrix 定义）
+            point_matrix: 几何点矩阵名称（需先用 engine.matrix 定义）
+            line_matrix: 几何线矩阵名称（需先用 engine.matrix 定义）
             no: 截面编号，不填则自动分配
         """
         if no is None:
@@ -2060,10 +1903,10 @@ class SectionManager:
         return self.get(no)
 
     def create_steel_custom_plate(
-            self,
-            name: str,
-            plate_positions: list[str] | None = None,
-            no: int | None = None,
+        self,
+        name: str,
+        plate_positions: list[str] | None = None,
+        no: int | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过参数板输入）(STEELCUSTOMPLATE)。
 
@@ -2079,6 +1922,286 @@ class SectionManager:
         ok, err = osis_section_steel_custom_plate(no, name, "STEELCUSTOMPLATE", plate_positions)
         if not ok:
             raise RuntimeError(f"创建自定义钢梁参数板截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_composite_steel_i(
+        self,
+        name: str,
+        bt: float,
+        bc: float,
+        tt1: float,
+        tt2: float,
+        tt3: float,
+        tc1: float,
+        tc2: float,
+        b1: float,
+        b2: float,
+        x1: float,
+        x2: float,
+        x3: float,
+        girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
+        h1: float = 2.0,
+        bf1: float = 1.0,
+        bb1: float = 1.0,
+        tf1: float = 0.02,
+        tb1: float = 0.02,
+        tw1: float = 0.012,
+        web_rib_pos1: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
+        middle_same_with_side: Literal[0, 1] = 1,
+        h2: float = 0.0,
+        bf2: float = 0.0,
+        bb2: float = 0.0,
+        tf2: float = 0.0,
+        tb2: float = 0.0,
+        tw2: float = 0.0,
+        web_rib_pos2: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
+        no: int | None = None,
+    ) -> Section:
+        """创建工字型钢组合截面（COMPOSITESTEELI）。  
+
+        Args:
+            Name: 截面名
+            Type: 固定为 COMPOSITESTEELI
+            Bt: 板宽
+            Bc: 悬臂长
+            Tt1: 标准段板厚
+            Tt2: 两侧加厚段板厚
+            Tt3: 中间加厚段板厚
+            Tc1: 悬臂端板厚
+            Tc2: 悬臂倒角处板厚
+            B1: 两侧加厚段板宽
+            B2: 中间加厚段板宽
+            x1, x2, x3: 倒角
+            GirderNum: SINGLE=单梁, DOUBLE=双梁, TRIPLE=三梁
+            H1:边梁梁高
+            Bf1:边梁上翼缘宽
+            Bb1:边梁下翼缘宽
+            Tf1:边梁上翼缘厚
+            Tb1:边梁下翼缘厚
+            Tw1:边梁腹板厚
+            WebRibPos1:边梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
+            MiddleSameWithSide:中梁构造同左边梁，1=相同，0=不同
+            H2:中梁梁高
+            Bf2:中梁上翼缘宽
+            Bb2:中梁下翼缘宽
+            Tf2:中梁上翼缘厚
+            Tb2:中梁下翼缘厚
+            Tw2:中梁腹板厚
+            WebRibPos2:中梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
+            no: 截面编号
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_steel_i(
+            no, name, "COMPOSITESTEELI",
+            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
+            girder_num,
+            h1, bf1, bb1, tf1, tb1, tw1, web_rib_pos1,
+            middle_same_with_side,
+            h2, bf2, bb2, tf2, tb2, tw2, web_rib_pos2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建工字型钢组合截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_composite_steel_trough(
+        self,
+        name: str,
+        bt: float,
+        bc: float,
+        tt1: float,
+        tt2: float,
+        tt3: float,
+        tc1: float,
+        tc2: float,
+        b1: float,
+        b2: float,
+        x1: float,
+        x2: float,
+        x3: float,
+        h1: float,
+        bb: float,
+        bf1: float,
+        tf1: float,
+        tb: float,
+        tw1: float,
+        right_same_with_left: Literal[0, 1] = 1,
+        has_steel_i: Literal[0, 1] = 0,
+        h2: float = 0.0,
+        bf2: float = 0.0,
+        bf3: float = 0.0,
+        tf2: float = 0.0,
+        tf3: float = 0.0,
+        tw2: float = 0.0,
+        no: int | None = None,
+    ) -> Section:
+        """创建槽型钢组合截面（COMPOSITESTEELTROUGH）。
+            Args:
+            Name: 截面名
+            Type: 固定为 COMPOSITESTEELTROUGH
+            Bt: 板宽
+            Bc: 悬臂长
+            Tt1: 标准段板厚
+            Tt2: 两侧加厚段板厚
+            Tt3: 中间加厚段板厚
+            Tc1: 悬臂端板厚
+            Tc2: 悬臂倒角处板厚
+            B1: 两侧加厚段板宽
+            B2: 中间加厚段板宽
+            x1, x2, x3: 倒角
+            H1: 主梁梁高
+            Bb: 主梁底板宽
+            Bf1: 主梁上翼缘宽
+            Tf1: 主梁上翼缘厚
+            Tb: 主梁底板厚
+            Tw1: 主梁腹板厚
+            RightSameWithLeft: 右腹板加劲肋布置是否与左侧相同，1=相同，0=不同
+            HasSteelI: 是否有小纵梁，1=有，0=无
+            H2:小纵梁梁高
+            Bf2:小纵梁上翼缘宽
+            Bf3:小纵梁下翼缘宽
+            Tf2:小纵梁上翼缘厚
+            Tf3:小纵梁下翼缘厚
+            Tw2:小纵梁腹板厚
+            no: 截面编号
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_steel_trough(
+            no, name, "COMPOSITESTEELTROUGH",
+            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
+            h1, bb, bf1, tf1, tb, tw1,
+            right_same_with_left, has_steel_i,
+            h2, bf2, bf3, tf2, tf3, tw2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建槽型钢组合截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_composite_steel_box(
+        self,
+        name: str,
+        bt: float,
+        bc: float,
+        tt1: float,
+        tt2: float,
+        tt3: float,
+        tc1: float,
+        tc2: float,
+        b1: float,
+        b2: float,
+        x1: float,
+        x2: float,
+        x3: float,
+        girder_num: Literal["SINGLE", "DOUBLE", "TRIPLE"] = "SINGLE",
+        h1: float = 2.0,
+        bf1: float = 1.0,
+        bct: float = 0.0,
+        bb: float = 1.0,
+        bcb: float = 0.0,
+        tf1: float = 0.02,
+        tb: float = 0.02,
+        tw1: float = 0.012,
+        same_layout: Literal[0, 1] = 1,
+        h2: float = 0.0,
+        bf2: float = 0.0,
+        bf3: float = 0.0,
+        tf2: float = 0.0,
+        tf3: float = 0.0,
+        tw2: float = 0.0,
+        no: int | None = None,
+    ) -> Section:
+        """创建箱型钢组合截面（COMPOSITESTEELBOX）。
+            Args:
+            Name: 截面名
+            Type: 固定为 COMPOSITESTEELBOX
+            Bt: 板宽
+            Bc: 悬臂长
+            Tt1: 标准段板厚
+            Tt2: 两侧加厚段板厚
+            Tt3: 中间加厚段板厚
+            Tc1: 悬臂端板厚
+            Tc2: 悬臂倒角处板厚
+            B1: 两侧加厚段板宽
+            B2: 中间加厚段板宽
+            x1, x2, x3: 倒角
+            GirderNum: SINGLE=单梁, DOUBLE=双梁, TRIPLE=三梁
+            H1: 主梁梁高
+            Bf1: 主梁上翼缘宽
+            Bct: 主梁上翼缘悬出宽
+            Bb: 主梁下翼缘宽
+            Bcb: 主梁下翼缘悬出宽
+            Tf1: 主梁上翼缘厚
+            Tb: 主梁下翼缘厚
+            Tw1: 主梁腹板厚
+            SameLayout: 下翼缘加劲肋布置与上翼缘是否相同，1=相同，0=不同
+            H2:小纵梁梁高
+            Bf2:小纵梁上翼缘宽
+            Bf3:小纵梁下翼缘宽
+            Tf2:小纵梁上翼缘厚
+            Tf3:小纵梁下翼缘厚
+            Tw2:小纵梁腹板厚
+            no: 截面编号
+        """
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_steel_box(
+            no, name, "COMPOSITESTEELBOX",
+            bt, bc, tt1, tt2, tt3, tc1, tc2, b1, b2, x1, x2, x3,
+            girder_num,
+            h1, bf1, bct, bb, bcb, tf1, tb, tw1, same_layout,
+            h2, bf2, bf3, tf2, tf3, tw2,
+        )
+        if not ok:
+            raise RuntimeError(f"创建箱型钢组合截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_composite_custom(
+        self,
+        name: str,
+        part_num: int,
+        base_e: float,
+        base_mu: float,
+        no: int | None = None,
+    ) -> Section:
+        raise RuntimeError(f"暂不支持创建自定义组合截面")
+        """创建自定义组合截面（COMPOSITECUSTOM）。"""
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_section_composite_custom(
+            no, name, "COMPOSITECUSTOM", part_num, base_e, base_mu,
+        )
+        if not ok:
+            raise RuntimeError(f"创建自定义组合截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_numerical(self, no: int, name: str, strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float,
+                         dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float,
+                         dPeriI: float) -> Section:
+        """
+        定义或修改数值截面
+        
+        Args:
+            no: 截面编号
+            name: 截面名称
+            strArea: 截面面积
+            dSy: 局部坐标系y轴方向的剪切常数
+            dSz: 局部坐标系z轴方向的剪切常数
+            dIxx: 绕局部坐标系x轴的惯性矩
+            dIyy: 绕局部坐标系y轴的惯性矩
+            dIzz: 绕局部坐标系z轴的惯性矩
+            dIww: 翘曲惯性矩
+            dCentY: 质心在局部坐标系y轴方向的坐标值
+            dCentZ: 质心在局部坐标系z轴方向的坐标值
+            dDy: 沿局部坐标系y轴方向的截面偏心
+            dDz: 沿局部坐标系z轴方向的截面偏心
+            dPeriO: 截面外轮廓周长
+            dPeriI: 截面内轮廓周长
+        """
+        ok, err = osis_section_numerical(no, name, "Numerical", strArea, dSy, dSz, dIxx, dIyy, dIzz, dIww, dCentY,
+                                         dCentZ, dDy, dDz, dPeriO, dPeriI)
+        if not ok:
+            raise RuntimeError(f"创建数值截面 {no} 失败: {err}")
         return self.get(no)
 
     def delete(self, no: int) -> None:

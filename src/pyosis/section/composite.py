@@ -54,9 +54,21 @@ def osis_section_composite_steel_i(
         B2: 中间加厚段板宽
         x1, x2, x3: 倒角
         GirderNum: SINGLE=单梁, DOUBLE=双梁, TRIPLE=三梁
-        H1, Bf1, Bb1, Tf1, Tb1, Tw1, WebRibPos1: 边梁
-        MiddleSameWithSide: 中梁构造同边梁，1=相同，0=不同
-        H2, Bf2, Bb2, Tf2, Tb2, Tw2, WebRibPos2: 中梁（MiddleSameWithSide=1 时 H2 等可填 0）
+        H1:边梁梁高
+        Bf1:边梁上翼缘宽
+        Bb1:边梁下翼缘宽
+        Tf1:边梁上翼缘厚
+        Tb1:边梁下翼缘厚
+        Tw1:边梁腹板厚
+        WebRibPos1:边梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
+        MiddleSameWithSide:中梁构造同左边梁，1=相同，0=不同
+        H2:中梁梁高
+        Bf2:中梁上翼缘宽
+        Bb2:中梁下翼缘宽
+        Tf2:中梁上翼缘厚
+        Tb2:中梁下翼缘厚
+        Tw2:中梁腹板厚
+        WebRibPos2:中梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
     Returns:
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功
