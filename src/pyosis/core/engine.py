@@ -90,6 +90,13 @@ class OSISEngine:
             url (str): OSIS 网址
         '''
         # 引用全局单例管理器
+        self._project = project_manager
+
+        ### 前处理 ###
+        self._control = control_manager
+        self._geometry = geometry_manager
+        self._property = property_manager
+        self._thickness = thickness_manager
         self._material = material_manager
         self._section = section_manager
         self._node = node_manager
@@ -97,16 +104,13 @@ class OSISEngine:
         self._boundary = boundary_manager
         self._load = loadcase_manager
         self._tendon = tendon_manager
-        self._stage = stage_manager
         self._live = live_manager
-        self._control = control_manager
-        self._project = project_manager
-        self._geometry = geometry_manager
-        self._property = property_manager
-        self._thickness = thickness_manager
         self._settlement = settlement_manager
         self._stability = stability_manager
         self._dynamic = dynamic_manager
+        self._stage = stage_manager
+
+        ### 后处理 ###
         self._post = post_manager
         self._result = result_manager
 
@@ -123,6 +127,33 @@ class OSISEngine:
     # 子管理器属性
     # ──────────────────────────────────────────
 
+    @property
+    def project(self) -> ProjectManager:
+        """项目管理器（创建、打开、保存项目）"""
+        return self._project
+    
+    ### 前处理 ###
+
+    @property
+    def control(self) -> ControlManager:
+        """控制管理器（全局参数、分析设置）"""
+        return self._control
+
+    @property
+    def geometry(self) -> GeometryManager:
+        """几何管理器（三维样条曲线）"""
+        return self._geometry
+    
+    @property
+    def prop(self) -> PropertyManager:
+        """属性管理器（坐标系、收缩徐变、阻尼等）"""
+        return self._property
+    
+    @property
+    def thickness(self) -> ThicknessManager:
+        """厚度管理器（壳厚度特性）"""
+        return self._thickness
+    
     @property
     def material(self) -> MaterialManager:
         """材料管理器"""
@@ -154,11 +185,6 @@ class OSISEngine:
         return self._load
 
     @property
-    def stage(self) -> StageManager:
-        """施工阶段管理器"""
-        return self._stage
-
-    @property
     def tendon(self) -> TendonManager:
         """钢束管理器"""
         return self._tendon
@@ -169,35 +195,10 @@ class OSISEngine:
         return self._live
 
     @property
-    def geometry(self) -> GeometryManager:
-        """几何管理器（三维样条曲线）"""
-        return self._geometry
-
-    @property
-    def prop(self) -> PropertyManager:
-        """属性管理器（坐标系、收缩徐变、阻尼等）"""
-        return self._property
-
-    @property
-    def thickness(self) -> ThicknessManager:
-        """厚度管理器（壳厚度特性）"""
-        return self._thickness
-
-    @property
-    def control(self) -> ControlManager:
-        """控制管理器（全局参数、分析设置）"""
-        return self._control
-
-    @property
-    def project(self) -> ProjectManager:
-        """项目管理器（创建、打开、保存项目）"""
-        return self._project
-
-    @property
     def settlement(self) -> SettlementManager:
         """沉降分析管理器"""
         return self._settlement
-
+    
     @property
     def stability(self) -> StabilityManager:
         """稳定分析管理器（屈曲分析）"""
@@ -207,6 +208,13 @@ class OSISEngine:
     def dynamic(self) -> DynamicManager:
         """动力分析管理器（荷载转换质量、模态、反应谱）"""
         return self._dynamic
+    
+    @property
+    def stage(self) -> StageManager:
+        """施工阶段管理器"""
+        return self._stage
+
+    ### 后处理 ###
 
     @property
     def post(self) -> PostManager:
@@ -337,18 +345,23 @@ class OSISEngine:
             各组件数量的字典
         """
         return {
+            # "controls":   # 没必要
+            "geometries": self._geometry.count(),
+            "properties": self.prop.count(),
+            # "thickness": self._thickness.count(),
             "materials": self._material.count(),
             "sections": self._section.count(),
             "nodes": self._node.count(),
             "elements": self._element.count(),
             "boundaries": self._boundary.count(),
-            "load_cases": self._load.count(),
-            "stages": self._stage.count(),
-            "geometry": self._geometry.count(),
-            "live_loads": self._live.count(),
-            "settlements": self._settlement.count(),
+            "loadcases": self._load.count(),
             "tendon_props": self._tendon.prop.count(),
             "tendon_shapes": self._tendon.shape.count(),
+            "lives": self._live.count(),
+            "settlements": self._settlement.count(),
+            "stabilities": self._stability.count(),
+            "dynamic": self._dynamic.count(),
+            "stages": self._stage.count(),
         }
 
     def __repr__(self) -> str:

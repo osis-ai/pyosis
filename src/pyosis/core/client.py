@@ -84,3 +84,4 @@ def osis_client(func_name: str, payload: dict, base_url=None) -> dict:
 
     except requests.RequestException as e:
         return {"success": False, "error": f"调用失败: {str(e)}"}
+    

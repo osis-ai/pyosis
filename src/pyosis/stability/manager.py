@@ -23,18 +23,6 @@ from ..core.client import osis_client
 # 数据类
 # ──────────────────────────────────────────────
 
-
-class BucklCaseInfo:
-    """屈曲工况中的荷载工况信息"""
-    
-    def __init__(self, name: str, scalar: float, load_type: Literal[0, 1]):
-        self.name = name
-        self.scalar = scalar
-        self.load_type = load_type
-    
-    def __repr__(self) -> str:
-        return f"BucklCaseInfo(name={self.name!r}, scalar={self.scalar}, type={self.load_type})"
-
 @dataclass(frozen=False)
 class BucklCase:
     """屈曲工况对象"""
@@ -46,6 +34,7 @@ class BucklCase:
     name: str
     no: int
     relatedStages: list[int]
+
     @classmethod
     def _from_dict(cls, d: dict) -> BucklCase:
         return cls(
@@ -58,6 +47,66 @@ class BucklCase:
             no=d.get("no"), 
             relatedStages=d.get("relatedStages") or [],
             )
+    
+    # ── 荷载工况管理 ──────────────────────────────
+
+    def include(
+        self,
+        op: Literal["a", "r"],
+        lc_name: str,
+        scalar: float,
+        lc_type: Literal[0, 1],
+    ) -> None:
+        """添加或移除参与屈曲分析的荷载工况。
+
+        Args:
+            op: 操作类型，"a"=添加，"r"=移除
+            lc_name: 荷载工况名称
+            scalar: 系数
+            lc_type: 荷载类型，1=可变，0=不变
+
+        Examples:
+            >>> # 创建屈曲工况
+            >>> buck = stability_manager.create("B1", num=5, accum=0, scalar=1.0, load_type=0)
+            >>> # 添加荷载工况 D 到屈曲工况 B1
+            >>> buck.include("a", "D", 1.0, 0)
+            >>> # 从屈曲工况 B1 移除荷载工况 D
+            >>> buck.include("r", "D", 1.0, 0)
+        """
+        ok, err = osis_buckl_anal_inc(self.name, op, lc_name, scalar, lc_type)
+        if not ok:
+            raise RuntimeError(f"{'添加' if op == 'a' else '移除'}荷载工况 {lc_name} {'到' if op == 'a' else '从'}屈曲工况 {self.name} 失败: {err}")
+
+    def replace(
+        self,
+        new_lc: str,
+        new_scalar: float,
+        new_type: Literal[0, 1],
+        old_lc: str,
+        old_scalar: float,
+        old_type: Literal[0, 1],
+    ) -> None:
+        """替换参与屈曲分析的荷载工况。
+
+        Args:
+            new_lc: 新的荷载工况名称
+            new_scalar: 新的系数
+            new_type: 新的荷载类型，1=可变，0=不变
+            old_lc: 被替换的荷载工况名称
+            old_scalar: 被替换的系数
+            old_type: 被替换的荷载类型，1=可变，0=不变
+
+        Examples:
+            >>> # 创建屈曲工况
+            >>> buck = stability_manager.create("B1", num=5, accum=0, scalar=1.0, load_type=0)
+            >>> # 将屈曲工况 B1 中的 D 替换为 DC
+            >>> buck.replace("DC", 1.2, 0, "D", 1.0, 0)
+        """
+        ok, err = osis_buckl_anal_inc(
+            self.name, "s", new_lc, new_scalar, new_type, old_lc, old_scalar, old_type
+        )
+        if not ok:
+            raise RuntimeError(f"替换屈曲工况 {self.name} 中的荷载工况 {old_lc} -> {new_lc} 失败: {err}")
 
 # ──────────────────────────────────────────────
 # 管理类
@@ -72,11 +121,11 @@ class StabilityManager:
     用法:
         >>> from pyosis.stability import stability_manager
         >>> # 创建屈曲工况
-        >>> stability_manager.create("B1", num=5, accum=0, scalar=1.0, load_type=0)
+        >>> buck = stability_manager.create("B1", num=5, accum=0, scalar=1.0, load_type=0)
         >>> # 添加荷载工况
-        >>> stability_manager.include("B1", "a", "D", 1.0, 0)
+        >>> buck.include("a", "D", 1.0, 0)
         >>> # 替换荷载工况
-        >>> stability_manager.replace("B1", "DC", 1.2, 0, "D", 1.0, 0)
+        >>> buck.replace("DC", 1.2, 0, "D", 1.0, 0)
         >>> # 删除屈曲工况
         >>> stability_manager.delete("B1")
     """
@@ -92,6 +141,7 @@ class StabilityManager:
             raise RuntimeError(f"{resp['error']}")
         buckl_cases = [BucklCase._from_dict(d) for d in resp.get("data", []) if "name" in d]
         return buckl_cases
+    
     def get(self, name: str | list[str]) -> BucklCase | list[BucklCase | None] | None:
         """根据名称获取屈曲工况"""
 
@@ -122,7 +172,7 @@ class StabilityManager:
         accum: Literal[0, 1] = 0,
         scalar: float = 1.0,
         load_type: Literal[0, 1] = 0,
-    ) -> None:
+    ) -> BucklCase:
         """定义或修改屈曲工况。
 
         Args:
@@ -135,6 +185,7 @@ class StabilityManager:
         ok, err = osis_buckl_anal(name, num, accum, scalar, load_type)
         if not ok:
             raise RuntimeError(f"创建/修改屈曲工况 {name} 失败: {err}")
+        return self.get(name)
 
     def delete(self, name: str) -> None:
         """删除屈曲工况。
@@ -164,66 +215,8 @@ class StabilityManager:
         if not ok:
             raise RuntimeError(f"修改屈曲工况名称 {old_name} -> {new_name} 失败: {err}")
 
-    # ── 荷载工况管理 ──────────────────────────────
-
-    def include(
-        self,
-        name: str,
-        op: Literal["a", "r"],
-        lc_name: str,
-        scalar: float,
-        lc_type: Literal[0, 1],
-    ) -> None:
-        """添加或移除参与屈曲分析的荷载工况。
-
-        Args:
-            name: 屈曲分析工况名称
-            op: 操作类型，"a"=添加，"r"=移除
-            lc_name: 荷载工况名称
-            scalar: 系数
-            lc_type: 荷载类型，1=可变，0=不变
-
-        Examples:
-            >>> # 添加荷载工况 D 到屈曲工况 B1
-            >>> stability_manager.include("B1", "a", "D", 1.0, 0)
-
-            >>> # 从屈曲工况 B1 移除荷载工况 D
-            >>> stability_manager.include("B1", "r", "D", 1.0, 0)
-        """
-        ok, err = osis_buckl_anal_inc(name, op, lc_name, scalar, lc_type)
-        if not ok:
-            raise RuntimeError(f"{'添加' if op == 'a' else '移除'}荷载工况 {lc_name} {'到' if op == 'a' else '从'}屈曲工况 {name} 失败: {err}")
-
-    def replace(
-        self,
-        name: str,
-        new_lc: str,
-        new_scalar: float,
-        new_type: Literal[0, 1],
-        old_lc: str,
-        old_scalar: float,
-        old_type: Literal[0, 1],
-    ) -> None:
-        """替换参与屈曲分析的荷载工况。
-
-        Args:
-            name: 屈曲分析工况名称
-            new_lc: 新的荷载工况名称
-            new_scalar: 新的系数
-            new_type: 新的荷载类型，1=可变，0=不变
-            old_lc: 被替换的荷载工况名称
-            old_scalar: 被替换的系数
-            old_type: 被替换的荷载类型，1=可变，0=不变
-
-        Examples:
-            >>> # 将屈曲工况 B1 中的 D 替换为 DC
-            >>> stability_manager.replace("B1", "DC", 1.2, 0, "D", 1.0, 0)
-        """
-        ok, err = osis_buckl_anal_inc(
-            name, "s", new_lc, new_scalar, new_type, old_lc, old_scalar, old_type
-        )
-        if not ok:
-            raise RuntimeError(f"替换屈曲工况 {name} 中的荷载工况 {old_lc} -> {new_lc} 失败: {err}")
+    def count(self) -> int:
+        return len(self.all())
 
     def __repr__(self) -> str:
         return f"StabilityManager()"
