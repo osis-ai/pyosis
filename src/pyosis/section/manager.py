@@ -1891,8 +1891,8 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            point_matrix: 几何点矩阵名称（需先用 engine.matrix 定义）
-            line_matrix: 几何线矩阵名称（需先用 engine.matrix 定义）
+            point_matrix: n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标 engine.matrix创建
+            Lline_matrix: n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽 engine.matrix创建
             no: 截面编号，不填则自动分配
         """
         if no is None:
@@ -1912,8 +1912,22 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            plate_positions: 板件位置列表
+            plate_positions: 板件位置列表，目前可选择
+                * 顶板（TopFlange、TopFlange1~TopFlange5）、
+                * 斜顶板（TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5）
+                * 底板（BottomFlange、BottomFlange1~BottomFlange5）、
+                * 斜底板（BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined5）
+                * 边腹板（SideWeb、SideWebL、SideWebR）、
+                * 中腹板（MiddleWeb、MiddleWeb1~MiddleWeb5）
+                * 无加劲肋的板件（PlateWithoutRib）
+                * 注意带有加劲肋的板件位置不可重复，否则无法正确计算
             no: 截面编号，不填则自动分配
+        Notes:
+            在定义完自定义钢梁截面包含哪些板件后需逐一定义各板件参数
+            >>> from pyosis import OSISEngine
+            >>> engine = OSISEngine()
+            >>> sec = engine.create_steel_custom_plate(...)
+            >>> sec.add_steel_plate(...)
         """
         if no is None:
             no = self._next_no()
