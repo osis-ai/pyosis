@@ -1,6 +1,6 @@
 from pyosis.core.engine import OSISEngine
 
-def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_group_names: list[str], loadcase_names: list[str], settle_analysis_names: list[str], live_analysis_names: list[str], buckling_analysis_names: list[str], damping_names: list[str]) -> None:
+def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_group_names: list[str], loadcase_names: list[str], settle_analysis_names: list[str], live_analysis_names: list[str], buckling_analysis_names: list[str], damping_names: list[str], rspec_analysis_names: list[str]) -> None:
     """创建施工阶段
     
     阶段编号：
@@ -16,6 +16,9 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
         loadcase_names: 荷载工况名称
         settle_analysis_names: 沉降分析工况名称
         live_analysis_names: 移动荷载分析工况名称
+        buckling_analysis_names: 屈曲分析工况名称
+        damping_names: 阻尼名称（预留，当前未使用）
+        rspec_analysis_names: 反应谱分析工况名称
     """
     stage = engine.stage
     eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
@@ -23,7 +26,8 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     lc_barrier, lc_end_conc, lc_neg_temp, lc_pavement, lc_pst, lc_temp_drop, lc_temp_rise, lc_pos_temp, lc_dead = loadcase_names
 
     la_lane, = live_analysis_names
-    
+    buckl_name, = buckling_analysis_names
+    rspec_name, = rspec_analysis_names
     # Stage 1: 主梁预制、张拉预应力（编号 1）
     stg1 = stage.create(no=1, name="CS1_主梁预制、张拉预应力", duration=7.0)
     stg1.define_element(1, 1, eg_main_beam, 7.0, 0)
@@ -58,6 +62,14 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     got1 = stage.get(1)
     if got1 is None or got1.name != "CS1_主梁预制、张拉预应力":
         raise ValueError("get(1) 失败")
+    if settle_analysis_names[0] not in got1.analysis_cases:
+        raise ValueError(
+            f"stg1 应含沉降分析 {settle_analysis_names[0]!r}, 实际 {got1.analysis_cases!r}"
+        )
+    if eg_main_beam not in got1.element_groups:
+        raise ValueError(
+            f"element_groups 应含 {eg_main_beam!r}, 实际 {got1.element_groups!r}"
+        )
     
     # all
     all_stg = stage.all()
@@ -81,7 +93,25 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     stg5.define_loadcase(1, 1, "", lc_pos_temp)
     stg5.define_loadcase(1, 1, "", lc_neg_temp)
     stg5.define_analysis(1, "LIVE", la_lane)
+    # stg5.define_analysis(1, "MODAL")
+    stg5.define_analysis(1, "RSPEC", rspec_name)
+    stg5.define_analysis(1, "BUCKLE", buckl_name)
 
+    got5 = stage.get(5)
+    if got5 is None or got5.name != "CS5_运营阶段":
+        raise ValueError("get(5) 失败")
+    if la_lane not in got5.analysis_cases:
+        raise ValueError(
+            f"stg5 应含活载分析 {la_lane!r}, 实际 {got5.analysis_cases!r}"
+        )
+    if rspec_name not in got5.analysis_cases:
+        raise ValueError(
+            f"stg5 应含反应谱分析 {rspec_name!r}, 实际 {got5.analysis_cases!r}"
+        )
+    if buckl_name not in got5.analysis_cases:
+        raise ValueError(
+            f"stg5 应含屈曲分析 {buckl_name!r}, 实际 {got5.analysis_cases!r}"
+        )
 if __name__ == "__main__":
     from _0_engine import engine
 
@@ -103,5 +133,9 @@ if __name__ == "__main__":
     settle_analysis = ["沉降分析工况"]
     live_analysis = ["车道荷载包络"]
 
-    build_stages(engine,elem_group_names,bd_group_names,lc_names,settle_analysis,live_analysis,["屈曲分析工况"],[],)
+    build_stages(
+        engine, elem_group_names, bd_group_names, lc_names,
+        settle_analysis, live_analysis,
+        ["屈曲分析工况"], [], ["反应谱分析工况"],
+    )
     print(engine.stage.all())

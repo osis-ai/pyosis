@@ -47,8 +47,8 @@ class SettlementGroup:
         return cls(
             name=d.get("name"),
             setl=d.get("setl"),
-            nodes=list(d.get("nodes")),
-            related_settlements=list(d.get("relatedSettlements")),
+            nodes=list(d.get("nodes", [])),
+            related_settlements=list(d.get("relatedSettlements", [])),
         )
 
     def __repr__(self) -> str:
@@ -369,12 +369,13 @@ class SettlementManager:
         """获取沉降工况总数"""
         return len(self._load())
 
-    def clear(self)->None:
-        """清空所有沉降工况"""
+    def clear(self) -> None:
+        """清空所有沉降工况和沉降组"""
         try:
             [self.delete(s.name) for s in self.all()]
+            self.group.clear()
         except Exception as e:
-            raise Exception(f"清空所有沉降工况失败: {e}，被占用,无法删除")
+            raise Exception(f"清空沉降分析失败: {e}，被占用,无法删除")
 
     def __repr__(self) -> str:
         return f"SettlementManager()"

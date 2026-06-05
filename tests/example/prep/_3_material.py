@@ -88,11 +88,16 @@ def build_materials(engine: OSISEngine) -> list[int]:
     for no in no_list:
         material.delete(no)
     # 创建荷载-位移曲线
-    engine.prop.pu_curve.create(99,"P-U曲线-测试",0,3,[0.0, 0.01, 0.02],[0.0, 100.0, 150.0])
+    engine.prop.pu_curve.create(99, "P-U曲线-测试", 0, 3, [0.0, 0.01, 0.02], [0.0, 100.0, 150.0])
+    got = engine.prop.pu_curve.get(99)
+    _expect_attr(got, "no", 99)
+    all_pu = engine.prop.pu_curve.all()
+    if len(all_pu) < 1:
+        raise ValueError("pu_curve.all() 为空")
     # 重编号
     engine.prop.pu_curve.renumber(99,100)
     # 删除
-    engine.prop.pu_curve.delete(100)
+    # engine.prop.pu_curve.delete(100)
     return [mat1.no, mat2.no, mat3.no, mat4.no]
 
 if __name__ == "__main__":

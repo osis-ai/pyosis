@@ -1011,7 +1011,10 @@ class LiveCaseManager:
 
     def clear(self)->None:
         """清空所有荷载工况"""
-        [self.delete(lc.name) for lc in self.all()]
+        try:
+            [self.delete(lc.name) for lc in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有荷载工况失败: {e}")
 
     def __repr__(self) -> str:
         return f"LiveCaseManager()"
@@ -1116,6 +1119,14 @@ class LiveManager:
             "lanes": self._lane_manager.count(),
             "cases": self._case_manager.count(),
         }
+
+    def clear(self) -> None:
+        try:
+            self.case.clear()  # 先删工况
+            self.lane.clear()  # 再删车道
+            self.grade.clear()  # 最后删等级
+        except Exception as e:
+            raise Exception(f"清空所有活载管理器失败: {e}")
 
     def __repr__(self) -> str:
         return f"LiveManager()"

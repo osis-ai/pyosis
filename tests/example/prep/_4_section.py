@@ -2536,9 +2536,11 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     _expect_attr(dsb_sec, "name", "双边箱截面")
 
     # 创建肋板式截面
-    r_sec = section.create_ribbed_slab("肋板式截面", 2.8, 21.5, 17.7, 0.3, 0.2, 1.25, 1.8, 0.2, 1.5, 0.3, "Integral",
-                                       0.0, 0.0, 0.0, no=63)
-    _expect_attr(r_sec, "name", "肋板式截面")
+    r_sec = section.create_ribbed_slab(
+        "肋板式截面", 2.8, 21.5, 17.7, 0.3, 0.2, 1.25, 1.8, 0.2,
+        "Integral", 0.0, 0.0, 0.0,1.5, 0.3,no=63,
+    )
+    _expect_attr(r_sec, "no", 63)
 
     # 创建T梁截面left
     t_sec1 = section.create_TGirder("T梁截面left", "Left", 2.5, 1.125, 0.85, 0.0, 0.16, 0.25, 0.6, 0.2, 0.6, 0.35, 0.25,
@@ -2677,7 +2679,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     _expect_attr(cpm_sec, "name", "π形截面")
 
     # 数值截面
-    circle_sec1.create_numerical(
+    section.create_numerical(
         99,
         "数值截面-测试",
         "0.50",  # strArea 面积

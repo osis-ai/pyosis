@@ -49,25 +49,31 @@ def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
         raise ValueError(f"remove 后仍包含 {eg_test.name!r}")
     if eg_main.name not in (e.setl_grp_nos or []):
         raise ValueError(f"remove 后应仍保留 {eg_main.name!r}")
-    # st.group.rename("_沉降测试组", "_沉降测试组1")
-    # st.group.delete("_沉降测试组1")
-    # if st.group.get("_沉降测试组") is not None:
-    #     raise ValueError("删除 '_沉降测试组' 后 get 应返回 None")
-    # if st.group.count() != 1:
-    #     raise ValueError(f"删除测试组后 st.group.count() 应为 1，实际 {st.group.count()}")
+    st.group.rename("_沉降测试组", "_沉降测试组1")
+    if st.group.get("_沉降测试组") is not None:
+        raise ValueError("rename 后旧名 '_沉降测试组' 应不存在")
+    if st.group.get("_沉降测试组1") is None:
+        raise ValueError("rename 后应能通过 '_沉降测试组1' 获取")
+
+    st.group.delete("_沉降测试组1")
+    if st.group.get("_沉降测试组1") is not None:
+        raise ValueError("delete 后 '_沉降测试组1' 应不存在")
+    if st.group.count() != 1:
+        raise ValueError(f"删除测试组后 st.group.count() 应为 1，实际 {st.group.count()}")
 
     # 5) 沉降工况 rename / delete（临时工况，勿动「沉降分析工况」）
     e_temp = st.create("_沉降工况测试")
     got_temp = st.get("_沉降工况测试")
-    if got_temp is None:
-        raise ValueError("获取 '_沉降工况测试' 失败")
-    st.rename(got_temp.name, "_"+got_temp.name)
-    got_renum = st.get("_"+got_temp.name)
-    if got_renum is None or got_renum.name != "_"+got_temp.name:
+    new_temp_name = "_" + got_temp.name
+    st.rename(got_temp.name, new_temp_name)
+    got_renum = st.get(new_temp_name)
+    if got_renum is None or got_renum.name != new_temp_name:
         raise ValueError(
-            f"renumber 后编号应为_{got_temp.name}，实际 {getattr(got_renum, 'name', None)!r}"
+            f"rename 后名称应为 {new_temp_name!r}，实际 {getattr(got_renum, 'name', None)!r}"
         )
-    st.delete("_沉降工况测试")
+    st.delete(new_temp_name)
+    if st.get(new_temp_name) is not None:
+        raise ValueError(f"delete 后 get({new_temp_name!r}) 应返回 None")
     if st.get("_沉降工况测试") is not None:
         raise ValueError("delete 后 get('_沉降工况测试') 应返回 None")
     # 6) 业务工况校验
@@ -98,9 +104,9 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
     buckl_name = "屈曲分析工况"
 
     # 1) 业务屈曲工况
-    stab.create(buckl_name, num=5, accum=0, scalar=1.0, load_type=0)
-    stab.include(buckl_name, "a", lc_dead, 1.0, 0)
-    stab.include(buckl_name, "a", lc_pst, 1.0, 0)
+    buck = stab.create(buckl_name, num=5, accum=0, scalar=1.0, load_type=0)
+    buck.include("a", lc_dead, 1.0, 0)
+    buck.include("a", lc_pst, 1.0, 0)
 
     # 2) get
     got = stab.get(buckl_name)
@@ -114,22 +120,20 @@ def build_buckling_analysis(engine: OSISEngine, loadcase_names: list[str]) -> li
 
     # 4) replace
     test_name = "_屈曲replace测试"
-    stab.create(test_name, num=3, accum=0, scalar=1.0, load_type=0)
-
-    stab.include(test_name, "a", lc_temp_drop, 1.0, 0)
+    test_buck = stab.create(test_name, num=3, accum=0, scalar=1.0, load_type=0)
+    test_buck.include("a", lc_temp_drop, 1.0, 0)
     got_test = stab.get(test_name)
     if got_test is None:
         raise ValueError(f"获取 {test_name!r} 失败")
     if not any(
-        isinstance(p, dict)
-        and (p.get("loadCase") == lc_temp_drop or p.get("name") == lc_temp_drop)
-        for p in (got_test.lcParas or [])
+            isinstance(p, dict)
+            and (p.get("loadCase") == lc_temp_drop or p.get("name") == lc_temp_drop)
+            for p in (got_test.lcParas or [])
     ):
         raise ValueError(
             f"include 后应包含 {lc_temp_drop!r}, lcParas={got_test.lcParas!r}"
         )
-
-    stab.replace(test_name, lc_temp_rise, 1.0, 0, lc_temp_drop, 1.0, 0)
+    test_buck.replace(lc_temp_rise, 1.0, 0, lc_temp_drop, 1.0, 0)
     got_test = stab.get(test_name)
     if got_test is None:
         raise ValueError(f"replace 后获取'{test_name!r}'失败")
@@ -278,36 +282,69 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     live_analysis_names = [lc1.name]
     return live_analysis_names
 
-def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> None:
+def build_rspec_analysis(engine: OSISEngine, damping_names: list[str]) -> list[str]:
     dynamic = engine.dynamic
-    rsp = dynamic.seis_rsp_spec_mod
-    rspec = dynamic.rspec_anal
+    rsp = dynamic.seismic
+    rspec = dynamic.response_spectrum
 
-    spec_name = "_反应谱测试谱"
-    case_name = "_反应谱工况测试"
+    test_spec_name = "_反应谱测试谱"
+    test_case_name = "_反应谱工况测试"
 
-    rsp.create_rsp_spec_code(
-        spec_name, "A", 9.8, code="JTGT2231_01_2020",
+    rsp.create_code(
+        test_spec_name, "A", 9.8, code="JTGT2231_01_2020",
         intensity=0.05, site=0, delta_t=0.1,
     )
 
-    rspec.create_rspec_anal(
-        case_name,
-        spectrum=spec_name,
+    rspec.create(
+        test_case_name,
+        spectrum=test_spec_name,
         damping_name=damping_names[0],
         num=5,
     )
     rspec.all()
-    got = rspec.get(case_name)
+    got = rspec.get(test_case_name)
     if got is None:
-        raise ValueError(f"获取 {case_name!r} 失败")
+        raise ValueError(f"获取 {test_case_name!r} 失败")
 
-    rspec.rename_rspec_anal(got.name, "_"+got.name)
-    got2 = rspec.get("_"+got.name)
-    if got2 is None or got2.name != "_"+got.name:
-        raise ValueError("rename_rspec_anal 后编号应为 99")
-    rspec.delete_rspec_anal(case_name)
-    rsp.delete_rsp_spec("_"+got.name)
+    renamed_case_name = "_" + got.name
+    rspec.rename(got.name, renamed_case_name)
+    got2 = rspec.get(renamed_case_name)
+    if got2 is None or got2.name != renamed_case_name:
+        raise ValueError(
+            f"rename 后名称应为 {renamed_case_name!r}，实际 {getattr(got2, 'name', None)!r}"
+        )
+
+    rspec.rename(renamed_case_name, test_case_name)
+    got3 = rspec.get(test_case_name)
+    if got3 is None or got3.name != test_case_name:
+        raise ValueError(
+            f"rename 回原名后应为 {test_case_name!r}，实际 {getattr(got3, 'name', None)!r}"
+        )
+
+    rspec.delete(test_case_name)
+    if rspec.get(test_case_name) is not None:
+        raise ValueError(f"delete 后 get({test_case_name!r}) 应返回 None")
+    rsp.delete(test_spec_name)
+    if rsp.get(test_spec_name) is not None:
+        raise ValueError(f"delete 后 get({test_spec_name!r}) 应返回 None")
+
+    biz_spec_name = "反应谱-运营谱"
+    biz_rspec_name = "反应谱分析工况"
+    rsp.create_code(
+        biz_spec_name, "A", 9.8, code="JTGT2231_01_2020",
+        intensity=0.05, site=0, delta_t=0.1,
+    )
+    rspec.create(
+        biz_rspec_name,
+        spectrum=biz_spec_name,
+        damping_name=damping_names[0],
+        num=5,
+    )
+    got_biz = rspec.get(biz_rspec_name)
+    if got_biz is None:
+        raise ValueError(f"获取 {biz_rspec_name!r} 失败")
+
+    return [biz_rspec_name]
 
 if __name__ == "__main__":
     from _0_engine import engine

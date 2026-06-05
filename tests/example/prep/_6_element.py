@@ -78,7 +78,14 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     x1, x2 = 15.3200, 15.5400
     y_off = 0.5
     shell_thk_no = 1
-    engine.thickness.create(shell_thk_no, 0.30, 0.30)
+    thk = engine.thickness
+    thk.create(shell_thk_no, 0.30, 0.30)
+    got_thk = thk.get(shell_thk_no)
+    if got_thk is None:
+        raise ValueError(f"thickness.get({shell_thk_no}) 返回 None")
+    _expect_attr(got_thk, "no", shell_thk_no)
+    _expect_attr(got_thk, "in_plane", 0.30)
+    _expect_attr(got_thk, "out_plane", 0.30)
     n_top_r = engine.node.create(x2, y_off, 0.0)
     n_top_l = engine.node.create(x1, y_off, 0.0)
     e_shell = element.create_shell(
@@ -92,10 +99,30 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
         no=19,
     )
     _expect_attr(e_shell, "no", 19)
-    # thickness delete 测试：临时编号，测完即删
-    engine.thickness.create(99, 0.25, 0.25)
-    engine.thickness.renumber("99","100")
-    engine.thickness.delete(100)
+    all_thk = thk.all()
+    if not any(t.no == shell_thk_no for t in all_thk):
+        raise ValueError(f"thickness.all() 中应包含编号 {shell_thk_no}")
+    if thk.count() < 1:
+        raise ValueError("thickness.count() 应 >= 1")
+    batch = thk.get([shell_thk_no, 999])
+    if not isinstance(batch, list) or batch[0] is None or batch[0].no != shell_thk_no:
+        raise ValueError("thickness.get([shell_thk_no, 999]) 第一项不符合预期")
+    if batch[1] is not None:
+        raise ValueError("thickness.get([..., 999]) 第二项应为 None")
+    # 临时编号：测 renumber / delete / get
+    thk.create(99, 0.25, 0.25)
+    got99 = thk.get(99)
+    if got99 is None or got99.in_plane != 0.25:
+        raise ValueError("create(99) 后 get(99) 失败")
+    thk.renumber("99", "100")
+    got100 = thk.get(100)
+    if got100 is None or got100.no != 100:
+        raise ValueError("renumber 后 get(100) 失败")
+    if thk.get(99) is not None:
+        raise ValueError("renumber 后 get(99) 应为 None")
+    thk.delete(100)
+    if thk.get(100) is not None:
+        raise ValueError("delete(100) 后 get(100) 应为 None")
     
     element.all()
     element.renumber(e15.no, e15.no + 1 )
@@ -250,6 +277,8 @@ if __name__ == "__main__":
 
     # 3) 最后删单元
     engine.element.clear()
+    # 4) 单元删完后再清壳厚度特性
+    engine.thickness.clear()
 
     mats = engine.material.all()
     print("materials: ", mats)

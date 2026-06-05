@@ -123,6 +123,56 @@ class LoadToMass:
         if not ok:
             raise RuntimeError(f"移除荷载转换质量项 {lc_name} 从 {self.name} 失败: {err}")
 
+    def _sync_from_dict(self, d: dict) -> None:
+        """用 dict 同步当前对象（内部使用）"""
+        self.name = d.get("name")
+        self.no = d.get("no")
+        self.analysis_type = d.get("analysisType", 0)
+        self.ok = bool(d.get("ok"))
+        self.related_stages = list(d.get("relatedStages") or [])
+        self.lc_paras_count = d.get("lcParasCount", 0)
+        self.lc_paras = [
+            LoadToMassLcPara._from_dict(p)
+            for p in (d.get("lcParas") or [])
+            if isinstance(p, dict)
+        ]
+
+    def _load(self) -> LoadToMass:
+        """从服务端刷新当前荷载转换质量（含 lc_paras）"""
+        resp = osis_client("GetLoadToMassInfoByNames", {"name": [self.name]})
+        if not resp["success"]:
+            raise RuntimeError(f"刷新荷载转换质量 {self.name} 失败: {resp['error']}")
+        data = resp.get("data", [])
+        if data and data[0]:
+            self._sync_from_dict(data[0])
+        else:
+            self.lc_paras = []
+            self.lc_paras_count = 0
+        return self
+
+    def get(self, lc_name: str) -> LoadToMassLcPara | None:
+        """按荷载工况名获取单个 lc_para"""
+        self._load()
+        for p in self.lc_paras:
+            if p.load_case == lc_name:
+                return p
+        return None
+
+    def all(self) -> list[LoadToMassLcPara]:
+        """获取当前荷载转换质量下的全部 lc_paras"""
+        self._load()
+        return list(self.lc_paras)
+
+    def clear(self) -> None:
+        """清空当前荷载转换质量下的全部 lc_paras"""
+        self._load()
+        for p in list(self.lc_paras):
+            ok, err = osis_ltm_anal_inc(self.name, "r", p.load_case, 0.0, 0.0)
+            if not ok:
+                raise RuntimeError(
+                    f"清空 lc_para {p.load_case!r} 从 {self.name} 失败: {err}"
+                )
+        self._load()
 
 class LoadToMassManager:
     """荷载转换质量管理器
@@ -620,6 +670,10 @@ class DynamicManager:
     def __repr__(self):
         return "DynamicManager()"
 
+    def clear(self)->None:
+        self.load_to_mass.clear()
+        self._seismic.clear()
+        self.response_spectrum.clear()
 
 # ──────────────────────────────────────────────
 # 全局单例

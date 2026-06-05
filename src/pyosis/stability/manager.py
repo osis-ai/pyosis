@@ -41,11 +41,11 @@ class BucklCase:
             accum=d.get("accum"), 
             accumLCParas=d.get("accumLCParas"), 
             analysisType=d.get("analysisType"), 
-            lcParas=d.get("lcParas"), 
+            lcParas=d.get("lcParas") or [],
             modalNum=d.get("modalNum"), 
             name=d.get("name"), 
             no=d.get("no"), 
-            relatedStages=d.get("relatedStages")
+            relatedStages=d.get("relatedStages") or [],
             )
     
     # ── 荷载工况管理 ──────────────────────────────

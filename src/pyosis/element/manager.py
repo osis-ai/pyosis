@@ -735,7 +735,12 @@ class ElementManager:
         return len(elements)
 
     def clear(self)->None:
-        [self.delete(e.no) for e in self.all()]
+        try:
+            self.group.clear()
+            self.taper_group.clear()
+            [self.delete(e.no) for e in self.all()]
+        except Exception as e:
+            raise Exception(f"清空所有单元失败: {e}，被占用,无法删除")
     # ── 子管理器 ──────────────────────────────
 
     @property
