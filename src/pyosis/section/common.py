@@ -137,7 +137,7 @@ def osis_section_smallbox(nSec: int, strName: str, eSectionType: Literal["SMALLB
             * Middle = 中梁
             * Right = 右边梁
         H (float): 箱梁高度
-        Bs (float): 边翼板宽
+        Bs (float): 边翼板宽，eGirderPos=Middle时无效，需要设置为缺省值空字符串""
         Bm (float): 中梁半宽
         Bc (float): 现浇湿接缝半宽
         Bb (float): 底板宽
@@ -236,7 +236,7 @@ def osis_section_hollowslab(nSec: int=1, strName: str="截面1-空心板", eSect
             * Middle = 中梁
             * Right = 右边梁
         H (float): 板高
-        Bs (float): 边板宽，eGirderPos=Middle时设置为 ""
+        Bs (float): 边板宽，eGirderPos=Middle时无效，需要设置为缺省值空字符串""
         Bm (float): 中梁半宽
         Bj (float): 铰缝上端缩进宽
         Tt (float): 顶板厚
