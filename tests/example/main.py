@@ -81,7 +81,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     live_names = build_live_analysis(engine, elem_group_names)
     buckling_names = build_buckling_analysis(engine, lc_names)
     damping_names = build_damping(engine)
-    build_rspec_analysis(engine, damping_names)
+    rspec_names = build_rspec_analysis(engine, damping_names)
     
     # 10. 施工阶段（获取所有组）
     print("[10/10] 创建施工阶段...")
@@ -94,6 +94,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
         live_names,
         buckling_names,
         damping_names,
+        rspec_names,
     )    
     print("\n" + "=" * 50)
     print("建模完成！")

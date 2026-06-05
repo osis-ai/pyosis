@@ -122,6 +122,10 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
     if boundary.group.get("_边界组移除测试1") is None:
         raise ValueError("rename 后应能通过新名 get 到边界组")
     boundary.group.rename("_边界组移除测试1","_边界组移除测试2")
+    if boundary.group.get("_边界组移除测试2") is None:
+        raise ValueError("rename 后应能通过新名 get 到边界组")
+    if boundary.group.get("_边界组移除测试1") is not None:
+        raise ValueError("delete 后 get('_边界组移除测试2') 应返回 None")
     boundary.group.delete("_边界组移除测试2")
 
 

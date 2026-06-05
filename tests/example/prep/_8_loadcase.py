@@ -411,7 +411,7 @@ if __name__ == "__main__":
 
     engine.tendon.shape.clear()
     engine.load.clear()
-    engine.dynamic.seis_rsp_spec_mod.clear()
+    engine.dynamic.clear()
 
     # 从 engine 获取已有数据
     mats = engine.material.all()
