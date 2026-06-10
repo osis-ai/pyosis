@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal
+from typing import Literal, Any
 
 from ..core.client import osis_client
 from .interface import (
@@ -159,6 +159,35 @@ class GeometryManager:
         return splines
 
     # ── 增删改 ────────────────────────────────
+    def create(self, name: str, type: str, *args: Any, **kwargs: Any) -> Spline:
+        """创建样条曲线（便捷入口，内部转发到对应 create_* 方法）
+
+        Args:
+            name: 曲线名称
+            type: 样条类型，"general" / "natural" / "arc2d" / "arc3d"
+            *args: 按位置传给对应 create_* 的参数（通常为 owner, coordinates）
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Raises:
+            ValueError: 未知的 type
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> geometry.create("Lane1", "general", "LIVE", [0, 0, 0, 1, 0, 0, 10, 0, 0, 1, 0, 0])
+            >>> geometry.create("T1", "arc3d", owner="TENDON", coordinates=[...])
+        """
+        _creator = {
+            "general": self.create_general,
+            "natural": self.create_natural,
+            "arc2d": self.create_arc2d,
+            "arc3d": self.create_arc3d,
+        }
+        type_key = type.lower()
+        if type_key not in _creator:
+            raise ValueError(
+                f"未知样条类型: {type!r}，支持: {', '.join(_creator)}"
+            )
+        return _creator[type_key](name, *args, **kwargs)
 
     def create_general(
         self,

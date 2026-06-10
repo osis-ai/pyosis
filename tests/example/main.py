@@ -58,23 +58,23 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     # 4. 截面（无依赖）
     print("[4/10] 创建截面...")
     sec_nos = build_sections(engine,mat_nos)
-    
+
     # 5. 节点（无依赖）
     print("[5/10] 创建节点...")
     node_nos = build_nodes(engine)
-    
+
     # 6. 单元（获取node/section/material）
     print("[6/10] 创建单元...")
     elem_nos, elem_group_names = build_elements(engine, mat_nos, sec_nos, node_nos)
-    
+
     # 7. 边界（获取node）
     print("[7/10] 创建边界条件...")
     bd_nos, bd_group_names = build_boundaries(engine, node_nos)
-    
+
     # 8. 荷载工况（获取geo/mat/elem）
     print("[8/10] 创建荷载工况和钢束...")
     lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
-    
+
     # 9. 活载分析（获取elem）
     print("[9/10] 创建分析...")
     settle_names = build_settle_analysis(engine, node_nos)
@@ -82,7 +82,7 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
     buckling_names = build_buckling_analysis(engine, lc_names)
     damping_names = build_damping(engine)
     rspec_names = build_rspec_analysis(engine, damping_names)
-    
+
     # 10. 施工阶段（获取所有组）
     print("[10/10] 创建施工阶段...")
     build_stages(
@@ -95,11 +95,11 @@ def build_model(incremental: bool = False, run_analysis: bool = False):
         buckling_names,
         damping_names,
         rspec_names,
-    )    
+    )
     print("\n" + "=" * 50)
     print("建模完成！")
     print("=" * 50)
-    
+
     if run_analysis:
         print("\n开始运行分析...")
         engine.solve()
@@ -123,7 +123,7 @@ def main():
     
     # 执行建模（默认清空重建）
     build_model(incremental=args.increment, run_analysis=args.solve)
-    
+    # engine.sync_apdl()
     # 保存项目
     if args.save:
         print(f"\n保存项目到: {args.save}")

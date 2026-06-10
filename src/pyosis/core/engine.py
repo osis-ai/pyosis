@@ -22,6 +22,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from .apdl_sync import ApdlSyncResult, ApdlSessionStore, perform_apdl_sync
 from ..material.manager import MaterialManager, material_manager
 from ..section.manager import SectionManager, section_manager
 from ..node.manager import NodeManager, node_manager
@@ -122,6 +123,7 @@ class OSISEngine:
         self._url = url
         set_osis_url(self._url)
         set_osis_port(self._port)
+        self._apdl_session = ApdlSessionStore()
 
     # ──────────────────────────────────────────
     # 子管理器属性
@@ -379,3 +381,28 @@ class OSISEngine:
         # ]
         # return "\n".join(parts)
         return f"OSISEngine(project_path={self.project.get_directory()})"
+
+    def sync_apdl(
+            self,
+            path: str | None = None,
+            *,
+            parse_only: bool = False,
+            force: bool = False,
+    ) -> ApdlSyncResult:
+        """通过 APDL 导出从 OSIS 同步数据。OSIS 界面操作后调用。"""
+        return perform_apdl_sync(
+            self, path, parse_only=parse_only, force=force,
+        )
+
+    # def sync(
+    #         self,
+    #         domains: list[str] | None = None,
+    #         *,
+    #         method: str = "apdl",
+    #         path: str | None = None,
+    #         force: bool = False,
+    #         parse_only: bool = False,
+    # ) -> ApdlSyncResult:
+    #     if method != "apdl":
+    #         raise ValueError(f"不支持的同步方式: {method}")
+    #     return self.sync_apdl(path=path, domains=domains, parse_only=parse_only, force=force)

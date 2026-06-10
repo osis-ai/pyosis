@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal, Union, Any
 from enum import Enum
 from ..core.client import osis_client
 from .interface import (
@@ -130,6 +130,30 @@ class MaterialManager:
         return max(mat_no) + 1
 
     # ── 增删改 ────────────────────────────────
+    def create(self, no: int | None, name: str, type: str, *args: Any, **kwargs: Any) -> Material:
+        """创建材料（便捷入口，内部转发到对应 create_* 方法）
+
+        Args:
+            no: 材料编号，None 则自动生成
+            name: 材料名称
+            type: 材料类型，"conc"/"steel"/"prestressed"/"rebar"/"custom"
+            *args: 按位置传给对应 create_* 的参数
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Raises:
+            ValueError: 未知的 type
+            RuntimeError: 创建失败
+        """
+        _creator = {
+            "conc": self.create_conc,
+            "steel": self.create_steel,
+            "prestressed": self.create_prestressed,
+            "rebar": self.create_rebar,
+            "custom": self.create_custom,
+        }
+        if type not in _creator:
+            raise ValueError(f"未知材料类型: {type}")
+        return _creator[type](name, *args, no=no, **kwargs)
 
     def create_conc(
         self,
