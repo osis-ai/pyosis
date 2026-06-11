@@ -329,10 +329,10 @@ def osis_section_conventionalbox(nSec: int, strName: str, eSectionType: Literal[
         Bi2 (float): 箱室2宽度。
         Bi3 (float): 箱室3宽度。
         Bi4 (float): 箱室4宽度。
-        xi1 (float): 倒角1宽(边室顶板)。
-        Tt1 (float): 倒角1根部厚。
-        xi2 (float): 倒角2宽(边室顶板)。
-        Tt2 (float): 倒角2根部厚。
+        xi1 (float): 倒角1宽(边室顶板)。>=0
+        Tt1 (float): 倒角1根部厚。>0
+        xi2 (float): 倒角2宽(边室顶板)。>0
+        Tt2 (float): 倒角2根部厚。>0
         xi3 (float): 倒角3宽(边室顶板)。
         yi3 (float): 倒角3根部厚。
         xi4 (float): 倒角4宽(边室底板)。

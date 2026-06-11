@@ -1199,7 +1199,7 @@ class SectionManager:
             tw2: 中腹板厚
             n_cell_num: 箱室个数
             bi1~bi4: 箱室1~4宽度
-            xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数
+            xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数  xi1>=0
             bc_l, tc_l, bc1_l, tc1_l, tc2_l: 左悬臂参数
             b_symmetry: 右侧是否对称
                 * 0=非对称
