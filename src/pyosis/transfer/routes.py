@@ -29,6 +29,8 @@ ROUTES = {
 
     # ─── MATERIAL ───
     "Material": "engine.material.create",
+    "MaterialDel": "engine.material.delete",
+    "MaterialMod": "engine.material.renumber",
 
     # ─── SECTION ───
     "Section": "engine.section.create",
@@ -36,9 +38,20 @@ ROUTES = {
     "SectionMod": "engine.section.renumber",
     "SectionOffset": ("chain", "engine.section.get", "set_offset", 0),
     "SectionMesh": ("chain", "engine.section.get", "set_mesh", 0),
+    "SectionMat": ("chain", "engine.section.get", "set_material", 0),
+    "SectionPart": ("chain", "engine.section.get", "add_part", 0),
     "StressPoint": ("chain", "engine.section.get", "set_stress_point", 0),
-    "RebarL": ("chain", "engine.section.get", "add_rebar_point", 0),
-    "RebarS": ("chain", "engine.section.get", "add_rebar_s_bent_up", 0),
+    "RebarL": ("chain", "engine.section.get", "add_rebar_l", 0),
+    "RebarLDel": ("chain", "engine.section.get", "delete_rebar", 0),
+    "RebarS": ("chain", "engine.section.get", "add_rebar_s", 0),
+    "RebarSDel": ("chain", "engine.section.get", "delete_rebar_s", 0),
+    "Rib": ("chain", "engine.section.get", "add_rib", 0),
+    "RibMod": ("chain", "engine.section.get", "modify_rib", 0),
+    "RibDel": ("chain", "engine.section.get", "delete_rib", 0),
+    "ClearSectionRib": ("chain", "engine.section.get", "delete_rib", 0),
+    "RibLayout": ("chain", "engine.section.get", "add_rib_layout", 0),
+    "RibLayoutDel": ("chain", "engine.section.get", "delete_rib_layout", 0),
+    "SteelPlate": ("chain", "engine.section.get", "add_steel_plate", 0),
 
     # ─── NODE ───
     "Node": "engine.node.create",
@@ -49,8 +62,10 @@ ROUTES = {
     "Element": "engine.element.create",
     "ElementDel": "engine.element.delete",
     "ElementMod": "engine.element.renumber",
-    "EleGrp": "engine.element.group.create",
+    "EleGrp": "engine.element.group.create",        # 只有创建功能
     "TaperEle": "engine.element.taper_group.create",
+    "TaperEleDel": "engine.element.taper_group.delete",
+    "TaperEleMod": "engine.element.taper_group.rename",
 
     # ─── BOUNDARY ───
     "Boundary": "engine.boundary.create",
@@ -61,13 +76,17 @@ ROUTES = {
     # ─── PROPERTY ───
     "CoorSys": "engine.prop.coord.create",
     "CoorSysDel": "engine.prop.coord.delete",
+    "CoorSysMod": "engine.prop.coord.renumber",
     "AsgnCompThk": "engine.prop.assign_component_thickness",
     "CrpShrk": "engine.prop.creep_shrink.create",
     "CrpShrkDel": "engine.prop.creep_shrink.delete",
+    "CrpShrkMod": "engine.prop.creep_shrink.renumber",
     "Damping": "engine.prop.damping.create",
     "DampingDel": "engine.prop.damping.delete",
+    "DampingMod": "engine.prop.damping.rename",
     "PUCurve": "engine.prop.pu_curve.create",
     "PUCurveDel": "engine.prop.pu_curve.delete",
+    "PUCurveMod": "engine.prop.pu_curve.renumber",
 
     # ─── GEOMETRY ───
     "Spline3D": "engine.geometry.create",
@@ -109,7 +128,7 @@ ROUTES = {
     "LiveAnalDel": "engine.live.analysis.delete",
     "LiveAnalMod": "engine.live.analysis.rename",
     "LiveAnalFactor": ("chain", "engine.live.analysis.get", "set_trans_reduction_factors", 0),
-    "LiveAnalInc": ("chain", "engine.live.case.get", "create_sub", 0),
+    "LiveAnalInc": ("chain", "engine.live.case.get", "include", 0),
     "LiveAnalOpt": ("chain", "engine.live.case.get", "set_lane_count", 0),
 
     # ─── SETTLEMENT ───
