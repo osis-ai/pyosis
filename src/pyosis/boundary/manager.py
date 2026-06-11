@@ -635,6 +635,39 @@ class BoundaryManager:
         return max(bd.no for bd in boundaries) + 1
 
     # ── 增删改 ────────────────────────────────
+    def create(self, no: int | None, type: str, *args: Any, **kwargs: Any) -> Boundary:
+        """创建边界（便捷入口，内部转发到对应 create_* 方法）
+
+        Args:
+            no: 边界编号，None 则自动分配
+            type: 边界类型，"GENERAL" / "MSTSLV" / "RELEASE" /
+                  "ELSTCSPT" / "GES" / "RIGID"
+            *args: 按位置传给对应 create_* 的参数
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Raises:
+            ValueError: 未知的 type
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> boundary_manager.create(None, "GENERAL", bX=1, bY=1, bZ=1)
+            >>> boundary_manager.create(1, "MSTSLV", nNode=10)
+            >>> boundary_manager.create(2, "RIGID", nNodeI=5)
+        """
+        _creator = {
+            "GENERAL": self.create_general,
+            "MSTSLV": self.create_master_slave,
+            "RELEASE": self.create_release,
+            "ELSTCSPT": self.create_elstcspt,
+            "GES": self.create_general_elstcspt,
+            "RIGID": self.create_rigid,
+        }
+        type_key = type.upper()
+        if type_key not in _creator:
+            raise ValueError(
+                f"未知边界类型: {type!r}，支持: {', '.join(_creator)}"
+            )
+        return _creator[type_key](*args, no=no, **kwargs)
 
     def create_general(
         self,

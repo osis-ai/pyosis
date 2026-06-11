@@ -555,6 +555,36 @@ class ElementManager:
         return max(ele_no) + 1
 
     # ── 增删改 ────────────────────────────────
+    def create(self, no: int | None, type: str, *args: Any, **kwargs: Any) -> Element:
+        """创建单元（便捷入口，内部转发到对应 create_* 方法）
+
+        Args:
+            no: 单元编号，None 则自动分配
+            type: 单元类型，"BEAM3D" / "TRUSS" / "SPRING" / "CABLE" / "SHELL"
+            *args: 按位置传给对应 create_* 的参数
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Raises:
+            ValueError: 未知的 type
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> element_manager.create(None, "BEAM3D", 1, 2, nMat=1, nSec1=1, nSec2=1)
+            >>> element_manager.create(10, "TRUSS", 1, 2, 1, 1, 1)
+        """
+        _creator = {
+            "BEAM3D": self.create_beam3d,
+            "TRUSS": self.create_truss,
+            "SPRING": self.create_spring,
+            "CABLE": self.create_cable,
+            "SHELL": self.create_shell,
+        }
+        type_key = type.upper()
+        if type_key not in _creator:
+            raise ValueError(
+                f"未知单元类型: {type!r}，支持: {', '.join(_creator)}"
+            )
+        return _creator[type_key](*args, no=no, **kwargs)
 
     def create_beam3d(
         self,

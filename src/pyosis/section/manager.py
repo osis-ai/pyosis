@@ -9,7 +9,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Any
 from enum import Enum
 
 from . import osis_section_numerical
@@ -850,6 +850,65 @@ class SectionManager:
         return max(sec_no) + 1
 
     # ── 增删改 ────────────────────────────────
+    def create(self, no: int | None, name: str, type: str, *args: Any, **kwargs: Any) -> Section:
+        """创建截面（便捷入口，内部转发到对应 create_* 方法）
+        Args:
+            no: 截面编号，None 则自动分配
+            name: 截面名称
+            type: OSIS 截面类型，如 "CIRCLE" / "RECT" / "STEELBOX" 等
+            *args: 按位置传给对应 create_* 的参数
+            **kwargs: 按关键字传给对应 create_* 的参数
+        Raises:
+            ValueError: 未知的 type
+            RuntimeError: 创建失败
+        """
+        _creator = {
+            "LSHAPE": self.create_Lshape,
+            "CIRCLE": self.create_circle,
+            "TSHAPE": self.create_Tshape,
+            "ISHAPE": self.create_Ishape,
+            "SMALLBOX": self.create_smallbox,
+            "RECT": self.create_rect,
+            "ROUNDEDEND": self.create_rounded_end,
+            "CONVENTIONALBOX": self.create_conventionalbox,
+            "STREAMEDBOX": self.create_streamed_box,
+            "DOUBLESIDEBOX": self.create_double_side_box,
+            "RIBBEDSLAB": self.create_ribbed_slab,
+            "TGIRDER": self.create_TGirder,
+            "HOLLOWSLAB": self.create_hollowslab,
+            "CUSTOM": self.create_custom,
+            "STEELI": self.create_steel_i,
+            "STEELBOX": self.create_steel_box,
+            "STEELBOXTHREECELL": self.create_steel_box_three_cell,
+            "STEELBOXITF": self.create_steel_box_itf,
+            "STEELCANTIBOX": self.create_steel_canti_box,
+            "STEELCANTIBOXIBF": self.create_steel_canti_box_ibf,
+            "STEELCUSTOM": self.create_steel_custom,
+            "STEELCUSTOMPLATE": self.create_steel_custom_plate,
+            "COMPOSITESTEELI": self.create_composite_steel_i,
+            "COMPOSITESTEELTROUGH": self.create_composite_steel_trough,
+            "COMPOSITESTEELBOX": self.create_composite_steel_box,
+            "COMPOSITECUSTOM": self.create_composite_custom,
+            "NUMERICAL": self.create_numerical,
+        }
+        # 历史/导出别名
+        _aliases = {
+            "FLATBOX": "STREAMEDBOX",  # build/command_map 用 FLATBOX，实际无 create_flat_box
+            "DOUBLE_SIDEBOX": "DOUBLESIDEBOX",
+            "STEELBOX3CELL": "STEELBOXTHREECELL",
+        }
+        # type_key = type.upper()
+        # type_key = _aliases.get(type_key, type_key)
+        if type not in _creator:
+            raise ValueError(
+                f"未知截面类型: {type!r}，支持: {', '.join(sorted(_creator))}"
+            )
+        # create_numerical 签名为 (no, name, ...)，其余为 (name, ..., no=no)
+        if type == "NUMERICAL":
+            if no is None:
+                no = self._next_no()
+            return _creator[type](no, name, *args, **kwargs)
+        return _creator[type](name, *args, no=no, **kwargs)
 
     def create_Lshape(
         self,

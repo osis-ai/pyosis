@@ -24,54 +24,54 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     element = engine.element
     
     # 封端区域：sec4 + sec4
-    e1  = element.create_beam3d(node_nos[0], node_nos[1], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0, no=1)
+    e1  = element.create(1,"beam3d",node_nos[0], node_nos[1], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e1,"no",1)
-    e2  = element.create_beam3d(node_nos[1], node_nos[2], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0, no=2)
+    e2  = element.create(2,"beam3d",node_nos[1], node_nos[2], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e2,"no",2)
     # 过渡段：sec5 + sec1
-    e3  = element.create_beam3d(node_nos[2], node_nos[3], mat_nos[0], sec_nos[4], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=3)
+    e3  = element.create(3,"beam3d",node_nos[2], node_nos[3], mat_nos[0], sec_nos[4], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e3,"no",3)
     # 标准段：sec1 + sec1
-    e4  = element.create_beam3d(node_nos[3],  node_nos[4],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=4)
+    e4  = element.create(4,"beam3d",node_nos[3],  node_nos[4],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e4,"no",4)
-    e5  = element.create_beam3d(node_nos[4],  node_nos[5],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=5)
+    e5  = element.create(5,"beam3d",node_nos[4],  node_nos[5],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e5,"no",5)
-    e6  = element.create_beam3d(node_nos[5],  node_nos[6],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=6)
+    e6  = element.create(6,"beam3d",node_nos[5],  node_nos[6],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e6,"no",6)
-    e7  = element.create_beam3d(node_nos[6],  node_nos[7],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=7)
+    e7  = element.create(7,"beam3d",node_nos[6],  node_nos[7],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e7,"no",7)
-    e8  = element.create_beam3d(node_nos[7],  node_nos[8],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=8)
+    e8  = element.create(8,"beam3d",node_nos[7],  node_nos[8],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e8,"no",8)
-    e9  = element.create_beam3d(node_nos[8],  node_nos[9],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=9)
+    e9  = element.create(9,"beam3d",node_nos[8],  node_nos[9],  mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e9,"no",9)
-    e10 = element.create_beam3d(node_nos[9],  node_nos[10], mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=10)
+    e10 = element.create(10,"beam3d",node_nos[9],  node_nos[10], mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e10,"no",10)
-    e11 = element.create_beam3d(node_nos[10], node_nos[11], mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0, no=11)
+    e11 = element.create(11,"beam3d",node_nos[10], node_nos[11], mat_nos[0], sec_nos[0], sec_nos[0], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e11,"no",11)
     # 过渡段：sec1 + sec5
-    e12 = element.create_beam3d(node_nos[11], node_nos[12], mat_nos[0], sec_nos[0], sec_nos[4], 1, 1, 0.000E+00, 0, 0.00, 0, no=12)
+    e12 = element.create(12,"beam3d",node_nos[11], node_nos[12], mat_nos[0], sec_nos[0], sec_nos[4], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e12,"no",12)
     # 封端区域：sec4 + sec4
-    e13 = element.create_beam3d(node_nos[12], node_nos[13], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0, no=13)
+    e13 = element.create(13,"beam3d",node_nos[12], node_nos[13], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e13,"no",13)
-    e14 = element.create_beam3d(node_nos[12], node_nos[13], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0, no=14)
+    e14 = element.create(14,"beam3d",node_nos[12], node_nos[13], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e14,"no",14)
-    e15 = element.create_beam3d(node_nos[12], node_nos[13], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0, no=15)
+    e15 = element.create(15,"beam3d",node_nos[12], node_nos[13], mat_nos[0], sec_nos[3], sec_nos[3], 1, 1, 0.000E+00, 0, 0.00, 0)
     _expect_attr(e15,"no",15)
-    e16 = element.create_truss(
+    e16 = element.create(16,"truss",
         node_nos[12], node_nos[13],
-        mat_nos[0], sec_nos[3], sec_nos[3], no=16
+        mat_nos[0], sec_nos[3], sec_nos[3]
     )
     _expect_attr(e16,"no",16)
-    e17 = element.create_spring(
+    e17 = element.create(17,"spring",
         node_nos[12], node_nos[13],
-        1, 10, 10, 10, 10, 10, 10, 0.0,17
+        1, 10, 10, 10, 10, 10, 10, 0.0
     )
     _expect_attr(e17,"no",17)
 
-    e18 = element.create_cable(
+    e18 = element.create(18,"cable",
         node_nos[12], node_nos[13],
-        mat_nos[0], sec_nos[3], "UL",18
+        mat_nos[0], sec_nos[3], "UL"
     )
     _expect_attr(e18,"no",18)
     # 创建四节点壳单元（面荷载 ESRFC 需要第 4 节点）
@@ -88,15 +88,14 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     _expect_attr(got_thk, "out_plane", 0.30)
     n_top_r = engine.node.create(x2, y_off, 0.0)
     n_top_l = engine.node.create(x1, y_off, 0.0)
-    e_shell = element.create_shell(
+    e_shell = element.create(19,"shell",
         node_nos[12],   # 节点 13，左下
         node_nos[13],   # 节点 14，右下
         n_top_r.no,     # 右上
         mat_nos[0],
         shell_thk_no,
         bIsThin=1,
-        node4=n_top_l.no,  # 左上
-        no=19,
+        node4=n_top_l.no  # 左上
     )
     _expect_attr(e_shell, "no", 19)
     all_thk = thk.all()
@@ -148,23 +147,23 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
         [1, 1.0, 0.4],
         [1, 0.0, 0.4],
     ])
-    sec_t1 = engine.section.create_custom("_过渡截面1", contour_matrix="TaperC1", no=301)
-    sec_t2 = engine.section.create_custom("_过渡截面2", contour_matrix="TaperC2", no=302)
+    sec_t1 = engine.section.create(301,"_过渡截面1","CUSTOM", contour_matrix="TaperC1")
+    sec_t2 = engine.section.create(302,"_过渡截面2","CUSTOM", contour_matrix="TaperC2")
     sec_t1.set_offset("Middle", 0.0, "Top", 0.0)
     sec_t2.set_offset("Middle", 0.0, "Top", 0.0)
     # 2) 独立节点链 + 2 根变截面梁（i/j 均为 301→302，且 ≥2 个单元）
     n_t1 = engine.node.create(0.0, -1.0, 0.0)
     n_t2 = engine.node.create(1.0, -1.0, 0.0)
     n_t3 = engine.node.create(2.0, -1.0, 0.0)
-    e_t1 = element.create_beam3d(
+    e_t1 = element.create(20,"beam3d",
         n_t1.no, n_t2.no,
         mat_nos[0], 301, 302,
-        1, 1, 0.0, 0, 0.0, 0, no=20,
+        1, 1, 0.0, 0, 0.0, 0
     )
-    e_t2 = element.create_beam3d(
+    e_t2 = element.create(21,"beam3d",
         n_t2.no, n_t3.no,
         mat_nos[0], 301, 302,
-        1, 1, 0.0, 0, 0.0, 0, no=21,
+        1, 1, 0.0, 0, 0.0, 0
     )
     _expect_attr(e_t1, "no", 20)
     _expect_attr(e_t2, "no", 21)
