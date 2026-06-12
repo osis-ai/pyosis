@@ -15,7 +15,7 @@ def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
     support_nodes = [node_nos[0], node_nos[-1]]
 
     # 1) 业务沉降组
-    eg_main = st.group.create("空心板支座沉降", -0.005, support_nodes)
+    eg_main = st.group.create("空心板支座沉降", -0.005, node_nos[0], node_nos[-1])
     got_main = st.group.get("空心板支座沉降")
     if got_main is None or got_main.name != "空心板支座沉降":
         raise ValueError("获取 '空心板支座沉降' 失败")
@@ -32,7 +32,7 @@ def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
         raise ValueError(f"include 后应包含 {eg_main.name!r}")
 
     # 4) 测试 remove：临时沉降组，测完删除
-    eg_test = st.group.create("_沉降测试组", -0.001, [node_nos[0]])
+    eg_test = st.group.create("_沉降测试组", -0.001, node_nos[0])
     got_test = st.group.get("_沉降测试组")
     if got_test is None or got_test.name != "_沉降测试组":
         raise ValueError("获取 '_沉降测试组' 失败")
@@ -219,13 +219,20 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     _expect_attr(grade5, "name", "自定义轴载")
 
 
-    eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
-
+    eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam, _ = element_group_names
+    # 节点 1~14 纵向跨度（与主梁单元组 1~13 一致，不含重复单元 14）
+    bridge_span = 15.51
     # 车道（名称标识）
-    lane1 = live.lane.create_ve(name="车道", length=15.0800, wheel=1.80, orientation=1, ref=0, ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0)
+    lane1 = live.lane.create_ve(
+        name="车道", length=bridge_span, wheel=1.80, orientation=1, ref=0,
+        ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0,
+    )
     _expect_attr(lane1,"name","车道")
 
-    lane2 = live.lane.create_tcb("车道2", eg_main_beam, length=15.0800, wheel=1.80, orientation=1, ref=0, ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0)
+    lane2 = live.lane.create_tcb(
+        "车道2", eg_main_beam, length=bridge_span, wheel=1.80, orientation=1, ref=0,
+        ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0,
+    )
     _expect_attr(lane2,"name","车道2")
 
     # 活载工况（名称标识）
@@ -236,7 +243,7 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     if live.case.count() == 0:
         raise Exception("获取活载工况数量错误")
     # 横向布载折减系数
-    lc1.set_trans_reduction_factors([1.2000, 1.0000, 0.7800, 0.6700, 0.6000, 0.5500, 0.5200, 0.5000, 0.5000, 0.5000])
+    lc1.set_trans_reduction_factors(1.2000, 1.0000, 0.7800, 0.6700, 0.6000, 0.5500, 0.5200, 0.5000, 0.5000, 0.5000)
     
     # 子工况
     lc1.create_sub(sub_name="车道荷载工况1",grade_name=grade1.name,scalar=1.0,calc_mu=True,bridge_type="CUSTOM",mu_params=[7.557770],lane_names=[lane1.name])
@@ -248,7 +255,7 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
         scalar=2.0,
         calc_mu=True,
         bridge_type="SIMPLE",
-        mu_params=[15.08, 3.45e10, 0.5, 2500.0],  # 桥长、弹模、惯性矩、质量
+        mu_params=[bridge_span, 3.45e10, 0.5, 2500.0],  # 桥长、弹模、惯性矩、质量
         lane_names=[lane2.name],
     )
 

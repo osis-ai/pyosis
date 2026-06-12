@@ -86,8 +86,8 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     _expect_attr(got_thk, "no", shell_thk_no)
     _expect_attr(got_thk, "in_plane", 0.30)
     _expect_attr(got_thk, "out_plane", 0.30)
-    n_top_r = engine.node.create(x2, y_off, 0.0)
-    n_top_l = engine.node.create(x1, y_off, 0.0)
+    n_top_r = engine.node.create(181,x2, y_off, 0.0)
+    n_top_l = engine.node.create(182,x1, y_off, 0.0)
     e_shell = element.create(19,"shell",
         node_nos[12],   # 节点 13，左下
         node_nos[13],   # 节点 14，右下
@@ -152,9 +152,9 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     sec_t1.set_offset("Middle", 0.0, "Top", 0.0)
     sec_t2.set_offset("Middle", 0.0, "Top", 0.0)
     # 2) 独立节点链 + 2 根变截面梁（i/j 均为 301→302，且 ≥2 个单元）
-    n_t1 = engine.node.create(0.0, -1.0, 0.0)
-    n_t2 = engine.node.create(1.0, -1.0, 0.0)
-    n_t3 = engine.node.create(2.0, -1.0, 0.0)
+    n_t1 = engine.node.create(None,0.0, -1.0, 0.0)
+    n_t2 = engine.node.create(None,1.0, -1.0, 0.0)
+    n_t3 = engine.node.create(None,2.0, -1.0, 0.0)
     e_t1 = element.create(20,"beam3d",
         n_t1.no, n_t2.no,
         mat_nos[0], 301, 302,
@@ -208,34 +208,45 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
                 e8.no, e9.no, e10.no, e11.no, e12.no, e13.no, e14.no, e18.no, e16.no]
     
     # 分配构件理论厚度
-    engine.prop.assign_component_thickness(3.128E-01, "a", [elem_nos[0], elem_nos[1], elem_nos[12], elem_nos[13]])
-    engine.prop.assign_component_thickness(2.379E-01, "a", [elem_nos[2], elem_nos[11]])
-    engine.prop.assign_component_thickness(1.967E-01, "a", elem_nos[3:11])
+    engine.prop.assign_component_thickness(3.128E-01, "a", elem_nos[0], elem_nos[1], elem_nos[12], elem_nos[13])
+    engine.prop.assign_component_thickness(2.379E-01, "a", elem_nos[2], elem_nos[11])
+    engine.prop.assign_component_thickness(1.967E-01, "a", "4to11")
     
     # 单元组
     eg1 = element.group.create("封端混凝土单元")
-    eg1.add([1, 14])
+    eg1.add(node_nos[0], node_nos[13])
     eg2 = element.group.create("钢束-1-N1线型单元")
-    eg2.add(elem_nos[0:13])
+    eg2.add(elem_nos[0],elem_nos[1],elem_nos[2],elem_nos[3],elem_nos[4],elem_nos[5],elem_nos[6],elem_nos[7],elem_nos[8],elem_nos[9],elem_nos[10],elem_nos[11],elem_nos[12])
     eg3 = element.group.create("钢束-2-N2线型单元")
-    eg3.add(elem_nos[0:13])
+    eg3.add(
+        elem_nos[0], elem_nos[1], elem_nos[2], elem_nos[3], elem_nos[4],
+        elem_nos[5], elem_nos[6], elem_nos[7], elem_nos[8], elem_nos[9],
+        elem_nos[10], elem_nos[11], elem_nos[12],
+    )    
     eg4 = element.group.create("主梁单元")
-    eg4.add(elem_nos[0:13])
+    eg4.add(
+        elem_nos[0], elem_nos[1], elem_nos[2], elem_nos[3], elem_nos[4],
+        elem_nos[5], elem_nos[6], elem_nos[7], elem_nos[8], elem_nos[9],
+        elem_nos[10], elem_nos[11], elem_nos[12],
+    )
+    # N3-SPL3D 专用：与 自然边界TENDON (0~5.5m) 对应，约单元 1~6
+    eg_n3 = element.group.create("N3-SPL3D线型单元")
+    eg_n3.add(elem_nos[0], elem_nos[1], elem_nos[2], elem_nos[3], elem_nos[4], elem_nos[5])
     # 添加单元组
     eg5 = element.group.create("封端混凝土单元5")
     # 添加单元
-    eg5.add([1, 14])
+    eg5.add(1,14)
     # 替换单元
-    new_eg5 = eg5.replace(["14by13"])
-    if new_eg5.elements != [1, 13]:
-      raise ValueError(f"替换后应为 ['14by13']，实际 {new_eg5.elements}")
+    new_eg5 = eg5.replace("14by19")
+    if new_eg5.elements != [1, 19]:
+      raise ValueError(f"替换后应为 ['14by19']，实际 {new_eg5.elements}")
     # 移除单元
-    new_eg5.remove([13])
+    new_eg5.remove(19)
     _expect_attr(new_eg5, "element_count", 1)
-    if 13 in new_eg5.elements:
-      raise ValueError("单元 13 应已从封端混凝土单元组移除")
+    if 19 in new_eg5.elements:
+        raise ValueError("单元 19 应已从封端混凝土单元组移除")
     if 1 not in new_eg5.elements:
-      raise ValueError("单元 1 应仍在封端混凝土单元组中")
+        raise ValueError("单元 1 应仍在封端混凝土单元组中")
 
     # 添加全部单元
     eg5_group = new_eg5.add_all()
@@ -258,12 +269,14 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     _expect_attr(got, "name", "封端混凝土单元6")
     # 删除单元组
     element.group.delete("封端混凝土单元6")
-    if element.group.count() != 4:
-      raise ValueError(f"删除后单元组数量应为 4，实际 {element.group.count()}")
+    if element.group.count() != 5:
+      raise ValueError(f"删除后单元组数量应为 5，实际 {element.group.count()}")
     if "封端混凝土单元6" in [g.name for g in element.group.all()]:
       raise ValueError("封端混凝土单元6 应已从单元组列表中删除")
 
-    elem_groups_names = [eg1.name, eg2.name, eg3.name, eg4.name]
+    elem_groups_names = [
+        eg1.name, eg2.name, eg3.name, eg4.name, eg_n3.name,
+    ]
     return elem_nos, elem_groups_names
 
 if __name__ == "__main__":

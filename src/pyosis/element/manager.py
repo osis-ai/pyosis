@@ -166,7 +166,7 @@ class ElementGroup:
         Returns:
             更新后的 ElementGroup 对象
         """
-        self._execute("a", list(elements))
+        self._execute("a", *elements)
         return self.refresh()
 
     def remove(self, *elements: int) -> ElementGroup:
@@ -178,7 +178,7 @@ class ElementGroup:
         Returns:
             更新后的 ElementGroup 对象
         """
-        self._execute("r", list(elements))
+        self._execute("r", *elements)
         return self.refresh()
 
     def replace(self, *elements: int) -> ElementGroup:
@@ -190,7 +190,7 @@ class ElementGroup:
         Returns:
             更新后的 ElementGroup 对象
         """
-        self._execute("s", list(elements))
+        self._execute("s", *elements)
         return self.refresh()
 
     def add_all(self) -> ElementGroup:

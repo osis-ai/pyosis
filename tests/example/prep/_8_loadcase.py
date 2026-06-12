@@ -141,12 +141,15 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
         raise Exception("获取所有钢束特性失败")
 
     tendon_spline1,tendon_spline2,natural_tendon_name,tendon_vert_name,tendon_plan_name = geo_names
-    _, tendon_eg_1, tendon_eg_2, _ = elem_group_names
+    _, tendon_eg_1, tendon_eg_2, _, tendon_eg_n3 = elem_group_names
 
-    shape3 = tendon.shape.create_spl3d("N3", 2, "15-4", tendon_eg_1, natural_tendon_name)
+    shape3 = tendon.shape.create_spl3d("N3", 2, "15-4", tendon_eg_n3, natural_tendon_name)
     _expect_attr(shape3,"name","N3")
 
-    shape5 = tendon.shape.create_arc2d("N5",1,"15-4",tendon_eg_1,1,[tendon_vert_name, tendon_plan_name],)
+    shape5 = tendon.shape.create_arc2d(
+        "N5", 1, "15-4", tendon_eg_n3, 1,
+        [tendon_vert_name, tendon_plan_name],
+    )
     _expect_attr(shape5,"name","N5")
 
     tendon.shape.all()
@@ -415,7 +418,7 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     # 地震反应谱
     rsp = dynamic.seismic
     rsp_import_name = "_反应谱导入测试"
-    rsp.create(rsp_import_name, "A", 9.8, [(0.1, 0.5), (0.2, 0.8), (0.5, 1.2), (1.0, 0.9)])
+    rsp.create(rsp_import_name, "A", 9.8,0, [(0.1, 0.5), (0.2, 0.8), (0.5, 1.2), (1.0, 0.9)])
 
     got_import = rsp.get(rsp_import_name)
     if got_import is None or got_import.name != rsp_import_name:

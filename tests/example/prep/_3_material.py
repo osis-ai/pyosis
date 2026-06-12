@@ -45,23 +45,23 @@ def build_materials(engine: OSISEngine) -> list[int]:
     if len(engine.prop.creep_shrink.all()) != 1:
       raise ValueError("删除 no=3 后应只剩 1 条")
     # 材料 1: C50 混凝土
-    mat1 = material.create(1, "C50", "conc", "JTG3362_2018", "C50", nCrepShrk=1, dDmp=0.050)
+    mat1 = material.create(1, "C50", "CONC", "JTG3362_2018", "C50", nCrepShrk=1, dDmp=0.050)
     _expect_attr(mat1, "name", "C50")
 
     # 材料 2: HRB400 钢筋
-    mat2 = material.create(2, "HRB400", "rebar", "JTG3362_2018", "HRB400", dDmp=0.050)
+    mat2 = material.create(2, "HRB400", "REBAR", "JTG3362_2018", "HRB400", dDmp=0.050)
     _expect_attr(mat2, "name", "HRB400")
 
     # 材料 3: 钢绞线-1860
-    mat3 = material.create(3, "钢绞线-1860", "prestressed", "JTG3362_2018", "Strand1860", dDmp=0.050)
+    mat3 = material.create(3, "钢绞线-1860", "PRESTRESSED", "JTG3362_2018", "Strand1860", dDmp=0.050)
     _expect_attr(mat3, "name", "钢绞线-1860")
 
     # 材料 4: 钢材1
-    mat4 = material.create(4, "钢材1", "steel", "JTGD64_2015", "Q235")
+    mat4 = material.create(4, "钢材1", "STEEL", "JTGD64_2015", "Q235")
     _expect_attr(mat4, "name", "钢材1")
 
     # 材料 5: 自定义材料
-    mat5 = material.create(5, "自定义材料", "custom", dE=1, dG=0, dMu=0, dExpCoeff=0, dUnitWeight=0, dDensity=0, dDmp=0)
+    mat5 = material.create(5, "自定义材料", "CUSTOM", dE=1, dG=0, dMu=0, dExpCoeff=0, dUnitWeight=0, dDensity=0, dDmp=0)
     _expect_attr(mat5, "name", "自定义材料")
 
     mats = material.all()
@@ -88,7 +88,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
     for no in no_list:
         material.delete(no)
     # 创建荷载-位移曲线
-    engine.prop.pu_curve.create(99, "P-U曲线-测试", 0, 3, [0.0, 0.01, 0.02], [0.0, 100.0, 150.0])
+    engine.prop.pu_curve.create(99, "P-U曲线-测试", 0, 3, 0.0, 0.01, 0.02, 0.0, 100.0, 150.0)
     got = engine.prop.pu_curve.get(99)
     _expect_attr(got, "no", 99)
     all_pu = engine.prop.pu_curve.all()

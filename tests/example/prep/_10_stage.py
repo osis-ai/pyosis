@@ -21,7 +21,7 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
         rspec_analysis_names: 反应谱分析工况名称
     """
     stage = engine.stage
-    eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
+    eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam, _ = element_group_names
     bg_abutment1, bg_abutment2 = boundary_group_names
     lc_barrier, lc_end_conc, lc_neg_temp, lc_pavement, lc_pst, lc_temp_drop, lc_temp_rise, lc_pos_temp, lc_dead = loadcase_names
 
@@ -52,7 +52,7 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     if stage.get(4) is not None:
         raise ValueError("delete(4) 后 get(4) 应返回 None")
     # insert：在阶段 3 后插入临时阶段（编号应为 4）
-    stg_ins = stage.insert("_阶段插入测试", ref_no=3, position=1, duration=1.0)
+    stg_ins = stage.insert(3, 1, "_阶段插入测试", 1.0)
     if stg_ins is None or stg_ins.name != "_阶段插入测试":
         raise ValueError("insert 失败")
     got4 = stage.get(4)

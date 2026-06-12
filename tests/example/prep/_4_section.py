@@ -2754,14 +2754,14 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     sec1.add_rebar_point(1, mat_no, 0.0, 0.0, "D16")
     sec1.add_rebar_point(2, mat_no, 0.0, 0.0, "D16")
     sec1.add_rebar_line_a(2, mat_no, "Left", 0.0, "Top", 0.0, 1, 0.1, "D16")
-    sec1.delete_rebar(2)
+    sec1.delete_rebar_l(2)
     sec1.add_rebar_line_b(3, mat_no, 0.0, 0.0, 1.0, 0.0, 1, 1, 0.1)
     # 抗剪钢筋
     sec1.add_rebar_s_bent_up(mat_no, 0.1, 0.01, 1)
     sec1.add_rebar_s_shear_stirrup(mat_no, 0.1, 0.01)
     sec1.add_rebar_s_web_vertical(mat_no, 0.1, 0.01, 1, 1, 1)
     sec1.add_rebar_s_torsional_stirrup(mat_no, 0.1, 0.01, 0.01)
-    sec1.delete_rebar_s("BentUpRebar")
+    sec1.delete_rebar_s(sec1.no,"BentUpRebar")
     # 圆形钢筋
     sec1.add_rebar_circle(
         n_rebar_no=4,
@@ -2774,7 +2774,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
         d_interval=0.0,
         diameter="D16",
     )
-    sec1.delete_rebar(4)
+    sec1.delete_rebar_l(4)
     # 直线钢筋
     sec1.add_rebar_line_a(8, mat_no, "Left", 0.0, "Top", 0.0, 1, 0.1, "D16")
 
