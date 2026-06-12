@@ -13,7 +13,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Any
 from enum import Enum
 
 from ..core.client import osis_client
@@ -190,6 +190,43 @@ class LoadCase:
         return self
 
     # ── 荷载添加 ──────────────────────────────
+
+    def create(self, type: str, *args: Any, **kwargs: Any) -> LoadCase:
+        """添加荷载（便捷入口，内部转发到对应 create_* 方法）
+
+        type 决定具体荷载类型，对应关系:
+            GRAVITY      → create_gravity
+            NFORCE       → create_nforce
+            LINE         → create_line_load
+            DISPLACEMENT → create_displacement
+            INITIAL      → create_initial_force
+            UTEMP        → create_uniform_temperature
+            GTEMP        → create_gradient_temperature
+            PST          → create_prestress
+            CFORCE       → create_cable_force
+            CONCENTRATED → create_concentrated_force
+            SURFACE      → create_surface_load
+            SURFACE_VEC  → create_surface_load_vector
+        """
+        _creator = {
+            "GRAVITY":      self.create_gravity,
+            "NFORCE":       self.create_nforce,
+            "LINE":         self.create_line_load,
+            "DISPLACEMENT": self.create_displacement,
+            "INITIAL":      self.create_initial_force,
+            "UTEMP":        self.create_uniform_temperature,
+            "GTEMP":        self.create_gradient_temperature,
+            "PST":          self.create_prestress,
+            "CFORCE":       self.create_cable_force,
+            "CONCENTRATED": self.create_concentrated_force,
+            "SURFACE":      self.create_surface_load,
+            "SURFACE_VEC":  self.create_surface_load_vector,
+        }
+        if type not in _creator:
+            raise ValueError(
+                f"未知荷载类型: {type!r}，支持: {', '.join(sorted(_creator))}"
+            )
+        return _creator[type](*args, **kwargs)
 
     def create_gravity(
             self,
@@ -869,46 +906,115 @@ class TendonPropManager:
         ]
         return props
 
+    def create(
+        self,
+        name: str,
+        mat: int,
+        type: str,
+        area: int,
+        *args: Any,
+        **kwargs: Any,
+    ) -> TendonProp:
+        """创建钢束特性（便捷入口，内部转发到对应 create_* 方法）
+
+        type 决定张拉方法（IN/EX/PRE），area 决定面积输入方式：
+            * 0 = 用户输入面积
+            * 1 = 按规范输入面积
+
+        Args:
+            name: 钢束特性名称
+            type: 张拉方法，支持 "IN" / "EX" / "PRE"
+            mat: 材料编号
+            area: 面积输入方式
+                * 0 = 用户输入面积（需传 val）
+                * 1 = 按规范输入面积（需传 code/diameter/num）
+            *args: 按位置传给对应 create_* 的参数
+            **kwargs: 按关键字传给对应 create_* 的参数
+                体内/体外钢束（IN/EX）：
+                    * area=1: code, diameter, num, pipe, [friction_coeff, ...]
+                    * area=0: val, pipe, [friction_coeff, ...]
+                先张法钢束（PRE）：
+                    * area=1: code, diameter, num, [delta_t, ...]
+                    * area=0: val, [delta_t, ...]
+
+        Raises:
+            ValueError: 未知的 type 或非法的 area
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> # 体内钢束，按规范
+            >>> tendon_manager.prop.create("15-10", "IN", 1, 1,
+            ...     code="GBT5224_2014", diameter=15.2, num=10, pipe=0.09)
+            >>> # 体内钢束，用户输入面积
+            >>> tendon_manager.prop.create("M1", "IN", 1, 0,
+            ...     val=0.00014, pipe=0.09)
+            >>> # 体外钢束
+            >>> tendon_manager.prop.create("EX1", "EX", 1, 1,
+            ...     code="GBT5224_2014", diameter=15.2, num=7, pipe=0.09)
+            >>> # 先张法
+            >>> tendon_manager.prop.create("P1", "PRE", 1, 1,
+            ...     code="GBT5224_2014", diameter=12.7, num=5)
+        """
+        type_key = type.upper()
+        if type_key not in ("IN", "EX", "PRE"):
+            raise ValueError(
+                f"未知张拉方法: {type!r}，支持: IN, EX, PRE"
+            )
+        if area not in (0, 1):
+            raise ValueError(
+                f"非法 area: {area!r}，支持: 0=用户输入面积, 1=按规范输入面积"
+            )
+
+        _creator = {
+            ("IN",  0): self.create_in_custom,
+            ("IN",  1): self.create_in,
+            ("EX",  0): self.create_ex_custom,
+            ("EX",  1): self.create_ex,
+            ("PRE", 0): self.create_pre_custom,
+            ("PRE", 1): self.create_pre,
+        }
+        return _creator[(type_key, area)](name, mat, *args, **kwargs)
+
     def create_in(
         self,
         name: str,
-        n_mat: int,
-        e_code: str,
+        mat: int,
+        code: str,
         diameter: float,
-        n_num: int,
-        d_pipe: float,
-        d_friction_coeff: float = 1.0,
-        d_deviation_coeff: float = 1.0,
-        d_starting_deform: float = 0.0,
-        d_end_deform: float = 0.0,
-        d_tensioning_coeff: float = 1.0,
-        d_relaxation_coeff: float = 1.0,
+        num: int,
+        pipe: float,
+        friction_coeff: float = 1.0,
+        deviation_coeff: float = 1.0,
+        starting_deform: float = 0.0,
+        end_deform: float = 0.0,
+        tensioning_coeff: float = 1.0,
+        relaxation_coeff: float = 1.0,
     ) -> TendonProp:
         """创建体内钢束特性（按规范输入面积）
 
         Args:
             name: 钢束特性名称
-            n_mat: 材料编号
-            e_code: 规范名
+            mat: 材料编号
+            code: 规范名
                 * GBT5224_2014
                 * GBT20065_2016
             diameter: 公称直径
-            n_num: 每束钢束根数
-            d_pipe: 管道直径
-            d_friction_coeff: 摩擦系数
-            d_deviation_coeff: 偏差系数
-            d_starting_deform: 起点变形
-            d_end_deform: 终点变形
-            d_tensioning_coeff: 张拉系数
-            d_relaxation_coeff: 松弛系数
+            num: 每束钢束根数
+            pipe: 管道直径
+            friction_coeff: 摩擦系数
+            deviation_coeff: 偏差系数
+            starting_deform: 起点变形
+            end_deform: 终点变形
+            tensioning_coeff: 张拉系数
+            relaxation_coeff: 松弛系数
 
         Returns:
             创建的 TendonProp 对象
         """
         ok, err = osis_tendon_prop_in_area1(
-            name, "IN", n_mat, 1, e_code, diameter, n_num, d_pipe,
-            d_friction_coeff, d_deviation_coeff, d_starting_deform,
-            d_end_deform, d_tensioning_coeff, d_relaxation_coeff,
+            name, "IN", mat, 1, code, diameter, num, pipe,
+            friction_coeff, deviation_coeff, starting_deform,
+            end_deform, tensioning_coeff, relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -917,37 +1023,37 @@ class TendonPropManager:
     def create_in_custom(
         self,
         name: str,
-        n_mat: int,
-        d_val: float,
-        d_pipe: float,
-        d_friction_coeff: float = 1.0,
-        d_deviation_coeff: float = 1.0,
-        d_starting_deform: float = 0.0,
-        d_end_deform: float = 0.0,
-        d_tensioning_coeff: float = 1.0,
-        d_relaxation_coeff: float = 1.0,
+        mat: int,
+        val: float,
+        pipe: float,
+        friction_coeff: float = 1.0,
+        deviation_coeff: float = 1.0,
+        starting_deform: float = 0.0,
+        end_deform: float = 0.0,
+        tensioning_coeff: float = 1.0,
+        relaxation_coeff: float = 1.0,
     ) -> TendonProp:
         """创建体内钢束特性（用户输入面积）
 
         Args:
             name: 钢束特性名称
-            n_mat: 材料编号
-            d_val: 用户输入的钢束面积
-            d_pipe: 管道直径
-            d_friction_coeff: 摩擦系数
-            d_deviation_coeff: 偏差系数
-            d_starting_deform: 起点变形
-            d_end_deform: 终点变形
-            d_tensioning_coeff: 张拉系数
-            d_relaxation_coeff: 松弛系数
+            mat: 材料编号
+            val: 用户输入的钢束面积
+            pipe: 管道直径
+            friction_coeff: 摩擦系数
+            deviation_coeff: 偏差系数
+            starting_deform: 起点变形
+            end_deform: 终点变形
+            tensioning_coeff: 张拉系数
+            relaxation_coeff: 松弛系数
 
         Returns:
             创建的 TendonProp 对象
         """
         ok, err = osis_tendon_prop_in_area0(
-            name, "IN", n_mat, 0, d_val, d_pipe,
-            d_friction_coeff, d_deviation_coeff, d_starting_deform,
-            d_end_deform, d_tensioning_coeff, d_relaxation_coeff,
+            name, "IN", mat, 0, val, pipe,
+            friction_coeff, deviation_coeff, starting_deform,
+            end_deform, tensioning_coeff, relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -956,41 +1062,41 @@ class TendonPropManager:
     def create_ex(
         self,
         name: str,
-        n_mat: int,
-        e_code: str,
+        mat: int,
+        code: str,
         diameter: float,
-        n_num: int,
-        d_pipe: float,
-        d_friction_coeff: float = 1.0,
-        d_starting_deform: float = 0.0,
-        d_end_deform: float = 0.0,
-        d_tensioning_coeff: float = 1.0,
-        d_relaxation_coeff: float = 1.0,
+        num: int,
+        pipe: float,
+        friction_coeff: float = 1.0,
+        starting_deform: float = 0.0,
+        end_deform: float = 0.0,
+        tensioning_coeff: float = 1.0,
+        relaxation_coeff: float = 1.0,
     ) -> TendonProp:
         """创建体外钢束特性（按规范输入面积）
 
         Args:
             name: 钢束特性名称
-            n_mat: 材料编号
-            e_code: 规范名
+            mat: 材料编号
+            code: 规范名
                 * GBT5224_2014
                 * GBT20065_2016
             diameter: 公称直径
-            n_num: 每束钢束根数
-            d_pipe: 管道直径
-            d_friction_coeff: 摩擦系数
-            d_starting_deform: 起点变形
-            d_end_deform: 终点变形
-            d_tensioning_coeff: 张拉系数
-            d_relaxation_coeff: 松弛系数
+            num: 每束钢束根数
+            pipe: 管道直径
+            friction_coeff: 摩擦系数
+            starting_deform: 起点变形
+            end_deform: 终点变形
+            tensioning_coeff: 张拉系数
+            relaxation_coeff: 松弛系数
 
         Returns:
             创建的 TendonProp 对象
         """
         ok, err = osis_tendon_prop_ex_area1(
-            name, "EX", n_mat, 1, e_code, diameter, n_num, d_pipe,
-            d_friction_coeff, d_starting_deform, d_end_deform,
-            d_tensioning_coeff, d_relaxation_coeff,
+            name, "EX", mat, 1, code, diameter, num, pipe,
+            friction_coeff, starting_deform, end_deform,
+            tensioning_coeff, relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -999,35 +1105,35 @@ class TendonPropManager:
     def create_ex_custom(
         self,
         name: str,
-        n_mat: int,
-        d_val: float,
-        d_pipe: float,
-        d_friction_coeff: float = 1.0,
-        d_starting_deform: float = 0.0,
-        d_end_deform: float = 0.0,
-        d_tensioning_coeff: float = 1.0,
-        d_relaxation_coeff: float = 1.0,
+        mat: int,
+        val: float,
+        pipe: float,
+        friction_coeff: float = 1.0,
+        starting_deform: float = 0.0,
+        end_deform: float = 0.0,
+        tensioning_coeff: float = 1.0,
+        relaxation_coeff: float = 1.0,
     ) -> TendonProp:
         """创建体外钢束特性（用户输入面积）
 
         Args:
             name: 钢束特性名称
-            n_mat: 材料编号
-            d_val: 用户输入的钢束面积
-            d_pipe: 管道直径
-            d_friction_coeff: 摩擦系数
-            d_starting_deform: 起点变形
-            d_end_deform: 终点变形
-            d_tensioning_coeff: 张拉系数
-            d_relaxation_coeff: 松弛系数
+            mat: 材料编号
+            val: 用户输入的钢束面积
+            pipe: 管道直径
+            friction_coeff: 摩擦系数
+            starting_deform: 起点变形
+            end_deform: 终点变形
+            tensioning_coeff: 张拉系数
+            relaxation_coeff: 松弛系数
 
         Returns:
             创建的 TendonProp 对象
         """
         ok, err = osis_tendon_prop_ex_area0(
-            name, "EX", n_mat, 0, d_val, d_pipe,
-            d_friction_coeff, d_starting_deform, d_end_deform,
-            d_tensioning_coeff, d_relaxation_coeff,
+            name, "EX", mat, 0, val, pipe,
+            friction_coeff, starting_deform, end_deform,
+            tensioning_coeff, relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -1036,34 +1142,34 @@ class TendonPropManager:
     def create_pre(
         self,
         name: str,
-        n_mat: int,
-        e_code: str,
+        mat: int,
+        code: str,
         diameter: float,
-        n_num: int,
-        d_delta_t: float = 10.0,
-        d_tensioning_coeff: float = 1.0,
-        d_relaxation_coeff: float = 1.0,
+        num: int,
+        delta_t: float = 10.0,
+        tensioning_coeff: float = 1.0,
+        relaxation_coeff: float = 1.0,
     ) -> TendonProp:
         """创建先张法钢束特性（按规范输入面积）
 
         Args:
             name: 钢束特性名称
-            n_mat: 材料编号
-            e_code: 规范名
+            mat: 材料编号
+            code: 规范名
                 * GBT5224_2014
                 * GBT20065_2016
             diameter: 公称直径
-            n_num: 每束钢束根数
-            d_delta_t: 与台座温差
-            d_tensioning_coeff: 张拉系数
-            d_relaxation_coeff: 松弛系数
+            num: 每束钢束根数
+            delta_t: 与台座温差
+            tensioning_coeff: 张拉系数
+            relaxation_coeff: 松弛系数
 
         Returns:
             创建的 TendonProp 对象
         """
         ok, err = osis_tendon_prop_pre_area1(
-            name, "PRE", n_mat, 1, e_code, diameter, n_num,
-            d_delta_t, d_tensioning_coeff, d_relaxation_coeff,
+            name, "PRE", mat, 1, code, diameter, num,
+            delta_t, tensioning_coeff, relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -1072,28 +1178,28 @@ class TendonPropManager:
     def create_pre_custom(
         self,
         name: str,
-        n_mat: int,
-        d_val: float,
-        d_delta_t: float = 10.0,
-        d_tensioning_coeff: float = 1.0,
-        d_relaxation_coeff: float = 1.0,
+        mat: int,
+        val: float,
+        delta_t: float = 10.0,
+        tensioning_coeff: float = 1.0,
+        relaxation_coeff: float = 1.0,
     ) -> TendonProp:
         """创建先张法钢束特性（用户输入面积）
 
         Args:
             name: 钢束特性名称
-            n_mat: 材料编号
-            d_val: 用户输入的钢束面积
-            d_delta_t: 与台座温差
-            d_tensioning_coeff: 张拉系数
-            d_relaxation_coeff: 松弛系数
+            mat: 材料编号
+            val: 用户输入的钢束面积
+            delta_t: 与台座温差
+            tensioning_coeff: 张拉系数
+            relaxation_coeff: 松弛系数
 
         Returns:
             创建的 TendonProp 对象
         """
         ok, err = osis_tendon_prop_pre_area0(
-            name, "PRE", n_mat, 0, d_val,
-            d_delta_t, d_tensioning_coeff, d_relaxation_coeff,
+            name, "PRE", mat, 0, val,
+            delta_t, tensioning_coeff, relaxation_coeff,
         )
         if not ok:
             raise RuntimeError(f"创建钢束特性 {name} 失败: {err}")
@@ -1206,6 +1312,60 @@ class TendonShapeManager:
             TendonShape._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
         ]
         return shapes
+
+    def create(
+        self,
+        name: str,
+        n_num: int,
+        type: str,
+        prop: str,
+        element_group: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> TendonShape:
+        """创建钢束形状（便捷入口，内部转发到对应 create_* 方法）
+
+        Args:
+            name: 钢束形状名称
+            type: 形状定义类型，支持：
+                * "SPL3D" = 3D 样条（需传 curve_name）
+                * "ARC3D" = 3D 圆弧（需传 curve_name）
+                * "ARC2D" = 2D 圆弧（需传 e_type, param）
+            n_num: 钢束数量
+            prop: 钢束特性名称
+            element_group: 作用的单元组
+            *args: 按位置传给对应 create_* 的参数
+                - SPL3D / ARC3D：下一个位置参数为 curve_name
+                - ARC2D：下一组位置参数为 e_type, param
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Note:
+            SPL3D/ARC3D 与 ARC2D 后续参数差异大，强烈建议用 **kwargs
+            关键字传参，避免位置参数顺序混淆。
+
+        Raises:
+            ValueError: 未知的 type
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> # 3D 样条
+            >>> tendon_manager.shape.create("N1", "SPL3D", 2, "15-4", "主梁", curve_name="curve1")
+            >>> # 3D 圆弧
+            >>> tendon_manager.shape.create("N2", "ARC3D", 2, "15-4", "主梁", curve_name="curve1")
+            >>> # 2D 圆弧（距离参考）
+            >>> tendon_manager.shape.create("N3", "ARC2D", 2, "15-4", "主梁", e_type=0, param=[0, "sv", 0, "pl"])
+        """
+        _creator = {
+            "SPL3D": self.create_spl3d,
+            "ARC3D": self.create_arc3d,
+            "ARC2D": self.create_arc2d,
+        }
+        type_key = type.upper()
+        if type_key not in _creator:
+            raise ValueError(
+                f"未知钢束形状类型: {type!r}，支持: {', '.join(_creator)}"
+            )
+        return _creator[type_key](name, n_num, prop, element_group, *args, **kwargs)
 
     def create_spl3d(
         self,

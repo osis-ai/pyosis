@@ -42,7 +42,7 @@ ROUTES = {
     "SectionPart": ("chain", "engine.section.get", "add_part", 0),
     "StressPoint": ("chain", "engine.section.get", "set_stress_point", 0),
     "RebarL": ("chain", "engine.section.get", "add_rebar_l", 0),
-    "RebarLDel": ("chain", "engine.section.get", "delete_rebar", 0),
+    "RebarLDel": ("chain", "engine.section.get", "delete_rebar_l", 0),
     "RebarS": ("chain", "engine.section.get", "add_rebar_s", 0),
     "RebarSDel": ("chain", "engine.section.get", "delete_rebar_s", 0),
     "Rib": ("chain", "engine.section.get", "add_rib", 0),

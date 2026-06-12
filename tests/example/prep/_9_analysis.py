@@ -200,20 +200,21 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     for grade in live.grade.all():
         live.grade.delete(grade.name)
     # 活载等级（名称标识）
-    grade1 = live.grade.create_highway("简支空心板移动荷载", "JTGD60_2015", "HIGHWAY_I")
+    grade1 = live.grade.create_highway("简支空心板移动荷载", code="JTGD60_2015", live_load_type="HIGHWAY_I")
     _expect_attr(grade1,"name","简支空心板移动荷载")
 
-    grade2 = live.grade.create_vehicle("车辆荷载等级","JTGD60_2015")
+    grade2 = live.grade.create_vehicle("车辆荷载等级", code="JTGD60_2015", live_load_type="VEHICLE")
     _expect_attr(grade2,"name","车辆荷载等级")
 
-    # grade3 = live.grade.create_crowd("人群荷载等级","BRIDGE_COMMON",10.0)
+    # grade3 = live.grade.create_crowd("人群荷载等级", code="JTGD60_2015", live_load_type="CROWD", bridge_type="BRIDGE_COMMON", para=10.0)
     # _expect_attr(grade3,"name","人群荷载等级")
 
-    grade4 = live.grade.create_fatigue("疲劳荷载等级","FATIGUE_I")
+    grade4 = live.grade.create_fatigue("疲劳荷载等级", code="JTGD60_2015", live_load_type="FATIGUE_I")
     _expect_attr(grade4,"name","疲劳荷载等级")
 
     grade5 = live.grade.create_custom(
-        "自定义轴载",veh_grp_layout=[(0.0, 140.0), (3.5, 140.0)],
+        "自定义轴载", code="CUSTOM", live_load_type="VG",
+        veh_grp_layout=[(0.0, 140.0), (3.5, 140.0)],
     )
     _expect_attr(grade5, "name", "自定义轴载")
 
@@ -221,10 +222,10 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     eg_end_conc, eg_tendon1, eg_tendon2, eg_main_beam = element_group_names
 
     # 车道（名称标识）
-    lane1 = live.lane.create_ve(name="车道",dLength=15.0800,wheel=1.80,eOriention=1,eRef=0,ref_elems=eg_main_beam,offsetY=0.0,offsetZ=0.0)
+    lane1 = live.lane.create_ve(name="车道", length=15.0800, wheel=1.80, orientation=1, ref=0, ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0)
     _expect_attr(lane1,"name","车道")
 
-    lane2 = live.lane.create_tcb("车道2",eg_main_beam,15.0800,1.80,eOriention=1,eRef=0,ref_elems=eg_main_beam,offsetY=0.0,offsetZ=0.0)
+    lane2 = live.lane.create_tcb("车道2", eg_main_beam, length=15.0800, wheel=1.80, orientation=1, ref=0, ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0)
     _expect_attr(lane2,"name","车道2")
 
     # 活载工况（名称标识）

@@ -177,12 +177,12 @@ class GeometryManager:
             >>> geometry.create("T1", "arc3d", owner="TENDON", coordinates=[...])
         """
         _creator = {
-            "general": self.create_general,
-            "natural": self.create_natural,
-            "arc2d": self.create_arc2d,
-            "arc3d": self.create_arc3d,
+            "GENERAL": self.create_general,
+            "NATURAL": self.create_natural,
+            "ARC2D": self.create_arc2d,
+            "ARC3D": self.create_arc3d,
         }
-        type_key = type.lower()
+        type_key = type.upper()
         if type_key not in _creator:
             raise ValueError(
                 f"未知样条类型: {type!r}，支持: {', '.join(_creator)}"
@@ -217,7 +217,7 @@ class GeometryManager:
         self,
         name: str,
         owner: Literal["LIVE", "TENDON"],
-        coordinates: list[float],
+        *coordinates: float,
     ) -> Spline:
         """创建或修改三维样条曲线（自然边界/NATURAL）
 
@@ -241,7 +241,7 @@ class GeometryManager:
         self,
         name: str,
         owner: str,
-        coordinates: list[float],
+        *coordinates: float,
     ) -> Spline:
         """创建或修改三维样条曲线（2D圆弧/ARC2D）
 
@@ -265,7 +265,7 @@ class GeometryManager:
         self,
         name: str,
         owner: str,
-        coordinates: list[float],
+        *coordinates: float,
     ) -> Spline:
         """创建或修改三维样条曲线（3D圆弧/ARC3D）
 

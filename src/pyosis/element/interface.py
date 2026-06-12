@@ -181,7 +181,7 @@ def osis_element_mod(nOld: int, nNew: int):
     pass
 
 @REGISTRY.register("EleGrp")
-def osis_element_group(strName: str="单元组1", eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"]='a', param: list=None):
+def osis_element_group(strName: str, eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param: str | int):
     '''
     添加或移除单元
     
@@ -196,7 +196,7 @@ def osis_element_group(strName: str="单元组1", eOP: Literal["c", "a", "s", "r
             * ra = 移除全部
             * m = 修改组名
             * d = 删除
-        param (list): 待操作的编号，支持的格式：*，*to*；*by*，仅用于替换。例子：[2,3,5,8to10] [2by3,5by6,8by10] 重合的编号自动忽略
+        *param (str | int): 待操作的编号，支持的格式：*，*to*；*by*，仅用于替换。例子：2,3,5,8to10,2by3,5by6,8by10 重合的编号自动忽略
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''

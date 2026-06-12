@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from ..transfer.parser import CommandParser, ParsedCommand
+from ..transfer.parser import parse_text as _parse_text, ParsedCommand
 
 if TYPE_CHECKING:
     from .engine import OSISEngine
@@ -276,7 +276,7 @@ def _collect_by_domain(
     return buckets
 
 
-def parse_apdl_file(path: str | Path) -> dict[str, list[ParsedCommand]]:
+def parse_apdl_file(path: str | Path) -> list[ParsedCommand]:
     """读取 .out → 合并多行 → 解析"""
     path = Path(path)
     content = None
@@ -290,8 +290,7 @@ def parse_apdl_file(path: str | Path) -> dict[str, list[ParsedCommand]]:
         raise ValueError(f"无法读取文件: {path}")
 
     merged = merge_multiline_commands(content)
-    parser = CommandParser()
-    return parser.parse_text(merged)
+    return _parse_text(merged)
 
 
 def perform_apdl_sync(

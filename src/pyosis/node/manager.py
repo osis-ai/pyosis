@@ -121,12 +121,12 @@ class NodeManager:
             return 1
         return max(node_no) + 1
 
-    def create(self, x: float, y: float, z: float, no: int | None = None) -> Node:
+    def create(self, no: int | None, x: float, y: float, z: float) -> Node:
         """创建节点
 
         Args:
+            no: 节点编号
             x, y, z: 节点坐标
-            no: 节点编号，不指定时自动生成（取最大编号+1）
 
         Returns:
             创建的节点对象

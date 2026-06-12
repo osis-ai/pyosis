@@ -389,13 +389,13 @@ class BoundaryGroup:
             self._sync_from_dict(data[0])
         return self
 
-    def _execute(self, operation: str, param: list | None = None) -> None:
+    def _execute(self, operation: str, *param: str | int) -> None:
         """执行边界组底层操作（内部使用）"""
-        ok, err = osis_boundary_group(self.name, operation, param)
+        ok, err = osis_boundary_group(self.name, operation, *param)
         if not ok:
             raise RuntimeError(f"边界组操作 {self.name} ({operation}) 失败: {err}")
 
-    def add(self, boundaries: list[int]) -> BoundaryGroup:
+    def add(self, *boundaries: int) -> BoundaryGroup:
         """向边界组添加边界
 
         Args:
@@ -404,10 +404,10 @@ class BoundaryGroup:
         Returns:
             更新后的 BoundaryGroup 对象
         """
-        self._execute("a", boundaries)
+        self._execute("a", *boundaries)
         return self.refresh()
 
-    def remove(self, boundaries: list[int]) -> BoundaryGroup:
+    def remove(self, *boundaries: int) -> BoundaryGroup:
         """从边界组移除边界
 
         Args:
@@ -416,10 +416,10 @@ class BoundaryGroup:
         Returns:
             更新后的 BoundaryGroup 对象
         """
-        self._execute("r", boundaries)
+        self._execute("r", *boundaries)
         return self.refresh()
 
-    def replace(self, boundaries: list[int]) -> BoundaryGroup:
+    def replace(self, *boundaries: int) -> BoundaryGroup:
         """替换边界组内边界
 
         Args:
@@ -428,7 +428,7 @@ class BoundaryGroup:
         Returns:
             更新后的 BoundaryGroup 对象
         """
-        self._execute("s", boundaries)
+        self._execute("s", *boundaries)
         return self.refresh()
 
     def add_all(self) -> BoundaryGroup:

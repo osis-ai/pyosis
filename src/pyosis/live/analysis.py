@@ -51,7 +51,7 @@ def osis_live_analysis_mod(strOldName: str, strNewName: str):
     pass
 
 @REGISTRY.register("LiveAnalFactor")
-def osis_live_analysis_factor(strName: str, factors: list[float]):
+def osis_live_analysis_factor(strName: str, *factors: float):
     '''
     定义或修改活载工况的横向布载折减系数
     
@@ -68,7 +68,7 @@ def osis_live_analysis_factor(strName: str, factors: list[float]):
 
 @REGISTRY.register("LiveAnalInc")
 def osis_live_analysis_inc(strName: str, eOP: Literal["a", "m"], strLiveSubName: str, strLiveGradeName: str, dFactor: int, bFlage: bool, 
-                           eBridgeType: Literal['SIMPLE', "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"], param: list['int'], lane: list['str']):
+                           eBridgeType: Literal['SIMPLE', "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"], param: list[int], lane: list[str]):
     # Name, OP, LiveSub, LiveGrade, factor, muFlag,  bridgeType, para_i..., LaneLoad_i, LaneLoad_j, ... 
     '''
     定义活载工况，加入或修改子工况
@@ -84,7 +84,7 @@ def osis_live_analysis_inc(strName: str, eOP: Literal["a", "m"], strLiveSubName:
         bFlag: 是否考虑冲击系数
             * 1 = 考虑
             * 0 = 不考虑
-        eBridgeType (str): 按照计算冲击系数划分的桥型
+        eBridgeType (str): 按照计算冲击系数划分的桥型 bFlag=0 设置为None
             * SIMPLE                = 简支梁桥
             * CONTINUOUS            = 连续梁桥
             * ARCH                  = 拱桥
@@ -92,7 +92,7 @@ def osis_live_analysis_inc(strName: str, eOP: Literal["a", "m"], strLiveSubName:
             * CABLE_STAYED_AUS      = 斜拉桥（有辅助墩）
             * SUSPENSION            = 悬索桥
             * CUSTOM = 自定义，用户直接输入基频
-        param (list): 计算冲击系数的参数或冲击系数
+        param (list): 计算冲击系数的参数或冲击系数 bFlag=0 设置为None
             * SIMPLE	            = 桥长、弹模、惯性矩、质量
             * CONTINUOUS	        = 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
             * ARCH	                = 拱厚变化系数、拱桥矢跨比、桥长、弹模、惯性矩，质量

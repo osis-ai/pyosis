@@ -151,13 +151,13 @@ class ElementGroup:
             self._sync_from_dict(data[0])
         return self
 
-    def _execute(self, operation: str, param: list | None = None) -> None:
+    def _execute(self, operation: str, *param: str | int) -> None:
         """执行单元组底层操作（内部使用）"""
-        ok, err = osis_element_group(self.name, operation, param)
+        ok, err = osis_element_group(self.name, operation, *param)
         if not ok:
             raise RuntimeError(f"单元组操作 {self.name} ({operation}) 失败: {err}")
 
-    def add(self, elements: list[int]) -> ElementGroup:
+    def add(self, *elements: int) -> ElementGroup:
         """向单元组添加单元
 
         Args:
@@ -166,10 +166,10 @@ class ElementGroup:
         Returns:
             更新后的 ElementGroup 对象
         """
-        self._execute("a", elements)
+        self._execute("a", list(elements))
         return self.refresh()
 
-    def remove(self, elements: list[int]) -> ElementGroup:
+    def remove(self, *elements: int) -> ElementGroup:
         """从单元组移除单元
 
         Args:
@@ -178,10 +178,10 @@ class ElementGroup:
         Returns:
             更新后的 ElementGroup 对象
         """
-        self._execute("r", elements)
+        self._execute("r", list(elements))
         return self.refresh()
 
-    def replace(self, elements: list[int]) -> ElementGroup:
+    def replace(self, *elements: int) -> ElementGroup:
         """替换单元组内单元
 
         Args:
@@ -190,7 +190,7 @@ class ElementGroup:
         Returns:
             更新后的 ElementGroup 对象
         """
-        self._execute("s", elements)
+        self._execute("s", list(elements))
         return self.refresh()
 
     def add_all(self) -> ElementGroup:

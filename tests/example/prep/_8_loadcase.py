@@ -28,43 +28,102 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     dynamic = engine.dynamic
     
     # ── 钢束特性──
-    tp1 = tendon.prop.create_in("15-10", mat_nos[2], "GBT5224_2014", 15.2, 10, 9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp1 = tendon.prop.create_in(
+        "15-10", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=10, pipe=9.0000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp1,"name","15-10")
 
-    tp2 = tendon.prop.create_in("15-3",  mat_nos[2], "GBT5224_2014", 15.2, 3,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp2 = tendon.prop.create_in(
+        "15-3", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=3, pipe=5.5000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp2,"name","15-3")
 
-    tp4 = tendon.prop.create_in("15-4",  mat_nos[2], "GBT5224_2014", 15.2, 4,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp4 = tendon.prop.create_in(
+        "15-4", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=4, pipe=5.5000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp4,"name","15-4")
 
-    tp5 = tendon.prop.create_in("15-5",  mat_nos[2], "GBT5224_2014", 15.2, 5,  5.5000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp5 = tendon.prop.create_in(
+        "15-5", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=5, pipe=5.5000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp5,"name","15-5")
 
-    tp6 = tendon.prop.create_in("15-6",  mat_nos[2], "GBT5224_2014", 15.2, 6,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp6 = tendon.prop.create_in(
+        "15-6", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=6, pipe=7.0000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp6,"name","15-6")
 
-    tp7 = tendon.prop.create_in("15-7",  mat_nos[2], "GBT5224_2014", 15.2, 7,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp7 = tendon.prop.create_in(
+        "15-7", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=7, pipe=7.0000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp7,"name","15-7")
 
-    tp8 = tendon.prop.create_in("15-8",  mat_nos[2], "GBT5224_2014", 15.2, 8,  7.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp8 = tendon.prop.create_in(
+        "15-8", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=8, pipe=7.0000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp8,"name","15-8")
 
-    tp9 = tendon.prop.create_in("15-9",  mat_nos[2], "GBT5224_2014", 15.2, 9,  9.0000E-02, 1.7000E-01, 1.5000E-03, 6.0000E-03, 6.0000E-03, 1.0000E+00, 3.0000E-01)
+    tp9 = tendon.prop.create_in(
+        "15-9", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=9, pipe=9.0000E-02,
+        friction_coeff=1.7000E-01, deviation_coeff=1.5000E-03,
+        starting_deform=6.0000E-03, end_deform=6.0000E-03,
+        tensioning_coeff=1.0000E+00, relaxation_coeff=3.0000E-01,
+    )
     _expect_attr(tp9,"name","15-9")
 
-    tp10 = tendon.prop.create_in_custom("15-10", mat_nos[2], 1.395000E+09, 1.7000E-01)
+    tp10 = tendon.prop.create_in_custom(
+        "15-10", mat=mat_nos[2], val=1.395000E+09, pipe=1.7000E-01,
+    )
     _expect_attr(tp10,"name","15-10")
 
-    tp11 = tendon.prop.create_ex("15-11", mat_nos[2], "GBT5224_2014", 15.2, 1, 1.7000E-01)
+    tp11 = tendon.prop.create_ex(
+        "15-11", mat=mat_nos[2], code="GBT5224_2014",
+        diameter=15.2, num=1, pipe=1.7000E-01,
+    )
     _expect_attr(tp11,"name","15-11")
 
-    tp12 = tendon.prop.create_ex_custom("15-12", mat_nos[2], 1.395000E+09, 1.7000E-01)
+    tp12 = tendon.prop.create_ex_custom(
+        "15-12", mat=mat_nos[2], val=1.395000E+09, pipe=1.7000E-01,
+    )
     _expect_attr(tp12,"name","15-12")
 
-    tp13 = tendon.prop.create_pre("15-13", mat_nos[2], "GBT5224_2014", 15.2, 10)
+    tp13 = tendon.prop.create_pre(
+        "15-13", mat=mat_nos[2], code="GBT5224_2014", diameter=15.2, num=10,
+    )
     _expect_attr(tp13,"name","15-13")
 
-    tp14 = tendon.prop.create_pre_custom("15-14", mat_nos[2], 1.395000E+09, 1.7000E-01)
+    tp14 = tendon.prop.create_pre_custom(
+        "15-14", mat=mat_nos[2], val=1.395000E+09, delta_t=1.7000E-01,
+    )
     _expect_attr(tp14,"name","15-14")
 
     tendon.prop.rename("15-10","15-100")

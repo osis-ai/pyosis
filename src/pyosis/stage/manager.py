@@ -271,9 +271,9 @@ class StageManager:
 
     def insert(
         self,
-        name: str,
         ref_no: int,
         position: Literal[0, 1],
+        name: str,
         duration: float,
     ) -> Stage:
         """插入施工阶段

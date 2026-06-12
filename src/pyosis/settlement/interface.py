@@ -9,7 +9,7 @@ from ..core import REGISTRY
 
 
 @REGISTRY.register("SetlGrp")
-def osis_setl_grp(strName: str, dVal: float, nodes: list[int] | None = None):
+def osis_setl_grp(strName: str, dVal: float, *nodes: int):
     """创建或修改沉降组。
 
     Args:
@@ -118,7 +118,7 @@ def osis_setl_anal_mod(old_name: str, new_name: str):
 
 
 @REGISTRY.register("SetlAnalInc")
-def osis_setl_anal_inc(strName: str, strOp: Literal["a", "r"], load_cases: list[str]):
+def osis_setl_anal_inc(strName: str, strOp: Literal["a", "r"], *load_cases: str):
     """添加或移除参与沉降分析工况的沉降组。
 
     Args:
@@ -126,7 +126,7 @@ def osis_setl_anal_inc(strName: str, strOp: Literal["a", "r"], load_cases: list[
         strOp (str): 操作类型
             * "a" = 添加
             * "r" = 移除
-        load_cases (list[str]): 沉降组名称列表
+        load_cases (str): 沉降组名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

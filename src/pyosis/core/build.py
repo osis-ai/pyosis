@@ -864,12 +864,13 @@ def generate_element(commands: List[str]) -> str:
             elif op == "a":
                 items = ", ".join(_item_val(item) for item in args[3:])
                 # 如果紧接着同名组，直接用 eg 变量
-                if raw_name == current_elem_group:
-                    lines.append(f"    eg.add([{items}])")
-                else:
-                    lines.append(
-                        f"    engine.element.group.get({name}).add([{items}])"
-                    )
+                if items:
+                    if raw_name == current_elem_group:
+                        lines.append(f"    eg.add({items})")
+                    else:
+                        lines.append(
+                            f"    engine.element.group.get({name}).add({items})"
+                        )
                 lines.append("")
 
         else:
@@ -1053,12 +1054,13 @@ def generate_boundary(commands: List[str]) -> str:
             elif op == "a":
                 items = ", ".join(_item_val(item) for item in args[3:])
                 # 如果紧接着同名组，直接用 bg 变量
-                if raw_name == current_bd_group:
-                    lines.append(f"    bg.add([{items}])")
-                else:
-                    lines.append(
-                        f"    engine.boundary.group.get({name}).add([{items}])"
-                    )
+                if items:
+                    if raw_name == current_bd_group:
+                        lines.append(f"    bg.add({items})")
+                    else:
+                        lines.append(
+                            f"    engine.boundary.group.get({name}).add({items})"
+                        )
                 lines.append("")
 
         else:

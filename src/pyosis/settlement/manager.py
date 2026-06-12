@@ -116,7 +116,7 @@ class Settlement:
         """
         if not group_names:
             return self
-        ok, err = osis_setl_anal_inc(self.name, "a", list(group_names))
+        ok, err = osis_setl_anal_inc(self.name, "a", *group_names)
         if not ok:
             raise RuntimeError(f"添加沉降组到工况 {self.name} 失败: {err}")
         return self.refresh()
@@ -132,7 +132,7 @@ class Settlement:
         """
         if not group_names:
             return self
-        ok, err = osis_setl_anal_inc(self.name, "r", list(group_names))
+        ok, err = osis_setl_anal_inc(self.name, "r", *group_names)
         if not ok:
             raise RuntimeError(f"从工况 {self.name} 移除沉降组失败: {err}")
         return self.refresh()
@@ -172,7 +172,7 @@ class SettlementGroupManager:
         self,
         name: str,
         val: float,
-        nodes: list[int],
+        *nodes: int,
     ) -> SettlementGroup:
         """创建或修改沉降组
 
@@ -184,7 +184,7 @@ class SettlementGroupManager:
         Returns:
             创建的 SettlementGroup 对象
         """
-        ok, err = osis_setl_grp(name, val, nodes)
+        ok, err = osis_setl_grp(name, val, *nodes)
         if not ok:
             raise RuntimeError(f"创建沉降组 {name} 失败: {err}")
         return self.get(name)

@@ -145,11 +145,11 @@ class MaterialManager:
             RuntimeError: 创建失败
         """
         _creator = {
-            "conc": self.create_conc,
-            "steel": self.create_steel,
-            "prestressed": self.create_prestressed,
-            "rebar": self.create_rebar,
-            "custom": self.create_custom,
+            "CONC": self.create_conc,
+            "STEEL": self.create_steel,
+            "PRESTRESSED": self.create_prestressed,
+            "REBAR": self.create_rebar,
+            "CUSTOM": self.create_custom,
         }
         if type not in _creator:
             raise ValueError(f"未知材料类型: {type}")

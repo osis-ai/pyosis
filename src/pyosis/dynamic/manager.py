@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Any
 
 from .load_to_mass import (
     osis_ltm_anal,
@@ -380,23 +380,83 @@ class SeisRspSpecManager:
         name: str,
         spec_type: Literal["N", "A", "V", "D"],
         g: float,
-        spectrum_data: list[tuple[float, float]],
+        input_type: Literal[0, 1],
+        *args: Any,
+        **kwargs: Any,
     ) -> SeisRspSpec:
-        """创建导入类型地震反应谱。
+        """创建地震反应谱（便捷入口，内部转发到对应 create_* 方法）
+
+        位置参顺序: name, spec_type, g, input_type, *create_* 剩余位置参
+        路由基于底层 inputType 能接受的值：
+
+            * 0 → create_import
+            * 1 → create_code
+
+        Args:
+            name: 反应谱名称
+            spec_type: 谱类型
+            g: 输入g值
+            input_type: 输入类型
+            *args: 按位置传给对应 create_* 的参数
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Raises:
+            ValueError: 未知 input_type
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> data = [(0.1, 0.5), (0.2, 0.8)]
+            >>> dynamic_manager.seismic.create("RS1", "A", 9.806, 0, data)
+            >>> dynamic_manager.seismic.create("RS2", "N", 9.806, 1,
+            ...     code="JTGT_2231_01_2020", bridge_type="A", site=2)
+        """
+        _creator = {
+            0: self.create_import,
+            1: self.create_code,
+        }
+        # 接受字符串 "0"/"1" 或 int
+        if isinstance(input_type, str):
+            try:
+                input_type = int(input_type)
+            except (ValueError, TypeError):
+                pass
+        if input_type not in _creator:
+            raise ValueError(
+                f"未知 input_type: {input_type!r}，支持: 0=导入, 1=按规范生成"
+            )
+        return _creator[input_type](name, spec_type, g, *args, **kwargs)
+
+    def create_import(
+        self,
+        name: str,
+        spec_type: Literal["N", "A", "V", "D"] = "A",
+        g: float = 9.806,
+        spectrum_data: list[tuple[float, float]] | list[float] = (),
+        n_num: int | None = None,
+    ) -> SeisRspSpec:
+        """创建导入类型地震反应谱
+
+        对应底层 osis_seis_rsp_spec_import(strName, strType, dG, inputType, nNum, spectrum_data)，
+        其中 inputType 固定为 0。
 
         Args:
             name: 反应谱名称
             spec_type: 谱类型，N=无量纲加速度谱，A=加速度谱，V=速度谱，D=位移谱
             g: 输入g值
-            spectrum_data: 反应谱数据列表，每个元素为 (周期, 谱值) 元组
+            spectrum_data: 反应谱数据，可为 (周期, 谱值) 元组列表或扁平列表
+            n_num: 点数，为 None 时自动从 spectrum_data 推断
         """
         if spectrum_data and isinstance(spectrum_data[0], tuple):
-            n_num = len(spectrum_data)
+            if n_num is None:
+                n_num = len(spectrum_data)
             flat = [v for pair in spectrum_data for v in pair]
         else:
             flat = list(spectrum_data)
-            n_num = len(flat) // 2
-        ok, err = osis_seis_rsp_spec_import(name, spec_type, g, 0, n_num, flat)
+            if n_num is None:
+                n_num = len(flat) // 2
+        ok, err = osis_seis_rsp_spec_import(
+            name, spec_type, g, 0, n_num, flat
+        )
         if not ok:
             raise RuntimeError(f"创建地震反应谱 {name} 失败: {err}")
         return self.get(name)
@@ -404,8 +464,8 @@ class SeisRspSpecManager:
     def create_code(
         self,
         name: str,
-        spec_type: Literal["N", "A", "V", "D"],
-        g: float,
+        spec_type: Literal["N", "A", "V", "D"] = "A",
+        g: float = 9.806,
         code: str = "JTGT_2231_01_2020",
         bridge_type: Literal["A", "B", "C", "D"] = "A",
         is_long_span: Literal[0, 1] = 0,
@@ -418,7 +478,7 @@ class SeisRspSpecManager:
         t: float = 6.0,
         delta_t: float = 0.01,
     ) -> SeisRspSpec:
-        """创建按规范生成类型地震反应谱。
+        """创建按规范生成类型地震反应谱
 
         Args:
             name: 反应谱名称
@@ -437,7 +497,7 @@ class SeisRspSpecManager:
             delta_t: 周期间隔
         """
         ok, err = osis_seis_rsp_spec_code(
-            name, spec_type, g,1,
+            name, spec_type, g, 1,
             code, bridge_type, is_long_span, level, intensity,
             site, direction, period, ksi, t, delta_t
         )

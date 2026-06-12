@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Literal, Optional, Any
 
 from .coordinate import (
     osis_coord_sys_three_point,
@@ -96,6 +96,46 @@ class Coordinate:
 class CoordinateManager:
     """坐标系管理器"""
 
+    def create(
+        self,
+        no: int,
+        type: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        """创建或修改空间坐标系（便捷入口，内部转发到对应 create_* 方法）
+
+        type 路由映射：
+            * "TRIPT" → create_three_point
+            * "DBPT"  → create_two_point_rotation
+
+        Args:
+            no: 坐标系编号
+            type: 坐标系类型
+            *args: 按位置传给对应 create_* 的参数
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Raises:
+            ValueError: 未知 type
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> property_manager.coord.create(1, "TRIPT",
+            ...     0, 0, 0, 10, 0, 0, 0, 10, 0)
+            >>> property_manager.coord.create(2, "DBPT",
+            ...     0, 0, 0, 10, 0, 0, angle=90.0)
+        """
+        _creator = {
+            "TRIPT": self.create_three_point,
+            "DBPT":  self.create_two_point_rotation,
+        }
+        type_key = type.upper()
+        if type_key not in _creator:
+            raise ValueError(
+                f"未知坐标系类型: {type!r}，支持: {', '.join(_creator)}"
+            )
+        return _creator[type_key](no, *args, **kwargs)
+
     def create_three_point(
         self,
         no: int,
@@ -103,7 +143,14 @@ class CoordinateManager:
         p2x: float, p2y: float, p2z: float,
         p3x: float, p3y: float, p3z: float,
     ) -> None:
-        """创建或修改三点空间坐标系"""
+        """创建或修改三点空间坐标系
+
+        Args:
+            no: 坐标系编号
+            p1x, p1y, p1z: 第 1 点坐标
+            p2x, p2y, p2z: 第 2 点坐标
+            p3x, p3y, p3z: 第 3 点坐标
+        """
         ok, err = osis_coord_sys_three_point(
             no, "TRIPT",
             p1x, p1y, p1z, p2x, p2y, p2z, p3x, p3y, p3z,
@@ -118,7 +165,14 @@ class CoordinateManager:
         p2x: float, p2y: float, p2z: float,
         angle: float,
     ) -> None:
-        """创建或修改两点+旋转角空间坐标系"""
+        """创建或修改两点+旋转角空间坐标系
+
+        Args:
+            no: 坐标系编号
+            p1x, p1y, p1z: 第 1 点坐标
+            p2x, p2y, p2z: 第 2 点坐标
+            angle: 旋转角
+        """
         ok, err = osis_coord_sys_two_point_rotation(
             no, "DBPT",
             p1x, p1y, p1z, p2x, p2y, p2z, angle,
@@ -307,8 +361,68 @@ class Damping:
 class DampingManager:
     """阻尼管理器"""
 
+    def create(
+        self,
+        name: str,
+        type: str,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Damping:
+        """创建或修改阻尼模型（便捷入口，内部转发到对应 create_* 方法）
+
+        type 路由映射：
+            * "modal" → create_modal
+            * "ryl"   → create_rayleigh_custom（当 method=1）
+                       或 create_rayleigh_formula（当 method=0）
+
+        Args:
+            name: 阻尼模型名称
+            type: 阻尼类型
+            *args: 按位置传给对应 create_* 的参数
+                - "modal": 下一个位置参数为 ksi
+                - "ryl": 下一个位置参数为 method (1=自定义, 0=公式)
+            **kwargs: 按关键字传给对应 create_* 的参数
+
+        Raises:
+            ValueError: 未知 type
+            RuntimeError: 创建失败
+
+        Examples:
+            >>> property_manager.damping.create("D1", "modal", 0.05)
+            >>> property_manager.damping.create("D2", "ryl", 1, alpha=0.1, beta=0.01)
+            >>> property_manager.damping.create("D3", "ryl", 0,
+            ...     ksii=0.05, ksij=0.05, wi=1.0, wj=5.0)
+        """
+        _supported_types = {"MODAL", "RYL"}
+        type_key = type.upper()
+        if type_key not in _supported_types:
+            raise ValueError(
+                f"未知阻尼类型: {type!r}，支持: {', '.join(sorted(_supported_types))}"
+            )
+        if type_key == "modal":
+            return self.create_modal(name, *args, **kwargs)
+        # type_key == "ryl"
+        method = args[0] if args else kwargs.get("method")
+        _supported_methods = {0: "根据公式计算因子", 1: "自定义因子"}
+        if method not in _supported_methods:
+            raise ValueError(
+                f"type='ryl' 时必须指定 method: "
+                f"{', '.join(f'{k}={v}' for k, v in sorted(_supported_methods.items()))}"
+            )
+        if args:
+            args = args[1:]
+        kwargs.pop("method", None)
+        if method == 1:
+            return self.create_rayleigh_custom(name, *args, **kwargs)
+        return self.create_rayleigh_formula(name, *args, **kwargs)
+
     def create_modal(self, name: str, ksi: float) -> Damping:
-        """创建或修改振型阻尼"""
+        """创建或修改振型阻尼
+
+        Args:
+            name: 阻尼模型名称
+            ksi: 振型阻尼数值
+        """
         ok, err = osis_damping_modal(name, "modal", ksi)
         if not ok:
             raise RuntimeError(f"创建振型阻尼 {name} 失败: {err}")
@@ -317,7 +431,13 @@ class DampingManager:
     def create_rayleigh_custom(
         self, name: str, alpha: float, beta: float,
     ) -> Damping:
-        """创建或修改Rayleigh阻尼（自定义因子）"""
+        """创建或修改Rayleigh阻尼（自定义因子）
+
+        Args:
+            name: 阻尼模型名称
+            alpha: 质量因子
+            beta: 刚度因子
+        """
         ok, err = osis_damping_rayleigh_custom(name, "ryl", 1, alpha, beta)
         if not ok:
             raise RuntimeError(f"创建Rayleigh阻尼 {name} 失败: {err}")
@@ -329,7 +449,15 @@ class DampingManager:
         ksii: float, ksij: float,
         wi: float, wj: float,
     ) -> Damping:
-        """创建或修改Rayleigh阻尼（公式计算因子）"""
+        """创建或修改Rayleigh阻尼（公式计算因子）
+
+        Args:
+            name: 阻尼模型名称
+            ksii: 阻尼比
+            ksij: 阻尼比
+            wi: 圆频率
+            wj: 圆频率
+        """
         ok, err = osis_damping_rayleigh_formula(name, "ryl", 0, ksii, ksij, wi, wj)
         if not ok:
             raise RuntimeError(f"创建Rayleigh阻尼 {name} 失败: {err}")
@@ -426,8 +554,7 @@ class PuCurveManager:
         name: str,
         curve_type: Literal[0, 1],
         num: int,
-        displacement: list[float],
-        force: list[float],
+        *values: float,
     ) -> None:
         """创建或修改荷载-位移曲线
 
@@ -436,9 +563,10 @@ class PuCurveManager:
             name: 曲线名称
             curve_type: 0=力, 1=力矩
             num: 曲线点数
-            displacement: 位移值列表
-            force: 力（矩）值列表
+            values: num 个位移值 + num 个力值，共 2*num 个
         """
+        displacement = [float(x) for x in values[:num]]
+        force = [float(x) for x in values[num:2 * num]]
         ok, err = osis_pu_curve(no, name, curve_type, num, displacement, force)
         if not ok:
             raise RuntimeError(f"创建荷载-位移曲线 {no} 失败: {err}")
@@ -543,16 +671,16 @@ class PropertyManager:
         self,
         thickness: float,
         op: Literal["a", "s", "r"],
-        elems: str | list,
+        *elems: str,
     ) -> None:
         """分配或重置单个单元的理论厚度
 
         Args:
             thickness: 构件理论厚度
             op: a=添加, s=替换, r=移除
-            elems: 待分配单元的编号，支持 *to* 格式
+            *elems: 待分配单元的编号，支持 *to* 格式
         """
-        ok, err = osis_assign_component_thickness(thickness, op, elems)
+        ok, err = osis_assign_component_thickness(thickness, op, *elems)
         if not ok:
             raise RuntimeError(f"分配构件厚度失败: {err}")
 

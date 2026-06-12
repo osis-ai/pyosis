@@ -292,6 +292,24 @@ class Section:
                 f"截面 {self.no} 添加线域 Part {part_index} 失败: {err}"
             )
 
+    def add_part(
+        self,
+        type: Literal["POLYGON", "LINE"],
+        *args: float,
+    ) -> None:
+        """添加或修改组合截面 Part（按类型分发）
+
+        Args:
+            type: Part 类型
+                * POLYGON = 多边形
+                * LINE    = 折线
+            args: 剩余参数透传给对应子方法
+        """
+        if type == "POLYGON":
+            self.add_composite_part_polygon(*args)
+        elif type == "LINE":
+            self.add_composite_part_line(*args)
+
     # ── 组合截面材料 ──────────────────────────
 
     def set_material(self, n_steel_mat_no: int, n_conc_mat_no: int) -> None:
@@ -340,7 +358,7 @@ class Section:
         Notes:
             基于截面坐标的原点去计算相对于顶底板线的位置
         """
-        ok, err = osis_rebar_l_point(self.no, n_rebar_no, "POINT", n_material_no, d_coor_y, d_coor_z, diameter)
+        ok, err = osis_rebar_l_point(self.no, n_rebar_no, "Point", n_material_no, d_coor_y, d_coor_z, diameter)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 纵向钢筋 {n_rebar_no} 失败: {err}")
 
@@ -372,7 +390,7 @@ class Section:
             基于距离顶、底的距离来定位
         """
         ok, err = osis_rebar_l_line_a(
-            self.no, n_rebar_no, "LINEA", n_material_no,
+            self.no, n_rebar_no, "LineA", n_material_no,
             y_ref, y_ref_value, z_ref, z_ref_value,
             n_num, d_interval, diameter,
         )
@@ -413,7 +431,7 @@ class Section:
             基于截面坐标的原点去计算相对于顶底板线的位置
         """
         ok, err = osis_rebar_l_line_b(
-            self.no, n_rebar_no, "LINEB", n_material_no,
+            self.no, n_rebar_no, "LineB", n_material_no,
             d_start_y, d_start_z, d_end_y, d_end_z,
             n_method, n_num, d_interval, layout_ref, n_has_end_rebar, diameter,
         )
@@ -442,73 +460,39 @@ class Section:
                 f"添加截面 {self.no} 纵向钢筋(Circle) {n_rebar_no} 失败: {err}"
             )
 
-    def delete_rebar(self, n_rebar_no: int) -> None:
-        """删除纵向钢筋
-
-        Args:
-            n_rebar_no: 钢筋编号
-        """
-        ok, err = osis_rebar_l_del(self.no, n_rebar_no)
-        if not ok:
-            raise RuntimeError(f"删除截面 {self.no} 纵向钢筋 {n_rebar_no} 失败: {err}")
-
-    # ── 抗剪钢筋 ──────────────────────────────
-
     def add_rebar_s_bent_up(
-            self,
-            n_material_no: int,
-            d_interval: float,
-            d_area: float,
-            d_angle: float,
+        self,
+        n_material_no: int,
+        d_interval: float,
+        d_area: float,
+        d_angle: float,
     ) -> None:
-        """定义或修改弯起钢筋
-
-        Args:
-            n_material_no: 材料编号
-            d_interval: 间距
-            d_area: 面积
-            d_angle: 角度
-        """
+        """添加弯起钢筋"""
         ok, err = osis_rebar_s_bent_up(self.no, "BentUpRebar", n_material_no, d_interval, d_area, d_angle)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 弯起钢筋失败: {err}")
 
     def add_rebar_s_shear_stirrup(
-            self,
-            n_material_no: int,
-            d_interval: float,
-            d_area: float,
+        self,
+        n_material_no: int,
+        d_interval: float,
+        d_area: float,
     ) -> None:
-        """定义或修改抗剪箍筋
-
-        Args:
-            n_material_no: 材料编号
-            d_interval: 间距
-            d_area: 面积
-        """
+        """添加抗剪箍筋"""
         ok, err = osis_rebar_s_shear_stirrup(self.no, "ShearStirrup", n_material_no, d_interval, d_area)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 抗剪箍筋失败: {err}")
 
     def add_rebar_s_web_vertical(
-            self,
-            n_material_no: int,
-            d_interval: float,
-            d_area: float,
-            d_angle: float,
-            d_effective_stress: float,
-            d_reduction_factor: float,
+        self,
+        n_material_no: int,
+        d_interval: float,
+        d_area: float,
+        d_angle: float,
+        d_effective_stress: float,
+        d_reduction_factor: float,
     ) -> None:
-        """定义或修改腹板竖筋
-
-        Args:
-            n_material_no: 材料编号
-            d_interval: 间距
-            d_area: 面积
-            d_angle: 角度
-            d_effective_stress: 有效应力
-            d_reduction_factor: 折减系数
-        """
+        """添加腹板竖筋"""
         ok, err = osis_rebar_s_web_vertical(
             self.no, "WebVerticalRebar", n_material_no,
             d_interval, d_area, d_angle, d_effective_stress, d_reduction_factor,
@@ -517,20 +501,13 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 腹板竖筋失败: {err}")
 
     def add_rebar_s_torsional_stirrup(
-            self,
-            n_material_no: int,
-            d_interval: float,
-            d_longi_area: float,
-            d_stirrup_area: float,
+        self,
+        n_material_no: int,
+        d_interval: float,
+        d_longi_area: float,
+        d_stirrup_area: float,
     ) -> None:
-        """定义或修改扭转箍筋
-
-        Args:
-            n_material_no: 材料编号
-            d_interval: 间距
-            d_longi_area: 纵筋面积
-            d_stirrup_area: 箍筋面积
-        """
+        """添加扭转箍筋"""
         ok, err = osis_rebar_s_torsional_stirrup(
             self.no, "TorsionalStirrup", n_material_no,
             d_interval, d_longi_area, d_stirrup_area,
@@ -538,114 +515,132 @@ class Section:
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 扭转箍筋失败: {err}")
 
-    def delete_rebar_s(self,e_rebar_type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"]) -> None:
-        """删除抗剪钢筋
+    def add_rebar_l(
+        self,
+        n_rebar_no: int,
+        type: Literal["Point", "LineA", "LineB", "Circle"],
+        *args: float,
+    ) -> None:
+        """添加或修改纵向钢筋（按输入方式分发）
 
         Args:
-            e_rebar_type: 钢筋类型
-                * BentUpRebar = 弯起钢筋
-                * ShearStirrup = 抗剪箍筋
+            n_rebar_no: 钢筋编号
+            type: 钢筋输入方式
+                * Point  = 点输入
+                * LineA  = 直线-垂直方式 A
+                * LineB  = 直线-垂直方式 B
+                * Circle = 圆周输入
+            args: 剩余参数透传给对应子方法
+        """
+        if type == "Point":
+            self.add_rebar_point(n_rebar_no, *args)
+        elif type == "LineA":
+            self.add_rebar_line_a(n_rebar_no, *args)
+        elif type == "LineB":
+            self.add_rebar_line_b(n_rebar_no, *args)
+        elif type == "Circle":
+            self.add_rebar_circle(n_rebar_no, *args)
+
+    def add_rebar_s(
+        self,
+        type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"],
+        *args: float,
+    ) -> None:
+        """添加或修改抗剪钢筋（按类型分发）
+
+        Args:
+            type: 钢筋类型
+                * BentUpRebar      = 弯起钢筋
+                * ShearStirrup     = 抗剪箍筋
                 * WebVerticalRebar = 腹板竖筋
                 * TorsionalStirrup = 扭转箍筋
+            args: 剩余参数透传给对应子方法
         """
-        ok, err = osis_rebar_s_del(self.no, e_rebar_type)
-        if not ok:
-            raise RuntimeError(f"删除截面 {self.no} 抗剪钢筋 {e_rebar_type} 失败: {err}")
+        if type == "BentUpRebar":
+            self.add_rebar_s_bent_up(*args)
+        elif type == "ShearStirrup":
+            self.add_rebar_s_shear_stirrup(*args)
+        elif type == "WebVerticalRebar":
+            self.add_rebar_s_web_vertical(*args)
+        elif type == "TorsionalStirrup":
+            self.add_rebar_s_torsional_stirrup(*args)
 
-    # ── 加劲肋 ────────────────────────────────
-
-    def add_rib_flat(self, str_name: str, d_h: float, d_t: float) -> None:
-        """定义或修改扁平加劲肋
+    def add_rib(
+        self,
+        type: Literal["Flat", "T", "U", "LL", "LR"],
+        *args: float,
+    ) -> None:
+        """添加或修改加劲肋（按类型分发）
 
         Args:
-            str_name: 加劲肋名称
-            d_h: 加劲肋高度
-            d_t: 加劲肋厚度
+            type: 加劲肋类型
+                * Flat = 扁平加劲肋
+                * T    = T 形加劲肋
+                * U    = U 形加劲肋
+                * LL   = 左 L 形加劲肋
+                * LR   = 右 L 形加劲肋
+            args: 剩余参数透传给对应子方法
         """
+        if type == "Flat":
+            self.add_rib_flat(*args)
+        elif type == "T":
+            self.add_rib_t(*args)
+        elif type == "U":
+            self.add_rib_u(*args)
+        elif type in ("LL", "LR"):
+            self.add_rib_l(args[0], type, *args[1:])
+
+    def add_rib_flat(
+        self,
+        str_name: str,
+        d_h: float,
+        d_t: float,
+    ) -> None:
+        """添加扁平加劲肋"""
         ok, err = osis_rib_flat(self.no, "Flat", str_name, d_h, d_t)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 扁平加劲肋 {str_name} 失败: {err}")
 
-    def add_rib_t(self, str_name: str, d_h: float, d_b: float, d_t1: float, d_t2: float) -> None:
-        """定义或修改 T 形加劲肋
-
-        Args:
-            str_name: 加劲肋名称
-            d_h: 加劲肋高度
-            d_b: 加劲肋宽度
-            d_t1: 竖肋厚度
-            d_t2: 横肋厚度
-        """
+    def add_rib_t(
+        self,
+        str_name: str,
+        d_h: float,
+        d_b: float,
+        d_t1: float,
+        d_t2: float,
+    ) -> None:
+        """添加 T 形加劲肋"""
         ok, err = osis_rib_t(self.no, "T", str_name, d_h, d_b, d_t1, d_t2)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} T形加劲肋 {str_name} 失败: {err}")
 
     def add_rib_u(
-            self,
-            str_name: str,
-            d_h: float,
-            d_b1: float,
-            d_b2: float,
-            d_t: float,
-            d_r: float,
+        self,
+        str_name: str,
+        d_h: float,
+        d_b1: float,
+        d_b2: float,
+        d_t: float,
+        d_r: float,
     ) -> None:
-        """定义或修改 U 形加劲肋
-
-        Args:
-            str_name: 加劲肋名称
-            d_h: 加劲肋高度
-            d_b1: 加劲肋上端宽度
-            d_b2: 加劲肋下端宽度
-            d_t: 加劲肋厚度
-            d_r: 加劲肋转角处圆弧半径
-        """
+        """添加 U 形加劲肋"""
         ok, err = osis_rib_u(self.no, "U", str_name, d_h, d_b1, d_b2, d_t, d_r)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} U形加劲肋 {str_name} 失败: {err}")
 
     def add_rib_l(
-            self,
-            str_name: str,
-            e_type: Literal["LL", "LR"] = "LL",
-            d_h: float = 0.1,
-            d_b: float = 0.1,
-            d_t: float = 0.01,
-            d_r: float = 0.01,
+        self,
+        str_name: str,
+        type: Literal["LL", "LR"] = "LL",
+        d_h: float = 0.1,
+        d_b: float = 0.1,
+        d_t: float = 0.01,
+        d_r: float = 0.01,
     ) -> None:
-        """定义或修改 L 形加劲肋
-
-        Args:
-            str_name: 加劲肋名称
-            e_type: LL = 左向 L 形加劲肋，LR = 右向 L 形加劲肋
-            d_h: 加劲肋高度
-            d_b: 加劲肋宽度
-            d_t: 加劲肋厚度
-            d_r: 加劲肋转角处圆弧半径
-        """
-        ok, err = osis_rib_l(self.no, e_type, str_name, d_h, d_b, d_t, d_r)
+        """添加 L 形加劲肋"""
+        ok, err = osis_rib_l(self.no, type, str_name, d_h, d_b, d_t, d_r)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} L形加劲肋 {str_name} 失败: {err}")
-
-    def modify_rib(self, str_old_name: str, str_new_name: str) -> None:
-        """修改加劲肋名称
-
-        Args:
-            str_old_name: 原加劲肋名称
-            str_new_name: 新加劲肋名称
-        """
-        ok, err = osis_rib_mod(self.no, str_old_name, str_new_name)
-        if not ok:
-            raise RuntimeError(f"修改截面 {self.no} 加劲肋名称 {str_old_name} -> {str_new_name} 失败: {err}")
-
-    def delete_rib(self, str_name: str) -> None:
-        """删除加劲肋
-
-        Args:
-            str_name: 加劲肋名称
-        """
-        ok, err = osis_rib_del(self.no, str_name)
-        if not ok:
-            raise RuntimeError(f"删除截面 {self.no} 加劲肋 {str_name} 失败: {err}")
 
     def add_rib_layout(
             self,
@@ -696,6 +691,49 @@ class Section:
         )
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 加劲肋布置 {n_layout_no} 失败: {err}")
+
+    def modify_rib(self, str_old_name: str, str_new_name: str) -> None:
+        """修改加劲肋名称
+
+        Args:
+            str_old_name: 原加劲肋名称
+            str_new_name: 新加劲肋名称
+        """
+        ok, err = osis_rib_mod(self.no, str_old_name, str_new_name)
+        if not ok:
+            raise RuntimeError(f"修改截面 {self.no} 加劲肋名称 {str_old_name} -> {str_new_name} 失败: {err}")
+
+
+    def delete_rebar_s(self, rebar_no: int, rebar_type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"]) -> None:
+        """删除箍筋
+
+        Args:
+            n_rebar_no: 钢筋编号
+            type (str): 钢筋类型，BentUpRebar=弯起钢筋，ShearStirrup=抗剪箍筋，WebVerticalRebar=腹板竖筋，TorsionalStirrup=扭转箍筋。
+        """
+        ok, err = osis_rebar_s_del(self.no, rebar_no, rebar_type)
+        if not ok:
+            raise RuntimeError(f"删除截面 {self.no} 箍筋 {rebar_no} 失败: {err}")
+
+    def delete_rebar_l(self, n_rebar_no: int) -> None:
+        """删除纵向钢筋
+
+        Args:
+            n_rebar_no: 钢筋编号
+        """
+        ok, err = osis_rebar_l_del(self.no, n_rebar_no)
+        if not ok:
+            raise RuntimeError(f"删除截面 {self.no} 纵向钢筋 {n_rebar_no} 失败: {err}")
+        
+    def delete_rib(self, str_name: str) -> None:
+        """删除加劲肋
+
+        Args:
+            str_name: 加劲肋名称
+        """
+        ok, err = osis_rib_del(self.no, str_name)
+        if not ok:
+            raise RuntimeError(f"删除截面 {self.no} 加劲肋 {str_name} 失败: {err}")
 
     def delete_rib_layout(
             self,
@@ -788,13 +826,6 @@ class Section:
         )
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 板件 {plate_position} 失败: {err}")
-
-    # 这个方法放在管理类
-    # def delete(self) -> None:
-    #     """删除当前截面"""
-    #     ok, err = osis_section_del(self.no)
-    #     if not ok:
-    #         raise RuntimeError(f"删除截面 {self.no} 失败: {err}")
 
     def renumber(self, new_no: int) -> None:
         """修改截面编号
@@ -897,18 +928,18 @@ class SectionManager:
             "DOUBLE_SIDEBOX": "DOUBLESIDEBOX",
             "STEELBOX3CELL": "STEELBOXTHREECELL",
         }
-        # type_key = type.upper()
-        # type_key = _aliases.get(type_key, type_key)
-        if type not in _creator:
+        type_key = type.upper()
+        type_key = _aliases.get(type_key, type_key)
+        if type_key not in _creator:
             raise ValueError(
                 f"未知截面类型: {type!r}，支持: {', '.join(sorted(_creator))}"
             )
         # create_numerical 签名为 (no, name, ...)，其余为 (name, ..., no=no)
-        if type == "NUMERICAL":
+        if type_key == "NUMERICAL":
             if no is None:
                 no = self._next_no()
-            return _creator[type](no, name, *args, **kwargs)
-        return _creator[type](name, *args, no=no, **kwargs)
+            return _creator[type_key](no, name, *args, **kwargs)
+        return _creator[type_key](name, *args, no=no, **kwargs)
 
     def create_Lshape(
         self,
