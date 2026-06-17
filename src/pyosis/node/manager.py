@@ -85,14 +85,14 @@ class NodeManager:
 
     用法:
         >>> from pyosis.node import node_manager
-        >>> node_manager.create(0, 0, 0)              # 创建节点（自动生成编号）
-        >>> node_manager.create(0, 0, 0, 1)           # 创建节点（指定编号）
-        >>> node = node_manager.get(1)                # 按编号查询
-        >>> print(node.coord)                         # (0.0, 0.0, 0.0)
-        >>> all_nodes = node_manager.all()            # 获取全部节点
-        >>> node_manager.delete(1)                    # 删除节点
-        >>> node_manager.renumber(1, 100)             # 修改编号
-        >>> node_manager.modify(100, 100, 0, 0)       # 修改节点坐标
+        >>> node_manager.create(None, 0.0, 0.0, 0.0)   # 自动编号
+        >>> node_manager.create(1, 0.0, 0.0, 0.0)      # 指定编号
+        >>> node = node_manager.get(1)                   # 按编号查询
+        >>> (node.x, node.y, node.z)                   # (0.0, 0.0, 0.0)
+        >>> all_nodes = node_manager.all()             # 获取全部节点
+        >>> node_manager.renumber(1, 100)              # 修改编号
+        >>> node_manager.delete(100)                   # 删除节点
+        >>> node_manager.create(100, 1.0, 0.0, 0.0)    # 修改坐标（create 覆盖）
     """
 
     def __init__(self) -> None:

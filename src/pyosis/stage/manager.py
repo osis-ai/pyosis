@@ -90,24 +90,24 @@ class Stage:
 
     def define_element(
         self,
-        eOP: Literal[1, 0], 
-        eType: Literal[1, 0], 
-        strGroupName: str, 
-        nBirth: int | None = None, 
-        ePart: Literal[0, 1, 2]=None
+        op: Literal[1, 0],
+        type: Literal[1, 0],
+        group_name: str,
+        birth: int | None = None,
+        part: Literal[0, 1, 2]=None
     ) -> None:
         """通过单元组激活/钝化单元
 
         Args:
-            eOP (int): 操作
+            op (int): 操作
                 * 1 = 添加
                 * 0 = 移除
-            eType (int): 
+            type (int):
                 * 1 = 激活
                 * 0 = 钝化
-            strGroupName (str): 待操作的单元组名称
-            nBirth (int): 龄期。eOP = 0 时需要设置为 None
-            ePart (int): 组合结构的分部，可缺省（None）
+            group_name (str): 待操作的单元组名称
+            birth (int): 龄期。eOP = 0 时需要设置为 None
+            part (int): 组合结构的分部，可缺省（None）
                 * 0 = 全部激活
                 * 1 = 仅钢材部分
                 * 2 = 仅混凝土部分
@@ -115,48 +115,48 @@ class Stage:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = osis_stage_element(self.no, eOP, eType, strGroupName, nBirth, ePart)
+        ok, err = osis_stage_element(self.no, op, type, group_name, birth, part)
         if not ok:
-            raise RuntimeError(f"阶段 {self.no} 定义单元组 {strGroupName} 失败: {err}")
+            raise RuntimeError(f"阶段 {self.no} 定义单元组 {group_name} 失败: {err}")
 
     def define_boundary(
         self,
-        eOP: Literal[1, 0], 
-        eType: Literal[1, 0], 
-        strGroupName: str
+        op: Literal[1, 0],
+        type: Literal[1, 0],
+        group_name: str
     ) -> None:
         """通过边界组激活/钝化边界
 
         Args:
-            eOP (int): 操作
+            op (int): 操作
                 * 1 = 添加
                 * 0 = 移除
-            eType (int): 
+            type (int):
                 * 1 = 激活
                 * 0 = 钝化
-            strGroupName (str): 待操作的边界组名称
+            group_name (str): 待操作的边界组名称
             
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = osis_stage_boundary(self.no, eOP, eType, strGroupName)
+        ok, err = osis_stage_boundary(self.no, op, type, group_name)
         if not ok:
-            raise RuntimeError(f"阶段 {self.no} 定义边界组 {strGroupName} 失败: {err}")
+            raise RuntimeError(f"阶段 {self.no} 定义边界组 {group_name} 失败: {err}")
 
     def define_loadcase(
         self,
-        eOP: Literal[1, 0], 
-        eType: Literal[1, 0], 
+        op: Literal[1, 0],
+        type: Literal[1, 0],
         ref_lc_name: str, 
         lc_name: str
     ) -> None:
         """激活/钝化荷载工况
 
         Args:
-            eOP (int): 操作
+            op (int): 操作
                 * 1 = 添加
                 * 0 = 移除
-            eType (int): 
+           type (int):
                 * 1 = 激活
                 * 0 = 钝化
             ref_lc_name (str): 参考当前施工阶段内的工况名称
@@ -165,23 +165,23 @@ class Stage:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = osis_stage_loadcase(self.no, eOP, eType, ref_lc_name, lc_name)
+        ok, err = osis_stage_loadcase(self.no, op, type, ref_lc_name, lc_name)
         if not ok:
             raise RuntimeError(f"阶段 {self.no} 激活荷载工况 {lc_name} 失败: {err}")
 
     def define_analysis(
         self,
-        eOP: Literal[1, 0], 
-        eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"],
+        op: Literal[1, 0],
+        type: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"],
         lc_name: str,
     ) -> None:
         """激活分析工况,分析工况默认在每个施工阶段的静力工况之后，不同分析工况无先后顺序
 
         Args:
-            eOP (int): 操作
+            op (int): 操作
                 * 1 = 添加
                 * 0 = 移除
-            eType: 分析类型
+            type: 分析类型
                 MODAL = 模态分析
                 SETL = 沉降分析
                 RSPEC = 反应谱
@@ -192,9 +192,9 @@ class Stage:
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = osis_stage_analysis(self.no, eOP, eType, lc_name)
+        ok, err = osis_stage_analysis(self.no, op, type, lc_name)
         if not ok:
-            raise RuntimeError(f"阶段 {self.no} 激活分析工况 {eType} 失败: {err}")
+            raise RuntimeError(f"阶段 {self.no} 激活分析工况 {type} 失败: {err}")
 
 
 # ──────────────────────────────────────────────

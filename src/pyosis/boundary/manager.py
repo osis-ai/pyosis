@@ -138,11 +138,11 @@ class Boundary:
     
     def assign(
         self,
-        eOP: Literal["a", "s", "r", "aa", "ra"] = "a",
+        op: Literal["a", "s", "r", "aa", "ra"] = "a",
         param: list | None = None,
     ) -> None:
         """分配边界给节点"""
-        ok, err = osis_assign_boundary(self.no, eOP, param if param is not None else [])
+        ok, err = osis_assign_boundary(self.no, op, param if param is not None else [])
         if not ok:
             raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
 
@@ -389,9 +389,9 @@ class BoundaryGroup:
             self._sync_from_dict(data[0])
         return self
 
-    def _execute(self, operation: str, *param: str | int) -> None:
+    def _execute(self, operation: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param: str | int) -> None:
         """执行边界组底层操作（内部使用）"""
-        ok, err = osis_boundary_group(self.name, operation, *param)
+        ok, err = osis_boundary_group(self.name, operation, list(param))
         if not ok:
             raise RuntimeError(f"边界组操作 {self.name} ({operation}) 失败: {err}")
 
@@ -458,7 +458,7 @@ class BoundaryGroup:
         Returns:
             更新后的 BoundaryGroup 对象
         """
-        self._execute("m", [new_name])
+        self._execute("m", new_name)
         self.name = new_name
         return self.refresh()
 
@@ -483,9 +483,9 @@ class BoundaryGroupManager:
         >>> bg = boundary_manager.group.create("桥台1")
         >>> bg = boundary_manager.group.get("桥台1")
         >>> # 组成员操作（在对象上调用）
-        >>> bg.add([1, 2])
-        >>> bg.remove([1])
-        >>> bg.replace([3, 4])
+        >>> bg.add(1, 2)
+        >>> bg.remove(1)
+        >>> bg.replace("3by4")   # 组内把边界 3 替换为 4
     """
 
     def __init__(self) -> None:
@@ -605,7 +605,7 @@ class BoundaryManager:
         >>> all_bds = boundary_manager.all()
         >>> # 边界组操作
         >>> bg = boundary_manager.group.create("桥台1")
-        >>> bg.add([1, 2])
+        >>> bg.add(1, 2)
         >>> bg = boundary_manager.group.get("桥台1")
     """
 
@@ -671,74 +671,54 @@ class BoundaryManager:
 
     def create_general(
         self,
-        nCoor: int | str = "",
-        bX: Literal[0, 1] = 1,
-        bY: Literal[0, 1] = 1,
-        bZ: Literal[0, 1] = 1,
-        bRX: Literal[0, 1] = 1,
-        bRY: Literal[0, 1] = 1,
-        bRZ: Literal[0, 1] = 1,
-        bRW: Literal[0, 1] = 1,
+        coor: int | str = "",
+        x: bool = 1,
+        y: bool = 1,
+        z: bool = 1,
+        rx: bool = 1,
+        ry: bool = 1,
+        rz: bool = 1,
+        rw: bool = 1,
         no: int | None = None,
     ) -> GeneralBoundary:
         """创建一般边界"""
         if no is None:
             no = self._next_no()
-        ok, err = osis_boundary_general(no, "GENERAL", nCoor or "", bX, bY, bZ, bRX, bRY, bRZ, bRW)
+        ok, err = osis_boundary_general(no, "GENERAL", coor or "", x, y, z, rx, ry, rz, rw)
         if not ok:
             raise RuntimeError(f"创建一般边界 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]
 
     def create_master_slave(
         self,
-        nNode: int,
-        bX: Literal[0, 1] = 1,
-        bY: Literal[0, 1] = 1,
-        bZ: Literal[0, 1] = 1,
-        bRX: Literal[0, 1] = 1,
-        bRY: Literal[0, 1] = 1,
-        bRZ: Literal[0, 1] = 1,
+        node: int,
+        dx: bool = 1,
+        dy: bool = 1,
+        dz: bool = 1,
+        rx: bool = 1,
+        ry: bool = 1,
+        rz: bool = 1,
         no: int | None = None,
-        bCoincident: int | None = 1,
+        coincident: int | None = 1,
     ) -> MstSlvBoundary:
         """创建主从约束"""
         if no is None:
             no = self._next_no()
-        ok, err = osis_boundary_master_slave(no, "MSTSLV", nNode, bX, bY, bZ, bRX, bRY, bRZ,bCoincident)
+        ok, err = osis_boundary_master_slave(no, "MSTSLV", node, dx, dy, dz, rx, ry, rz,coincident)
         if not ok:
             raise RuntimeError(f"创建主从约束 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]
 
     def create_release(
         self,
-        Fxi_state: bool,
-        Fyi_state: bool,
-        Fzi_state: bool,
-        Mxi_state: bool,
-        Myi_state: bool,
-        Mzi_state: bool,
-        Mbi_state: bool,
-        Fxi: float,
-        Fyi: float,
-        Fzi: float,
-        Mxi: float,
-        Myi: float,
-        Mzi: float,
-        Mbi: float,
-        Fxj_state: bool,
-        Fyj_state: bool,
-        Fzj_state: bool,
-        Mxj_state: bool,
-        Myj_state: bool,
-        Mzj_state: bool,
-        Mbj_state: bool,
-        Fxj: float,
-        Fyj: float,
-        Fzj: float,
-        Mxj: float,
-        Myj: float,
-        Mzj: float,
-        Mbj: float,
+        fxi_state: bool,fyi_state: bool,fzi_state: bool,
+        mxi_state: bool,myi_state: bool,mzi_state: bool,mbi_state: bool,
+        fxi: float,fyi: float,fzi: float,
+        mxi: float,myi: float,mzi: float,mbi: float,
+        fxj_state: bool,fyj_state: bool,fzj_state: bool,
+        mxj_state: bool,myj_state: bool,mzj_state: bool,mbj_state: bool,
+        fxj: float,fyj: float,fzj: float,
+        mxj: float,myj: float,mzj: float,mbj: float,
         no: int | None = None,
     ) -> ReleaseBoundary:
         """创建释放梁端约束"""
@@ -746,10 +726,10 @@ class BoundaryManager:
             no = self._next_no()
         ok, err = osis_boundary_release(
             no, "RELEASE",
-            Fxi_state, Fyi_state, Fzi_state, Mxi_state, Myi_state, Mzi_state, Mbi_state,
-            Fxi, Fyi, Fzi, Mxi, Myi, Mzi, Mbi,
-            Fxj_state, Fyj_state, Fzj_state, Mxj_state, Myj_state, Mzj_state, Mbj_state,
-            Fxj, Fyj, Fzj, Mxj, Myj, Mzj, Mbj,
+            fxi_state, fyi_state, fzi_state, mxi_state, myi_state, mzi_state, mbi_state,
+            fxi, fyi, fzi, mxi, myi, mzi, mbi,
+            fxj_state, fyj_state, fzj_state, mxj_state, myj_state, mzj_state, mbj_state,
+            fxj, fyj, fzj, mxj, myj, mzj, mbj,
         )
         if not ok:
             raise RuntimeError(f"创建释放梁端约束 {no} 失败: {err}")
@@ -757,26 +737,26 @@ class BoundaryManager:
 
     def create_elstcspt(
         self,
-        nCoor: int | str = "",
-        bX: Literal[0, 1] = 1,
-        DX: float = 1e13,
-        bY: Literal[0, 1] = 1,
-        DY: float = 1e13,
-        bZ: Literal[0, 1] = 1,
-        DZ: float = 1e13,
-        bRX: Literal[0, 1] = 1,
-        RX: float = 1e16,
-        bRY: Literal[0, 1] = 1,
-        RY: float = 1e16,
-        bRZ: Literal[0, 1] = 1,
-        RZ: float = 1e16,
+        coor: int | str = "",
+        x: bool = 1,
+        dx: float = 1e13,
+        y: bool = 1,
+        dy: float = 1e13,
+        z: bool = 1,
+        dz: float = 1e13,
+        rx: bool = 1,
+        drx: float = 1e16,
+        ry: bool = 1,
+        dry: float = 1e16,
+        rz: bool = 1,
+        drz: float = 1e16,
         no: int | None = None,
     ) -> ElstcSptBoundary:
         """创建弹性支承"""
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_elstcspt(
-            no, "ELSTCSPT", nCoor or "", bX, DX, bY, DY, bZ, DZ, bRX, RX, bRY, RY, bRZ, RZ
+            no, "ELSTCSPT", coor or "", x, dx, y, dy, z, dz, rx, drx, ry, dry, rz, drz
         )
         if not ok:
             raise RuntimeError(f"创建弹性支承 {no} 失败: {err}")
@@ -784,7 +764,7 @@ class BoundaryManager:
 
     def create_general_elstcspt(
         self,
-        nCoor: int | str = "",
+        coor: int | str = "",
         stiffness_matrix: list[float] | None = None,
         mass_matrix: list[float] | None = None,
         damping_matrix: list[float] | None = None,
@@ -826,7 +806,7 @@ class BoundaryManager:
             params.append(0)  # bC = 0
         
         ok, err = osis_boundary_general_elstcspt(
-            no, "GES", nCoor or "", *params
+            no, "GES", coor or "", *params
         )
         if not ok:
             raise RuntimeError(f"创建一般弹性支承 {no} 失败: {err}")
@@ -910,9 +890,9 @@ class BoundaryManager:
         提供边界组的增删改查功能。
 
         用法:
-            >>> boundary_manager.group.create("桥台1")
-            >>> boundary_manager.group.add("桥台1", [1, 2])
-            >>> boundary_manager.group.get("桥台1")
+            >>> bg = boundary_manager.group.create("桥台1")
+            >>> bg.add(1, 2)
+            >>> bg = boundary_manager.group.get("桥台1")
         """
         return self._group_manager
 

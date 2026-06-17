@@ -246,7 +246,7 @@ class LiveCase:
         op: Literal["a", "m", "d", "mn"],
         sub_name: str,
         *args: str,
-    ) -> LiveCase:
+    ) -> LiveCase | None:
         """活载子工况增删改（对应 OSIS 命令 LiveAnalInc）。
 
         Args:
@@ -293,13 +293,14 @@ class LiveCase:
             return self.rename_sub(sub_name, args[0] if args else "")
         elif op == "d":
             return self.delete_sub(sub_name)
+        return None
 
     def create_sub(
         self,
         sub_name: str,
         grade_name: str,
-        scalar: float = 1.0,
-        calc_mu: bool = True,
+        scalar: int = 1,
+        calc_mu: bool = 1,
         bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "CUSTOM",
         mu_params: list[float] | None = None,
         lane_names: list[str] | None = None,
@@ -310,7 +311,7 @@ class LiveCase:
             sub_name: 子工况名称
             grade_name: 活载等级名称
             scalar: 缩放系数，默认 1.0
-            calc_mu: 是否计算冲击系数，默认 True
+            calc_mu: 是否计算冲击系数，默认 1
             bridge_type: 桥型（用于计算冲击系数）
                 - SIMPLE: 简支梁桥
                 - CONTINUOUS: 连续梁桥
@@ -355,7 +356,7 @@ class LiveCase:
         sub_name: str,
         grade_name: str,
         scalar: float = 1.0,
-        calc_mu: bool = True,
+        calc_mu: bool = 1,
         bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "SIMPLE",
         mu_params: list[float] | None = None,
         lane_names: list[str] | None = None,
@@ -366,7 +367,7 @@ class LiveCase:
             sub_name: 子工况名称
             grade_name: 活载等级名称
             scalar: 缩放系数，默认 1.0
-            calc_mu: 是否计算冲击系数，默认 True
+            calc_mu: 是否计算冲击系数，默认 1
             bridge_type: 桥型（用于计算冲击系数）
                 - SIMPLE: 简支梁桥
                 - CONTINUOUS: 连续梁桥
@@ -1197,31 +1198,19 @@ class LiveManager:
     - ``lane``: 车道管理器（LaneManager）
     - ``case``: 活载工况管理器（LiveCaseManager）
 
-    用法示例::
+        用法示例::
 
         >>> from pyosis.live import live_manager
-        >>> 
+        >>>
         >>> # 创建活载等级
-        >>> grade = live_manager.grade.create_highway("公路I级")
-        >>> 
-        >>> # 创建车道
-        >>> lane = live_manager.lane.create_ve(
-        ...     name="车道1",
-        ...     dLength=30.0,
-        ...     ref_elems="主梁单元组",
-        ...     offsetY=2.5,
-        ... )
-        >>> 
+        >>> grade = live_manager.grade.create_highway("简支空心板移动荷载",code="JTGD60_2015",live_load_type="HIGHWAY_I")
+        >>>
+        >>> # 创建车道（VE 车道单元法）
+        >>> lane = live_manager.lane.create_ve(name="车道1",length=30.0,wheel=1.80,orientation=1,ref=0,ref_elems="主梁单元",offset_y=2.5,offset_z=0.0)
+        >>>
         >>> # 创建活载工况并添加子工况
-        >>> live_case = live_manager.case.create("活载工况1")
-        >>> live_case.create_sub(
-        ...     sub_name="子工况1",
-        ...     grade_name=grade.name,
-        ...     lane_names=[lane.name],
-        ...     calc_mu=True,
-        ...     bridge_type="SIMPLE",
-        ...     mu_params=[30.0, 3.45e10, 0.5, 2500.0],
-        ... )
+        >>> live_case = live_manager.case.create("活载工况1", "JTGD60_2015", 1)
+        >>> live_case.create_sub(sub_name="子工况1",grade_name="简支空心板移动荷载",scalar=1,calc_mu=True,bridge_type="SIMPLE",mu_params=[30.0, 3.45e10, 0.5, 2500.0],lane_names=["车道1"])
     """
 
     def __init__(self) -> None:

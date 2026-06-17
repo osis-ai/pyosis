@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal, Any
 from enum import Enum
 
@@ -341,190 +341,190 @@ class Section:
 
     def add_rebar_point(
             self,
-            n_rebar_no: int,
-            n_material_no: int,
-            d_coor_y: float,
-            d_coor_z: float,
+            rebar_no: int,
+            material_no: int,
+            coor_y: float,
+            coor_z: float,
             diameter: str,
     ) -> None:
         """定义或修改纵向钢筋（点输入）
 
         Args:
-            n_rebar_no: 钢筋编号
-            n_material_no: 钢筋材料编号
-            d_coor_y: 中心点 Y 坐标
-            d_coor_z: 中心点 Z 坐标
+            rebar_no: 钢筋编号
+            material_no: 钢筋材料编号
+            coor_y: 中心点 Y 坐标
+            coor_z: 中心点 Z 坐标
             diameter: 钢筋直径，范围 D4-D50
         Notes:
             基于截面坐标的原点去计算相对于顶底板线的位置
         """
-        ok, err = osis_rebar_l_point(self.no, n_rebar_no, "Point", n_material_no, d_coor_y, d_coor_z, diameter)
+        ok, err = osis_rebar_l_point(self.no, rebar_no, "Point", material_no, coor_y, coor_z, diameter)
         if not ok:
-            raise RuntimeError(f"添加截面 {self.no} 纵向钢筋 {n_rebar_no} 失败: {err}")
+            raise RuntimeError(f"添加截面 {self.no} 纵向钢筋 {rebar_no} 失败: {err}")
 
     def add_rebar_line_a(
             self,
-            n_rebar_no: int,
-            n_material_no: int,
+            rebar_no: int,
+            material_no: int,
             y_ref: Literal["Left", "Center"] = "Left",
             y_ref_value: float = 0.0,
             z_ref: Literal["Top", "Bottom"] = "Top",
             z_ref_value: float = 0.0,
-            n_num: int = 1,
-            d_interval: float = 0.1,
+            num: int = 1,
+            interval: float = 0.1,
             diameter: str = "D16",
     ) -> None:
         """定义或修改纵向钢筋（直线-输入方法 A）
 
         Args:
-            n_rebar_no: 钢筋编号
-            n_material_no: 钢筋材料编号
+            rebar_no: 钢筋编号
+            material_no: 钢筋材料编号
             y_ref: Y 方向参考位置，Left=左，Center=质心
             y_ref_value: 与 Y 方向参考位置的距离，Y 轴正方向为正
             z_ref: Z 方向参考位置，Top=顶，Bottom=底
             z_ref_value: 与 Z 方向参考位置的距离，Z 轴正方向为正
-            n_num: 数量
-            d_interval: 间距
+            num: 数量
+            interval: 间距
             diameter: 钢筋直径，范围 D4-D50
         Notes:
             基于距离顶、底的距离来定位
         """
         ok, err = osis_rebar_l_line_a(
-            self.no, n_rebar_no, "LineA", n_material_no,
+            self.no, rebar_no, "LineA", material_no,
             y_ref, y_ref_value, z_ref, z_ref_value,
-            n_num, d_interval, diameter,
+            num, interval, diameter,
         )
         if not ok:
-            raise RuntimeError(f"添加截面 {self.no} 纵向钢筋(LineA) {n_rebar_no} 失败: {err}")
+            raise RuntimeError(f"添加截面 {self.no} 纵向钢筋(LineA) {rebar_no} 失败: {err}")
 
     def add_rebar_line_b(
             self,
-            n_rebar_no: int,
-            n_material_no: int,
-            d_start_y: float,
-            d_start_z: float,
-            d_end_y: float,
-            d_end_z: float,
-            n_method: Literal[0, 1] = 1,
-            n_num: int = 1,
-            d_interval: float = 0.1,
+            rebar_no: int,
+            material_no: int,
+            start_y: float,
+            start_z: float,
+            end_y: float,
+            end_z: float,
+            method: Literal[0, 1] = 1,
+            num: int = 1,
+            interval: float = 0.1,
             layout_ref: Literal["StartPoint", "MidPoint", "EndPoint"] = "StartPoint",
-            n_has_end_rebar: Literal[0, 1] = 1,
+            has_end_rebar: Literal[0, 1] = 1,
             diameter: str = "D16",
     ) -> None:
         """定义或修改纵向钢筋（直线-输入方法 B）
 
         Args:
-            n_rebar_no: 钢筋编号
-            n_material_no: 钢筋材料编号
-            d_start_y: 开始点 Y 坐标
-            d_start_z: 开始点 Z 坐标
-            d_end_y: 结束点 Y 坐标
-            d_end_z: 结束点 Z 坐标
-            n_method: 1=输入数量，0=输入间距
-            n_num: 数量
-            d_interval: 间距
+            rebar_no: 钢筋编号
+            material_no: 钢筋材料编号
+            start_y: 开始点 Y 坐标
+            start_z: 开始点 Z 坐标
+            end_y: 结束点 Y 坐标
+            end_z: 结束点 Z 坐标
+            method: 1=输入数量，0=输入间距
+            num: 数量
+            interval: 间距
             layout_ref: 分布参考，StartPoint=起点，MidPoint=中点，EndPoint=终点
-            n_has_end_rebar: 1=有端筋，0=无端筋
+            has_end_rebar: 1=有端筋，0=无端筋
             diameter: 钢筋直径，范围 D4-D50
         Notes:
             基于截面坐标的原点去计算相对于顶底板线的位置
         """
         ok, err = osis_rebar_l_line_b(
-            self.no, n_rebar_no, "LineB", n_material_no,
-            d_start_y, d_start_z, d_end_y, d_end_z,
-            n_method, n_num, d_interval, layout_ref, n_has_end_rebar, diameter,
+            self.no, rebar_no, "LineB", material_no,
+            start_y, start_z, end_y, end_z,
+            method, num, interval, layout_ref, has_end_rebar, diameter,
         )
         if not ok:
-            raise RuntimeError(f"添加截面 {self.no} 纵向钢筋(LineB) {n_rebar_no} 失败: {err}")
+            raise RuntimeError(f"添加截面 {self.no} 纵向钢筋(LineB) {rebar_no} 失败: {err}")
     def add_rebar_circle(
         self,
-        n_rebar_no: int,
-        n_material_no: int,
-        d_center_y: float,
-        d_center_z: float,
-        d_radius: float,
-        n_method: Literal[0, 1],
-        n_num: int,
-        d_interval: float,
+        rebar_no: int,
+        material_no: int,
+        center_y: float,
+        center_z: float,
+        radius: float,
+        method: Literal[0, 1],
+        num: int,
+        interval: float,
         diameter: str,
         ) -> None:
         """添加纵向钢筋（圆形输入）"""
         ok, err = osis_rebar_l_circle(
-            self.no, n_rebar_no, "Circle", n_material_no,
-            d_center_y, d_center_z, d_radius,
-            n_method, n_num, d_interval, diameter,
+            self.no, rebar_no, "Circle", material_no,
+            center_y, center_z, radius,
+            method, num, interval, diameter,
         )
         if not ok:
             raise RuntimeError(
-                f"添加截面 {self.no} 纵向钢筋(Circle) {n_rebar_no} 失败: {err}"
+                f"添加截面 {self.no} 纵向钢筋(Circle) {rebar_no} 失败: {err}"
             )
 
     def add_rebar_s_bent_up(
         self,
-        n_material_no: int,
-        d_interval: float,
-        d_area: float,
-        d_angle: float,
+        material_no: int,
+        interval: float,
+        area: float,
+        angle: float,
     ) -> None:
         """添加弯起钢筋"""
-        ok, err = osis_rebar_s_bent_up(self.no, "BentUpRebar", n_material_no, d_interval, d_area, d_angle)
+        ok, err = osis_rebar_s_bent_up(self.no, "BentUpRebar", material_no, interval, area, angle)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 弯起钢筋失败: {err}")
 
     def add_rebar_s_shear_stirrup(
         self,
-        n_material_no: int,
-        d_interval: float,
-        d_area: float,
+        material_no: int,
+        interval: float,
+        area: float,
     ) -> None:
         """添加抗剪箍筋"""
-        ok, err = osis_rebar_s_shear_stirrup(self.no, "ShearStirrup", n_material_no, d_interval, d_area)
+        ok, err = osis_rebar_s_shear_stirrup(self.no, "ShearStirrup", material_no, interval, area)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 抗剪箍筋失败: {err}")
 
     def add_rebar_s_web_vertical(
         self,
-        n_material_no: int,
-        d_interval: float,
-        d_area: float,
-        d_angle: float,
-        d_effective_stress: float,
-        d_reduction_factor: float,
+        material_no: int,
+        interval: float,
+        area: float,
+        angle: float,
+        effective_stress: float,
+        reduction_factor: float,
     ) -> None:
         """添加腹板竖筋"""
         ok, err = osis_rebar_s_web_vertical(
-            self.no, "WebVerticalRebar", n_material_no,
-            d_interval, d_area, d_angle, d_effective_stress, d_reduction_factor,
+            self.no, "WebVerticalRebar", material_no,
+            interval, area, angle, effective_stress, reduction_factor,
         )
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 腹板竖筋失败: {err}")
 
     def add_rebar_s_torsional_stirrup(
         self,
-        n_material_no: int,
-        d_interval: float,
-        d_longi_area: float,
-        d_stirrup_area: float,
+        material_no: int,
+        interval: float,
+        longi_area: float,
+        stirrup_area: float,
     ) -> None:
         """添加扭转箍筋"""
         ok, err = osis_rebar_s_torsional_stirrup(
-            self.no, "TorsionalStirrup", n_material_no,
-            d_interval, d_longi_area, d_stirrup_area,
+            self.no, "TorsionalStirrup", material_no,
+            interval, longi_area, stirrup_area,
         )
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 扭转箍筋失败: {err}")
 
     def add_rebar_l(
         self,
-        n_rebar_no: int,
+        rebar_no: int,
         type: Literal["Point", "LineA", "LineB", "Circle"],
         *args: float,
     ) -> None:
         """添加或修改纵向钢筋（按输入方式分发）
 
         Args:
-            n_rebar_no: 钢筋编号
+            rebar_no: 钢筋编号
             type: 钢筋输入方式
                 * Point  = 点输入
                 * LineA  = 直线-垂直方式 A
@@ -533,13 +533,13 @@ class Section:
             args: 剩余参数透传给对应子方法
         """
         if type == "Point":
-            self.add_rebar_point(n_rebar_no, *args)
+            self.add_rebar_point(rebar_no, *args)
         elif type == "LineA":
-            self.add_rebar_line_a(n_rebar_no, *args)
+            self.add_rebar_line_a(rebar_no, *args)
         elif type == "LineB":
-            self.add_rebar_line_b(n_rebar_no, *args)
+            self.add_rebar_line_b(rebar_no, *args)
         elif type == "Circle":
-            self.add_rebar_circle(n_rebar_no, *args)
+            self.add_rebar_circle(rebar_no, *args)
 
     def add_rebar_s(
         self,
@@ -593,38 +593,38 @@ class Section:
     def add_rib_flat(
         self,
         str_name: str,
-        d_h: float,
-        d_t: float,
+        h: float,
+        t: float,
     ) -> None:
         """添加扁平加劲肋"""
-        ok, err = osis_rib_flat(self.no, "Flat", str_name, d_h, d_t)
+        ok, err = osis_rib_flat(self.no, "Flat", str_name, h, t)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 扁平加劲肋 {str_name} 失败: {err}")
 
     def add_rib_t(
         self,
         str_name: str,
-        d_h: float,
-        d_b: float,
-        d_t1: float,
-        d_t2: float,
+        h: float,
+        b: float,
+        t1: float,
+        t2: float,
     ) -> None:
         """添加 T 形加劲肋"""
-        ok, err = osis_rib_t(self.no, "T", str_name, d_h, d_b, d_t1, d_t2)
+        ok, err = osis_rib_t(self.no, "T", str_name, h, b, t1, t2)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} T形加劲肋 {str_name} 失败: {err}")
 
     def add_rib_u(
         self,
         str_name: str,
-        d_h: float,
-        d_b1: float,
-        d_b2: float,
-        d_t: float,
-        d_r: float,
+        h: float,
+        b1: float,
+        b2: float,
+        t: float,
+        r: float,
     ) -> None:
         """添加 U 形加劲肋"""
-        ok, err = osis_rib_u(self.no, "U", str_name, d_h, d_b1, d_b2, d_t, d_r)
+        ok, err = osis_rib_u(self.no, "U", str_name, h, b1, b2, t, r)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} U形加劲肋 {str_name} 失败: {err}")
 
@@ -632,22 +632,22 @@ class Section:
         self,
         str_name: str,
         type: Literal["LL", "LR"] = "LL",
-        d_h: float = 0.1,
-        d_b: float = 0.1,
-        d_t: float = 0.01,
-        d_r: float = 0.01,
+        h: float = 0.1,
+        b: float = 0.1,
+        t: float = 0.01,
+        r: float = 0.01,
     ) -> None:
         """添加 L 形加劲肋"""
-        ok, err = osis_rib_l(self.no, type, str_name, d_h, d_b, d_t, d_r)
+        ok, err = osis_rib_l(self.no, type, str_name, h, b, t, r)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} L形加劲肋 {str_name} 失败: {err}")
 
     def add_rib_layout(
             self,
-            e_girder_type: Literal[
+            girder_type: Literal[
                 "STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL",
             ],
-            e_plate_type: Literal[
+            plate_type: Literal[
                 "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
                 "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
                 "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
@@ -656,22 +656,22 @@ class Section:
                 "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
                 "PlateWithoutRib",
             ],
-            n_layout_no: int,
+            layout_no: int,
             str_rib_name: str,
-            d_position_distance: float,
-            d_interval: float,
-            n_interval_num: int,
+            position_distance: float,
+            interval: float,
+            interval_num: int,
     ) -> None:
         """定义或修改加劲肋布置信息
 
         Args:
-            e_girder_type: 钢梁类型
+            girder_type: 钢梁类型
                 * STEELISIDE = 组合梁的边工字钢梁
                 * STEELIMIDDLE = 组合梁的中工字钢梁
                 * STEELBOX = 组合梁的钢箱梁
                 * STEELTROUGH = 组合梁的槽型钢梁
                 * STEEL = 一般钢梁截面
-            e_plate_type: 板件所在位置
+            plate_type: 板件所在位置
                 * 顶板：TopFlange、TopFlange1~TopFlange5
                 * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5
                 * 底板：BottomFlange、BottomFlange1~BottomFlange5
@@ -679,18 +679,18 @@ class Section:
                 * 边腹板：SideWeb、SideWebL、SideWebR
                 * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
                 * 无加劲肋的板件：PlateWithoutRib
-            n_layout_no: 加劲肋布置信息的编号
+            layout_no: 加劲肋布置信息的编号
             str_rib_name: 加劲肋的名称
-            d_position_distance: 加劲肋与参考点的定位距离
-            d_interval: 加劲肋布置间距
-            n_interval_num: 间距数量
+            position_distance: 加劲肋与参考点的定位距离
+            interval: 加劲肋布置间距
+            interval_num: 间距数量
         """
         ok, err = osis_rib_layout(
-            self.no, e_girder_type, e_plate_type, n_layout_no,
-            str_rib_name, d_position_distance, d_interval, n_interval_num,
+            self.no, girder_type, plate_type, layout_no,
+            str_rib_name, position_distance, interval, interval_num,
         )
         if not ok:
-            raise RuntimeError(f"添加截面 {self.no} 加劲肋布置 {n_layout_no} 失败: {err}")
+            raise RuntimeError(f"添加截面 {self.no} 加劲肋布置 {layout_no} 失败: {err}")
 
     def modify_rib(self, str_old_name: str, str_new_name: str) -> None:
         """修改加劲肋名称
@@ -737,10 +737,10 @@ class Section:
 
     def delete_rib_layout(
             self,
-            e_girder_type: Literal[
+            girder_type: Literal[
                 "STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL",
             ],
-            e_plate_type: Literal[
+            plate_type: Literal[
                 "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
                 "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
                 "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
@@ -749,18 +749,18 @@ class Section:
                 "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
                 "PlateWithoutRib",
             ],
-            n_layout_no: int,
+            layout_no: int,
     ) -> None:
         """删除加劲肋布置信息
 
         Args:
-            e_girder_type: 钢梁类型
-            e_plate_type: 板件所在位置
-            n_layout_no: 加劲肋布置信息的编号
+            girder_type: 钢梁类型
+            plate_type: 板件所在位置
+            layout_no: 加劲肋布置信息的编号
         """
-        ok, err = osis_rib_layout_del(self.no, e_girder_type, e_plate_type, n_layout_no)
+        ok, err = osis_rib_layout_del(self.no, girder_type, plate_type, layout_no)
         if not ok:
-            raise RuntimeError(f"删除截面 {self.no} 加劲肋布置 {n_layout_no} 失败: {err}")
+            raise RuntimeError(f"删除截面 {self.no} 加劲肋布置 {layout_no} 失败: {err}")
 
     def clear_ribs(self) -> None:
         """删除截面加劲肋及加劲肋布置信息"""
@@ -944,7 +944,7 @@ class SectionManager:
     def create_Lshape(
         self,
         name: str,
-        n_dir: Literal[0, 1] = 1,
+        dir: Literal[0, 1] = 1,
         h: float = 0.1,
         b: float = 0.1,
         tf1: float = 0.016,
@@ -955,7 +955,7 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            n_dir: L形截面方向，0=左下向，1=左上向
+            dir: L形截面方向，0=左下向，1=左上向
             h: 截面总高度
             b: 截面总宽度
             tf1: 竖肢厚度
@@ -964,7 +964,7 @@ class SectionManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_section_Lshape(no, name, "LSHAPE", n_dir, h, b, tf1, tf2)
+        ok, err = osis_section_Lshape(no, name, "LSHAPE", dir, h, b, tf1, tf2)
         if not ok:
             raise RuntimeError(f"创建L形截面 {no} 失败: {err}")
         return self.get(no)
@@ -972,7 +972,7 @@ class SectionManager:
     def create_circle(
         self,
         name: str,
-        e_circle_type: Literal["Hollow", "Solid"] = "Solid",
+        circle_type: Literal["Hollow", "Solid"] = "Solid",
         d: float = 0.5,
         tw: float = 0.02,
         no: int | None = None,
@@ -981,14 +981,14 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            e_circle_type: 截面类型，Hollow=空腹，Solid=实腹
+            circle_type: 截面类型，Hollow=空腹，Solid=实腹
             d: 圆形截面直径
             tw: 空腹截面的壁厚（仅当 e_circle_type 为 Hollow 时生效）
             no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_section_circle(no, name, "CIRCLE", e_circle_type, d, tw)
+        ok, err = osis_section_circle(no, name, "CIRCLE", circle_type, d, tw)
         if not ok:
             raise RuntimeError(f"创建圆形截面 {no} 失败: {err}")
         return self.get(no)
@@ -996,7 +996,7 @@ class SectionManager:
     def create_Tshape(
         self,
         name: str,
-        n_dir: Literal[0, 1] = 1,
+        dir: Literal[0, 1] = 1,
         h: float = 0.3,
         b: float = 0.2,
         tf: float = 0.016,
@@ -1007,7 +1007,7 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            n_dir: 截面方向，0=T形，1=倒T形
+            dir: 截面方向，0=T形，1=倒T形
             h: 截面总高度
             b: 翼缘宽度
             tf: 翼缘厚度
@@ -1016,7 +1016,7 @@ class SectionManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_section_Tshape(no, name, "TSHAPE", n_dir, h, b, tf, tw)
+        ok, err = osis_section_Tshape(no, name, "TSHAPE", dir, h, b, tf, tw)
         if not ok:
             raise RuntimeError(f"创建T形截面 {no} 失败: {err}")
         return self.get(no)
@@ -1071,7 +1071,7 @@ class SectionManager:
         tt1: float = 0.25,
         xi2: float = 0.05,
         yi2: float = 0.05,
-        b_slope: bool = False,
+        slope: bool = False,
         i1: float = 0.0,
         i2: float = 0.0,
         r: float = 0.05,
@@ -1098,7 +1098,7 @@ class SectionManager:
             tt1: 倒角1根部厚
             xi2: 倒角2宽（底板）
             yi2: 倒角2高
-            b_slope: 是否输入横坡
+            slope: 是否输入横坡
             i1: 顶左坡
             i2: 顶右坡
             r: 底板倒角圆弧半径
@@ -1108,7 +1108,7 @@ class SectionManager:
             no = self._next_no()
         ok, err = osis_section_smallbox(
             no, name, "SMALLBOX", e_girder_pos, h, bs, bm, bc, bb,
-            tt, tb, tw, i, tc, tc1, x, xi1, tt1, xi2, yi2, b_slope, i1, i2, r,
+            tt, tb, tw, i, tc, tc1, x, xi1, tt1, xi2, yi2, slope, i1, i2, r,
         )
         if not ok:
             raise RuntimeError(f"创建小箱梁截面 {no} 失败: {err}")
@@ -1178,12 +1178,12 @@ class SectionManager:
     def create_rounded_end(
         self,
         name: str,
-        e_filling_type: Literal["Solid", "Hollow"] = "Solid",
+        filling_type: Literal["Solid", "Hollow"] = "Solid",
         b: float = 7.0,
         h: float = 3.0,
         r: float = 2.0,
-        b_has_diaphragm: bool = False,
-        b_inner: float = 4.0,
+        has_diaphragm: bool = False,
+        inner: float = 4.0,
         t: float = 1.0,
         xi1: float = 0.5,
         yi1: float = 0.25,
@@ -1196,12 +1196,12 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            e_filling_type: 填充类型，Solid=实腹，Hollow=空腹
+            filling_type: 填充类型，Solid=实腹，Hollow=空腹
             b: 截面宽
             h: 截面高
             r: 圆弧半径
-            b_has_diaphragm: 是否有隔板
-            b_inner: 内宽
+            has_diaphragm: 是否有隔板
+            inner: 内宽
             t: 壁厚
             xi1: 内倒角宽
             yi1: 内倒角高
@@ -1213,8 +1213,8 @@ class SectionManager:
         if no is None:
             no = self._next_no()
         ok, err = osis_section_rounded_end(
-            no, name, "ROUNDEDEND", e_filling_type, b, h, r,
-            b_has_diaphragm, b_inner, t, xi1, yi1, tw, xi2, yi2,
+            no, name, "ROUNDEDEND", filling_type, b, h, r,
+            has_diaphragm, inner, t, xi1, yi1, tw, xi2, yi2,
         )
         if not ok:
             raise RuntimeError(f"创建圆端形截面 {no} 失败: {err}")
@@ -1233,7 +1233,7 @@ class SectionManager:
         tb: float = 0.32,
         tw1: float = 0.5,
         tw2: float = 0.5,
-        n_cell_num: int = 1,
+        cell_num: int = 1,
         bi1: float = 5.05,
         bi2: float = 4.5,
         bi3: float = 5.05,
@@ -1257,13 +1257,13 @@ class SectionManager:
         bc1_l: float = 1.325,
         tc1_l: float = 0.7,
         tc2_l: float = 0.4,
-        b_symmetry: bool = True,
+        symmetry: bool = True,
         bc_r: float = 2.875,
         tc_r: float = 0.2,
         bc1_r: float = 1.325,
         tc1_r: float = 0.7,
         tc2_r: float = 0.4,
-        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+        slope_type: Literal["Integral", "CastInPlace"] = "Integral",
         i: float = 0.0,
         i1: float = 0.0,
         i2: float = 0.0,
@@ -1287,15 +1287,15 @@ class SectionManager:
             tb: 底板厚
             tw1: 边腹板厚
             tw2: 中腹板厚
-            n_cell_num: 箱室个数
+            cell_num: 箱室个数
             bi1~bi4: 箱室1~4宽度
             xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数  xi1>=0
             bc_l, tc_l, bc1_l, tc1_l, tc2_l: 左悬臂参数
-            b_symmetry: 右侧是否对称
+            symmetry: 右侧是否对称
                 * 0=非对称
                 * 1=对称
             bc_r, tc_r, bc1_r, tc1_r, tc2_r: 右悬臂参数
-            e_slope_type: 横坡类型
+            slope_type: 横坡类型
                 * Integral=整体旋转找坡
                 * CastInPlace=现浇模板找坡
             i~i4: 各坡度参数
@@ -1306,10 +1306,10 @@ class SectionManager:
             no = self._next_no()
         ok, err = osis_section_conventionalbox(
             no, name, "CONVENTIONALBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
-            tt, tb, tw1, tw2, n_cell_num, bi1, bi2, bi3, bi4,
+            tt, tb, tw1, tw2, cell_num, bi1, bi2, bi3, bi4,
             xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
-            bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
-            e_slope_type, i, i1, i2, i3, i4, r1, r2,
+            bc_l, tc_l, bc1_l, tc1_l, tc2_l, symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
+            slope_type, i, i1, i2, i3, i4, r1, r2,
         )
         if not ok:
             raise RuntimeError(f"创建常规箱梁截面 {no} 失败: {err}")
@@ -1331,7 +1331,7 @@ class SectionManager:
         ttj: float = 0.5,
         tbj: float = 0.27,
         twj: float = 0.4,
-        n_cell_num: int = 5,
+        cell_num: int = 5,
         bi1: float = 4.7,
         bi2: float = 6.85,
         bi3: float = 6.0,
@@ -1355,13 +1355,13 @@ class SectionManager:
         bc1_l: float = 0.5,
         tc1_l: float = 0.7,
         tc2_l: float = 0.4,
-        b_symmetry: bool = True,
+        symmetry: bool = True,
         bc_r: float = 4.0,
         tc_r: float = 0.2,
         bc1_r: float = 0.5,
         tc1_r: float = 0.7,
         tc2_r: float = 0.4,
-        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+        slope_type: Literal["Integral", "CastInPlace"] = "Integral",
         i: float = 0.0,
         i1: float = 0.0,
         i2: float = 0.0,
@@ -1388,15 +1388,15 @@ class SectionManager:
             ttj: 加强室顶板厚
             tbj: 加强室底板厚
             twj: 加强室腹板厚
-            n_cell_num: 箱室个数
+            cell_num: 箱室个数
             bi1~bi4: 箱室1~4宽度
             xi1~xi7, yi3~yi7, tt1~tt6: 各倒角参数
             bc_l, tc_l, bc1_l, tc1_l, tc2_l: 左悬臂参数
-            b_symmetry: 右侧是否对称
+            symmetry: 右侧是否对称
                 * 0=非对称
                 * 1=对称
             bc_r, tc_r, bc1_r, tc1_r, tc2_r: 右悬臂参数
-            e_slope_type: 横坡类型
+            slope_type: 横坡类型
                 * Integral=整体旋转找坡
                 * CastInPlace=现浇模板找坡
             i~i4: 各坡度参数
@@ -1407,10 +1407,10 @@ class SectionManager:
             no = self._next_no()
         ok, err = osis_section_streamed_box(
             no, name, "STREAMEDBOX", h, bt_l, bt_r, bb_l, bb_r, bs,
-            tt, tb1, tb2, tw, ttj, tbj, twj, n_cell_num, bi1, bi2, bi3, bi4,
+            tt, tb1, tb2, tw, ttj, tbj, twj, cell_num, bi1, bi2, bi3, bi4,
             xi1, tt1, xi2, tt2, xi3, yi3, xi4, tt4, xi5, yi5, xi6, tt6, xi7, yi7,
-            bc_l, tc_l, bc1_l, tc1_l, tc2_l, b_symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
-            e_slope_type, i, i1, i2, i3, i4, r1, r2,
+            bc_l, tc_l, bc1_l, tc1_l, tc2_l, symmetry, bc_r, tc_r, bc1_r, tc1_r, tc2_r,
+            slope_type, i, i1, i2, i3, i4, r1, r2,
         )
         if not ok:
             raise RuntimeError(f"创建扁平箱梁截面 {no} 失败: {err}")
@@ -1428,8 +1428,8 @@ class SectionManager:
         tb1: float = 0.3,
         tb2: float = 0.3,
         tw: float = 0.5,
-        b_wind: float = 1.0,
-        n_wind: float = 1.0,
+        b: float = 1.0,
+        n: float = 1.0,
         bi: float = 8.0,
         xi1: float = 1.0,
         tt1: float = 0.6,
@@ -1440,7 +1440,7 @@ class SectionManager:
         xo4: float = 1.0,
         tt4: float = 0.7,
         b1: float = 0.3,
-        e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
+        slope_type: Literal["Integral", "CastInPlace"] = "Integral",
         i: float = 0.0,
         i1: float = 0.0,
         i2: float = 0.0,
@@ -1459,8 +1459,8 @@ class SectionManager:
             tb1: 底板厚
             tb2: 斜底板厚
             tw: 腹板厚
-            b_wind: 风嘴上部水平宽度
-            n_wind: 风嘴上部竖向高度
+            b: 风嘴上部水平宽度
+            n: 风嘴上部竖向高度
             bi: 室内宽
             xi1: 倒角1宽(顶板边)
             tt1: 倒角1根部厚
@@ -1471,7 +1471,7 @@ class SectionManager:
             xo4: 倒角4宽(顶板)
             tt4: 倒角4根部厚
             b1: 腹板内侧倒角宽
-            e_slope_type: 横坡类型
+            slope_type: 横坡类型
                 * Integral=整体旋转找坡
                 * CastInPlace=现浇模板找坡
             i: 整体转梁横坡
@@ -1483,8 +1483,8 @@ class SectionManager:
             no = self._next_no()
         ok, err = osis_section_double_side_box(
             no, name, "DOUBLESIDEBOX", h, bt, bt_bottom, bs, bb,
-            tt, tb1, tb2, tw, b_wind, n_wind, bi, xi1, tt1, xi2, tt2,
-            xi3, yi3, xo4, tt4, b1, e_slope_type, i, i1, i2,
+            tt, tb1, tb2, tw, b, n, bi, xi1, tt1, xi2, tt2,
+            xi3, yi3, xo4, tt4, b1, slope_type, i, i1, i2,
         )
         if not ok:
             raise RuntimeError(f"创建双边箱截面 {no} 失败: {err}")
@@ -1533,8 +1533,12 @@ class SectionManager:
         """
         if no is None:
             no = self._next_no()
+        # ok, err = osis_section_ribbed_slab(
+        #     no, name, "RIBBEDSLAB", h, bt, bt_bottom, tt, b, h_rib, b1, b2,e_slope_type, i, i1, i2, x, y
+        # )
         ok, err = osis_section_ribbed_slab(
-            no, name, "RIBBEDSLAB", h, bt, bt_bottom, tt, b, h_rib, b1, b2, x, y, e_slope_type, i, i1, i2,
+            no, name, "RIBBEDSLAB", h, bt, bt_bottom, tt, b, h_rib, b1, b2,
+            x, y, e_slope_type, i, i1, i2,
         )
         if not ok:
             raise RuntimeError(f"创建肋板式截面 {no} 失败: {err}")
@@ -1543,7 +1547,7 @@ class SectionManager:
     def create_TGirder(
         self,
         name: str,
-        e_girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
+        girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
         h: float = 2.5,
         bs: float = 1.125,
         bm: float = 0.85,
@@ -1555,7 +1559,7 @@ class SectionManager:
         bh: float = 0.6,
         hh: float = 0.35,
         yh: float = 0.25,
-        b_slope: bool = False,
+        slope: bool = False,
         i1: float = 0.0,
         i2: float = 0.0,
         r: float = 0.05,
@@ -1565,7 +1569,7 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            e_girder_pos: 截面位置
+            girder_pos: 截面位置
                 * Left=左边梁
                 * Middle=中梁
                 * Right=右边梁
@@ -1580,7 +1584,7 @@ class SectionManager:
             bh: 马蹄宽度
             hh: 马蹄高度
             yh: 马蹄倒角高
-            b_slope: 是否输入横坡
+            slope: 是否输入横坡
             i1: 顶左坡
             i2: 顶右坡
             r: 顶板处倒角半径
@@ -1589,8 +1593,8 @@ class SectionManager:
         if no is None:
             no = self._next_no()
         ok, err = osis_section_TGirder(
-            no, name, "TGIRDER", e_girder_pos, h, bs, bm, bc,
-            tt1, tt2, x, tw, bh, hh, yh, b_slope, i1, i2, r,
+            no, name, "TGIRDER", girder_pos, h, bs, bm, bc,
+            tt1, tt2, x, tw, bh, hh, yh, slope, i1, i2, r,
         )
         if not ok:
             raise RuntimeError(f"创建T梁截面 {no} 失败: {err}")
@@ -1599,7 +1603,7 @@ class SectionManager:
     def create_hollowslab(
         self,
         name: str,
-        e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
+        girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
         h: float = 0.95,
         bs: float = 1.0,
         bm: float = 0.57,
@@ -1625,12 +1629,12 @@ class SectionManager:
 
         Args:
             name: 截面名称
-            e_girder_pos: 截面位置
+            girder_pos: 截面位置
                 * LEFT=左边梁
                 * MIDDLE=中梁
                 * RIGHT=右边梁
             h: 板高
-            bs: 边板宽（e_girder_pos=MIDDLE 时需要设置为空字符串）
+            bs: 边板宽（girder_pos=MIDDLE 时需要设置为空字符串）
             bm: 中梁半宽
             bj: 铰缝上端缩进宽
             tt: 顶板厚
@@ -1653,7 +1657,7 @@ class SectionManager:
         if no is None:
             no = self._next_no()
         ok, err = osis_section_hollowslab(
-            no, name, "HOLLOWSLAB", e_girder_pos, h, bs, bm, bj,
+            no, name, "HOLLOWSLAB", girder_pos, h, bs, bm, bj,
             tt, tb, tw, tc, tc1, bc, xi1, yi1, xi2, yi2,
             xo3, yo3, xo4, yo4, h1,
         )
@@ -1982,7 +1986,7 @@ class SectionManager:
         Args:
             name: 截面名称
             point_matrix: n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标 engine.matrix创建
-            Lline_matrix: n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽 engine.matrix创建
+            line_matrix: n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽 engine.matrix创建
             no: 截面编号，不填则自动分配
         """
         if no is None:
@@ -2016,8 +2020,8 @@ class SectionManager:
             在定义完自定义钢梁截面包含哪些板件后需逐一定义各板件参数
             >>> from pyosis import OSISEngine
             >>> engine = OSISEngine()
-            >>> sec = engine.create_steel_custom_plate(...)
-            >>> sec.add_steel_plate(...)
+            >>> sec = engine.section.create_steel_custom_plate("自定义钢梁截面",plate_positions=["TopFlange"])
+            >>> sec.add_steel_plate("STEEL", "TopFlange",0.0, 0.0, 1.0, 1.0, 0.02)
         """
         if no is None:
             no = self._next_no()
@@ -2064,34 +2068,33 @@ class SectionManager:
         """创建工字型钢组合截面（COMPOSITESTEELI）。  
 
         Args:
-            Name: 截面名
-            Type: 固定为 COMPOSITESTEELI
-            Bt: 板宽
-            Bc: 悬臂长
-            Tt1: 标准段板厚
-            Tt2: 两侧加厚段板厚
-            Tt3: 中间加厚段板厚
-            Tc1: 悬臂端板厚
-            Tc2: 悬臂倒角处板厚
-            B1: 两侧加厚段板宽
-            B2: 中间加厚段板宽
+            name: 截面名
+            bt: 板宽
+            bc: 悬臂长
+            tt1: 标准段板厚
+            tt2: 两侧加厚段板厚
+            tt3: 中间加厚段板厚
+            tc1: 悬臂端板厚
+            tc2: 悬臂倒角处板厚
+            b1: 两侧加厚段板宽
+            b2: 中间加厚段板宽
             x1, x2, x3: 倒角
-            GirderNum: SINGLE=单梁, DOUBLE=双梁, TRIPLE=三梁
-            H1:边梁梁高
-            Bf1:边梁上翼缘宽
-            Bb1:边梁下翼缘宽
-            Tf1:边梁上翼缘厚
-            Tb1:边梁下翼缘厚
-            Tw1:边梁腹板厚
-            WebRibPos1:边梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
-            MiddleSameWithSide:中梁构造同左边梁，1=相同，0=不同
-            H2:中梁梁高
-            Bf2:中梁上翼缘宽
-            Bb2:中梁下翼缘宽
-            Tf2:中梁上翼缘厚
-            Tb2:中梁下翼缘厚
-            Tw2:中梁腹板厚
-            WebRibPos2:中梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
+            girder_num: SINGLE=单梁, DOUBLE=双梁, TRIPLE=三梁
+            h1:边梁梁高
+            bf1:边梁上翼缘宽
+            bb1:边梁下翼缘宽
+            tf1:边梁上翼缘厚
+            tb1:边梁下翼缘厚
+            tw1:边梁腹板厚
+            web_rib_pos1:边梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
+            middle_same_with_side:中梁构造同左边梁，1=相同，0=不同
+            h2:中梁梁高
+            bf2:中梁上翼缘宽
+            bb2:中梁下翼缘宽
+            tf2:中梁上翼缘厚
+            tb2:中梁下翼缘厚
+            tw2:中梁腹板厚
+            web_rib_pos2:中梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
             no: 截面编号
         """
         if no is None:
@@ -2141,32 +2144,32 @@ class SectionManager:
     ) -> Section:
         """创建槽型钢组合截面（COMPOSITESTEELTROUGH）。
             Args:
-            Name: 截面名
-            Type: 固定为 COMPOSITESTEELTROUGH
-            Bt: 板宽
-            Bc: 悬臂长
-            Tt1: 标准段板厚
-            Tt2: 两侧加厚段板厚
-            Tt3: 中间加厚段板厚
-            Tc1: 悬臂端板厚
-            Tc2: 悬臂倒角处板厚
-            B1: 两侧加厚段板宽
-            B2: 中间加厚段板宽
+            name: 截面名
+            type: 固定为 COMPOSITESTEELTROUGH
+            bt: 板宽
+            bc: 悬臂长
+            tt1: 标准段板厚
+            tt2: 两侧加厚段板厚
+            tt3: 中间加厚段板厚
+            tc1: 悬臂端板厚
+            tc2: 悬臂倒角处板厚
+            b1: 两侧加厚段板宽
+            b2: 中间加厚段板宽
             x1, x2, x3: 倒角
-            H1: 主梁梁高
-            Bb: 主梁底板宽
-            Bf1: 主梁上翼缘宽
-            Tf1: 主梁上翼缘厚
-            Tb: 主梁底板厚
-            Tw1: 主梁腹板厚
-            RightSameWithLeft: 右腹板加劲肋布置是否与左侧相同，1=相同，0=不同
-            HasSteelI: 是否有小纵梁，1=有，0=无
-            H2:小纵梁梁高
-            Bf2:小纵梁上翼缘宽
-            Bf3:小纵梁下翼缘宽
-            Tf2:小纵梁上翼缘厚
-            Tf3:小纵梁下翼缘厚
-            Tw2:小纵梁腹板厚
+            h1: 主梁梁高
+            bb: 主梁底板宽
+            bf1: 主梁上翼缘宽
+            tf1: 主梁上翼缘厚
+            tb: 主梁底板厚
+            tw1: 主梁腹板厚
+            right_same_with_left: 右腹板加劲肋布置是否与左侧相同，1=相同，0=不同
+            has_steel_i: 是否有小纵梁，1=有，0=无
+            h2:小纵梁梁高
+            bf2:小纵梁上翼缘宽
+            bf3:小纵梁下翼缘宽
+            tf2:小纵梁上翼缘厚
+            tf3:小纵梁下翼缘厚
+            tw2:小纵梁腹板厚
             no: 截面编号
         """
         if no is None:
@@ -2217,34 +2220,34 @@ class SectionManager:
     ) -> Section:
         """创建箱型钢组合截面（COMPOSITESTEELBOX）。
             Args:
-            Name: 截面名
-            Type: 固定为 COMPOSITESTEELBOX
-            Bt: 板宽
-            Bc: 悬臂长
-            Tt1: 标准段板厚
-            Tt2: 两侧加厚段板厚
-            Tt3: 中间加厚段板厚
-            Tc1: 悬臂端板厚
-            Tc2: 悬臂倒角处板厚
-            B1: 两侧加厚段板宽
-            B2: 中间加厚段板宽
+            name: 截面名
+            type: 固定为 COMPOSITESTEELBOX
+            bt: 板宽
+            bc: 悬臂长
+            tt1: 标准段板厚
+            tt2: 两侧加厚段板厚
+            tt3: 中间加厚段板厚
+            tc1: 悬臂端板厚
+            tc2: 悬臂倒角处板厚
+            b1: 两侧加厚段板宽
+            b2: 中间加厚段板宽
             x1, x2, x3: 倒角
-            GirderNum: SINGLE=单梁, DOUBLE=双梁, TRIPLE=三梁
-            H1: 主梁梁高
-            Bf1: 主梁上翼缘宽
-            Bct: 主梁上翼缘悬出宽
-            Bb: 主梁下翼缘宽
-            Bcb: 主梁下翼缘悬出宽
-            Tf1: 主梁上翼缘厚
-            Tb: 主梁下翼缘厚
-            Tw1: 主梁腹板厚
-            SameLayout: 下翼缘加劲肋布置与上翼缘是否相同，1=相同，0=不同
-            H2:小纵梁梁高
-            Bf2:小纵梁上翼缘宽
-            Bf3:小纵梁下翼缘宽
-            Tf2:小纵梁上翼缘厚
-            Tf3:小纵梁下翼缘厚
-            Tw2:小纵梁腹板厚
+            girder_num: SINGLE=单梁, DOUBLE=双梁, TRIPLE=三梁
+            h1: 主梁梁高
+            bf1: 主梁上翼缘宽
+            bct: 主梁上翼缘悬出宽
+            bb: 主梁下翼缘宽
+            bcb: 主梁下翼缘悬出宽
+            tf1: 主梁上翼缘厚
+            tb: 主梁下翼缘厚
+            tw1: 主梁腹板厚
+            same_layout: 下翼缘加劲肋布置与上翼缘是否相同，1=相同，0=不同
+            h2:小纵梁梁高
+            bf2:小纵梁上翼缘宽
+            bf3:小纵梁下翼缘宽
+            tf2:小纵梁上翼缘厚
+            tf3:小纵梁下翼缘厚
+            tw2:小纵梁腹板厚
             no: 截面编号
         """
         if no is None:
@@ -2279,31 +2282,31 @@ class SectionManager:
             raise RuntimeError(f"创建自定义组合截面 {no} 失败: {err}")
         return self.get(no)
 
-    def create_numerical(self, no: int, name: str, strArea: str, dSy: float, dSz: float, dIxx: float, dIyy: float,
-                         dIzz: float, dIww: float, dCentY: float, dCentZ: float, dDy: float, dDz: float, dPeriO: float,
-                         dPeriI: float) -> Section:
+    def create_numerical(self, no: int, name: str, area: str, sy: float, sz: float, ixx: float, iyy: float,
+                         izz: float, iww: float, cent_y: float, cent_z: float, dy: float, dz: float, peri_O: float,
+                         peri_i: float) -> Section:
         """
         定义或修改数值截面
         
         Args:
             no: 截面编号
             name: 截面名称
-            strArea: 截面面积
-            dSy: 局部坐标系y轴方向的剪切常数
-            dSz: 局部坐标系z轴方向的剪切常数
-            dIxx: 绕局部坐标系x轴的惯性矩
-            dIyy: 绕局部坐标系y轴的惯性矩
-            dIzz: 绕局部坐标系z轴的惯性矩
-            dIww: 翘曲惯性矩
-            dCentY: 质心在局部坐标系y轴方向的坐标值
-            dCentZ: 质心在局部坐标系z轴方向的坐标值
-            dDy: 沿局部坐标系y轴方向的截面偏心
-            dDz: 沿局部坐标系z轴方向的截面偏心
-            dPeriO: 截面外轮廓周长
-            dPeriI: 截面内轮廓周长
+            area: 截面面积
+            sy: 局部坐标系y轴方向的剪切常数
+            sz: 局部坐标系z轴方向的剪切常数
+            ixx: 绕局部坐标系x轴的惯性矩
+            iyy: 绕局部坐标系y轴的惯性矩
+            izz: 绕局部坐标系z轴的惯性矩
+            iww: 翘曲惯性矩
+            cent_y: 质心在局部坐标系y轴方向的坐标值
+            cent_z: 质心在局部坐标系z轴方向的坐标值
+            dy: 沿局部坐标系y轴方向的截面偏心
+            dz: 沿局部坐标系z轴方向的截面偏心
+            peri_O: 截面外轮廓周长
+            peri_i: 截面内轮廓周长
         """
-        ok, err = osis_section_numerical(no, name, "Numerical", strArea, dSy, dSz, dIxx, dIyy, dIzz, dIww, dCentY,
-                                         dCentZ, dDy, dDz, dPeriO, dPeriI)
+        ok, err = osis_section_numerical(no, name, "Numerical", area, sy, sz, ixx, iyy, izz, iww, cent_y,
+                                         cent_z, dy, dz, peri_O, peri_i)
         if not ok:
             raise RuntimeError(f"创建数值截面 {no} 失败: {err}")
         return self.get(no)
@@ -2322,7 +2325,7 @@ class SectionManager:
 
     # ── 查询 ──────────────────────────────────
 
-    def get(self, no: int | list[int], expected_cls: type[Section] = Section) -> Section | list[Section | None]:
+    def get(self, no: int | list[int], expected_cls: type[Section] = Section) -> None | Section | list[Section | None]:
         """根据编号获取单个或多个截面 (O(k))"""
         if isinstance(no, int):
             no = [no]

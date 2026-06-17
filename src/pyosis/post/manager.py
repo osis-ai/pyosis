@@ -368,19 +368,19 @@ class PostManager:
 
     def set_weld_skeleton(
         self,
-        n_para: Literal[0, 1],
+        para: Literal[0, 1],
         factor: float = 1.3,
     ) -> None:
         """设置焊接钢筋骨架系数（需先选中单元）
 
         Args:
-            n_para: 0 — 无焊接钢筋骨架（默认）；1 — 有焊接钢筋骨架
-            factor: 焊接钢筋骨架系数，须大于 0；默认 1.3，仅在 n_para 为 1 时生效
+            para: 0 — 无焊接钢筋骨架（默认）；1 — 有焊接钢筋骨架
+            factor: 焊接钢筋骨架系数，须大于 0；默认 1.3，仅在 para 为 1 时生效
 
         Raises:
             RuntimeError: 设置失败时抛出异常
         """
-        ok, err = osis_cd_crack_weld(n_para, factor)
+        ok, err = osis_cd_crack_weld(para, factor)
         if not ok:
             raise RuntimeError(f"设置焊接钢筋骨架系数失败: {err}")
 

@@ -282,7 +282,7 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     user_lc.create_prestress(shape1.name, "BOTH", "ST", 1.395000E+09, 1.395000E+09)
     lc_barrier.create_cable_force(15, "IN",1.0e6)
     # 修改荷载工况
-    user_lc.modify(eType="NFORCE", old_entity=1, new_entity=2)
+    user_lc.modify(e_type="NFORCE", old_entity=1, new_entity=2)
 
     # 面荷载 — 依赖 _6 中已创建的壳单元
     shells = [e for e in engine.element.all() if e.element_type.name == "SHELL"]
@@ -291,11 +291,11 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     shell_no = shells[0].no
 
     user_lc.create_surface_load(
-        strEntity=str(shell_no),
-        strPlanei="1",
-        strDir="X",
-        strGlobalI="0",
-        strP1i="0", strP2i="0", strP3i="0", strP4i="0",
+        entity=str(shell_no),
+        plane_i="1",
+        s_dir="X",
+        global_i="0",
+        p1i="0", p2i="0", p3i="0", p4i="0",
     )
      # 删除荷载（LoadCase.delete）
     user_lc.delete("ESRFC", entity=str(shell_no))
@@ -308,13 +308,13 @@ def build_loadcases(engine: OSISEngine, geo_names: list[str], mat_nos: list[int]
     lc1 = loadcase.create("荷载工况-桥规中的荷编号1-结构重力", "D")
     _expect_attr(lc1,"name","荷载工况-桥规中的荷编号1-结构重力")
 
-    lc2 = loadcase.create("荷载工况-结构和非结构附属荷载", "DC")
+    lc2 = loadcase.create("荷载工况-结构和非结构附属荷载", "USER")
     _expect_attr(lc2,"name","荷载工况-结构和非结构附属荷载")
 
-    lc3 = loadcase.create("荷载工况-铺装和设备荷载", "DW")
+    lc3 = loadcase.create("荷载工况-铺装和设备荷载", "CS")
     _expect_attr(lc3,"name","荷载工况-铺装和设备荷载")
 
-    lc4 = loadcase.create("荷载工况-桩端摩擦力", "DD")
+    lc4 = loadcase.create("荷载工况-桩端摩擦力", "USER")
     _expect_attr(lc4,"name","荷载工况-桩端摩擦力")
 
     # 2: 封端混凝土工况（CS）

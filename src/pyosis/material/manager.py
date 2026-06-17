@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Union, Any
+from typing import Literal, Any
 from enum import Enum
 from ..core.client import osis_client
 from .interface import (
@@ -158,24 +158,24 @@ class MaterialManager:
     def create_conc(
         self,
         name: str,
-        eCode: Literal["JTG3362_2018", "JTGD62_2004"],
-        eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
-        nCrepShrk: int | str = "",
-        dDmp: float = 0.05,
+        code: Literal["JTG3362_2018", "JTGD62_2004"],
+        grade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
+        crep_shrk: int | str = "",
+        dmp: float = 0.05,
         no: int | None = None,
     ) -> Material:
         """创建混凝土材料
 
         Args:
             name: 材料名称
-            eCode: 材料标准代码，可选值：
+            code: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
-            eGrade: 材料等级牌号，可选值：
+            grade: 材料等级牌号，可选值：
                 C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80
             no: 材料编号，不指定时自动生成（取最大编号+1）
-            nCrepShrk: 收缩徐变特性编号，可缺省
-            dDmp: 材料阻尼比
+            crep_shrk: 收缩徐变特性编号，可缺省
+            dmp: 材料阻尼比
 
         Returns:
             创建的材料对象
@@ -185,7 +185,7 @@ class MaterialManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_material_conc(no, name, "CONC", eCode, eGrade, nCrepShrk, dDmp)
+        ok, err = osis_material_conc(no, name, "CONC", code, grade, crep_shrk, dmp)
         if not ok:
             raise RuntimeError(f"创建混凝土材料 {no} 失败: {err}")
         return self.get(no)
@@ -193,21 +193,21 @@ class MaterialManager:
     def create_steel(
         self,
         name: str,
-        eCode: Literal["JTGD64_2015"],
-        eGrade: Literal["Q235", "Q345", "Q390", "Q420"],
-        dDmp: float = 0.0,
+        code: Literal["JTGD64_2015"],
+        grade: Literal["Q235", "Q345", "Q390", "Q420"],
+        dmp: float = 0.0,
         no: int | None = None,
     ) -> Material:
         """创建钢材
 
         Args:
             name: 材料名称
-            eCode: 材料标准代码，可选值：
+            code: 材料标准代码，可选值：
                 - JTGD64_2015
-            eGrade: 材料等级牌号，可选值：
+            grade: 材料等级牌号，可选值：
                 Q235, Q345, Q390, Q420
             no: 材料编号，不指定时自动生成（取最大编号+1）
-            dDmp: 材料阻尼比
+            dmp: 材料阻尼比
 
         Returns:
             创建的材料对象
@@ -217,7 +217,7 @@ class MaterialManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_material_steel(no, name, "STEEL", eCode, eGrade, dDmp)
+        ok, err = osis_material_steel(no, name, "STEEL", code, grade, dmp)
         if not ok:
             raise RuntimeError(f"创建钢材 {no} 失败: {err}")
         return self.get(no)
@@ -225,24 +225,24 @@ class MaterialManager:
     def create_prestressed(
         self,
         name: str,
-        eCode: Literal["JTG3362_2018", "JTGD62_2004"],
-        eGrade: str,
-        dDmp: float = 0.0,
+        code: Literal["JTG3362_2018", "JTGD62_2004"],
+        grade: str,
+        dmp: float = 0.0,
         no: int | None = None,
     ) -> Material:
         """创建预应力材料
 
         Args:
             name: 材料名称
-            eCode: 材料标准代码，可选值：
+            code: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
-            eGrade: 材料等级牌号，根据材料标准可选：
+            grade: 材料等级牌号，根据材料标准可选：
                 - JTG3362_2018: Strand1720, Strand1860, Strand1960, Wire1470, Wire1570,
                   Wire1770, Wire1860, Rebar785, Rebar930, Rebar1080
                 - JTGD62_2004: Strand1860, Wire1670, Wire1770, Rebar785, Rebar930
             no: 材料编号，不指定时自动生成（取最大编号+1）
-            dDmp: 材料阻尼比
+            dmp: 材料阻尼比
 
         Returns:
             创建的材料对象
@@ -252,7 +252,7 @@ class MaterialManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_material_prestressed(no, name, "PRESTRESSED", eCode, eGrade, dDmp)
+        ok, err = osis_material_prestressed(no, name, "PRESTRESSED", code, grade, dmp)
         if not ok:
             raise RuntimeError(f"创建预应力材料 {no} 失败: {err}")
         return self.get(no)
@@ -260,23 +260,23 @@ class MaterialManager:
     def create_rebar(
         self,
         name: str,
-        eCode: Literal["JTG3362_2018", "JTGD62_2004"],
-        eGrade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"],
-        dDmp: float = 0.0,
+        code: Literal["JTG3362_2018", "JTGD62_2004"],
+        grade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"],
+        dmp: float = 0.0,
         no: int | None = None,
     ) -> Material:
         """创建钢筋材料
 
         Args:
             name: 材料名称
-            eCode: 材料标准代码，可选值：
+            code: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
-            eGrade: 材料等级牌号，根据材料标准可选：
+            grade: 材料等级牌号，根据材料标准可选：
                 - JTG3362_2018: HPB300, HRB400, HRBF400, RRB400, HRB500
                 - JTGD62_2004: R235, HRB335, HRB400, KL400
             no: 材料编号，不指定时自动生成（取最大编号+1）
-            dDmp: 材料阻尼比
+            dmp: 材料阻尼比
 
         Returns:
             创建的材料对象
@@ -286,7 +286,7 @@ class MaterialManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_material_rebar(no, name, "REBAR", eCode, eGrade, dDmp)
+        ok, err = osis_material_rebar(no, name, "REBAR", code, grade, dmp)
         if not ok:
             raise RuntimeError(f"创建钢筋材料 {no} 失败: {err}")
         return self.get(no)
@@ -294,13 +294,13 @@ class MaterialManager:
     def create_custom(
         self,
         name: str,
-        dE: float = 1,
-        dG: float = 0,
-        dMu: float = 0,
-        dExpCoeff: float = 0,
-        dUnitWeight: float = 0,
-        dDensity: float = 0,
-        dDmp: float = 0,
+        e: float = 1,
+        g: float = 0,
+        mu: float = 0,
+        exp_coeff: float = 0,
+        unit_weight: float = 0,
+        density: float = 0,
+        dmp: float = 0,
         no: int | None = None,
     ) -> Material:
         """创建自定义材料
@@ -308,13 +308,13 @@ class MaterialManager:
         Args:
             name: 材料名称
             no: 材料编号，不指定时自动生成（取最大编号+1）
-            dE: 弹性模量(Pa)
-            dG: 剪切模量(Pa)
-            dMu: 泊松比
-            dExpCoeff: 线膨胀系数(1/摄氏度)
-            dUnitWeight: 容重(N/m^3)
-            dDensity: 质量密度(kg/m^3)
-            dDmp: 材料阻尼比
+            e: 弹性模量(Pa)
+            g: 剪切模量(Pa)
+            mu: 泊松比
+            exp_coeff: 线膨胀系数(1/摄氏度)
+            unit_weight: 容重(N/m^3)
+            density: 质量密度(kg/m^3)
+            dmp: 材料阻尼比
 
         Returns:
             创建的材料对象
@@ -325,7 +325,7 @@ class MaterialManager:
         if no is None:
             no = self._next_no()
         ok, err = osis_material_custom(
-            no, name, "CUSTOM", dE, dG, dMu, dExpCoeff, dUnitWeight, dDensity, dDmp
+            no, name, "CUSTOM", e, g, mu, exp_coeff, unit_weight, density, dmp
         )
         if not ok:
             raise RuntimeError(f"创建自定义材料 {no} 失败: {err}")

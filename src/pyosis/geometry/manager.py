@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Literal, Any
 
@@ -173,8 +173,9 @@ class GeometryManager:
             RuntimeError: 创建失败
 
         Examples:
-            >>> geometry.create("Lane1", "general", "LIVE", [0, 0, 0, 1, 0, 0, 10, 0, 0, 1, 0, 0])
-            >>> geometry.create("T1", "arc3d", owner="TENDON", coordinates=[...])
+            >>> from pyosis.geometry import geometry_manager
+            >>> geometry_manager.create("Lane1", "general", "LIVE", [0, 0, 0, 1, 0, 0, 10, 0, 0, 1, 0, 0])
+            >>> geometry_manager.create("T1", "arc3d", owner="TENDON", coordinates=[...])
         """
         _creator = {
             "GENERAL": self.create_general,

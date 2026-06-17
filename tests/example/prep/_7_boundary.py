@@ -19,26 +19,26 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
     boundary = engine.boundary
     
     # 边界 1: x向固定（UX, UY, UZ, RX, RZ约束，RY释放）
-    bd1 = boundary.create(1,"GENERAL",bX=1, bY=1, bZ=1, bRX=1, bRY=0, bRZ=1, bRW=0)
+    bd1 = boundary.create(1,"GENERAL",x=1, y=1, z=1, rx=1, ry=0, rz=1, rw=0)
     _expect_attr(bd1,"no",1)
     bd1.assign("a", [node_nos[1]])  # 分配给节点2
     
     # 边界 2: x向滑动（UY, UZ, RX, RZ约束，UX、RY释放）
-    bd2 = boundary.create(2,"GENERAL",bX=0, bY=1, bZ=1, bRX=1, bRY=0, bRZ=1, bRW=0)
+    bd2 = boundary.create(2,"GENERAL",x=0, y=1, z=1, rx=1, ry=0, rz=1, rw=0)
     _expect_attr(bd2,"no",2)
     bd2.assign("a", [node_nos[13]])  # 分配给节点14
     
 
-    bd3 = boundary.create(3,"MSTSLV",nNode=node_nos[1])
+    bd3 = boundary.create(3,"MSTSLV",node=node_nos[1])
     _expect_attr(bd3,"no",3)
 
-    bd4 = boundary.create(4,"RELEASE", Fxi_state=False, Fyi_state=True, Fzi_state=True, Mxi_state=True, Myi_state=False, Mzi_state=True, Mbi_state=False, Fxi=0, Fyi=0, Fzi=0, Mxi=0, Myi=0, Mzi=0, Mbi=0, Fxj_state=False, Fyj_state=True, Fzj_state=True, Mxj_state=True, Myj_state=False, Mzj_state=True, Mbj_state=False, Fxj=0, Fyj=0, Fzj=0, Mxj=0, Myj=0, Mzj=0, Mbj=0)
+    bd4 = boundary.create(4,"RELEASE", fxi_state=False, fyi_state=True, fzi_state=True, mxi_state=True, myi_state=False, mzi_state=True, mbi_state=False, fxi=0, fyi=0, fzi=0, mxi=0, myi=0, mzi=0, mbi=0, fxj_state=False, fyj_state=True, fzj_state=True, mxj_state=True, myj_state=False, mzj_state=True, mbj_state=False, fxj=0, fyj=0, fzj=0, mxj=0, myj=0, mzj=0, mbj=0)
     _expect_attr(bd4,"no",4)
 
-    bd5 = boundary.create(5,"ELSTCSPT",nCoor="", bX=1, DX=0, bY=1, DY=0, bZ=1, DZ=0, bRX=1, RX=0, bRY=0, RY=0, bRZ=1, RZ=0)
+    bd5 = boundary.create(5,"ELSTCSPT",coor="", x=1, dx=0, y=1, dy=0, z=1, dz=0, rx=1, drx=0, ry=0, dry=0, rz=1, drz=0)
     _expect_attr(bd5,"no",5)
 
-    bd6 = boundary.create(6,"GES",nCoor="", stiffness_matrix=[1e9, 0, 0, 0, 0, 0, 1e9, 0, 0, 0, 0, 0, 1e9, 0, 0, 0, 0, 0, 1e9, 0, 0])
+    bd6 = boundary.create(6,"GES",coor="", stiffness_matrix=[1e9, 0, 0, 0, 0, 0, 1e9, 0, 0, 0, 0, 0, 1e9, 0, 0, 0, 0, 0, 1e9, 0, 0])
     _expect_attr(bd6,"no",6)
 
     bd7 = boundary.create(7,"RIGID",nNodeI=node_nos[1])
@@ -52,8 +52,8 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
     
     # 截面特性调整 临时 no=8，测完删除
     bd8 = boundary.create(8,"GENERAL",
-        bX=0, bY=0, bZ=0,
-        bRX=0, bRY=0, bRZ=0, bRW=0)
+        x=0, y=0, z=0,
+        rx=0, ry=0, rz=0, rw=0)
     _expect_attr(bd8, "no", 8)
     bd8.set_section_factor(
         1.0, 1.0, 1.0,
@@ -71,16 +71,16 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
     # 边界组
     bg1 = boundary.group.create("桥台1_永久_x向固定")
     _expect_attr(bg1,"name","桥台1_永久_x向固定")
-    bg1.add([bd1.no])
+    bg1.add(bd1.no)
 
     bg2 = boundary.group.create("桥台2_永久_x向滑动")
     _expect_attr(bg2,"name","桥台2_永久_x向滑动")
-    bg2.add([bd2.no])
+    bg2.add(bd2.no)
 
     # 边界组 replace 测试 — 临时组，不影响业务组
     bg_rep = boundary.group.create("_边界组替换测试")
-    bg_rep.add([bd3.no, bd4.no])
-    bg_rep = bg_rep.replace(["4by5"])  # 组内把边界 4 换成 5
+    bg_rep.add(bd3.no, bd4.no)
+    bg_rep = bg_rep.replace("4by5")  # 组内把边界 4 换成 5
     if set(bg_rep.boundary_nos) != {bd3.no, bd5.no}:
         raise ValueError(
             f"replace 后应为 {{{bd3.no}, {bd5.no}}}，实际 {bg_rep.boundary_nos}"
@@ -94,10 +94,10 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
 
     # 边界组 remove / remove_all 测试 — 临时组，不影响业务组
     bg_test = boundary.group.create("_边界组移除测试")
-    bg_test.add([bd3.no, bd4.no])
+    bg_test.add(bd3.no, bd4.no)
     if bd4.no not in bg_test.boundary_nos:
         raise ValueError(f"add 后应包含边界 {bd4.no}")
-    bg_test = bg_test.remove([bd4.no])
+    bg_test = bg_test.remove(bd4.no)
     if bd4.no in bg_test.boundary_nos:
         raise ValueError(f"remove 后不应再包含边界 {bd4.no}")
     if bd3.no not in bg_test.boundary_nos:

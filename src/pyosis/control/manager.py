@@ -171,17 +171,17 @@ class ControlManager:
         if not ok:
             raise RuntimeError(f"设置自动时间步长失败: {err}")
 
-    def set_substitution_steps(self, nls: int, nsbmx: int) -> None:
+    def set_substitution_steps(self, ls: int, sbmx: int) -> None:
         """指定荷载步数和最大荷载子步数"""
-        ok, err = osis_NSUBST(nls, nsbmx)
+        ok, err = osis_NSUBST(ls, sbmx)
         if not ok:
             raise RuntimeError(f"设置荷载步数失败: {err}")
 
     # ── 模态分析 ────────────────────────────────
 
-    def set_modal_opt(self, n_mod: int = 1) -> None:
+    def set_modal_opt(self, num: int = 1) -> None:
         """定义模态分析所需的特征值最大数目"""
-        ok, err = osis_mod_opt(n_mod)
+        ok, err = osis_mod_opt(num)
         if not ok:
             raise RuntimeError(f"设置模态分析参数失败: {err}")
 

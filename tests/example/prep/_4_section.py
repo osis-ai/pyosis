@@ -2764,14 +2764,14 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     sec1.delete_rebar_s(sec1.no,"BentUpRebar")
     # 圆形钢筋
     sec1.add_rebar_circle(
-        n_rebar_no=4,
-        n_material_no=mat_no,
-        d_center_y=0.0,
-        d_center_z=0.0,
-        d_radius=0.30,
-        n_method=1,
-        n_num=8,
-        d_interval=0.0,
+        rebar_no=4,
+        material_no=mat_no,
+        center_y=0.0,
+        center_z=0.0,
+        radius=0.30,
+        method=1,
+        num=8,
+        interval=0.0,
         diameter="D16",
     )
     sec1.delete_rebar_l(4)

@@ -11,7 +11,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
 
 from ..core.client import osis_client
 from .interface import (
@@ -153,7 +152,7 @@ class SettlementGroupManager:
 
     用法:
         >>> from pyosis.settlement import settlement_manager
-        >>> sg = settlement_manager.group.create("N1", -0.001, [1, 2, 3])
+        >>> sg = settlement_manager.group.create("N1", -0.001, 1, 2, 3)
         >>> sg = settlement_manager.group.get("N1")
         >>> settlement_manager.group.delete("N1")
     """
@@ -273,7 +272,7 @@ class SettlementManager:
         >>> s = settlement_manager.create("S1")
         >>> s = settlement_manager.get("S1")
         >>> # 沉降组操作
-        >>> sg = settlement_manager.group.create("N1", -0.001, [1, 2, 3])
+        >>> sg = settlement_manager.group.create("N1", -0.001, 1, 2, 3)
         >>> s.include("N1")
         >>> settlement_manager.delete("S1")
     """

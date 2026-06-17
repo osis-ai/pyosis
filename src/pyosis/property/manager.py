@@ -5,7 +5,7 @@
     >>> property_manager.coord.create_three_point(1, 0, 0, 0, 10, 0, 0, 0, 10, 0)
     >>> property_manager.creep_shrink.create(1, "CS1", 70.0, 7, 5.0, 3)
     >>> property_manager.damping.create_modal("Damp1", 0.05)
-    >>> property_manager.pu_curve.create(1, "PU1", 0, 3, [0, 0.01, 0.02], [0, 100, 150])
+    >>> property_manager.pu_curve.create(1, "PU1", 0, 3, 0.0, 0.01, 0.02, 0.0, 100.0, 150.0)
 """
 
 from __future__ import annotations
@@ -684,7 +684,7 @@ class PropertyManager:
         if not ok:
             raise RuntimeError(f"分配构件厚度失败: {err}")
 
-    def count(self) -> int:
+    def count(self) -> dict[str, int]:
         return {
             # "coords": self._coord.count(),
             "creep_shrinks": self._creep_shrink.count(),

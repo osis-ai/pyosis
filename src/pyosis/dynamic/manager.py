@@ -686,13 +686,13 @@ class DynamicManager:
     用法:
     >>> from pyosis.dynamic import dynamic_manager
     >>> # 荷载转换质量
-    >>> dynamic_manager.load_to_mass.create("LTM1")
-    >>> dynamic_manager.load_to_mass.add("LTM1", "D", 1.0, 9.806)
+    >>> ltm = dynamic_manager.load_to_mass.create("LTM1")
+    >>> ltm.add("D", 1.0, 9.806)
     >>> # 模态分析
     >>> dynamic_manager.modal.set_modal_opt(10)
-    >>> # 地震反应谱
+    >>> # 地震反应谱（导入型）
     >>> data = [(0.1, 0.5), (0.2, 0.8)]
-    >>> dynamic_manager.seismic.create("RS1", "A", 9.806, data)
+    >>> dynamic_manager.seismic.create("RS1", "A", 9.806, 0, data)
     >>> # 反应谱工况
     >>> dynamic_manager.response_spectrum.create("RA1", "RS1", num=10)
     """

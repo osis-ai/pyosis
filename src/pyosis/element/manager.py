@@ -151,7 +151,7 @@ class ElementGroup:
             self._sync_from_dict(data[0])
         return self
 
-    def _execute(self, operation: str, *param: str | int) -> None:
+    def _execute(self, operation: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param: str | int) -> None:
         """执行单元组底层操作（内部使用）"""
         ok, err = osis_element_group(self.name, operation, *param)
         if not ok:
@@ -264,13 +264,13 @@ class ElementGroupManager:
 
     用法:
         >>> from pyosis.element import element_manager
-        >>> # 创建和查询
+        >>> # 单元组：创建 → 在对象上操作成员
         >>> eg = element_manager.group.create("主梁单元")
-        >>> eg = element_manager.group.get("主梁单元")
-        >>> # 组成员操作（在对象上调用）
-        >>> eg.add([1, 2, 3])
-        >>> eg.remove([1])
-        >>> eg.replace([4, 5])
+        >>> eg.add(1, 2, 3)
+        >>> eg.remove(1)
+        >>> eg.replace(4, 5)
+        >>> eg = element_manager.group.get("主梁单元")  # 查询刷新后的状态
+        >>> eg.elements
     """
 
     def __init__(self) -> None:
@@ -525,8 +525,8 @@ class ElementManager:
         >>> element_manager.renumber(elem.no, 100)
         >>> 
         >>> # 单元组操作
-        >>> element_manager.group.create("主梁单元")
-        >>> element_manager.group.add("主梁单元", [1, 2, 3])
+        >>> eg = element_manager.group.create("主梁单元")
+        >>> eg.add(1, 2, 3)
         >>> eg = element_manager.group.get("主梁单元")
     """
 
@@ -596,9 +596,9 @@ class ElementManager:
         nYTrans: Literal[1, 2, 3, 4] = 1,
         nZTrans: Literal[1, 2, 3, 4] = 1,
         dStrain: float = 0.0,
-        bFlag: int = 0,
+        bFlag: bool = 0,
         dTheta: float = 0,
-        bWarping: int = 0,
+        bWarping: bool = 0,
         no: int | None = None,
     ) -> Element:
         """创建梁柱单元"""
@@ -641,14 +641,14 @@ class ElementManager:
         rx: float = 10,
         ry: float = 10,
         rz: float = 10,
-        dBeta: float = 0.0,
+        beta: float = 0.0,
         no: int | None = None,
     ) -> Element:
         """创建弹簧单元"""
         if no is None:
             no = self._next_no()
         ok, err = osis_element_spring(
-            no, "SPRING", node1, node2, bLinear, dx, dy, dz, rx, ry, rz, dBeta
+            no, "SPRING", node1, node2, bLinear, dx, dy, dz, rx, ry, rz, beta
         )
         if not ok:
             raise RuntimeError(f"创建弹簧单元 {no} 失败: {err}")
@@ -658,16 +658,16 @@ class ElementManager:
         self,
         node1: int,
         node2: int,
-        nMat: int,
-        nSec: int,
-        eMethod: Literal["UL", "IF", "HF", "VF", "IS"] = "UL",
-        dPara: float = 10.0,
+        mat: int,
+        sec: int,
+        method: Literal["UL", "IF", "HF", "VF", "IS"] = "UL",
+        para: float = 10.0,
         no: int | None = None,
     ) -> Element:
         """创建拉索单元"""
         if no is None:
             no = self._next_no()
-        ok, err = osis_element_cable(no, "CABLE", node1, node2, nMat, nSec, eMethod, dPara)
+        ok, err = osis_element_cable(no, "CABLE", node1, node2, mat, sec, method, para)
         if not ok:
             raise RuntimeError(f"创建拉索单元 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]
@@ -677,16 +677,16 @@ class ElementManager:
         node1: int,
         node2: int,
         node3: int,
-        nMat: int,
-        nThk: int,
-        bIsThin: int = 1,
+        mat: int,
+        thk: int,
+        is_thin: bool = 1,
         node4: int | None = None,
         no: int | None = None,
     ) -> Element:
         """创建壳单元"""
         if no is None:
             no = self._next_no()
-        ok, err = osis_element_shell(no, "SHELL", bIsThin, nMat, nThk, node1, node2, node3, node4)
+        ok, err = osis_element_shell(no, "SHELL", is_thin, mat, thk, node1, node2, node3, node4)
         if not ok:
             raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
         return self.get(no)
@@ -780,9 +780,9 @@ class ElementManager:
         提供单元组的增删改查功能。
 
         用法:
-            >>> element_manager.group.create("主梁1")
-            >>> element_manager.group.add("主梁1", [1, 2])
-            >>> element_manager.group.get("主梁1")
+            >>> eg = element_manager.group.create("主梁1")
+            >>> eg.add(1, 2)
+            >>> eg = element_manager.group.get("主梁1")
         """
         return self._element_manager
 
@@ -793,7 +793,7 @@ class ElementManager:
         提供变截面单元组的查询功能。
         用法:
             >>> element_manager.taper_group.all()
-            >>> element_manager.taper_group.get([1, 2, 3])
+            >>> element_manager.taper_group.get(["1", "2", "3"])
         """
         return self._taper_ele_group_manager
 

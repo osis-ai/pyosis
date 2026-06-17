@@ -94,7 +94,7 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
         n_top_r.no,     # 右上
         mat_nos[0],
         shell_thk_no,
-        bIsThin=1,
+        is_thin=1,
         node4=n_top_l.no  # 左上
     )
     _expect_attr(e_shell, "no", 19)
