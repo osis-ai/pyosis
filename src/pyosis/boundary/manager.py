@@ -506,16 +506,16 @@ class BoundaryGroupManager:
 
     # ── 增删改 ────────────────────────────────
 
-    def create(self, name: str) -> BoundaryGroup:
+    def create(self, name: str, op:Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param) -> BoundaryGroup:
         """创建边界组
 
         Args:
             name: 边界组名称
-
+            op: 操作
         Returns:
             创建的 BoundaryGroup 对象
         """
-        ok, err = osis_boundary_group(name, "c")
+        ok, err = osis_boundary_group(name, op, *param)
         if not ok:
             raise RuntimeError(f"创建边界组 {name} 失败: {err}")
         return self.get(name)
@@ -698,8 +698,8 @@ class BoundaryManager:
         rx: bool = 1,
         ry: bool = 1,
         rz: bool = 1,
-        no: int | None = None,
         coincident: int | None = 1,
+        no: int | None = None,
     ) -> MstSlvBoundary:
         """创建主从约束"""
         if no is None:
@@ -763,21 +763,30 @@ class BoundaryManager:
         return self.get(no)  # type: ignore[return-value]
 
     def create_general_elstcspt(
-        self,
-        coor: int | str = "",
-        stiffness_matrix: list[float] | None = None,
-        mass_matrix: list[float] | None = None,
-        damping_matrix: list[float] | None = None,
-        no: int | None = None,
+            self,
+            coor: int | str = "",
+            *params: float | int,
+            stiffness_matrix: list[float] | None = None,
+            mass_matrix: list[float] | None = None,
+            damping_matrix: list[float] | None = None,
+            no: int | None = None,
     ) -> GeneralElstcSptBoundary:
         """创建一般弹性支承
 
+        支持两种调用方式:
+            1) OSIS 平铺（与命令流一致）::
+                create(6, "GES", "", K11, K12, ..., K66, bM, bC, ...)
+                → create_general_elstcspt("", K11, K12, ..., bM, bC, no=6)
+
+            2) 列表写法（手写脚本）::
+                create(6, "GES", coor="", stiffness_matrix=[...])
+
         Args:
-            nCoor: 局部坐标系编号，"" 代表缺省
-            stiffness_matrix: 6x6 刚度矩阵上三角元素（21个值），必须全部给出
-                顺序：K11,K12,K13,K14,K15,K16,K22,K23,K24,K25,K26,K33,K34,K35,K36,K44,K45,K46,K55,K56,K66
-            mass_matrix: 6x6 质量矩阵上三角元素（21个值），可选
-            damping_matrix: 6x6 阻尼矩阵上三角元素（21个值），可选
+            coor: 局部坐标系编号，"" 代表缺省
+            *params: OSIS 平铺参数（K11..K66, bM, [M..], bC, [C..]）
+            stiffness_matrix: 6x6 刚度矩阵上三角元素（21 个值）
+            mass_matrix: 6x6 质量矩阵上三角元素（21 个值），可选
+            damping_matrix: 6x6 阻尼矩阵上三角元素（21 个值），可选
             no: 边界编号，None 时自动分配
 
         Returns:
@@ -785,28 +794,24 @@ class BoundaryManager:
         """
         if no is None:
             no = self._next_no()
-        if stiffness_matrix is None:
-            stiffness_matrix = []
-        
-        # 构建参数序列
-        params = list(stiffness_matrix)
-        
-        # 质量矩阵
-        if mass_matrix:
-            params.append(1)  # bM = 1
-            params.extend(mass_matrix)
+
+        if params:
+            flat = params
         else:
-            params.append(0)  # bM = 0
-        
-        # 阻尼矩阵
-        if damping_matrix:
-            params.append(1)  # bC = 1
-            params.extend(damping_matrix)
-        else:
-            params.append(0)  # bC = 0
-        
+            flat = list(stiffness_matrix or [])
+            if mass_matrix:
+                flat.append(1)
+                flat.extend(mass_matrix)
+            else:
+                flat.append(0)
+            if damping_matrix:
+                flat.append(1)
+                flat.extend(damping_matrix)
+            else:
+                flat.append(0)
+
         ok, err = osis_boundary_general_elstcspt(
-            no, "GES", coor or "", *params
+            no, "GES", coor or "", *flat
         )
         if not ok:
             raise RuntimeError(f"创建一般弹性支承 {no} 失败: {err}")

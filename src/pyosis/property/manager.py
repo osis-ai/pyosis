@@ -671,7 +671,7 @@ class PropertyManager:
         self,
         thickness: float,
         op: Literal["a", "s", "r"],
-        *elems: str,
+        *elems: str | int,
     ) -> None:
         """分配或重置单个单元的理论厚度
 

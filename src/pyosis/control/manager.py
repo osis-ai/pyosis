@@ -94,49 +94,49 @@ class ControlManager:
 
     # ── 材料效应开关 ────────────────────────────
 
-    def set_calc_tendon(self, enabled: bool = True) -> None:
+    def set_calc_tendon(self, enabled: Literal[0,1] = 1) -> None:
         """是否计算预应力"""
         ok, err = osis_calc_tendon(enabled)
         if not ok:
             raise RuntimeError(f"设置预应力计算失败: {err}")
 
-    def set_calc_concurrent_force(self, enabled: bool = True) -> None:
+    def set_calc_concurrent_force(self, enabled: Literal[0,1] = 1) -> None:
         """是否计算并发反力"""
         ok, err = osis_calc_con_force(enabled)
         if not ok:
             raise RuntimeError(f"设置并发反力计算失败: {err}")
 
-    def set_calc_shrink(self, enabled: bool = True) -> None:
+    def set_calc_shrink(self, enabled: Literal[0,1] = 1) -> None:
         """是否计算收缩"""
         ok, err = osis_calc_shrink(enabled)
         if not ok:
             raise RuntimeError(f"设置收缩计算失败: {err}")
 
-    def set_calc_creep(self, enabled: bool = True) -> None:
+    def set_calc_creep(self, enabled: Literal[0,1] = 1) -> None:
         """是否计算徐变"""
         ok, err = osis_calc_creep(enabled)
         if not ok:
             raise RuntimeError(f"设置徐变计算失败: {err}")
 
-    def set_calc_shear(self, enabled: bool = True) -> None:
+    def set_calc_shear(self, enabled: Literal[0,1] = 1) -> None:
         """是否计算剪切"""
         ok, err = osis_calc_shear(enabled)
         if not ok:
             raise RuntimeError(f"设置剪切计算失败: {err}")
 
-    def set_calc_relaxation(self, enabled: bool = True) -> None:
+    def set_calc_relaxation(self, enabled: Literal[0,1] = 1) -> None:
         """是否计算钢束松弛"""
         ok, err = osis_calc_rlx(enabled)
         if not ok:
             raise RuntimeError(f"设置钢束松弛计算失败: {err}")
 
-    def set_mod_loc_coor(self, enabled: bool = True) -> None:
+    def set_mod_loc_coor(self, enabled: Literal[0,1] = 1) -> None:
         """是否修改变截面单元局部坐标轴来计算内力/应力"""
         ok, err = osis_mod_loc_coor(enabled)
         if not ok:
             raise RuntimeError(f"设置局部坐标轴修正失败: {err}")
 
-    def set_inc_tendon(self, enabled: bool = True) -> None:
+    def set_inc_tendon(self, enabled: Literal[0,1] = 1) -> None:
         """是否考虑钢束自重及钢束对截面几何特性的影响"""
         ok, err = osis_inc_tendon(enabled)
         if not ok:
@@ -146,8 +146,8 @@ class ControlManager:
 
     def set_nonlinear(
         self,
-        geom: bool = False,
-        link: bool = False,
+        geom: Literal[0,1] = 0,
+        link: Literal[0,1] = 0,
     ) -> None:
         """设置非线性控制开关
 
@@ -159,13 +159,13 @@ class ControlManager:
         if not ok:
             raise RuntimeError(f"设置非线性控制失败: {err}")
 
-    def set_line_search(self, enabled: bool = True) -> None:
+    def set_line_search(self, enabled: Literal[0,1] = 1) -> None:
         """设置线性搜索开关"""
         ok, err = osis_ln_srch(enabled)
         if not ok:
             raise RuntimeError(f"设置线性搜索失败: {err}")
 
-    def set_auto_time_step(self, enabled: bool = True) -> None:
+    def set_auto_time_step(self, enabled: Literal[0,1] = 1) -> None:
         """设置是否自动计算时间荷载步"""
         ok, err = osis_auto_ts(enabled)
         if not ok:

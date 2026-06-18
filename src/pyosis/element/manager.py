@@ -291,16 +291,17 @@ class ElementGroupManager:
 
     # ── 增删改 ────────────────────────────────
 
-    def create(self, name: str) -> ElementGroup:
+    def create(self, name: str, op:Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param: str | int) -> ElementGroup:
         """创建单元组
 
         Args:
             name: 单元组名称
+            op: 操作
 
         Returns:
             ElementGroup: 创建的单元组对象
         """
-        ok, err = osis_element_group(name, "c")
+        ok, err = osis_element_group(name, op, *param)
         if not ok:
             raise RuntimeError(f"创建单元组 {name} 失败: {err}")
         return self.get(name)
@@ -673,20 +674,26 @@ class ElementManager:
         return self.get(no)  # type: ignore[return-value]
 
     def create_shell(
-        self,
-        node1: int,
-        node2: int,
-        node3: int,
-        mat: int,
-        thk: int,
-        is_thin: bool = 1,
-        node4: int | None = None,
-        no: int | None = None,
+            self,
+            is_thin: bool,
+            mat: int,
+            thk: int,
+            node1: int,
+            node2: int,
+            node3: int,
+            node4: int | None = None,
+            no: int | None = None,
     ) -> Element:
-        """创建壳单元"""
+        """创建壳单元
+
+        参数顺序与 OSIS 命令一致：
+            Element,no,SHELL,is_thin,mat,thk,node1,node2,node3[,node4]
+        """
         if no is None:
             no = self._next_no()
-        ok, err = osis_element_shell(no, "SHELL", is_thin, mat, thk, node1, node2, node3, node4)
+        ok, err = osis_element_shell(
+            no, "SHELL", is_thin, mat, thk, node1, node2, node3, node4
+        )
         if not ok:
             raise RuntimeError(f"创建壳单元 {no} 失败: {err}")
         return self.get(no)

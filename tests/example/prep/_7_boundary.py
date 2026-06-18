@@ -69,16 +69,16 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
 
     
     # 边界组
-    bg1 = boundary.group.create("桥台1_永久_x向固定")
+    bg1 = boundary.group.create("桥台1_永久_x向固定","c")
     _expect_attr(bg1,"name","桥台1_永久_x向固定")
     bg1.add(bd1.no)
 
-    bg2 = boundary.group.create("桥台2_永久_x向滑动")
+    bg2 = boundary.group.create("桥台2_永久_x向滑动","c")
     _expect_attr(bg2,"name","桥台2_永久_x向滑动")
     bg2.add(bd2.no)
 
     # 边界组 replace 测试 — 临时组，不影响业务组
-    bg_rep = boundary.group.create("_边界组替换测试")
+    bg_rep = boundary.group.create("_边界组替换测试","c")
     bg_rep.add(bd3.no, bd4.no)
     bg_rep = bg_rep.replace("4by5")  # 组内把边界 4 换成 5
     if set(bg_rep.boundary_nos) != {bd3.no, bd5.no}:
@@ -93,7 +93,7 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
 
 
     # 边界组 remove / remove_all 测试 — 临时组，不影响业务组
-    bg_test = boundary.group.create("_边界组移除测试")
+    bg_test = boundary.group.create("_边界组移除测试","c")
     bg_test.add(bd3.no, bd4.no)
     if bd4.no not in bg_test.boundary_nos:
         raise ValueError(f"add 后应包含边界 {bd4.no}")

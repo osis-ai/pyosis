@@ -191,7 +191,7 @@ class LoadCase:
 
     # ── 荷载添加 ──────────────────────────────
 
-    def create(self, type: str, *args: Any, **kwargs: Any) -> LoadCase:
+    def create(self, type: str, *args: Any, **kwargs: Any) -> LoadCase | None:
         """添加荷载（便捷入口，内部转发到对应 create_* 方法）
 
         type 决定具体荷载类型，对应关系:
@@ -222,11 +222,13 @@ class LoadCase:
             "SURFACE":      self.create_surface_load,
             "SURFACE_VEC":  self.create_surface_load_vector,
         }
-        if type not in _creator:
-            raise ValueError(
-                f"未知荷载类型: {type!r}，支持: {', '.join(sorted(_creator))}"
-            )
-        return _creator[type](*args, **kwargs)
+        type_key = type.strip().upper()
+
+        if type_key in ("PTF", "PTM"):
+            elem, e_coord, n_range, *rest = args
+            forces = [list(rest[i: i + 6]) for i in range(0, len(rest), 6)]
+            return self.create_concentrated_force(elem,e_coord,is_moment=(type_key == "PTM"),forces=forces)
+        return _creator[type_key](*args, **kwargs)
 
     def create_gravity(
             self,
@@ -462,7 +464,7 @@ class LoadCase:
             direct: Literal["Y", "Z"] = "Y",
             g_temp_type: Literal["R", "T", "C", "B"] = "R",
             num: int = 1,
-            param: list = None,
+            *param: float | str,
     ) -> LoadCase:
         """添加梯度温度荷载
 
@@ -487,9 +489,13 @@ class LoadCase:
         Returns:
             更新后的 LoadCase 对象
         """
-        if param is None:
-            param = ["", 10, 10, 0, 0]
-        ok, err = osis_load_gtemp("GTEMP", self.name, entity, direct, g_temp_type, num, param)
+        if len(param) == 1 and isinstance(param[0], list):
+            plist = list(param[0])   # 手写: ..., 2, [1.24, 0.0, ...]
+        else:
+            plist = list(param)      # .out 平铺: ..., 2, 1.24, 0.0, ...
+        ok, err = osis_load_gtemp(
+            "GTEMP", self.name, entity, direct, g_temp_type, num, plist
+        )
         if not ok:
             raise RuntimeError(f"添加梯度温度荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
@@ -892,8 +898,8 @@ class TendonPropManager:
     def create(
         self,
         name: str,
-        mat: int,
         s_type: str,
+        mat: int,
         area: int,
         *args: Any,
         **kwargs: Any,
@@ -940,7 +946,7 @@ class TendonPropManager:
             >>> tendon_manager.prop.create("P1", mat_no, "PRE", 1,
             ...     code="GBT5224_2014", diameter=12.7, num=5)
         """
-        type_key = type.upper()
+        type_key = s_type.upper()
         if type_key not in ("IN", "EX", "PRE"):
             raise ValueError(
                 f"未知张拉方法: {type!r}，支持: IN, EX, PRE"
@@ -1132,6 +1138,7 @@ class TendonPropManager:
         diameter: float,
         num: int,
         delta_t: float = 10.0,
+        pipe: float = 0.0,  # .out 第 9 字段，PRE 不使用
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
@@ -1166,6 +1173,7 @@ class TendonPropManager:
         mat: int,
         val: float,
         delta_t: float = 10.0,
+        pipe: float = 0.0,  # .out 占位，PRE 不使用，不调入底层
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
@@ -1302,9 +1310,9 @@ class TendonShapeManager:
         self,
         name: str,
         n_num: int,
-        type: str,
         prop: str,
         element_group: str,
+        layout_type: str,
         *args: Any,
         **kwargs: Any,
     ) -> TendonShape:
@@ -1346,7 +1354,7 @@ class TendonShapeManager:
             "ARC3D": self.create_arc3d,
             "ARC2D": self.create_arc2d,
         }
-        type_key = type.upper()
+        type_key = layout_type.upper()
         if type_key not in _creator:
             raise ValueError(
                 f"未知钢束形状类型: {type!r}，支持: {', '.join(_creator)}"
@@ -1410,7 +1418,7 @@ class TendonShapeManager:
         prop: str,
         element_group: str,
         e_type: Literal[0, 1],
-        param: list,
+        *param: str | int | float,
     ) -> TendonShape:
         """定义钢束形状-2D圆弧
 
@@ -1435,7 +1443,13 @@ class TendonShapeManager:
         Returns:
             创建的 TendonShape 对象
         """
-        ok, err = osis_tendon_shape_arc2d(name, n_num, prop, element_group, "ARC2D", e_type, param)
+        if len(param) == 1 and isinstance(param[0], list):
+            plist = list(param[0])  # 兼容手写: create_arc2d(..., 1, [a, b])
+        else:
+            plist = list(param)  # .out 平铺: ..., 1, a, b
+        ok, err = osis_tendon_shape_arc2d(
+            name, n_num, prop, element_group, "ARC2D", e_type, plist
+        )
         if not ok:
             raise RuntimeError(f"创建钢束形状 {name} 失败: {err}")
         return self.get(name)

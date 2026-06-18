@@ -519,7 +519,7 @@ class Section:
         self,
         rebar_no: int,
         type: Literal["Point", "LineA", "LineB", "Circle"],
-        *args: float,
+        *args: float | str,
     ) -> None:
         """添加或修改纵向钢筋（按输入方式分发）
 
@@ -568,7 +568,7 @@ class Section:
     def add_rib(
         self,
         type: Literal["Flat", "T", "U", "LL", "LR"],
-        *args: float,
+        *args: float | str,
     ) -> None:
         """添加或修改加劲肋（按类型分发）
 
@@ -793,13 +793,13 @@ class Section:
         """定义或修改自定义钢梁截面的板件。
 
         Args:
-            GirderType (str): 钢梁类型。
+            girder_type (str): 钢梁类型。
                 * STEELISIDE = 组合梁的边工字钢梁
                 * STEELIMIDDLE = 组合梁的中工字钢梁
                 * STEELBOX = 组合梁的钢箱梁
                 * STEELTROUGH = 组合梁的槽型钢梁
                 * STEEL = 一般钢梁截面
-            PlatePostion (str): 板件所在位置。
+            plate_position (str): 板件所在位置。
                 * 顶板：TopFlange、TopFlange1~TopFlange5
                 * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5
                 * 底板：BottomFlange、BottomFlange1~BottomFlange5
@@ -807,15 +807,15 @@ class Section:
                 * 边腹板：SideWeb、SideWebL、SideWebR
                 * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
                 * 无加劲肋的板件：PlateWithoutRib
-            StartX (float): 板件起始点x坐标。
-            StartY (float): 板件起始点y坐标。
-            EndX (float): 板件终点x坐标。
-            EndY (float): 板件终点y坐标。
-            Thickness (float): 板件厚度。
-            IsSymmetric (int): 板件是否关于y轴对称，1=对称，0=不对称。
-            RibStartPosition (int): 加劲肋起始位置，1=从起点开始布置，0=从终点开始布置。
-            RibStartDistance (float): 加劲肋起始位置与板件端点的距离。
-            RibLocation (str): 加劲肋布置位置。
+            start_x (float): 板件起始点x坐标。
+            start_y (float): 板件起始点y坐标。
+            end_x (float): 板件终点x坐标。
+            end_y (float): 板件终点y坐标。
+            thickness (float): 板件厚度。
+            is_symmetric (int): 板件是否关于y轴对称，1=对称，0=不对称。
+            rib_start_position (int): 加劲肋起始位置，1=从起点开始布置，0=从终点开始布置。
+            rib_start_distance (float): 加劲肋起始位置与板件端点的距离。
+            rib_location (str): 加劲肋布置位置。
                 * 对于非中腹板的一般板件，以起点到终点的线段为基准，在线段左侧则为Left，反之为Right，不可选择Both
                 * 对于中腹板，指加劲肋在腹板两侧布置的绝对位置，与起止点无关。
         """
@@ -1501,13 +1501,13 @@ class SectionManager:
         h_rib: float = 1.25,
         b1: float = 1.8,
         b2: float = 0.2,
+        x: float = 1.5,
+        y: float = 0.3,
         e_slope_type: Literal["Integral", "CastInPlace"] = "Integral",
         i: float = 0.0,
         i1: float = "",
         i2: float = "",
-        x: float = 1.5,
-        y: float = 0.3,
-        no: int | None = None,
+        no: int | None = None
     ) -> Section:
         """创建肋板式截面(RIBBEDSLAB)。
 
@@ -1538,7 +1538,7 @@ class SectionManager:
         # )
         ok, err = osis_section_ribbed_slab(
             no, name, "RIBBEDSLAB", h, bt, bt_bottom, tt, b, h_rib, b1, b2,
-            x, y, e_slope_type, i, i1, i2,
+            x, y, e_slope_type, i, i1, i2
         )
         if not ok:
             raise RuntimeError(f"创建肋板式截面 {no} 失败: {err}")

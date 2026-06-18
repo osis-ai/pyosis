@@ -88,15 +88,8 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     _expect_attr(got_thk, "out_plane", 0.30)
     n_top_r = engine.node.create(181,x2, y_off, 0.0)
     n_top_l = engine.node.create(182,x1, y_off, 0.0)
-    e_shell = element.create(19,"shell",
-        node_nos[12],   # 节点 13，左下
-        node_nos[13],   # 节点 14，右下
-        n_top_r.no,     # 右上
-        mat_nos[0],
-        shell_thk_no,
-        is_thin=1,
-        node4=n_top_l.no  # 左上
-    )
+    e_shell = element.create(19, "shell",is_thin=1,mat=mat_nos[0],thk=shell_thk_no,
+                             node1=node_nos[12],node2=node_nos[13],node3=n_top_r.no,node4=n_top_l.no)
     _expect_attr(e_shell, "no", 19)
     all_thk = thk.all()
     if not any(t.no == shell_thk_no for t in all_thk):
@@ -168,7 +161,7 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     _expect_attr(e_t1, "no", 20)
     _expect_attr(e_t2, "no", 21)
     # 3) create
-    tg = element.taper_group.create(taper_name,"0",1.0, "0", 0.0,"0", 1.0, "0", 0.0,"20", "21")
+    tg = element.taper_group.create(taper_name,0,1.0, 0, 0.0,0, 1.0, 0, 0.0,"20", "21")
     _expect_attr(tg, "name", taper_name)
     # 4) get
     got_tg = element.taper_group.get(taper_name)
@@ -213,27 +206,27 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     engine.prop.assign_component_thickness(1.967E-01, "a", "4to11")
     
     # 单元组
-    eg1 = element.group.create("封端混凝土单元")
+    eg1 = element.group.create("封端混凝土单元","c")
     eg1.add(node_nos[0], node_nos[13])
-    eg2 = element.group.create("钢束-1-N1线型单元")
+    eg2 = element.group.create("钢束-1-N1线型单元","c")
     eg2.add(elem_nos[0],elem_nos[1],elem_nos[2],elem_nos[3],elem_nos[4],elem_nos[5],elem_nos[6],elem_nos[7],elem_nos[8],elem_nos[9],elem_nos[10],elem_nos[11],elem_nos[12])
-    eg3 = element.group.create("钢束-2-N2线型单元")
+    eg3 = element.group.create("钢束-2-N2线型单元","c")
     eg3.add(
         elem_nos[0], elem_nos[1], elem_nos[2], elem_nos[3], elem_nos[4],
         elem_nos[5], elem_nos[6], elem_nos[7], elem_nos[8], elem_nos[9],
         elem_nos[10], elem_nos[11], elem_nos[12],
     )    
-    eg4 = element.group.create("主梁单元")
+    eg4 = element.group.create("主梁单元","c")
     eg4.add(
         elem_nos[0], elem_nos[1], elem_nos[2], elem_nos[3], elem_nos[4],
         elem_nos[5], elem_nos[6], elem_nos[7], elem_nos[8], elem_nos[9],
         elem_nos[10], elem_nos[11], elem_nos[12],
     )
     # N3-SPL3D 专用：与 自然边界TENDON (0~5.5m) 对应，约单元 1~6
-    eg_n3 = element.group.create("N3-SPL3D线型单元")
+    eg_n3 = element.group.create("N3-SPL3D线型单元","c")
     eg_n3.add(elem_nos[0], elem_nos[1], elem_nos[2], elem_nos[3], elem_nos[4], elem_nos[5])
     # 添加单元组
-    eg5 = element.group.create("封端混凝土单元5")
+    eg5 = element.group.create("封端混凝土单元5","c")
     # 添加单元
     eg5.add(1,14)
     # 替换单元

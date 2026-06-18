@@ -498,12 +498,13 @@ def osis_section_double_side_box(nSec: int, strName: str, eSectionType: Literal[
     pass
 
 @REGISTRY.register('Section')
-def osis_section_ribbed_slab(nSec: int, strName: str, eSectionType: Literal["RIBBEDSLAB"]="RIBBEDSLAB",
-                             H: float=2.8, Bt: float=21.5, bt: float=17.7, Tt: float=0.3,
-                             b: float=0.2, h: float=1.25, b1: float=1.8, b2: float=0.2,
-                             eSlopeType: Literal["Integral", "CastInPlace"]="Integral",
-                             i: float=0.0, i1: float="", i2: float="",
-                             x: float=1.5, y: float=0.3):
+def osis_section_ribbed_slab(
+    nSec: int, strName: str, eSectionType: Literal["RIBBEDSLAB"] = "RIBBEDSLAB",
+    H: float = 2.8, Bt: float = 21.5, bt: float = 17.7, Tt: float = 0.3,
+    b: float = 0.2, h: float = 1.25, b1: float = 1.8, b2: float = 0.2,
+    x: float = 1.5, y: float = 0.3,
+    eSlopeType: Literal["Integral", "CastInPlace"] = "Integral",
+    i: float = 0.0, i1: float = "", i2: float = ""):
     """定义或修改肋板式截面(RibbedSlab)。
 
     Args:

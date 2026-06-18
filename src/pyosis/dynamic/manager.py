@@ -614,10 +614,10 @@ class RspecAnalManager:
     def create(
         self,
         name: str,
-        spectrum: str,
         direction: Literal[1, 0] = 1,
         angle: float = 0.0,
         scalar: float = 1.0,
+        spectrum: str = "",
         interpolated: Literal[1, 0] = 1,
         cmb: Literal["SRSS", "CQC"] = "CQC",
         damping_name: str = "",
