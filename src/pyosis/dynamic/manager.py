@@ -8,8 +8,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal, Any
-
+from typing import Literal, Any, Callable
 from .load_to_mass import (
     osis_ltm_anal,
     osis_ltm_anal_del,
@@ -380,7 +379,7 @@ class SeisRspSpecManager:
         name: str,
         spec_type: Literal["N", "A", "V", "D"],
         g: float,
-        input_type: Literal[0, 1],
+        input_type: int | str,
         *args: Any,
         **kwargs: Any,
     ) -> SeisRspSpec:
@@ -410,21 +409,19 @@ class SeisRspSpecManager:
             >>> dynamic_manager.seismic.create("RS2", "N", 9.806, 1,
             ...     code="JTGT_2231_01_2020", bridge_type="A", site=2)
         """
-        _creator = {
+        _creator: dict[Literal[0, 1], Callable[..., SeisRspSpec]] = {
             0: self.create_import,
             1: self.create_code,
         }
-        # 接受字符串 "0"/"1" 或 int
         if isinstance(input_type, str):
-            try:
-                input_type = int(input_type)
-            except (ValueError, TypeError):
-                pass
-        if input_type not in _creator:
+            it = int(input_type)
+        else:
+            it = input_type
+        if it not in (0, 1):
             raise ValueError(
                 f"未知 input_type: {input_type!r}，支持: 0=导入, 1=按规范生成"
             )
-        return _creator[input_type](name, spec_type, g, *args, **kwargs)
+        return _creator[it](name, spec_type, g, *args, **kwargs)
 
     def create_import(
         self,

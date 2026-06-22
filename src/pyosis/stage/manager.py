@@ -93,7 +93,7 @@ class Stage:
         op: Literal[1, 0],
         type: Literal[1, 0],
         group_name: str,
-        birth: int | None = None,
+        birth: int | float | None = None,
         part: Literal[0, 1, 2]=None
     ) -> None:
         """通过单元组激活/钝化单元
@@ -236,7 +236,7 @@ class StageManager:
         self,
         no: int,    # 施工阶段编号必须连续，不做自动编号
         name: str,
-        duration: int,
+        duration: int | float,
     ) -> Stage:
         """创建施工阶段
 
@@ -274,7 +274,7 @@ class StageManager:
         ref_no: int,
         position: Literal[0, 1],
         name: str,
-        duration: float,
+        duration: float | int,
     ) -> Stage:
         """插入施工阶段
 

@@ -299,7 +299,7 @@ class LiveCase:
         self,
         sub_name: str,
         grade_name: str,
-        scalar: int = 1,
+        scalar: int | float = 1,
         calc_mu: bool = 1,
         bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "CUSTOM",
         mu_params: list[float] | None = None,

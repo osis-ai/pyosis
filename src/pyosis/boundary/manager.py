@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Literal
-from enum import Enum, IntEnum
+from enum import IntEnum
 
 from ..core.client import osis_client
 from .interface import (
@@ -739,17 +739,17 @@ class BoundaryManager:
         self,
         coor: int | str = "",
         x: bool = 1,
-        dx: float = 1e13,
+        dx: float | int = 1e13,
         y: bool = 1,
-        dy: float = 1e13,
+        dy: float | int = 1e13,
         z: bool = 1,
-        dz: float = 1e13,
+        dz: float | int = 1e13,
         rx: bool = 1,
-        drx: float = 1e16,
+        drx: float | int = 1e16,
         ry: bool = 1,
-        dry: float = 1e16,
+        dry: float | int = 1e16,
         rz: bool = 1,
-        drz: float = 1e16,
+        drz: float | int = 1e16,
         no: int | None = None,
     ) -> ElstcSptBoundary:
         """创建弹性支承"""
