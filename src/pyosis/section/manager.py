@@ -704,16 +704,15 @@ class Section:
             raise RuntimeError(f"修改截面 {self.no} 加劲肋名称 {str_old_name} -> {str_new_name} 失败: {err}")
 
 
-    def delete_rebar_s(self, sec_no: int, rebar_type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"]) -> None:
+    def delete_rebar_s(self, rebar_type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"]) -> None:
         """删除箍筋
 
         Args:
-            sec_no: 钢筋编号
             rebar_type (str): 钢筋类型，BentUpRebar=弯起钢筋，ShearStirrup=抗剪箍筋，WebVerticalRebar=腹板竖筋，TorsionalStirrup=扭转箍筋。
         """
-        ok, err = osis_rebar_s_del(sec_no, rebar_type)
+        ok, err = osis_rebar_s_del(self.no, rebar_type)
         if not ok:
-            raise RuntimeError(f"删除截面 {sec_no} 失败: {err}")
+            raise RuntimeError(f"删除截面 {self.no} 箍筋 {rebar_type} 失败: {err}")
 
     def delete_rebar_l(self, n_rebar_no: int) -> None:
         """删除纵向钢筋
