@@ -8,6 +8,7 @@
 
 from .parser import parse_text, ParsedCommand
 from .generator import generate
+# from .generator_old import generate
 
 __all__ = ["transfer", "parse_text", "ParsedCommand", "generate"]
 

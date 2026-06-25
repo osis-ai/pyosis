@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 from ..core.client import osis_client
 from .interface import (
@@ -104,10 +105,11 @@ class Settlement:
             self._sync_from_dict(data[0])
         return self
 
-    def include(self, *group_names: str) -> Settlement:
+    def include(self, op:Literal["a", "r"], *group_names: str) -> Settlement:
         """将沉降组添加至当前工况
 
         Args:
+            op: 操作
             group_names: 沉降组名称列表
 
         Returns:
@@ -115,7 +117,7 @@ class Settlement:
         """
         if not group_names:
             return self
-        ok, err = osis_setl_anal_inc(self.name, "a", *group_names)
+        ok, err = osis_setl_anal_inc(self.name, op, *group_names)
         if not ok:
             raise RuntimeError(f"添加沉降组到工况 {self.name} 失败: {err}")
         return self.refresh()

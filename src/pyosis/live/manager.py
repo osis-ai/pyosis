@@ -500,12 +500,12 @@ class LiveGradeManager:
         return grades
 
     def create(
-        self,
-        name: str,
-        code: str,
-        type: str,
-        *args: Any,
-        **kwargs: Any,
+            self,
+            name: str,
+            code: str,
+            type: str,
+            *args: Any,
+            **kwargs: Any,
     ) -> LiveGrade:
         """创建活载等级（便捷入口，内部转发到对应 create_* 方法）
 
@@ -519,40 +519,38 @@ class LiveGradeManager:
             * "FATIGUE_I"   → create_fatigue
             * "FATIGUE_II"  → create_fatigue
             * "FATIGUE_III" → create_fatigue
-            * "VG"          → create_custom
-
-        Args:
-            name: 活载等级名称
-            code: 规范类型
-                * "JTGD60_2015" = 公路规范
-                * "CUSTOM"      = 自定义规范
-            type: 活载类型
-            *args: 按位置传给对应 create_* 的剩余参数
-            **kwargs: 按关键字传给对应 create_* 的参数
-
-        Raises:
-            ValueError: 未知 type
-            RuntimeError: 创建失败
-
-        Examples:
-            >>> live_manager.grade.create("活载-VEHICLE", "JTGD60_2015", "VEHICLE", "VEHICLE")
-            >>> live_manager.grade.create("公路I级", "JTGD60_2015", "HIGHWAY_I", "HIGHWAY_I")
-            >>> live_manager.grade.create("自定义", "CUSTOM", "VG", "VG", 2,
-            ...     [(1.5, 100), (3.0, 100)])
-            >>> live_manager.grade.create("疲劳I", "JTGD60_2015", "FATIGUE_I",
-            ...     live_load_type="FATIGUE_I")
+            * "VG"          → create_custom（OSIS 平铺: grp_num, 轴距, 轴载, ...）
         """
-        _creator = {
-            "HIGHWAY_I":   self.create_highway,
-            "HIGHWAY_II":  self.create_highway,
-            "VEHICLE":     self.create_vehicle,
-            "CROWD":       self.create_crowd,
-            "FATIGUE_I":   self.create_fatigue,
-            "FATIGUE_II":  self.create_fatigue,
-            "FATIGUE_III": self.create_fatigue,
-            "VG":          self.create_custom,
-        }
         type_key = type.upper()
+
+        # OSIS: LiveGrade, name, CUSTOM, VG, grp_num, (轴距, 轴载) × N
+        if type_key == "VG":
+            if kwargs.get("veh_grp_layout") is not None:
+                return self.create_custom(name, code, type_key, *args, **kwargs)
+            if not args:
+                return self.create_custom(name, code, "VG")
+            grp_num = int(args[0])
+            rest = args[1:]
+            if len(rest) % 2 != 0:
+                raise ValueError(
+                    f"VG 轴载参数须成对 (轴距, 轴载)，当前 {len(rest)} 个: {rest!r}"
+                )
+            layout = [
+                (float(rest[i]), float(rest[i + 1]))
+                for i in range(0, len(rest), 2)
+            ]
+            return self.create_custom(name, code, "VG", grp_num, layout)
+
+        _creator = {
+            "HIGHWAY_I": self.create_highway,
+            "HIGHWAY_II": self.create_highway,
+            "VEHICLE": self.create_vehicle,
+            "CROWD": self.create_crowd,
+            "FATIGUE_I": self.create_fatigue,
+            "FATIGUE_II": self.create_fatigue,
+            "FATIGUE_III": self.create_fatigue,
+            "VG": self.create_custom,
+        }
         if type_key not in _creator:
             raise ValueError(
                 f"未知活载类型: {type!r}，"

@@ -219,6 +219,8 @@ class LoadCase:
             "PST":          self.create_prestress,
             "CFORCE":       self.create_cable_force,
             "CONCENTRATED": self.create_concentrated_force,
+            # "PTF":          self.create_concentrated_force,
+            # "PTM":          self.create_concentrated_force,
             "SURFACE":      self.create_surface_load,
             "SURFACE_VEC":  self.create_surface_load_vector,
         }

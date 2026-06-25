@@ -125,9 +125,9 @@ ROUTES = {
     "InflAlgoDel": "engine.live.lane.delete",
     "InflAlgoMod": "engine.live.lane.rename",
     "LiveAnal": "engine.live.case.create",
-    "LiveAnalDel": "engine.live.analysis.delete",
-    "LiveAnalMod": "engine.live.analysis.rename",
-    "LiveAnalFactor": ("chain", "engine.live.analysis.get", "set_trans_reduction_factors", 0),
+    "LiveAnalDel": "engine.live.case.delete",
+    "LiveAnalMod": "engine.live.case.rename",
+    "LiveAnalFactor": ("chain", "engine.live.case.get", "set_trans_reduction_factors", 0),
     "LiveAnalInc": ("chain", "engine.live.case.get", "include", 0),
     "LiveAnalOpt": ("chain", "engine.live.case.get", "set_lane_count", 0),
 

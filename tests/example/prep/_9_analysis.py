@@ -27,7 +27,7 @@ def build_settle_analysis(engine: OSISEngine, node_nos: list[int]) -> list[str]:
         raise ValueError("获取 '沉降分析工况' 失败")
 
     # 3) 把沉降组纳入该工况
-    e.include(eg_main.name)
+    e.include("a",eg_main.name)
     if eg_main.name not in (e.setl_grp_nos or []):
         raise ValueError(f"include 后应包含 {eg_main.name!r}")
 

@@ -139,12 +139,16 @@ class Boundary:
     def assign(
         self,
         op: Literal["a", "s", "r", "aa", "ra"] = "a",
-        param: list | None = None,
+        *param: int | str,
     ) -> None:
         """分配边界给节点"""
-        ok, err = osis_assign_boundary(self.no, op, param if param is not None else [])
+        if len(param) == 1 and isinstance(param[0], list):
+            nodes = param[0]
+        else:
+            nodes = list(param)
+        ok, err = osis_assign_boundary(self.no, op, nodes)
         if not ok:
-            raise RuntimeError(f"分配边界 {self.no} 到节点 {param} 失败: {err}")
+            raise RuntimeError(f"分配边界 {self.no} 到节点 {nodes} 失败: {err}")
 
 
 @dataclass(frozen=True)

@@ -385,24 +385,6 @@ class OSISEngine:
     def sync_apdl(
             self,
             path: str | None = None,
-            *,
-            parse_only: bool = False,
-            force: bool = False,
     ) -> ApdlSyncResult:
         """通过 APDL 导出从 OSIS 同步数据。OSIS 界面操作后调用。"""
-        return perform_apdl_sync(
-            self, path, parse_only=parse_only, force=force,
-        )
-
-    # def sync(
-    #         self,
-    #         domains: list[str] | None = None,
-    #         *,
-    #         method: str = "apdl",
-    #         path: str | None = None,
-    #         force: bool = False,
-    #         parse_only: bool = False,
-    # ) -> ApdlSyncResult:
-    #     if method != "apdl":
-    #         raise ValueError(f"不支持的同步方式: {method}")
-    #     return self.sync_apdl(path=path, domains=domains, parse_only=parse_only, force=force)
+        return perform_apdl_sync(self, path)

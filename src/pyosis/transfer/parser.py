@@ -20,16 +20,32 @@ from .split import split_cmd, split_commands
 # OSIS 导出时将下一条命令名粘在上一个字段末尾的情况（如 BothSectionOffset）
 _GLUED_TAIL_COMMANDS = ("SectionOffset",)
 
+# 矩阵赋值命令正则表达式
 MATRIX_ASSIGN_RE = re.compile(r"^(\w+)\[([\d,\s]+)\]\s*=\s*(.+)$")
-
+# 注释行正则表达式
 _COMMENT_LINE_RE = re.compile(r"^\s*(//|#)")
+# 空白行正则表达式
 _BLANK_RE = re.compile(r"^\s*$")
+# 模块标记正则表达式
+MODULE_PATTERN = re.compile(r"//-+\s*(\w+)\s*-*")
+# 用于识别命令所属模块
+KNOWN_MODULES = frozenset({
+    "CONTROL",
+    "PROPERTY",
+    "MATERIAL",
+    "SECTION",
+    "NODE",
+    "ELEMENT",
+    "BOUNDARY",
+    "LOADCASE",
+    "ANALYSIS",
+    "STAGE",
+})
 
-
+# 已解析的 OSIS 命令
 @dataclass
 class ParsedCommand:
-    """一条已解析的 OSIS 命令。"""
-
+    """一条已解析的 OSIS 命令"""
     raw: str
     fields: List[str]
     name: str
@@ -38,10 +54,11 @@ class ParsedCommand:
     matrix_name: str = ""
     matrix_indices: tuple[int, ...] = ()
     matrix_value: str = ""
+    module: str | None = None  # "CONTROL" | "SECTION" | ... | None
 
 
 def _join_continuation_lines(lines: List[str]) -> List[str]:
-    """合并续行, 返回已合并的物理行列表。"""
+    """处理一条命令拆成多行命令的情况"""
     result: List[str] = []
     buf = ""
     for raw_line in lines:
@@ -100,7 +117,8 @@ def _split_glued_command_fields(fields: List[str]) -> List[List[str]]:
     return groups
 
 
-def _make_parsed_command(fields: List[str], source: str) -> ParsedCommand:
+# 创建已解析的命令
+def _make_parsed_command(fields: List[str], source: str, module: str | None) -> ParsedCommand:
     first = fields[0] if fields else ""
     return ParsedCommand(
         raw=source,
@@ -108,10 +126,11 @@ def _make_parsed_command(fields: List[str], source: str) -> ParsedCommand:
         name=first,
         source=source,
         kind="normal",
+        module=module,
     )
 
-# 解析一条命令
-def _parse_one_command(source: str) -> List[ParsedCommand]:
+# 解析一条命令,返回已解析的命令列表
+def _parse_one_command(source: str, module:str|None) -> List[ParsedCommand]:
     fields = split_cmd(source)
     first = fields[0] if fields else ""
     lower_first = first.lower()
@@ -124,6 +143,7 @@ def _parse_one_command(source: str) -> List[ParsedCommand]:
                 name=first,
                 source=source,
                 kind="matrix_dim",
+                module=module,
             )
         ]
 
@@ -141,6 +161,7 @@ def _parse_one_command(source: str) -> List[ParsedCommand]:
                 matrix_name=assign_match.group(1),
                 matrix_indices=indices,
                 matrix_value=assign_match.group(3).strip(),
+                module=module,
             )
         ]
 
@@ -150,10 +171,11 @@ def _parse_one_command(source: str) -> List[ParsedCommand]:
         if not group:
             continue
         sub_source = ",".join(group)
-        result.append(_make_parsed_command(group, sub_source))
+        result.append(_make_parsed_command(group, sub_source, module=module))
     return result
 
 
+# 解析 OSIS 命令流文本,返回已解析的命令列表
 def parse_text(text: str) -> List[ParsedCommand]:
     """解析 OSIS 命令流文本。
 
@@ -162,12 +184,18 @@ def parse_text(text: str) -> List[ParsedCommand]:
     """
     lines = text.splitlines()
     physical_lines = _join_continuation_lines(lines)
-
+    current_module: str | None = None
     commands: List[ParsedCommand] = []
 
     for physical in physical_lines:
-        if not physical:
+        stripped = physical.strip()
+        # 识别模块标记
+        m = MODULE_PATTERN.match(stripped)
+        if m:
+            name = m.group(1).upper()
+            current_module = name if name in KNOWN_MODULES else None
             continue
+
         if _COMMENT_LINE_RE.match(physical):
             continue
         if _BLANK_RE.match(physical):
@@ -182,6 +210,7 @@ def parse_text(text: str) -> List[ParsedCommand]:
             continue
 
         for sub in split_commands(physical):
-            commands.extend(_parse_one_command(sub))
+            for cmd in _parse_one_command(sub, module=current_module):
+                commands.append(cmd)
 
     return commands
