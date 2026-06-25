@@ -589,6 +589,7 @@ class ElementManager:
 
     def create_beam3d(
         self,
+        no: int | None,
         node1: int,
         node2: int,
         nMat: int,
@@ -600,7 +601,6 @@ class ElementManager:
         bFlag: bool = 0,
         dTheta: float = 0,
         bWarping: bool = 0,
-        no: int | None = None,
     ) -> Element:
         """创建梁柱单元"""
         if no is None:
@@ -615,13 +615,13 @@ class ElementManager:
 
     def create_truss(
         self,
+        no: int | None,
         node1: int,
         node2: int,
         nMat: int,
         nSec1: int,
         nSec2: int,
         dStrain: float = 0.0,
-        no: int | None = None,
     ) -> Element:
         """创建桁架单元"""
         if no is None:
@@ -633,6 +633,7 @@ class ElementManager:
 
     def create_spring(
         self,
+        no: int | None,
         node1: int,
         node2: int,
         bLinear: int = 1,
@@ -643,7 +644,6 @@ class ElementManager:
         ry: float = 10,
         rz: float = 10,
         beta: float = 0.0,
-        no: int | None = None,
     ) -> Element:
         """创建弹簧单元"""
         if no is None:
@@ -657,13 +657,13 @@ class ElementManager:
 
     def create_cable(
         self,
+        no: int | None,
         node1: int,
         node2: int,
         mat: int,
         sec: int,
         method: Literal["UL", "IF", "HF", "VF", "IS"] = "UL",
         para: float = 10.0,
-        no: int | None = None,
     ) -> Element:
         """创建拉索单元"""
         if no is None:
@@ -675,6 +675,7 @@ class ElementManager:
 
     def create_shell(
             self,
+            no: int | None,
             is_thin: bool,
             mat: int,
             thk: int,
@@ -682,7 +683,6 @@ class ElementManager:
             node2: int,
             node3: int,
             node4: int | None = None,
-            no: int | None = None,
     ) -> Element:
         """创建壳单元
 

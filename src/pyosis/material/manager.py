@@ -157,16 +157,17 @@ class MaterialManager:
 
     def create_conc(
         self,
+        no: int | None,
         name: str,
         code: Literal["JTG3362_2018", "JTGD62_2004"],
         grade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
         crep_shrk: int | str = "",
         dmp: float = 0.05,
-        no: int | None = None,
     ) -> Material:
         """创建混凝土材料
 
         Args:
+            no: 编号
             name: 材料名称
             code: 材料标准代码，可选值：
                 - JTG3362_2018
@@ -192,21 +193,22 @@ class MaterialManager:
 
     def create_steel(
         self,
+        no: int | None,
         name: str,
         code: Literal["JTGD64_2015"],
         grade: Literal["Q235", "Q345", "Q390", "Q420"],
         dmp: float = 0.0,
-        no: int | None = None,
+
     ) -> Material:
         """创建钢材
 
         Args:
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             name: 材料名称
             code: 材料标准代码，可选值：
                 - JTGD64_2015
             grade: 材料等级牌号，可选值：
                 Q235, Q345, Q390, Q420
-            no: 材料编号，不指定时自动生成（取最大编号+1）
             dmp: 材料阻尼比
 
         Returns:
@@ -224,15 +226,17 @@ class MaterialManager:
 
     def create_prestressed(
         self,
+        no: int | None,
         name: str,
         code: Literal["JTG3362_2018", "JTGD62_2004"],
         grade: str,
         dmp: float = 0.0,
-        no: int | None = None,
+
     ) -> Material:
         """创建预应力材料
 
         Args:
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             name: 材料名称
             code: 材料标准代码，可选值：
                 - JTG3362_2018
@@ -241,7 +245,6 @@ class MaterialManager:
                 - JTG3362_2018: Strand1720, Strand1860, Strand1960, Wire1470, Wire1570,
                   Wire1770, Wire1860, Rebar785, Rebar930, Rebar1080
                 - JTGD62_2004: Strand1860, Wire1670, Wire1770, Rebar785, Rebar930
-            no: 材料编号，不指定时自动生成（取最大编号+1）
             dmp: 材料阻尼比
 
         Returns:
@@ -259,15 +262,16 @@ class MaterialManager:
 
     def create_rebar(
         self,
+        no: int | None,
         name: str,
         code: Literal["JTG3362_2018", "JTGD62_2004"],
         grade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"],
         dmp: float = 0.0,
-        no: int | None = None,
     ) -> Material:
         """创建钢筋材料
 
         Args:
+            no: 材料编号，不指定时自动生成（取最大编号+1）
             name: 材料名称
             code: 材料标准代码，可选值：
                 - JTG3362_2018
@@ -275,7 +279,6 @@ class MaterialManager:
             grade: 材料等级牌号，根据材料标准可选：
                 - JTG3362_2018: HPB300, HRB400, HRBF400, RRB400, HRB500
                 - JTGD62_2004: R235, HRB335, HRB400, KL400
-            no: 材料编号，不指定时自动生成（取最大编号+1）
             dmp: 材料阻尼比
 
         Returns:
@@ -293,6 +296,7 @@ class MaterialManager:
 
     def create_custom(
         self,
+        no: int | None,
         name: str,
         e: float = 1,
         g: float = 0,
@@ -301,13 +305,13 @@ class MaterialManager:
         unit_weight: float = 0,
         density: float = 0,
         dmp: float = 0,
-        no: int | None = None,
+
     ) -> Material:
         """创建自定义材料
 
         Args:
-            name: 材料名称
             no: 材料编号，不指定时自动生成（取最大编号+1）
+            name: 材料名称
             e: 弹性模量(Pa)
             g: 剪切模量(Pa)
             mu: 泊松比

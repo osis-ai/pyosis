@@ -942,24 +942,24 @@ class SectionManager:
 
     def create_Lshape(
         self,
+        no: int | None,
         name: str,
         dir: Literal[0, 1] = 1,
         h: float = 0.1,
         b: float = 0.1,
         tf1: float = 0.016,
         tf2: float = 0.016,
-        no: int | None = None,
     ) -> Section:
         """创建L形截面(LShape)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             dir: L形截面方向，0=左下向，1=左上向
             h: 截面总高度
             b: 截面总宽度
             tf1: 竖肢厚度
             tf2: 横肢厚度
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -970,20 +970,21 @@ class SectionManager:
 
     def create_circle(
         self,
+        no: int | None,
         name: str,
         circle_type: Literal["Hollow", "Solid"] = "Solid",
         d: float = 0.5,
         tw: float = 0.02,
-        no: int | None = None,
+
     ) -> Section:
         """创建圆形截面(Circle)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             circle_type: 截面类型，Hollow=空腹，Solid=实腹
             d: 圆形截面直径
             tw: 空腹截面的壁厚（仅当 e_circle_type 为 Hollow 时生效）
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -994,24 +995,24 @@ class SectionManager:
 
     def create_Tshape(
         self,
+        no: int | None,
         name: str,
         dir: Literal[0, 1] = 1,
         h: float = 0.3,
         b: float = 0.2,
         tf: float = 0.016,
         tw: float = 0.016,
-        no: int | None = None,
     ) -> Section:
         """创建T形截面(TShape)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             dir: 截面方向，0=T形，1=倒T形
             h: 截面总高度
             b: 翼缘宽度
             tf: 翼缘厚度
             tw: 腹板厚度
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1022,6 +1023,7 @@ class SectionManager:
 
     def create_Ishape(
         self,
+        no: int | None,
         name: str,
         h: float = 0.3,
         bt: float = 0.13,
@@ -1029,11 +1031,11 @@ class SectionManager:
         tt: float = 0.016,
         tb: float = 0.016,
         tw: float = 0.016,
-        no: int | None = None,
     ) -> Section:
         """创建I形截面（工字形截面）(IShape)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 截面总高度
             bt: 上翼缘宽度
@@ -1041,7 +1043,6 @@ class SectionManager:
             tt: 上翼缘厚度
             tb: 下翼缘厚度
             tw: 腹板厚度
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1052,6 +1053,7 @@ class SectionManager:
 
     def create_smallbox(
         self,
+        no: int | None,
         name: str,
         e_girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
         h: float = 1.6,
@@ -1074,11 +1076,11 @@ class SectionManager:
         i1: float = 0.0,
         i2: float = 0.0,
         r: float = 0.05,
-        no: int | None = None,
     ) -> Section:
         """创建小箱梁截面(SMALLBOX)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             e_girder_pos: 截面位置，LEFT=左边梁，MIDDLE=中梁，RIGHT=右边梁
             h: 箱梁高度
@@ -1101,7 +1103,6 @@ class SectionManager:
             i1: 顶左坡
             i2: 顶右坡
             r: 底板倒角圆弧半径
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1116,6 +1117,7 @@ class SectionManager:
 
     def create_rect(
         self,
+        no: int | None,
         name: str,
         transition_type: Literal["Chamfer", "Fillet"] = "Fillet",
         sec_type: Literal["Solid", "Hollow"] = "Solid",
@@ -1136,11 +1138,11 @@ class SectionManager:
         b1: float = 1.2,
         b2: float = 0.8,
         h_groove: float = 0.2,
-        no: int | None = None,
     ) -> Section:
         """创建矩形截面(RECT)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             transition_type: 倒角类型，Chamfer=斜倒角，Fillet=圆倒角
             sec_type: 截面类型，Solid=实腹，Hollow=空腹
@@ -1161,7 +1163,6 @@ class SectionManager:
             b1: 凹槽上口宽度
             b2: 凹槽下口宽度
             h_groove: 凹槽深度
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1176,6 +1177,7 @@ class SectionManager:
 
     def create_rounded_end(
         self,
+        no: int | None,
         name: str,
         filling_type: Literal["Solid", "Hollow"] = "Solid",
         b: float = 7.0,
@@ -1189,11 +1191,11 @@ class SectionManager:
         tw: float = 1.0,
         xi2: float = 0.5,
         yi2: float = 0.25,
-        no: int | None = None,
     ) -> Section:
         """创建圆端形截面(ROUNDEDEND)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             filling_type: 填充类型，Solid=实腹，Hollow=空腹
             b: 截面宽
@@ -1207,7 +1209,6 @@ class SectionManager:
             tw: 隔板厚
             xi2: 隔板倒角宽
             yi2: 隔板倒角高
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1221,6 +1222,7 @@ class SectionManager:
 
     def create_conventionalbox(
         self,
+        no: int | None,
         name: str,
         h: float = 2.7,
         bt_l: float = 6.375,
@@ -1270,11 +1272,11 @@ class SectionManager:
         i4: float = 0.0,
         r1: float = 0.0,
         r2: float = 0.0,
-        no: int | None = None,
     ) -> Section:
         """创建常规箱梁截面(CONVENTIONALBOX)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 截面高度
             bt_l: 设计线左顶板宽
@@ -1299,7 +1301,6 @@ class SectionManager:
                 * CastInPlace=现浇模板找坡
             i~i4: 各坡度参数
             r1, r2: 倒角圆弧半径
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1316,6 +1317,7 @@ class SectionManager:
 
     def create_streamed_box(
         self,
+        no: int | None,
         name: str,
         h: float = 4.0,
         bt_l: float = 20.0,
@@ -1368,11 +1370,11 @@ class SectionManager:
         i4: float = 0.0,
         r1: float = 0.5,
         r2: float = 0.2,
-        no: int | None = None,
     ) -> Section:
         """创建扁平箱梁截面(STREAMEDBOX)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 截面高度
             bt_l: 设计线左顶板宽
@@ -1400,7 +1402,6 @@ class SectionManager:
                 * CastInPlace=现浇模板找坡
             i~i4: 各坡度参数
             r1, r2: 倒角圆弧半径
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1417,6 +1418,7 @@ class SectionManager:
 
     def create_double_side_box(
         self,
+        no: int | None,
         name: str,
         h: float = 3.8,
         bt: float = 36.0,
@@ -1443,11 +1445,11 @@ class SectionManager:
         i: float = 0.0,
         i1: float = 0.0,
         i2: float = 0.0,
-        no: int | None = None,
     ) -> Section:
         """创建双边箱截面(DOUBLESIDEBOX)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 梁高
             bt: 顶板顶宽
@@ -1476,7 +1478,6 @@ class SectionManager:
             i: 整体转梁横坡
             i1: 顶左坡
             i2: 顶右坡
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1491,6 +1492,7 @@ class SectionManager:
 
     def create_ribbed_slab(
         self,
+        no: int | None,
         name: str,
         h: float = 2.8,
         bt: float = 21.5,
@@ -1506,11 +1508,11 @@ class SectionManager:
         i: float = 0.0,
         i1: float = "",
         i2: float = "",
-        no: int | None = None
     ) -> Section:
         """创建肋板式截面(RIBBEDSLAB)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 截面高度
             bt: 顶板顶宽
@@ -1528,7 +1530,6 @@ class SectionManager:
             i2: 顶右坡，e_slope_type=Integral时缺省，设置为 空字符串
             x: 顶板倒角宽
             y: 顶板倒角高
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1545,6 +1546,7 @@ class SectionManager:
 
     def create_TGirder(
         self,
+        no: int | None,
         name: str,
         girder_pos: Literal["Left", "Middle", "Right"] = "Middle",
         h: float = 2.5,
@@ -1562,11 +1564,11 @@ class SectionManager:
         i1: float = 0.0,
         i2: float = 0.0,
         r: float = 0.05,
-        no: int | None = None,
     ) -> Section:
         """创建T梁截面(TGIRDER)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             girder_pos: 截面位置
                 * Left=左边梁
@@ -1587,7 +1589,6 @@ class SectionManager:
             i1: 顶左坡
             i2: 顶右坡
             r: 顶板处倒角半径
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1601,6 +1602,7 @@ class SectionManager:
 
     def create_hollowslab(
         self,
+        no: int | None,
         name: str,
         girder_pos: Literal["LEFT", "MIDDLE", "RIGHT"] = "MIDDLE",
         h: float = 0.95,
@@ -1622,11 +1624,11 @@ class SectionManager:
         xo4: float = 0.08,
         yo4: float = 0.08,
         h1: float = 0.12,
-        no: int | None = None,
     ) -> Section:
         """创建空心板截面(HOLLOWSLAB)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             girder_pos: 截面位置
                 * LEFT=左边梁
@@ -1651,7 +1653,6 @@ class SectionManager:
             xo4: 倒角4宽（下端）
             yo4: 倒角4高
             h1: 下端竖直段高
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1666,16 +1667,16 @@ class SectionManager:
 
     def create_custom(
             self,
+            no: int | None,
             name: str,
             contour_matrix: str = "",
-            no: int | None = None,
     ) -> Section:
         """创建自定义截面(CUSTOM)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             contour_matrix: 轮廓点矩阵名称（需先用 engine.matrix 定义）
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1686,6 +1687,7 @@ class SectionManager:
 
     def create_steel_i(
         self,
+        no: int | None,
         name: str,
         # 暂时去掉默认值
         h: float,
@@ -1695,11 +1697,11 @@ class SectionManager:
         tb: float,
         tw: float,
         web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-        no: int | None = None,
     ) -> Section:
         """创建工字形钢截面(STEELI)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 梁高
             bt: 上翼缘宽度
@@ -1708,7 +1710,6 @@ class SectionManager:
             tb: 下翼缘厚度
             tw: 腹板厚度
             web_rib_pos: 加劲肋位置，Left=左侧，Right=右侧，Both=两侧
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1719,6 +1720,7 @@ class SectionManager:
 
     def create_steel_box(
         self,
+        no: int | None,
         name: str,
         h: float,
         bt: float,
@@ -1729,11 +1731,11 @@ class SectionManager:
         tb: float,
         tw: float,
         same_layout: Literal[0, 1] = 1,
-        no: int | None = None,
     ) -> Section:
         """创建箱型钢截面(STEELBOX)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 梁高
             bt: 上翼缘宽度
@@ -1744,7 +1746,6 @@ class SectionManager:
             tb: 下翼缘厚度
             tw: 腹板厚度
             same_layout: 下翼缘加劲肋是否与上翼缘相同，1=相同，0=不同
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1755,6 +1756,7 @@ class SectionManager:
 
     def create_steel_box_three_cell(
         self,
+        no: int | None,
         name: str,
         # 暂时去掉默认值
         h: float,
@@ -1775,11 +1777,11 @@ class SectionManager:
         has_web: Literal[0, 1] = 1,
         tw2: float = 0.0,
         web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
-        no: int | None = None,
     ) -> Section:
         """创建单箱单/三室钢截面(STEELBOXTHREECELL)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 梁高
             bt: 上翼缘宽度
@@ -1799,7 +1801,6 @@ class SectionManager:
             has_web: 是否有中腹板，1=有，0=无
             tw2: 中腹板厚度
             web_rib_pos: 加劲肋位置，Left=左侧，Right=右侧，Both=两侧
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1813,6 +1814,7 @@ class SectionManager:
 
     def create_steel_box_itf(
         self,
+        no: int | None,
         name: str,
         # 暂时去掉默认值
         h: float,
@@ -1831,11 +1833,11 @@ class SectionManager:
         tb2: float,
         tb3: float,
         tw1: float,
-        no: int | None = None,
     ) -> Section:
         """创建单箱单室斜顶板钢截面(STEELBOXITF)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 梁高
             b: 梁宽
@@ -1853,7 +1855,6 @@ class SectionManager:
             tb2: 斜底板厚度1
             tb3: 斜底板厚度2
             tw1: 边腹板厚
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1867,6 +1868,7 @@ class SectionManager:
 
     def create_steel_canti_box(
         self,
+        no: int | None,
         name: str,
         # 暂时去掉默认值
         h: float,
@@ -1884,11 +1886,11 @@ class SectionManager:
         web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
         h_end: float = 0.0,
         t_end: float = 0.0,
-        no: int | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室钢截面(STEELCANTIBOX)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 梁高
             bt: 顶板宽度
@@ -1905,7 +1907,6 @@ class SectionManager:
             web_rib_pos: 加劲肋位置，Left=左侧，Right=右侧，Both=两侧
             h_end: 悬臂端封板高
             t_end: 悬臂端封板厚
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1919,6 +1920,7 @@ class SectionManager:
 
     def create_steel_canti_box_ibf(
         self,
+        no: int | None,
         name: str,
         # 暂时去掉默认值
         h: float,
@@ -1938,11 +1940,11 @@ class SectionManager:
         web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
         h_end: float = 0.0,
         t_end: float = 0.0,
-        no: int | None = None,
     ) -> Section:
         """创建悬臂单箱单/双室斜底板钢截面(STEELCANTIBOXIBF)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             h: 梁高
             bt: 顶板宽度
@@ -1961,7 +1963,6 @@ class SectionManager:
             web_rib_pos: 加劲肋位置，Left=左侧，Right=右侧，Both=两侧
             h_end: 悬臂端封板高
             t_end: 悬臂端封板厚
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1975,18 +1976,18 @@ class SectionManager:
 
     def create_steel_custom(
         self,
+        no: int | None,
         name: str,
         point_matrix: str = "",
         line_matrix: str = "",
-        no: int | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过点线关系输入）(STEELCUSTOM)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             point_matrix: n行3列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的x坐标，第三个元素为点的y坐标 engine.matrix创建
             line_matrix: n行3列，几何线矩阵，每行第一个元素为起始点编号，第二个元素为终点编号，第三个元素为线宽 engine.matrix创建
-            no: 截面编号，不填则自动分配
         """
         if no is None:
             no = self._next_no()
@@ -1997,13 +1998,14 @@ class SectionManager:
 
     def create_steel_custom_plate(
         self,
+        no: int | None,
         name: str,
         plate_positions: list[str] | None = None,
-        no: int | None = None,
     ) -> Section:
         """创建自定义钢梁截面（通过参数板输入）(STEELCUSTOMPLATE)。
 
         Args:
+            no: 截面编号，不填则自动分配
             name: 截面名称
             plate_positions: 板件位置列表，目前可选择
                 * 顶板（TopFlange、TopFlange1~TopFlange5）、
@@ -2014,7 +2016,6 @@ class SectionManager:
                 * 中腹板（MiddleWeb、MiddleWeb1~MiddleWeb5）
                 * 无加劲肋的板件（PlateWithoutRib）
                 * 注意带有加劲肋的板件位置不可重复，否则无法正确计算
-            no: 截面编号，不填则自动分配
         Notes:
             在定义完自定义钢梁截面包含哪些板件后需逐一定义各板件参数
             >>> from pyosis import OSISEngine
@@ -2033,6 +2034,7 @@ class SectionManager:
 
     def create_composite_steel_i(
         self,
+        no: int | None,
         name: str,
         bt: float,
         bc: float,
@@ -2062,11 +2064,11 @@ class SectionManager:
         tb2: float = 0.0,
         tw2: float = 0.0,
         web_rib_pos2: Literal["LEFT", "RIGHT", "BOTH"] = "BOTH",
-        no: int | None = None,
     ) -> Section:
         """创建工字型钢组合截面（COMPOSITESTEELI）。  
 
         Args:
+            no: 截面编号
             name: 截面名
             bt: 板宽
             bc: 悬臂长
@@ -2094,7 +2096,6 @@ class SectionManager:
             tb2:中梁下翼缘厚
             tw2:中梁腹板厚
             web_rib_pos2:中梁加劲肋布置位置，LEFT=左侧，RIGHT=右侧，BOTH=双侧
-            no: 截面编号
         """
         if no is None:
             no = self._next_no()
@@ -2112,6 +2113,7 @@ class SectionManager:
 
     def create_composite_steel_trough(
         self,
+        no: int | None,
         name: str,
         bt: float,
         bc: float,
@@ -2139,10 +2141,10 @@ class SectionManager:
         tf2: float = 0.0,
         tf3: float = 0.0,
         tw2: float = 0.0,
-        no: int | None = None,
     ) -> Section:
         """创建槽型钢组合截面（COMPOSITESTEELTROUGH）。
             Args:
+            no: 截面编号
             name: 截面名
             type: 固定为 COMPOSITESTEELTROUGH
             bt: 板宽
@@ -2169,7 +2171,6 @@ class SectionManager:
             tf2:小纵梁上翼缘厚
             tf3:小纵梁下翼缘厚
             tw2:小纵梁腹板厚
-            no: 截面编号
         """
         if no is None:
             no = self._next_no()
@@ -2186,6 +2187,7 @@ class SectionManager:
 
     def create_composite_steel_box(
         self,
+        no: int | None,
         name: str,
         bt: float,
         bc: float,
@@ -2215,10 +2217,10 @@ class SectionManager:
         tf2: float = 0.0,
         tf3: float = 0.0,
         tw2: float = 0.0,
-        no: int | None = None,
     ) -> Section:
         """创建箱型钢组合截面（COMPOSITESTEELBOX）。
             Args:
+            no: 截面编号
             name: 截面名
             type: 固定为 COMPOSITESTEELBOX
             bt: 板宽
@@ -2247,7 +2249,6 @@ class SectionManager:
             tf2:小纵梁上翼缘厚
             tf3:小纵梁下翼缘厚
             tw2:小纵梁腹板厚
-            no: 截面编号
         """
         if no is None:
             no = self._next_no()
@@ -2264,11 +2265,11 @@ class SectionManager:
 
     def create_composite_custom(
         self,
+        no: int | None,
         name: str,
         part_num: int,
         base_e: float,
         base_mu: float,
-        no: int | None = None,
     ) -> Section:
         raise RuntimeError(f"暂不支持创建自定义组合截面")
         """创建自定义组合截面（COMPOSITECUSTOM）。"""

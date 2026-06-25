@@ -675,6 +675,7 @@ class BoundaryManager:
 
     def create_general(
         self,
+        no: int | None,
         coor: int | str = "",
         x: bool = 1,
         y: bool = 1,
@@ -683,7 +684,6 @@ class BoundaryManager:
         ry: bool = 1,
         rz: bool = 1,
         rw: bool = 1,
-        no: int | None = None,
     ) -> GeneralBoundary:
         """创建一般边界"""
         if no is None:
@@ -695,6 +695,7 @@ class BoundaryManager:
 
     def create_master_slave(
         self,
+        no: int | None,
         node: int,
         dx: bool = 1,
         dy: bool = 1,
@@ -703,7 +704,6 @@ class BoundaryManager:
         ry: bool = 1,
         rz: bool = 1,
         coincident: int | None = 1,
-        no: int | None = None,
     ) -> MstSlvBoundary:
         """创建主从约束"""
         if no is None:
@@ -715,6 +715,7 @@ class BoundaryManager:
 
     def create_release(
         self,
+        no: int | None,
         fxi_state: bool,fyi_state: bool,fzi_state: bool,
         mxi_state: bool,myi_state: bool,mzi_state: bool,mbi_state: bool,
         fxi: float,fyi: float,fzi: float,
@@ -723,7 +724,6 @@ class BoundaryManager:
         mxj_state: bool,myj_state: bool,mzj_state: bool,mbj_state: bool,
         fxj: float,fyj: float,fzj: float,
         mxj: float,myj: float,mzj: float,mbj: float,
-        no: int | None = None,
     ) -> ReleaseBoundary:
         """创建释放梁端约束"""
         if no is None:
@@ -741,6 +741,7 @@ class BoundaryManager:
 
     def create_elstcspt(
         self,
+        no: int | None,
         coor: int | str = "",
         x: bool = 1,
         dx: float | int = 1e13,
@@ -754,7 +755,6 @@ class BoundaryManager:
         dry: float | int = 1e16,
         rz: bool = 1,
         drz: float | int = 1e16,
-        no: int | None = None,
     ) -> ElstcSptBoundary:
         """创建弹性支承"""
         if no is None:
@@ -768,12 +768,12 @@ class BoundaryManager:
 
     def create_general_elstcspt(
             self,
+            no: int | None ,
             coor: int | str = "",
             *params: float | int,
             stiffness_matrix: list[float] | None = None,
             mass_matrix: list[float] | None = None,
             damping_matrix: list[float] | None = None,
-            no: int | None = None,
     ) -> GeneralElstcSptBoundary:
         """创建一般弹性支承
 
@@ -786,12 +786,12 @@ class BoundaryManager:
                 create(6, "GES", coor="", stiffness_matrix=[...])
 
         Args:
+            no: 边界编号，None 时自动分配
             coor: 局部坐标系编号，"" 代表缺省
             *params: OSIS 平铺参数（K11..K66, bM, [M..], bC, [C..]）
             stiffness_matrix: 6x6 刚度矩阵上三角元素（21 个值）
             mass_matrix: 6x6 质量矩阵上三角元素（21 个值），可选
             damping_matrix: 6x6 阻尼矩阵上三角元素（21 个值），可选
-            no: 边界编号，None 时自动分配
 
         Returns:
             GeneralElstcSptBoundary 对象
@@ -823,14 +823,14 @@ class BoundaryManager:
 
     def create_rigid(
         self,
+        no: int | None,
         nNodeI: int,
-        no: int | None = None,
     ) -> Boundary:
         """创建刚性连接
 
         Args:
-            nNodeI: 节点1编号（刚性区域的主节点）
             no: 边界编号，None 时自动分配
+            nNodeI: 节点1编号（刚性区域的主节点）
 
         Returns:
             Boundary 对象
