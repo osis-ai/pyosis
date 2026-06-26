@@ -154,6 +154,34 @@ def _write_prep_module(prep_dir: Path, module: str, lines: list[str]) -> Path:
     path.write_text("\n".join(body_lines), encoding="utf-8")
     return path
 
+def _write_main_py(prep_dir: Path) -> Path:
+    """写入 main.py：依次执行 _1_control … _10_stage。"""
+    import_lines = [
+        f"from {Path(fname).stem} import {MODULE_BUILDERS[mod]}"
+        for mod in MODULE_ORDER
+        for fname in [MODULE_FILES[mod]]
+    ]
+    call_lines = [f"    {MODULE_BUILDERS[mod]}(eng)" for mod in MODULE_ORDER]
+
+    body_lines = [
+        '"""由 pyosis.transfer.sync_exec 自动生成：依次执行 prep 模块。"""',
+        "",
+        "from __future__ import annotations",
+        "",
+        "from _0_engine import engine as default_engine",
+        *import_lines,
+        "",
+        "def main(engine=None) -> None:",
+        "    eng = default_engine if engine is None else engine",
+        *call_lines,
+        "",
+        'if __name__ == "__main__":',
+        "    main()",
+        "",
+    ]
+    path = prep_dir / "main.py"
+    path.write_text("\n".join(body_lines), encoding="utf-8")
+    return path
 
 def write_prep_outputs(parsed: list[ParsedCommand], prep_dir: Path) -> tuple[int, list[Path]]:
     """写入 _0_engine.py 与 _1~_10 prep 模块，返回 (代码行数, 文件列表)。
@@ -175,6 +203,7 @@ def write_prep_outputs(parsed: list[ParsedCommand], prep_dir: Path) -> tuple[int
         "engine = OSISEngine()\n",
         encoding="utf-8",
     )
+    prep_paths.append(_write_main_py(prep_dir))
     return code_line_count, prep_paths
 
 
