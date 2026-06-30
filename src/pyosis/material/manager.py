@@ -153,7 +153,7 @@ class MaterialManager:
         }
         if type not in _creator:
             raise ValueError(f"未知材料类型: {type}")
-        return _creator[type](name, *args, no=no, **kwargs)
+        return _creator[type](no, name, *args, **kwargs)
 
     def create_conc(
         self,

@@ -2758,7 +2758,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     sec1.add_rebar_s_shear_stirrup(mat_no, 0.1, 0.01)
     sec1.add_rebar_s_web_vertical(mat_no, 0.1, 0.01, 1, 1, 1)
     sec1.add_rebar_s_torsional_stirrup(mat_no, 0.1, 0.01, 0.01)
-    sec1.delete_rebar_s(sec1.no,"BentUpRebar")
+    sec1.delete_rebar_s("BentUpRebar")
     # 圆形钢筋
     sec1.add_rebar_circle(
         rebar_no=4,

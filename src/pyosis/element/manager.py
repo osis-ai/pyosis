@@ -585,7 +585,7 @@ class ElementManager:
             raise ValueError(
                 f"未知单元类型: {type!r}，支持: {', '.join(_creator)}"
             )
-        return _creator[type_key](*args, no=no, **kwargs)
+        return _creator[type_key](no, *args, **kwargs)
 
     def create_beam3d(
         self,

@@ -938,7 +938,7 @@ class SectionManager:
             if no is None:
                 no = self._next_no()
             return _creator[type_key](no, name, *args, **kwargs)
-        return _creator[type_key](name, *args, no=no, **kwargs)
+        return _creator[type_key](no, name, *args, **kwargs)
 
     def create_Lshape(
         self,
