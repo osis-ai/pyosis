@@ -69,7 +69,7 @@ class OSISEngine:
         - tendon:    钢束管理器（含 prop/shape 子管理器）
         - live:      活载管理器（含 grade/lane/case 子管理器）
         - geometry:  几何管理器（三维样条曲线）
-        - property:  属性管理器（坐标系、收缩徐变、阻尼等）
+        - prop:      属性管理器（property 坐标系、收缩徐变、阻尼等）
         - thickness: 厚度管理器（壳厚度特性）
         - control:   控制管理器（全局参数、分析设置）
         - project:   项目管理器（创建、打开、保存项目）
