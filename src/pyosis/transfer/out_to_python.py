@@ -69,19 +69,100 @@ def _merge_preamble_into_control(
     return merged
 
 
+# 模块职责一句话(给 AI 看的提示)
+MODULE_PURPOSE = {
+    "CONTROL": "全局控制参数(重力、非线性、收缩徐变开关等)",
+    "PROPERTY": "几何属性(坐标系、收缩徐变特性、钢束线型等)",
+    "MATERIAL": "材料定义(混凝土、钢筋、钢绞线)",
+    "SECTION": "截面定义(标准截面 + 加厚/变化截面)",
+    "NODE": "节点坐标",
+    "ELEMENT": "单元(梁/弹簧)创建 + 分组",
+    "BOUNDARY": "边界条件(支座、约束自由度)",
+    "LOADCASE": "荷载工况(自重、二期、预应力、温度、沉降)",
+    "ANALYSIS": "分析设置(活载等级、车道)",
+    "STAGE": "施工阶段(激活/钝化、体系转换)",
+}
+
+
+# 写 prep 模块时,按调用特征(method + 第一个 string 参数)分段,加注释
+def _group_key(line: str) -> str | None:
+    """提取一行的"分组键":method 链 + 第一个 string 参数。
+
+    例:
+        engine.load.get("防撞护栏右").create("LINE", ...) -> load.get+防撞护栏右
+        engine.element.group.create("0号块单元", ...)      -> element.group.create+0号块单元
+        engine.element.create(1, "BEAM3D", ...)            -> element.create+BEAM3D
+        engine.control.set_gravity_acceleration(9.8)      -> control.set_gravity_acceleration+-
+
+    无特征(如赋值)返 None。
+    """
+    s = line.strip()
+    # 找第一个 '('
+    i = s.find("(")
+    if i < 0:
+        return None
+    # method 链 = 整行直到 "("
+    method = s[:i]
+    # 第一个 string 参数
+    rest = s[i + 1:].lstrip()
+    if not rest.startswith('"'):
+        return None
+    j = rest.find('"', 1)
+    if j < 0:
+        return None
+    return f"{method}|{rest[1:j]}"
+
+
+def _insert_group_comments(lines: list[str]) -> list[str]:
+    """在 group key 变化处插入 `# ---- <method>: <name> ----` 注释。
+
+    输入 lines 假设跟 generator 输出对齐(**每行无缩进**,已有 `engine.xxx` 前缀)。
+    注释也保持无缩进,跟代码一致;最终由 `_write_prep_module` 统一加 def body 缩进。
+    """
+    out: list[str] = []
+    prev_key: str | None = None
+    for line in lines:
+        key = _group_key(line)
+        if key is not None and key != prev_key:
+            method, name = key.split("|", 1)
+            short = method.rsplit(".", 1)[-1]  # 最后一个方法名
+            out.append(f"# ---- {short}: {name} ----")
+        out.append(line)
+        prev_key = key if key is not None else prev_key
+    return out
+
+
 # 写入 prep 模块
 def _write_prep_module(prep_dir: Path, module: str, lines: list[str]) -> Path:
-    """写入 prep 模块；lines 为空时写 pass stub。"""
+    """写入 prep 模块；lines 为空时写 pass stub。
+
+    生成顺序:
+        1. docstring(说明模块职责)
+        2. imports
+        3. builder 函数(按 group 加注释)
+        4. if __name__ == "__main__": 单跑入口
+    """
     fname = MODULE_FILES[module]
     builder = MODULE_BUILDERS[module]
     empty = not lines
-    doc = f"由 pyosis.transfer.out_to_python 从 .out 自动生成: {module}"
-    if empty:
-        doc += "（无命令）"
+    purpose = MODULE_PURPOSE.get(module, module)
 
-    fn_body = ["    pass"] if empty else [f"    {line}" for line in lines]
+    if empty:
+        doc = f"OSIS 命令流 {module} 模块 — 当前 .out 中无该段,无需调用。"
+        fn_body = ["    pass"]
+    else:
+        doc = (
+            f"OSIS 命令流 {module} 模块 — {purpose}\n\n"
+            f"由 pyosis.transfer.out_to_python 从 .out 自动生成。"
+            f"按调用特征分组(注释头 # ---- method: name ----),同组相邻命令共享同一上下文。"
+        )
+        annotated = _insert_group_comments(lines)
+        fn_body = [f"    {line}" for line in annotated]
+
     body_lines = [
         f'"""{doc}"""',
+        "",
+        "from __future__ import annotations",
         "",
         "from pyosis.core.engine import OSISEngine",
         "",
@@ -108,9 +189,19 @@ def _write_main_py(prep_dir: Path) -> Path:
     call_lines = [f"    {MODULE_BUILDERS[mod]}(eng)" for mod in MODULE_ORDER]
 
     body_lines = [
-        '"""由 pyosis.transfer.out_to_python 自动生成：依次执行 prep 模块。"""',
+        '"""main.py — 入口脚本,按 _1.._10 顺序依次执行 prep 模块。',
+        "",
+        "可单独跑(`python main.py`),也可被 import 后调 main(engine)。",
+        "默认使用 _0_engine 模块级单例 OSISEngine,也可注入外部 engine。",
+        '"""',
         "",
         "from __future__ import annotations",
+        "",
+        "import sys",
+        "from pathlib import Path",
+        "",
+        "# 让 main.py 不管从哪个目录跑都能 import 同目录的 prep modules",
+        "sys.path.insert(0, str(Path(__file__).resolve().parent))",
         "",
         "from _0_engine import engine as default_engine",
         *import_lines,
@@ -144,6 +235,9 @@ def write_prep_outputs(parsed: list[ParsedCommand], prep_dir: Path) -> tuple[int
         prep_paths.append(_write_prep_module(prep_dir, module, lines))
 
     (prep_dir / "_0_engine.py").write_text(
+        '"""模块级单例 OSISEngine,供同包内其他 prep 模块 import 使用。\n\n'
+        "不要在主代码里直接 new OSISEngine();通过 main.py 调度。\n"
+        '"""\n'
         "from pyosis.core.engine import OSISEngine\n\n"
         "engine = OSISEngine()\n",
         encoding="utf-8",
