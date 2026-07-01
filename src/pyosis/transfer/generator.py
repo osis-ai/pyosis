@@ -46,8 +46,9 @@ def _route_key(name: str) -> str:
 
 
 def _fallback_run(cmd: ParsedCommand) -> str:
-    raw = cmd.source.replace('"', '\\"')
-    return raw
+    """未注册命令的兜底：用 engine.run("...") 包裹原始命令流，确保所有命令都可执行。"""
+    raw = cmd.source.replace("\\", "\\\\").replace('"', '\\"')
+    return f'engine.run("{raw}")'
 
 
 def _render_route(cmd: ParsedCommand) -> str:
