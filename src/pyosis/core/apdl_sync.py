@@ -21,6 +21,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from ..transfer import parse_text
+from ..transfer.out_to_python import DEFAULT_EXPORT_NAME, write_prep_outputs
+
 if TYPE_CHECKING:
     from .engine import OSISEngine
 
@@ -31,6 +34,7 @@ _TIME_LINE_PATTERN = re.compile(
     r"^//-+ TIME:.*//\s*$",
     re.MULTILINE | re.IGNORECASE,
 )
+
 
 @dataclass
 class ApdlSyncResult:
@@ -107,6 +111,49 @@ def _save_persisted_hash(state_path: Path, out_path: Path, file_hash: str) -> No
     )
 
 
+# 解析项目目录
+def _get_project_dir(engine: "OSISEngine") -> Path | None:
+    try:
+        proj_dir = engine.project.get_directory()
+    except RuntimeError:
+        return None
+    if not proj_dir:
+        return None
+    return Path(proj_dir)
+
+
+# 解析 (out_path, prep_dir)
+def _resolve_project_paths(engine: "OSISEngine") -> tuple[Path, Path]:
+    """返回 (默认 out_path, prep_dir)。prep_dir 不存在会自动创建。"""
+    proj_dir = _get_project_dir(engine)
+    if proj_dir is None:
+        raise RuntimeError("无法获取 OSIS 项目目录")
+    prep_dir = proj_dir / "py" / "prep"
+    prep_dir.mkdir(parents=True, exist_ok=True)
+    return proj_dir / DEFAULT_EXPORT_NAME, prep_dir
+
+
+# 确保 .out 文件存在
+def _ensure_out_file(
+    engine: "OSISEngine",
+    out_path: Path,
+    *,
+    force_export: bool,
+) -> Path:
+    """确保 .out 存在；不存在或 force_export 时调用 engine.export_apdl。"""
+    if out_path.is_file() and not force_export:
+        return out_path
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"执行 export_apdl → {out_path}")
+    engine.export_apdl(str(out_path))
+
+    if not out_path.is_file() or out_path.stat().st_size == 0:
+        raise FileNotFoundError(f"导出失败或未生成有效 .out 文件: {out_path}")
+
+    return out_path
+
+
 # 执行 APDL 同步
 def perform_apdl_sync(
     engine: "OSISEngine",
@@ -118,22 +165,14 @@ def perform_apdl_sync(
 
     无项目路径时返回 None。
     """
-    from ..transfer import parse_text
-    from ..transfer.sync_exec import (
-        get_project_dir_optional,
-        resolve_out_file,
-        resolve_project_paths,
-        write_prep_outputs,
-    )
-
-    if get_project_dir_optional(engine) is None:
+    if _get_project_dir(engine) is None:
         return None
 
     session: ApdlSessionStore = engine._apdl_session
 
-    default_out, prep_dir = resolve_project_paths(engine)
+    default_out, prep_dir = _resolve_project_paths(engine)
     out_path = Path(path) if path is not None else default_out
-    out_path = resolve_out_file(engine, out_path, force_export=force_export)
+    out_path = _ensure_out_file(engine, out_path, force_export=force_export)
 
     text = _read_out_text(out_path)
     file_hash = _text_hash(text)

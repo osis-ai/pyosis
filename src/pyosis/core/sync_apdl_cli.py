@@ -1,4 +1,7 @@
 """OSIS 界面操作后触发 pyosis APDL 同步的 CLI 入口。
+
+仅负责触发 perform_apdl_sync；prep 模块的执行不在本模块职责范围内。
+
 用法:
     python -m pyosis.core.sync_apdl_cli
 退出码:
@@ -9,30 +12,15 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING
 
+from .apdl_sync import perform_apdl_sync
 from .engine import OSISEngine
-
-if TYPE_CHECKING:
-    from .apdl_sync import ApdlSyncResult
-
-
-def _print_result(result: ApdlSyncResult) -> None:
-
-    if result.changed:
-        print("命令流有变化，已重新生成并执行 prep")
-    else:
-        print("命令流未变化，已 export，未重新执行 prep")
-
-    summary = result.summary()
-    if summary:
-        print(f"摘要: {summary}")
-
 
 
 def main() -> int:
+    engine = OSISEngine()
     try:
-        result = OSISEngine().sync_apdl()
+        result = perform_apdl_sync(engine)
     except Exception as exc:
         print(f"sync_apdl 失败: {exc}", file=sys.stderr)
         return 1
@@ -41,7 +29,7 @@ def main() -> int:
         print("跳过：未获取到项目路径")
         return 0
 
-    # _print_result(result)
+    print(result.summary())
     return 0
 
 
