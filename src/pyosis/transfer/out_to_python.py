@@ -17,8 +17,6 @@ from pathlib import Path
 from pyosis.transfer.generator import generate_lines
 from pyosis.transfer.parser import ParsedCommand
 
-DEFAULT_EXPORT_NAME = "_pyosis_sync.out"
-
 # 模块文件名
 MODULE_FILES = {
     "CONTROL": "_1_control.py",

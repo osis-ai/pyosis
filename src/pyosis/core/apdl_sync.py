@@ -22,12 +22,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from ..transfer import parse_text
-from ..transfer.out_to_python import DEFAULT_EXPORT_NAME, write_prep_outputs
+from ..transfer.out_to_python import write_prep_outputs
 
 if TYPE_CHECKING:
     from .engine import OSISEngine
 
 SYNC_STATE_FILE = ".apdl_sync.json"
+
+# 默认 .out 文件名（位于项目根目录）
+DEFAULT_EXPORT_NAME = "_pyosis_sync.out"
 
 # 忽略 TIME: 行，避免时间戳导致 MD5 每次不同
 _TIME_LINE_PATTERN = re.compile(
