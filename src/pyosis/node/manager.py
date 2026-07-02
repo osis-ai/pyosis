@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from ..core.client import osis_client
+from ..core import get_references, raise_if_occupied
 from .interface import osis_node, osis_node_del, osis_node_mod
 
 
@@ -121,6 +122,10 @@ class NodeManager:
             return 1
         return max(node_no) + 1
 
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询节点被谁引用"""
+        return get_references("Node", no=no)
+
     def create(self, no: int | None, x: float, y: float, z: float) -> Node:
         """创建节点
 
@@ -148,8 +153,11 @@ class NodeManager:
             no: 节点编号
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("Node", deps, no=no)
         ok, err = osis_node_del(no)
         if not ok:
             raise RuntimeError(f"删除节点 {no} 失败: {err}")

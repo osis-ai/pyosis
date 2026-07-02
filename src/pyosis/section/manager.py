@@ -13,6 +13,7 @@ from typing import Literal, Any
 from enum import Enum
 
 from . import osis_section_numerical
+from ..core import get_references, raise_if_occupied
 from ..core.client import osis_client
 from .composite import (
     osis_section_composite_steel_i,
@@ -878,6 +879,10 @@ class SectionManager:
         if len(sec_no) == 0:
             return 1
         return max(sec_no) + 1
+
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询截面被谁引用"""
+        return get_references("Section", no=no)
 
     # ── 增删改 ────────────────────────────────
     def create(self, no: int | None, name: str, type: str, *args: Any, **kwargs: Any) -> Section:
@@ -2312,7 +2317,14 @@ class SectionManager:
         return self.get(no)
 
     def delete(self, no: int) -> None:
-        """删除截面"""
+        """删除截面
+
+        Raises:
+            DependencyError: 存在依赖项时
+            RuntimeError: 删除失败时抛出异常
+        """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("Section", deps, no=no)
         ok, err = osis_section_del(no)
         if not ok:
             raise RuntimeError(f"删除截面 {no} 失败: {err}")

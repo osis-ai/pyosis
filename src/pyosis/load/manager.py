@@ -17,6 +17,7 @@ from typing import Literal, Any
 from enum import Enum
 
 from ..core.client import osis_client
+from ..core import get_references, raise_if_occupied
 from .loadcase import (
     osis_loadcase,
     osis_loadcase_del,
@@ -897,6 +898,10 @@ class TendonPropManager:
         ]
         return props
 
+    def get_dependencies(self, name: str) -> dict[str, list]:
+        """查询钢束特性被谁引用"""
+        return get_references("TendonProp", name=name)
+
     def create(
         self,
         name: str,
@@ -1207,8 +1212,11 @@ class TendonPropManager:
             name: 钢束特性名称
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(name)
+        raise_if_occupied("TendonProp", deps, name=name)
         ok, err = osis_tendon_prop_del(name)
         if not ok:
             raise RuntimeError(f"删除钢束特性 {name} 失败: {err}")
@@ -1307,6 +1315,10 @@ class TendonShapeManager:
             TendonShape._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
         ]
         return shapes
+
+    def get_dependencies(self, name: str) -> dict[str, list]:
+        """查询钢束形状被谁引用"""
+        return get_references("TendonShape", name=name)
 
     def create(
         self,
@@ -1463,8 +1475,11 @@ class TendonShapeManager:
             name: 钢束形状名称
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(name)
+        raise_if_occupied("TendonShape", deps, name=name)
         ok, err = osis_tendon_shape_del(name)
         if not ok:
             raise RuntimeError(f"删除钢束形状 {name} 失败: {err}")
@@ -1628,6 +1643,10 @@ class LoadCaseManager:
         ]
         return loadcases
 
+    def get_dependencies(self, name: str) -> dict[str, list]:
+        """查询荷载工况被谁引用"""
+        return get_references("LoadCase", name=name)
+
     # ── 增删改 ────────────────────────────────
 
     def create(
@@ -1690,8 +1709,11 @@ class LoadCaseManager:
             name: 荷载工况名称
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(name)
+        raise_if_occupied("LoadCase", deps, name=name)
         ok, err = osis_loadcase_del(name)
         if not ok:
             raise RuntimeError(f"删除荷载工况 {name} 失败: {err}")

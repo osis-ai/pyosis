@@ -23,7 +23,7 @@ from .interface import (
     osis_material_del,
     osis_material_mod,
 )
-
+from ..core import get_references, raise_if_occupied
 
 # ──────────────────────────────────────────────
 # 数据类
@@ -117,6 +117,10 @@ class MaterialManager:
         ]
 
         return materials
+
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询材料被谁引用"""
+        return get_references("Material", no=no)
 
     def _next_no(self) -> int:
         """生成下一个可用材料编号
@@ -342,8 +346,11 @@ class MaterialManager:
             no: 材料编号
 
         Raises:
+            DependencyError: 存在依赖项时（force=False 才会抛）
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("Material", deps, no=no)
         ok, err = osis_material_del(no)
         if not ok:
             raise RuntimeError(f"删除材料 {no} 失败: {err}")
