@@ -313,16 +313,33 @@ class Section:
 
     # ── 组合截面材料 ──────────────────────────
 
-    def set_material(self, n_steel_mat_no: int, n_conc_mat_no: int) -> None:
-        """定义组合截面材料（仅用于组合截面）
+    def set_material(
+            self,
+            e_ratio: float = 5.97101,
+            dens_ratio: float = 3.14,
+            pr_steel: float = 0.31,
+            pr_concrete: float = 0.2,
+    ) -> None:
+        """设置组合截面材料系数（仅用于组合截面）
+
+        对应命令: SectionMat, nSec, ERatio, DensRatio, PRSteel, PRConcrete
 
         Args:
-            n_steel_mat_no: 钢材材料编号
-            n_conc_mat_no: 混凝土材料编号
+            e_ratio: 钢/混凝土弹性模量比 Es/Ec（>0）
+            dens_ratio: 钢/混凝土密度比（>0）
+            pr_steel: 钢材泊松比（>=0 且 <1）
+            pr_concrete: 混凝土泊松比（>=0 且 <1）
         """
-        ok, err = osis_section_mat(self.no, n_steel_mat_no, n_conc_mat_no)
+        if e_ratio <= 0 or dens_ratio <= 0:
+            raise ValueError("e_ratio 与 dens_ratio 必须大于 0")
+        if not (0 <= pr_steel < 1) or not (0 <= pr_concrete < 1):
+            raise ValueError("泊松比必须 >= 0 且 < 1")
+
+        ok, err = osis_section_mat(
+            self.no, e_ratio, dens_ratio, pr_steel, pr_concrete
+        )
         if not ok:
-            raise RuntimeError(f"设置截面 {self.no} 材料失败: {err}")
+            raise RuntimeError(f"设置截面 {self.no} 材料系数失败: {err}")
 
     # ── 应力点 ────────────────────────────────
 

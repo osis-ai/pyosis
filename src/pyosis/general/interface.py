@@ -86,39 +86,35 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     
     # 递归生成赋值语句
     def generate_assignments(data: Any, indices: List):
-        """递归遍历矩阵并生成赋值语句"""
         if isinstance(data, list):
             for idx, elem in enumerate(data):
                 new_indices = indices + [idx]
                 generate_assignments(elem, new_indices)
         else:
-            # 处理数值赋值
             value = data
-            
-            # 格式化数值
-            if isinstance(value, int) or isinstance(value, float):
+            if isinstance(value, (int, float)):
                 val_str = str(value)
             else:
-                # 其他类型尝试转为string
                 val_str = f"\"{value}\""
             idx_parts = list(indices)
             if not is_charn:
                 while len(idx_parts) < 3:
                     idx_parts.append(0)
             idx_str = ",".join(map(str, idx_parts))
-            assign_cmd = f"{matrix_name}[{idx_str}] = {val_str}"
-            # _log(assign_cmd)
-            # osis_run(assign_cmd, "stash")
+            assign_cmd = f"{matrix_name}[{idx_str}]={val_str}"
             all_cmds.append(assign_cmd)
-    
-    # 开始递归生成赋值语句（OSIS索引从0开始）
+
     generate_assignments(matrix_data, [])
-    # osis_run()
-    # 返回拼接后的完整命令字符串
-    # str_cmds = "\n".join(all_cmds)
-    str_cmds = ";".join(all_cmds)
-    # _log(str_cmds)
-    return osis_run(str_cmds, "exec")
+
+    for cmd in all_cmds:
+        ok, err = osis_run(f"{cmd};", "stash")
+        if not ok or err:
+            return False, err or f"stash 失败: {cmd}"
+
+    ok, err = osis_run("", "exec")
+    if not ok or err:
+        return False, err
+    return True, ""
 
 def output_result_for_calc_book():
     return osis_client("OutputResultForCalcBook", {})

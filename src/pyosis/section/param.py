@@ -67,18 +67,27 @@ def osis_section_mesh(nSec: int=1, nMeshMethod: Literal[0, 1]=0, dMeshSize: floa
     pass
 
 @REGISTRY.register('SectionMat')
-def osis_section_mat(nIndex: int, nSteelMatNo: int, nConcMatNo: int):
+def osis_section_mat(
+    index: int,
+    e_ratio: float,
+    dens_ratio: float,
+    pr_steel: float,
+    pr_concrete: float,
+):
     """
-    定义组合截面材料，仅用于组合截面
+    定义组合截面材料系数（仅用于组合截面）
+
+    对应 C++: SectionMat, nSec, ERatio, DensRatio, PRSteel, PRConcrete
+
     Args:
-        nIndex (int): 编号
-        nSteelMatNo (int): 钢材材料编号
-        nConcMatNo (int): 混凝土材料编号
+        index: 组合截面编号
+        e_ratio: 钢/混凝土弹性模量比 Es/Ec（>0）
+        dens_ratio: 钢/混凝土密度比（>0）
+        pr_steel: 钢材泊松比（>=0 且 <1）
+        pr_concrete: 混凝土泊松比（>=0 且 <1）
 
     Returns:
-        tuple (bool, str):
-            - bool: 操作是否成功
-            - str: 失败原因（如果操作失败）
+        tuple (bool, str): 是否成功、失败原因
     """
     pass
 
