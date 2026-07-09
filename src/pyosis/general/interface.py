@@ -11,7 +11,7 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
         matrix_data: 任意维度的列表（1维/2维/3维/...）或单个数值（0维）
     
     Returns:
-        OSIS DSL格式的字符串（拼接后的完整命令）
+        tuple (bool, str): 是否成功，失败原因
     
     Example:
         >>> # 2维矩阵示例
@@ -86,6 +86,7 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     
     # 递归生成赋值语句
     def generate_assignments(data: Any, indices: List):
+        """递归遍历矩阵并生成赋值语句"""
         if isinstance(data, list):
             for idx, elem in enumerate(data):
                 new_indices = indices + [idx]
@@ -101,20 +102,13 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
                 while len(idx_parts) < 3:
                     idx_parts.append(0)
             idx_str = ",".join(map(str, idx_parts))
-            assign_cmd = f"{matrix_name}[{idx_str}]={val_str}"
+            assign_cmd = f"{matrix_name}[{idx_str}] = {val_str}"
             all_cmds.append(assign_cmd)
 
     generate_assignments(matrix_data, [])
 
-    for cmd in all_cmds:
-        ok, err = osis_run(f"{cmd};", "stash")
-        if not ok or err:
-            return False, err or f"stash 失败: {cmd}"
-
-    ok, err = osis_run("", "exec")
-    if not ok or err:
-        return False, err
-    return True, ""
+    str_cmds = ";".join(all_cmds)
+    return osis_run(str_cmds, "exec")
 
 def output_result_for_calc_book():
     return osis_client("OutputResultForCalcBook", {})
