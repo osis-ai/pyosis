@@ -26,6 +26,8 @@ session.mount("https://", adapter)  # 如果你后续用HTTPS
 
 DEFAULT_PORT = 18080
 DEFAULT_URL = "http://localhost"
+DEFAULT_TIMEOUT = 300
+DEFAULT_SOLVE_TIMEOUT = 600
 
 def set_osis_url(url):
     '''
@@ -42,12 +44,19 @@ def set_osis_port(port):
     DEFAULT_PORT = port
 
 # ========== 通用客户端函数（复用连接池） ==========
-def osis_client(func_name: str, payload: dict, base_url=None) -> dict:
+def osis_client(
+    func_name: str,
+    payload: dict,
+    base_url=None,
+    timeout: float | None = None,
+) -> dict:
     """
     通用 OSIS 接口客户端（复用连接池，高效批量调用）
     Args:
         func_name: C++ 接口名（如 "OSIS_Run"）
         payload: 请求参数字典（自动序列化为 JSON）
+        base_url: url
+        timeout: HTTP 超时秒数，默认 DEFAULT_TIMEOUT
     Returns:
         异常时返回 (False, 错误信息)
     """
@@ -59,7 +68,7 @@ def osis_client(func_name: str, payload: dict, base_url=None) -> dict:
             url,
             data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers={"Content-Type": "application/json; charset=utf-8"},
-            timeout=300,
+            timeout=timeout if timeout is not None else DEFAULT_TIMEOUT,
         )
 
         data = None

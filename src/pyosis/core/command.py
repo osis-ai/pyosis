@@ -19,7 +19,11 @@ from .client import osis_client
 #         f.write(f"[{timestamp}] {text}\n")
 #         f.close()
 
-def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> tuple[bool, str]:
+def osis_run(
+    strCmd: str = "",
+    mode: Literal["stash", "exec"] = "exec",
+    timeout: float | None = None,
+) -> tuple[bool, str]:
     """
     http 模拟 C++ 原生 OSIS_Run 函数
     Args:
@@ -27,11 +31,16 @@ def osis_run(strCmd: str="", mode: Literal["stash", "exec"]="exec") -> tuple[boo
         mode: 运行模式，此参数为了同时执行多条命令提高效率
             * 使用 stash 仅会将命令流存到OSIS中，不会执行
             * 收到 exec 信号才会执行暂存包括当前的所有命令流。
+        timeout: HTTP 超时秒数，默认由 osis_client 决定
 
     Returns:
         tuple (bool, str): 是否成功，失败原因
     """
-    response = osis_client("OSIS_Run", locals())
+    response = osis_client(
+        "OSIS_Run",
+        {"strCmd": strCmd, "mode": mode},
+        timeout=timeout,
+    )
     return response['success'], response['error']
     
 def _log(text, log_dir="pyosis_logs"):
