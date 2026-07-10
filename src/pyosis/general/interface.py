@@ -1,6 +1,6 @@
 from typing import Any, Dict, Literal, List, Union, Sequence
 from ..core import REGISTRY, osis_run
-from ..core.client import osis_client
+from ..core.client import DEFAULT_SOLVE_TIMEOUT, osis_client
 
 def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     """
@@ -144,12 +144,18 @@ def osis_clc():
     """
     pass
 
-@REGISTRY.register("Solve")
-def osis_solve():
+def osis_solve(timeout: float | None = None):
     """
     求解工程
-    
+
+    Args:
+        timeout: HTTP 超时秒数，默认 600（10 分钟）
+
     Returns:
         tuple (bool, str): 是否成功，失败原因
     """
-    pass
+    return osis_run(
+        "Solve;",
+        "exec",
+        timeout=timeout if timeout is not None else DEFAULT_SOLVE_TIMEOUT,
+    )

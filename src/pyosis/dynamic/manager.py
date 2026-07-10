@@ -579,7 +579,7 @@ class RspecAnalManager:
 
     def _load(self) -> list[RspecAnal]:
         """从服务端加载所有反应谱工况信息"""
-        resp = osis_client("GetAllSeisRespSpecInfo", {})
+        resp = osis_client("GetAllRespSpecInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         rsp = [RspecAnal._from_dict(d) for d in resp.get("data", [])]
@@ -594,7 +594,7 @@ class RspecAnalManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        resp = osis_client("GetSeisRespSpecByNames", {"name": names})
+        resp = osis_client("GetRespSpecInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         rsp = [RspecAnal._from_dict(d) if d else None for d in resp.get("data", [])]
