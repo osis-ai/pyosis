@@ -39,6 +39,7 @@ from .tendon import (
     osis_tendon_shape_mod,
     osis_layout_tendons,
     osis_wipe_tendons,
+    osis_bottom_tendons,
 )
 from .static import (
     osis_load_gravity,
@@ -860,6 +861,17 @@ class TendonShape:
         ok, err = osis_wipe_tendons(self.name)
         if not ok:
             raise RuntimeError(f"擦除钢束 {self.name} 失败: {err}")
+
+    def bottom(self, b_bot: int, *bot: int) -> None:
+        """定义是否沿梁单元底板布置钢束形状
+
+        Args:
+            b_bot: 0=不沿底板布置，1=沿底板布置
+            *bot: 底板布置对应的样条曲线行号，数量不限（Bot_i, Bot_j, ...）
+        """
+        ok, err = osis_bottom_tendons(self.name, b_bot, *bot)
+        if not ok:
+            raise RuntimeError(f"设置钢束 {self.name} 底板布置失败: {err}")
 
     def rename(self, new_name: str) -> None:
         """重命名钢束形状
