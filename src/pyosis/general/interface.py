@@ -1,6 +1,6 @@
 from typing import Any, Dict, Literal, List, Union, Sequence
 from ..core import REGISTRY, osis_run
-from ..core.client import osis_client
+from ..core.client import DEFAULT_SOLVE_TIMEOUT, osis_client
 
 def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
     """
@@ -11,7 +11,7 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
         matrix_data: 任意维度的列表（1维/2维/3维/...）或单个数值（0维）
     
     Returns:
-        OSIS DSL格式的字符串（拼接后的完整命令）
+        tuple (bool, str): 是否成功，失败原因
     
     Example:
         >>> # 2维矩阵示例
@@ -92,14 +92,10 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
                 new_indices = indices + [idx]
                 generate_assignments(elem, new_indices)
         else:
-            # 处理数值赋值
             value = data
-            
-            # 格式化数值
-            if isinstance(value, int) or isinstance(value, float):
+            if isinstance(value, (int, float)):
                 val_str = str(value)
             else:
-                # 其他类型尝试转为string
                 val_str = f"\"{value}\""
             idx_parts = list(indices)
             if not is_charn:
@@ -107,17 +103,11 @@ def osis_matrix(matrix_name: str, matrix_data: Union[List, int, float, str]):
                     idx_parts.append(0)
             idx_str = ",".join(map(str, idx_parts))
             assign_cmd = f"{matrix_name}[{idx_str}] = {val_str}"
-            # _log(assign_cmd)
-            # osis_run(assign_cmd, "stash")
             all_cmds.append(assign_cmd)
-    
-    # 开始递归生成赋值语句（OSIS索引从0开始）
+
     generate_assignments(matrix_data, [])
-    # osis_run()
-    # 返回拼接后的完整命令字符串
-    # str_cmds = "\n".join(all_cmds)
+
     str_cmds = ";".join(all_cmds)
-    # _log(str_cmds)
     return osis_run(str_cmds, "exec")
 
 def output_result_for_calc_book():
@@ -154,12 +144,18 @@ def osis_clc():
     """
     pass
 
-@REGISTRY.register("Solve")
-def osis_solve():
+def osis_solve(timeout: float | None = None):
     """
     求解工程
-    
+
+    Args:
+        timeout: HTTP 超时秒数，默认 600（10 分钟）
+
     Returns:
         tuple (bool, str): 是否成功，失败原因
     """
-    pass
+    return osis_run(
+        "Solve;",
+        "exec",
+        timeout=timeout if timeout is not None else DEFAULT_SOLVE_TIMEOUT,
+    )

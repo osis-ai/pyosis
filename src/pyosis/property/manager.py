@@ -38,6 +38,7 @@ from .pu_curve import (
 )
 from .component_thickness import osis_assign_component_thickness
 from ..core.client import osis_client
+from ..core import get_references, raise_if_occupied
 
 @dataclass(frozen=False)
 class Point3D:
@@ -180,8 +181,19 @@ class CoordinateManager:
         if not ok:
             raise RuntimeError(f"创建坐标系 {no} 失败: {err}")
 
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询坐标系被谁引用"""
+        return get_references("CoorSys", no=no)
+
     def delete(self, no: int) -> None:
-        """删除坐标系"""
+        """删除坐标系
+
+        Raises:
+            DependencyError: 存在依赖项时
+            RuntimeError: 删除失败时抛出异常
+        """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("CoorSys", deps, no=no)
         ok, err = osis_coord_sys_del(no)
         if not ok:
             raise RuntimeError(f"删除坐标系 {no} 失败: {err}")
@@ -310,8 +322,19 @@ class CreepShrinkManager:
             raise RuntimeError(f"创建收缩徐变特性 {no} 失败: {err}")
         return self.get(no)
 
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询收缩徐变特性被谁引用"""
+        return get_references("CreepShrink", no=no)
+
     def delete(self, no: int) -> None:
-        """删除收缩徐变特性"""
+        """删除收缩徐变特性
+
+        Raises:
+            DependencyError: 存在依赖项时
+            RuntimeError: 删除失败时抛出异常
+        """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("CreepShrink", deps, no=no)
         ok, err = osis_creep_shrink_del(no)
         if not ok:
             raise RuntimeError(f"删除收缩徐变特性 {no} 失败: {err}")
@@ -463,8 +486,19 @@ class DampingManager:
             raise RuntimeError(f"创建Rayleigh阻尼 {name} 失败: {err}")
         return self.get(name)
 
+    def get_dependencies(self, name: str) -> dict[str, list]:
+        """查询阻尼模型被谁引用"""
+        return get_references("Damping", name=name)
+
     def delete(self, name: str) -> None:
-        """删除阻尼模型"""
+        """删除阻尼模型
+
+        Raises:
+            DependencyError: 存在依赖项时
+            RuntimeError: 删除失败时抛出异常
+        """
+        deps = self.get_dependencies(name)
+        raise_if_occupied("Damping", deps, name=name)
         ok, err = osis_damping_del(name)
         if not ok:
             raise RuntimeError(f"删除阻尼模型 {name} 失败: {err}")
@@ -571,8 +605,19 @@ class PuCurveManager:
         if not ok:
             raise RuntimeError(f"创建荷载-位移曲线 {no} 失败: {err}")
 
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询荷载-位移曲线被谁引用"""
+        return get_references("PUCurve", no=no)
+
     def delete(self, no: int) -> None:
-        """删除荷载-位移曲线"""
+        """删除荷载-位移曲线
+
+        Raises:
+            DependencyError: 存在依赖项时
+            RuntimeError: 删除失败时抛出异常
+        """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("PUCurve", deps, no=no)
         ok, err = osis_pu_curve_del(no)
         if not ok:
             raise RuntimeError(f"删除荷载-位移曲线 {no} 失败: {err}")

@@ -19,6 +19,7 @@ from enum import Enum
 from typing import Literal, Any
 
 from ..core.client import osis_client
+from ..core import get_references, raise_if_occupied
 from .interface import (
     osis_spline3d_general,
     osis_spline3d_natural,
@@ -286,6 +287,10 @@ class GeometryManager:
             raise RuntimeError(f"创建3D圆弧 {name} 失败: {err}")
         return self.get(name)
 
+    def get_dependencies(self, name: str) -> dict[str, list]:
+        """查询几何样条被谁引用"""
+        return get_references("Spline", name=name)
+
     def delete(self, name: str) -> None:
         """删除三维样条曲线
 
@@ -293,8 +298,11 @@ class GeometryManager:
             name: 曲线名称
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(name)
+        raise_if_occupied("Spline", deps, name=name)
         ok, err = osis_spline3d_del(name)
         if not ok:
             raise RuntimeError(f"删除样条曲线 {name} 失败: {err}")

@@ -23,6 +23,7 @@ from typing import Any, Literal
 from enum import IntEnum
 
 from ..core.client import osis_client
+from ..core import get_references, raise_if_occupied
 from .interface import (
     osis_boundary_general,
     osis_boundary_elstcspt,
@@ -638,6 +639,10 @@ class BoundaryManager:
             return 1
         return max(bd.no for bd in boundaries) + 1
 
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询边界被谁引用"""
+        return get_references("Boundary", no=no)
+
     # ── 增删改 ────────────────────────────────
     def create(self, no: int | None, type: str, *args: Any, **kwargs: Any) -> Boundary:
         """创建边界（便捷入口，内部转发到对应 create_* 方法）
@@ -846,7 +851,14 @@ class BoundaryManager:
         return self.get(no)  # type: ignore[return-value]
 
     def delete(self, no: int) -> None:
-        """删除边界"""
+        """删除边界
+
+        Raises:
+            DependencyError: 存在依赖项时
+            RuntimeError: 删除失败时抛出异常
+        """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("Boundary", deps, no=no)
         ok, err = osis_boundary_del(no)
         if not ok:
             raise RuntimeError(f"删除边界 {no} 失败: {err}")

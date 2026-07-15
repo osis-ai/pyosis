@@ -328,3 +328,21 @@ def osis_wipe_tendons(strShapeName: str):
         tuple (bool, str): 是否成功，失败原因
     '''
     pass
+
+@REGISTRY.register("BottomTS")
+def osis_bottom_tendons(TdShapeName: str, bBot: int, *Bot: int):
+    '''
+    定义是否沿梁单元底板布置钢束形状
+
+    Args:
+        TdShapeName (str): 钢束形状名称
+        bBot (int): 是否沿底板布置
+            * 0 = 不沿底板布置
+            * 1 = 沿底板布置
+        *Bot (int): 底板布置钢束对应的样条曲线行号，数量不限
+            （如 Bot_i, Bot_j, Bot_k, ...）
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass

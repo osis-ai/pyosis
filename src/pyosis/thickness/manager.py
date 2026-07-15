@@ -16,6 +16,7 @@ from .interface import (
     osis_shell_thickness_mod,
 )
 from ..core.client import osis_client
+from ..core import get_references, raise_if_occupied
 
 
 @dataclass(frozen=True)
@@ -93,6 +94,10 @@ class ThicknessManager:
         if not ok:
             raise RuntimeError(f"创建厚度特性 {no} 失败: {err}")
 
+    def get_dependencies(self, no: int) -> dict[str, list]:
+        """查询壳厚度被谁引用"""
+        return get_references("ShellThickness", no=no)
+
     def delete(self, no: int) -> None:
         """删除板或壳的厚度特性
 
@@ -100,8 +105,11 @@ class ThicknessManager:
             no: 厚度特性编号
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(no)
+        raise_if_occupied("ShellThickness", deps, no=no)
         ok, err = osis_shell_thickness_del(no)
         if not ok:
             raise RuntimeError(f"删除厚度特性 {no} 失败: {err}")

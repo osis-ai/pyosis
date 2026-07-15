@@ -10,3 +10,5 @@ OSISEngine中的函数，将会分发到各个模块，被再次封装，意图�
 
 from .command import REGISTRY, osis_run, set_run_mode
 from .client import set_osis_port, set_osis_url
+from .exceptions import DependencyError
+from .references import get_references, raise_if_occupied

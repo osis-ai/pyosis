@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from typing import Literal, Any
 
 from ..core.client import osis_client
+from ..core import get_references, raise_if_occupied
 from .grade import (
     osis_livegrade_highway,
     osis_livegrade_vehicle,
@@ -499,6 +500,10 @@ class LiveGradeManager:
         ]
         return grades
 
+    def get_dependencies(self, name: str) -> dict[str, list]:
+        """查询活载等级被谁引用"""
+        return get_references("LiveGrade", name=name)
+
     def create(
             self,
             name: str,
@@ -713,8 +718,11 @@ class LiveGradeManager:
             name: 活载等级名称
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(name)
+        raise_if_occupied("LiveGrade", deps, name=name)
         ok, err = osis_livegrade_del(name)
         if not ok:
             raise RuntimeError(f"删除活载等级 {name} 失败: {err}")
@@ -814,6 +822,10 @@ class LaneManager:
             Lane._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and "name" in d
         ]
         return lanes
+
+    def get_dependencies(self, name: str) -> dict[str, list]:
+        """查询车道被谁引用"""
+        return get_references("LiveLane", name=name)
 
     def create(
         self,
@@ -966,8 +978,11 @@ class LaneManager:
             name: 车道名称
 
         Raises:
+            DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
         """
+        deps = self.get_dependencies(name)
+        raise_if_occupied("LiveLane", deps, name=name)
         ok, err = osis_lane_del(name)
         if not ok:
             raise RuntimeError(f"删除车道 {name} 失败: {err}")
