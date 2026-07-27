@@ -297,9 +297,14 @@ class OSISEngine:
     # 便捷方法（委托给 project manager）
     # ──────────────────────────────────────────
 
-    def save_project(self) -> None:
-        """保存当前项目"""
-        self._project.save()
+    def save_project(self, filepath: str = "") -> None:
+        """保存项目
+
+        Args:
+            filepath: 工程文件路径。为空时使用当前项目路径；
+                非空时使用传入路径。
+        """
+        self._project.save(filepath)
 
     def new_project(self, type: int = 1, filepath: str = "") -> None:
         """新建项目
@@ -317,6 +322,10 @@ class OSISEngine:
             filepath: 项目文件路径
         """
         self._project.open(filepath)
+
+    def close(self) -> None:
+        """关闭 OSIS 软件"""
+        self._project.close()
 
     # ──────────────────────────────────────────
     # 便捷方法（委托给 control manager）

@@ -2,10 +2,12 @@
 
 用法:
     >>> from pyosis.project import project_manager
-    >>> project_manager.create(type=1, filepath="D:/Models/bridge.osis")
-    >>> project_manager.open("D:/Models/bridge.osis")
+    >>> project_manager.create(type=1, filepath="D:/Models/bridge.sis")
+    >>> project_manager.open("D:/Models/bridge.sis")
     >>> project_manager.save()
-    >>> project_manager.save_as("D:/Models/bridge_v2.osis")
+    >>> project_manager.save("D:/Models/bridge.sis")
+    >>> project_manager.save_as("D:/Models/bridge_v2.sis")
+    >>> project_manager.close()
     >>> project_manager.get_directory()
 """
 
@@ -16,6 +18,7 @@ from .interface import (
     open_project,
     save_project,
     save_project_as,
+    close_osis,
     get_project_directory,
 )
 
@@ -53,13 +56,19 @@ class ProjectManager:
         if not ok:
             raise RuntimeError(f"打开项目失败: {err}")
 
-    def save(self) -> None:
-        """保存当前项目
+    def save(self, filepath: str = "") -> None:
+        """保存项目
+
+        Args:
+            filepath: 工程文件路径。为空时使用当前项目路径；
+                非空时使用传入路径。
 
         Raises:
             RuntimeError: 保存失败时抛出异常
         """
-        ok, err = save_project("")
+        if not filepath:
+            filepath = self._current_project_file()
+        ok, err = save_project(filepath)
         if not ok:
             raise RuntimeError(f"保存项目失败: {err}")
 
@@ -76,6 +85,16 @@ class ProjectManager:
         if not ok:
             raise RuntimeError(f"另存为失败: {err}")
 
+    def close(self) -> None:
+        """关闭 OSIS 软件
+
+        Raises:
+            RuntimeError: 关闭失败时抛出异常
+        """
+        ok, err = close_osis()
+        if not ok:
+            raise RuntimeError(f"关闭软件失败: {err}")
+
     def get_directory(self) -> str:
         """获取当前项目目录
 
@@ -89,6 +108,11 @@ class ProjectManager:
             return get_project_directory()
         except Exception as e:
             raise RuntimeError(f"获取项目目录失败: {e}")
+
+    def _current_project_file(self) -> str:
+        """由当前项目目录推导工程文件路径（目录同名 .sis）。"""
+        directory = self.get_directory().rstrip("\\/")
+        return f"{directory}.sis"
 
     def __repr__(self) -> str:
         return "ProjectManager()"
