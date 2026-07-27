@@ -10,7 +10,7 @@ def get_project_directory() -> 'str | None':
         return response["path"]
     raise Exception(response["error"])
 
-@REGISTRY.register("/open")
+@REGISTRY.register("/Open")
 def open_project(filepath) -> Tuple[bool, str]:
     """
     打开项目
@@ -23,7 +23,7 @@ def open_project(filepath) -> Tuple[bool, str]:
     """
     pass
 
-@REGISTRY.register("/create")
+@REGISTRY.register("/Create")
 def create_project(type, filePath) -> Tuple[bool, str]:
     """
     创建项目

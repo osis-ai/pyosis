@@ -169,8 +169,8 @@ ROUTES = {
     "StgAnal": ("chain", "engine.stage.get", "define_analysis", 0),
 
     # ─── PROJECT ───
-    "/create": "engine.new_project",
-    "/open": "engine.open_project",
+    "/Create": "engine.new_project",
+    "/Open": "engine.open_project",
     "/Save": "engine.save_project",
     "/SaveAs": "engine.project.save_as",
     "/Close": "engine.close",
