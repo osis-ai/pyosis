@@ -175,6 +175,11 @@ ROUTES = {
     "/SaveAs": "engine.project.save_as",
     "/Close": "engine.close",
 
+    # ─── DISPLAY ───
+    "DispCtrl": "engine.display.disp_ctrl",
+    "/control": "engine.display.control",
+    "Plsm": "engine.display.set_plsm",
+
     # ─── GENERAL ───
     "Clear": "engine.clear",
     "Solve": "engine.solve",

@@ -20,3 +20,4 @@ from ..stability import *
 
 from ..post import *
 from ..result import *
+from ..display import *
