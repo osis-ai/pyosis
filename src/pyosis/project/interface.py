@@ -67,7 +67,7 @@ def save_project_as(filePath) -> Tuple[bool, str]:
 @REGISTRY.register("/Close")
 def close_osis() -> Tuple[bool, str]:
     """
-    关闭 OSIS 软件
+    关闭 OSIS 项目
 
     Returns:
         Tuple[bool, str]

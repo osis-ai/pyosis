@@ -7,9 +7,9 @@
     4. 有变化 → parse → 写 prep → 存本次 hash
 
 用法:
-    result = engine.sync_apdl()
-    if result and result.changed:
-        print(result.summary())
+    changed = engine.sync_apdl()
+    if changed:
+        print("命令流已变化,已写 prep")
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..transfer import parse_text
 from ..transfer.out_to_python import write_prep_outputs
 
 if TYPE_CHECKING:
@@ -40,18 +39,8 @@ _TIME_LINE_PATTERN = re.compile(
 
 
 @dataclass
-class ApdlSyncResult:
-    """APDL 同步结果。"""
-
-    changed: bool = False
-
-    def summary(self) -> str:
-        return "命令流已变化，已写 prep" if self.changed else "命令流未变化"
-
-
-@dataclass
 class ApdlSessionStore:
-    """记录最近一次同步的 .out 路径与 hash（供调试/展示，不由 ApdlSyncResult 重复携带）。"""
+    """记录最近一次同步的 .out 路径与 hash（供调试/展示）。"""
 
     last_path: str = ""
     last_hash: str = ""
@@ -162,11 +151,14 @@ def perform_apdl_sync(
     engine: "OSISEngine",
     path: str | None = None,
     *,
-    force_export: bool = True,
-) -> ApdlSyncResult | None:
+    force_export: bool = False,
+) -> bool | None:
     """执行 APDL 同步：export → 比 hash → 有变化则写 prep（不执行 prep）。
 
-    无项目路径时返回 None。
+    Returns:
+        True  - 命令流已变化,已写 prep
+        False - 命令流未变化
+        None  - 未获取到项目路径(无法同步)
     """
     if _get_project_dir(engine) is None:
         return None
@@ -186,12 +178,11 @@ def perform_apdl_sync(
     session.update_file(str(out_path), file_hash)
 
     if file_hash == last_hash:
-        return ApdlSyncResult(changed=False)
+        return False
 
-    parsed = parse_text(text)
-    write_prep_outputs(parsed, prep_dir)
+    write_prep_outputs(out_path, prep_dir)
 
     # 未执行 prep，OSIS 未变
     _save_persisted_hash(state_path, out_path, file_hash)
 
-    return ApdlSyncResult(changed=True)
+    return True

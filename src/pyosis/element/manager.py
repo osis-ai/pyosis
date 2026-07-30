@@ -298,6 +298,15 @@ class ElementGroupManager:
         Args:
             name: 单元组名称
             op: 操作
+                * c = 创建
+                * a = 添加
+                * s = 替换
+                * r = 移除
+                * aa = 添加全部
+                * ra = 移除全部
+                * m = 修改组名
+                * d = 删除
+            *param (str | int): 待操作的编号，支持的格式：*，*to*；*by*，仅用于替换。例子：2,3,5,8to10,2by3,5by6,8by10 重合的编号自动忽略
 
         Returns:
             ElementGroup: 创建的单元组对象

@@ -86,7 +86,7 @@ class ProjectManager:
             raise RuntimeError(f"另存为失败: {err}")
 
     def close(self) -> None:
-        """关闭 OSIS 软件
+        """关闭 OSIS 项目
 
         Raises:
             RuntimeError: 关闭失败时抛出异常

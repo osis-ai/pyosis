@@ -20,16 +20,16 @@ from .engine import OSISEngine
 def main() -> int:
     engine = OSISEngine()
     try:
-        result = perform_apdl_sync(engine)
+        changed = perform_apdl_sync(engine)
     except Exception as exc:
         print(f"sync_apdl 失败: {exc}", file=sys.stderr)
         return 1
 
-    if result is None:
+    if changed is None:
         print("跳过：未获取到项目路径")
         return 0
 
-    print(result.summary())
+    print("命令流已变化，已写 prep" if changed else "命令流未变化")
     return 0
 
 

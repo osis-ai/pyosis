@@ -22,7 +22,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from .apdl_sync import ApdlSyncResult, ApdlSessionStore, perform_apdl_sync
+from .apdl_sync import ApdlSessionStore, perform_apdl_sync
 from ..material.manager import MaterialManager, material_manager
 from ..section.manager import SectionManager, section_manager
 from ..node.manager import NodeManager, node_manager
@@ -240,6 +240,15 @@ class OSISEngine:
         """显示管理器（边界 / 荷载 / 钢束显隐等）"""
         return self._display
 
+
+    def start(self) -> None:
+        """开启 OSIS 软件"""
+        ...
+
+    def close(self) -> None:
+        """关闭 OSIS 软件"""
+        ...
+
     # ──────────────────────────────────────────
     # 通用操作（直接暴露 general 和 core 的函数）
     # ──────────────────────────────────────────
@@ -335,10 +344,6 @@ class OSISEngine:
         """
         self._project.open(filepath)
 
-    def close(self) -> None:
-        """关闭 OSIS 软件"""
-        self._project.close()
-
     # ──────────────────────────────────────────
     # 便捷方法（委托给 control manager）
     # ──────────────────────────────────────────
@@ -408,8 +413,21 @@ class OSISEngine:
         return f"OSISEngine(project_path={self.project.get_directory()})"
 
     def sync_apdl(
-            self,
-            path: str | None = None,
-    ) -> ApdlSyncResult:
-        """通过 APDL 导出从 OSIS 同步数据。OSIS 界面操作后调用。"""
-        return perform_apdl_sync(self, path)
+        self,
+        path: str | None = None,
+        *,
+        force_export: bool = False,
+    ) -> bool | None:
+        """通过 APDL 导出从 OSIS 同步数据。OSIS 界面操作后调用。
+
+        Args:
+            path: 自定义 .out 文件路径,None 用项目下默认 _pyosis_sync.out。
+            force_export: False(默认)若 .out 已存在则直接复用,仅当 hash 与上次不一致才写 prep;
+                True 时总是重新执行 export_apdl。
+
+        Returns:
+            True  - 命令流已变化,已写 prep
+            False - 命令流未变化
+            None  - 未获取到项目路径
+        """
+        return perform_apdl_sync(self, path, force_export=force_export)

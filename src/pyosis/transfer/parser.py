@@ -1,5 +1,9 @@
 """命令流解析器.
 
+职责:把输入的一整段 OSIS 命令流文本解析成多条 ParsedCommand.
+不做任何 .out 格式相关的事(比如识别 //--- CONTROL --- 这类模块标记),
+那是 out_to_python 的职责.
+
 支持:
     - 行注释（//、#）
     - 多行续行（行末逗号 / 下一行首字符为空白+逗号）
@@ -13,7 +17,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import List
+from typing import Iterator, List
 
 from .split import split_cmd, split_commands
 
@@ -23,24 +27,10 @@ _GLUED_TAIL_COMMANDS = ("SectionOffset",)
 # 矩阵赋值命令正则表达式
 MATRIX_ASSIGN_RE = re.compile(r"^(\w+)\[([\d,\s]+)\]\s*=\s*(.+)$")
 # 注释行正则表达式
-_COMMENT_LINE_RE = re.compile(r"^\s*(//|#)")
+COMMENT_LINE_RE = re.compile(r"^\s*(//|#)")
 # 空白行正则表达式
-_BLANK_RE = re.compile(r"^\s*$")
-# 模块标记正则表达式
-MODULE_PATTERN = re.compile(r"//-+\s*(\w+)\s*-*")
-# 用于识别命令所属模块
-KNOWN_MODULES = frozenset({
-    "CONTROL",
-    "PROPERTY",
-    "MATERIAL",
-    "SECTION",
-    "NODE",
-    "ELEMENT",
-    "BOUNDARY",
-    "LOADCASE",
-    "ANALYSIS",
-    "STAGE",
-})
+BLANK_RE = re.compile(r"^\s*$")
+
 
 # 已解析的 OSIS 命令
 @dataclass
@@ -54,7 +44,6 @@ class ParsedCommand:
     matrix_name: str = ""
     matrix_indices: tuple[int, ...] = ()
     matrix_value: str = ""
-    module: str | None = None  # "CONTROL" | "SECTION" | ... | None
 
 
 def _join_continuation_lines(lines: List[str]) -> List[str]:
@@ -117,8 +106,33 @@ def _split_glued_command_fields(fields: List[str]) -> List[List[str]]:
     return groups
 
 
+# 去除一行内的 // 注释（保留 // 之前的有效命令部分）
+def strip_inline_comment(line: str) -> str:
+    if "//" not in line:
+        return line
+    pos = line.find("//")
+    if pos == 0:
+        return ""
+    if line[pos - 1] in (" ", "\t"):
+        return line[:pos].rstrip()
+    return line
+
+
+# 迭代"物理命令行":合并续行;不过滤注释/空行,留给调用方决定
+def iter_physical_lines(text: str) -> Iterator[str]:
+    """逐行 yield 物理命令行(已合并续行)。
+
+    不做任何注释/空行过滤——调用方按需处理:
+        - parse_text 会跳过 //、#、空行(以及 //--- MODULE_NAME --- 这种模块标记);
+          因为 parser 不识别模块,所以这条规则保持宽泛。
+        - out_to_python._split_by_module 同样跳过注释/空行,但用 MODULE_PATTERN
+          提前捕获模块标记以切换 current_module。
+    """
+    yield from _join_continuation_lines(text.splitlines())
+
+
 # 创建已解析的命令
-def _make_parsed_command(fields: List[str], source: str, module: str | None) -> ParsedCommand:
+def _make_parsed_command(fields: List[str], source: str) -> ParsedCommand:
     first = fields[0] if fields else ""
     return ParsedCommand(
         raw=source,
@@ -126,11 +140,11 @@ def _make_parsed_command(fields: List[str], source: str, module: str | None) -> 
         name=first,
         source=source,
         kind="normal",
-        module=module,
     )
 
+
 # 解析一条命令,返回已解析的命令列表
-def _parse_one_command(source: str, module:str|None) -> List[ParsedCommand]:
+def _parse_one_command(source: str) -> List[ParsedCommand]:
     fields = split_cmd(source)
     first = fields[0] if fields else ""
     lower_first = first.lower()
@@ -143,7 +157,6 @@ def _parse_one_command(source: str, module:str|None) -> List[ParsedCommand]:
                 name=first,
                 source=source,
                 kind="matrix_dim",
-                module=module,
             )
         ]
 
@@ -161,7 +174,6 @@ def _parse_one_command(source: str, module:str|None) -> List[ParsedCommand]:
                 matrix_name=assign_match.group(1),
                 matrix_indices=indices,
                 matrix_value=assign_match.group(3).strip(),
-                module=module,
             )
         ]
 
@@ -171,8 +183,16 @@ def _parse_one_command(source: str, module:str|None) -> List[ParsedCommand]:
         if not group:
             continue
         sub_source = ",".join(group)
-        result.append(_make_parsed_command(group, sub_source, module=module))
+        result.append(_make_parsed_command(group, sub_source))
     return result
+
+
+# 解析一行物理命令为多条 ParsedCommand(处理 ; 分隔)
+def _parse_physical_line(line: str) -> List[ParsedCommand]:
+    out: List[ParsedCommand] = []
+    for sub in split_commands(line):
+        out.extend(_parse_one_command(sub))
+    return out
 
 
 # 解析 OSIS 命令流文本,返回已解析的命令列表
@@ -181,36 +201,16 @@ def parse_text(text: str) -> List[ParsedCommand]:
 
     Returns:
         ParsedCommand 列表（不含注释、空行）。
+        不识别 //--- MODULE_NAME --- 这类 .out 模块标记,那是 out_to_python 的职责。
     """
-    lines = text.splitlines()
-    physical_lines = _join_continuation_lines(lines)
-    current_module: str | None = None
     commands: List[ParsedCommand] = []
-
-    for physical in physical_lines:
-        stripped = physical.strip()
-        # 识别模块标记
-        m = MODULE_PATTERN.match(stripped)
-        if m:
-            name = m.group(1).upper()
-            current_module = name if name in KNOWN_MODULES else None
+    for line in iter_physical_lines(text):
+        if COMMENT_LINE_RE.match(line):
             continue
-
-        if _COMMENT_LINE_RE.match(physical):
+        if BLANK_RE.match(line):
             continue
-        if _BLANK_RE.match(physical):
+        line = strip_inline_comment(line)
+        if BLANK_RE.match(line):
             continue
-        if "//" in physical:
-            hash_pos = physical.find("//")
-            if hash_pos == 0:
-                continue
-            if hash_pos > 0 and physical[hash_pos - 1] in (" ", "\t"):
-                physical = physical[:hash_pos].rstrip()
-        if not physical:
-            continue
-
-        for sub in split_commands(physical):
-            for cmd in _parse_one_command(sub, module=current_module):
-                commands.append(cmd)
-
+        commands.extend(_parse_physical_line(line))
     return commands
