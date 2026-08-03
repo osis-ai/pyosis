@@ -224,11 +224,11 @@ def osis_assign_boundary(nBd: int=1, eOP: Literal["a", "s", "r", "aa", "ra"]="a"
     pass
 
 @REGISTRY.register("BdGrp")
-def osis_boundary_group(strName: str, eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], param: list=[]):
+def osis_boundary_group(strName: str, eOP: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param: str | int):
     '''
     ## 添加或移除边界组
     pyosis.boundary.osis_boundary_group
-    
+
     Args:
         strName (str): 边界组名
         eOP (str): 操作
@@ -240,7 +240,7 @@ def osis_boundary_group(strName: str, eOP: Literal["c", "a", "s", "r", "aa", "ra
             * ra = 移除全部
             * m = 修改组名
             * d = 删除
-        param (list): 待操作的编号，支持的格式：*, *to*; *by*，仅用于替换。
+        param: 待操作的编号，支持的格式：*, *to*; *by*，仅用于替换。
             例子：[2,3,5,"8to10"] ["2by3","5by6","8by10"] 重合的编号自动忽略
 
     Returns:

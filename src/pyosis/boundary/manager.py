@@ -396,7 +396,7 @@ class BoundaryGroup:
 
     def _execute(self, operation: Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param: str | int) -> None:
         """执行边界组底层操作（内部使用）"""
-        ok, err = osis_boundary_group(self.name, operation, list(param))
+        ok, err = osis_boundary_group(self.name, operation, *param)
         if not ok:
             raise RuntimeError(f"边界组操作 {self.name} ({operation}) 失败: {err}")
 
