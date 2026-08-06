@@ -24,6 +24,7 @@ pip install osis-python -i https://pypi.org/simple
 
 - OSIS >= 5.0（包含所需的 Python 运行环境）
 - Python >= 3.8
+- **仅求解器模式（solver-only）** 额外需要带 `PySolver.dll` 的求解器安装目录（例如 `D:\OSIS_Solver\Rbin64`）。
 
 ## 快速开始
 
@@ -103,6 +104,31 @@ from pyosis.node import node_manager
 mat = material_manager.create_conc("C30", eCode="JTG3362_2018", eGrade="C30")
 node = node_manager.create(0, 0, 0)
 ```
+
+### 4. 使用 OSISSolver 直接启动求解器（仅求解器模式）
+
+默认情况下 `OSISEngine()` 连接的是已经打开的 OSIS 图形界面进程。如果希望**不打开 GUI** 直接驱动求解器（例如无头批量计算、CI、服务端自动化），可以用 `OSISSolver` 通过 ctypes 直接加载求解器 DLL 并启动其 HTTP server：
+
+```python
+from pyosis.core.solver import OSISSolver
+from pyosis.core.engine import OSISEngine
+
+# 加载 <安装目录>/PySolver.dll 并启动 HTTP server（默认端口 18080）
+solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver\Rbin64")
+engine = OSISEngine.from_solver(solver)
+
+# 建工程（类型 101 = 桥梁分析），之后照常建模
+engine.project.create(101, r"D:\work\my_bridge\my_bridge.sis")
+engine.control.set_gravity_acceleration(9.8066)
+# ... 截面 / 材料 / 节点 / 单元 ...
+engine.solve()
+```
+
+仅求解器模式注意事项：
+
+- `osis_install_path` 必须是包含 `PySolver.dll`（及其依赖 DLL）的目录。
+- 求解器必须先有工程才能执行建模命令：先 `engine.project.create()` / `open()`。
+- 崩溃 minidump 固定写入 `<安装目录>\Error\dmp\`（启动时自动创建）。
 
 ## 核心架构
 
@@ -323,3 +349,4 @@ engine.solve()
 ## 更多资源
 
 - [tests/](tests/)：包含各模块的示例代码
+- [tests/_scratch_solve_probe.py](tests/_scratch_solve_probe.py)：仅求解器端到端示例（启动求解器 → 建工程 → 跑完十个建模模块 → 求解 → summary）
