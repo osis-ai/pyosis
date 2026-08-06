@@ -24,7 +24,7 @@ pip install osis-python -i https://pypi.org/simple
 
 - OSIS >= 5.0（包含所需的 Python 运行环境）
 - Python >= 3.8
-- **仅求解器模式（solver-only）** 额外需要带 `PySolver.dll` 的求解器安装目录（例如 `D:\OSIS_Solver\Rbin64`）。
+- **仅求解器模式（solver-only）** 额外显式提供 OSIS 求解器的安装目录（例如 `D:\OSIS_Solver`）。
 
 ## 快速开始
 
@@ -107,17 +107,16 @@ node = node_manager.create(0, 0, 0)
 
 ### 4. 使用 OSISSolver 直接启动求解器（仅求解器模式）
 
-默认情况下 `OSISEngine()` 连接的是已经打开的 OSIS 图形界面进程。如果希望**不打开 GUI** 直接驱动求解器（例如无头批量计算、CI、服务端自动化），可以用 `OSISSolver` 通过 ctypes 直接加载求解器 DLL 并启动其 HTTP server：
-
+默认情况下 `OSISEngine()` 连接的是已经打开的 OSIS 图形界面进程。如果希望**不打开 GUI** 直接驱动求解器（例如无头批量计算、CI、服务端自动化），可以用 `OSISSolver` 单独启动 OSIS 求解器。
 ```python
 from pyosis.core.solver import OSISSolver
 from pyosis.core.engine import OSISEngine
 
-# 加载 <安装目录>/PySolver.dll 并启动 HTTP server（默认端口 18080）
-solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver\Rbin64")
+# 加载 <安装目录> 
+solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver")
 engine = OSISEngine.from_solver(solver)
 
-# 建工程（类型 101 = 桥梁分析），之后照常建模
+# 建工程（类型 101 = 通用桥梁分析），之后照常建模
 engine.project.create(101, r"D:\work\my_bridge\my_bridge.sis")
 engine.control.set_gravity_acceleration(9.8066)
 # ... 截面 / 材料 / 节点 / 单元 ...
@@ -126,9 +125,8 @@ engine.solve()
 
 仅求解器模式注意事项：
 
-- `osis_install_path` 必须是包含 `PySolver.dll`（及其依赖 DLL）的目录。
 - 求解器必须先有工程才能执行建模命令：先 `engine.project.create()` / `open()`。
-- 崩溃 minidump 固定写入 `<安装目录>\Error\dmp\`（启动时自动创建）。
+- 崩溃时 dmp 文件将固定写入 `<安装目录>\Error\dmp\`。
 
 ## 核心架构
 
@@ -157,6 +155,7 @@ pyosis 采用 Manager 模式组织代码，每个模块对应一个 Manager：
 | ResultManager | `engine.result` | 结果导出（工况/包络/验算结果） |
 | ControlManager | `engine.control` | 全局控制参数 |
 | ProjectManager | `engine.project` | 项目操作 |
+| DisplayManager | `engine.display` | 显示控制（边界/荷载/钢束显隐、视图方向、显示开关） |
 
 ### 子管理器
 
@@ -194,6 +193,21 @@ shape = engine.tendon.shape.create_arc3d(
 grade = engine.live.grade.create("公路-I级")
 lane = engine.live.lane.create("车道1")
 case = engine.live.case.create("活载工况1")
+```
+
+### 显示控制
+
+```python
+# 边界 / 荷载 / 钢束显隐
+engine.display.disp_ctrl("bc", "all", "all", 1)          # 显示所有边界
+engine.display.disp_ctrl("lg", "nforce", "all", 0)       # 隐藏所有集中力
+engine.display.disp_ctrl("td", "all", ["T1", "T2"], 1)   # 显示指定钢束
+
+# 视图方向
+engine.display.set_view("top")          # standard / top / right / front
+
+# 显示开关
+engine.display.set_plsm(1)              # 0 = 关，1 = 开
 ```
 
 ### 属性与厚度管理
@@ -346,7 +360,3 @@ lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
 engine.solve()
 ```
 
-## 更多资源
-
-- [tests/](tests/)：包含各模块的示例代码
-- [tests/_scratch_solve_probe.py](tests/_scratch_solve_probe.py)：仅求解器端到端示例（启动求解器 → 建工程 → 跑完十个建模模块 → 求解 → summary）

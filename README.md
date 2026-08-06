@@ -160,6 +160,7 @@ pyosis adopts a Manager pattern to organize code. Each module corresponds to a M
 | ResultManager | `engine.result` | Result export (load case / envelope / check results) |
 | ControlManager | `engine.control` | Global control parameters |
 | ProjectManager | `engine.project` | Project operations |
+| DisplayManager | `engine.display` | Display control (show/hide boundaries, loads, tendons; view orientation; display switches) |
 
 ### Sub-Managers
 
@@ -197,6 +198,21 @@ shape = engine.tendon.shape.create_arc3d(
 grade = engine.live.grade.create("HighwayClassI")
 lane = engine.live.lane.create("Lane1")
 case = engine.live.case.create("LiveLoadCase 1")
+```
+
+### Display Control
+
+```python
+# Show/hide boundaries, loads and tendons
+engine.display.disp_ctrl("bc", "all", "all", 1)          # Show all boundaries
+engine.display.disp_ctrl("lg", "nforce", "all", 0)       # Hide all concentrated forces
+engine.display.disp_ctrl("td", "all", ["T1", "T2"], 1)   # Show specific tendons
+
+# View orientation
+engine.display.set_view("top")          # standard / top / right / front
+
+# Display switch
+engine.display.set_plsm(1)              # 0 = off, 1 = on
 ```
 
 ### Property & Thickness Management
@@ -348,8 +364,3 @@ lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
 # Solve
 engine.solve()
 ```
-
-## More Resources
-
-- [tests/](tests/): Example code for each module
-- [tests/_scratch_solve_probe.py](tests/_scratch_solve_probe.py): Solver-only end-to-end example (bootstrap solver → create project → build all modules → solve → summary)
