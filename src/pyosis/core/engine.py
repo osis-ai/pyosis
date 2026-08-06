@@ -122,13 +122,28 @@ class OSISEngine:
 
         # OSIS端口与网址
         if port is None:
-            self._port = os.environ.get("OSIS_HTTP_PORT", 18080)     # 如果设置了环境变量
+            self._port = int(os.environ.get("OSIS_HTTP_PORT", 18080))
         else:
             self._port = port
         self._url = url
         set_osis_url(self._url)
         set_osis_port(self._port)
         self._apdl_session = ApdlSessionStore()
+
+    @classmethod
+    def from_solver(cls, solver: "OSISSolver") -> "OSISEngine":
+        """从已启动的 OSISSolver 创建 engine,自动取 url/port。
+
+        用法:
+            with OSISSolver(osis_install_path=r"D:\\OSIS_Solver") as solver:
+                engine = OSISEngine.from_solver(solver)
+                engine.run("K,1,0,0,0")
+        """
+        if not solver.started:
+            raise RuntimeError("OSISEngine.from_solver: solver 未启动,请先调 solver.start()")
+        # 注意:url 不带端口,只传 port;client.py 内部用 f"{DEFAULT_URL}:{DEFAULT_PORT}"
+        # 拼最终地址,url 已经含端口会导致重复(:18080:18080)。
+        return cls(port=solver.port, url="http://localhost")
 
     # ──────────────────────────────────────────
     # 子管理器属性
