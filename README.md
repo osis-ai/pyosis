@@ -364,3 +364,14 @@ lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
 # Solve
 engine.solve()
 ```
+
+## End-to-End Demo
+
+See [`tests/pyosis_demo.py`](tests/pyosis_demo.py) for a runnable end-to-end example that:
+
+- Starts the solver directly via `OSISSolver` (no GUI required)
+- Builds the 25m 简支小箱梁 example model (10 prep modules)
+- Runs `engine.solve()`
+- Exports LCND / LCEF / EnvND / EnvEF results to CSV
+
+The demo reuses the prep modules from `tests/output/output_py/25m简支小箱梁中梁-solveronly/`, so it serves both as a smoke test and a copy-paste template.

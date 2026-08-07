@@ -360,3 +360,14 @@ lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
 engine.solve()
 ```
 
+## 端到端示例
+
+见 [`tests/pyosis_demo.py`](tests/pyosis_demo.py):一个可运行的端到端示例,完成以下流程:
+
+- 通过 `OSISSolver` 直接启动求解器(无需 GUI)
+- 建模 25m 简支小箱梁示例(10 个 prep 模块)
+- 执行 `engine.solve()`
+- 导出 LCND / LCEF / EnvND / EnvEF 结果到 CSV
+
+该 demo 复用了 `tests/output/output_py/25m简支小箱梁中梁-solveronly/` 的 prep 模块,既可作为冒烟测试,也可作为可复制粘贴的模板。
+
