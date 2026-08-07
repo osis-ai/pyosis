@@ -49,7 +49,7 @@ engine.control.set_calc_creep(True)
 sec = engine.section.create_circle("CircleSection", d=0.5, tw=0.02)
 
 # Create materials
-mat = engine.material.create_conc("C30Concrete", eCode="JTG3362_2018", eGrade="C30")
+mat = engine.material.create_conc(no=1, name="C30Concrete", code="JTG3362_2018", grade="C30")
 
 # Create nodes
 n1 = engine.node.create(0, 0, 0)
@@ -61,7 +61,7 @@ elem = engine.element.create_beam3d(
 )
 
 # Create boundaries
-bd = engine.boundary.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1)
+bd = engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)
 bd.assign("a", [n1.no])
 
 # Create load case and add loads
@@ -104,7 +104,7 @@ If you don't need the convenience methods of Engine, you can also import individ
 from pyosis.material import material_manager
 from pyosis.node import node_manager
 
-mat = material_manager.create_conc("C30", eCode="JTG3362_2018", eGrade="C30")
+mat = material_manager.create_conc(no=1, name="C30", code="JTG3362_2018", grade="C30")
 node = node_manager.create(0, 0, 0)
 ```
 
@@ -176,21 +176,18 @@ bg = engine.boundary.group.create("AbutmentBoundaries")
 bg.add([1, 2])
 
 # Various boundary types
-engine.boundary.create_general(bX=1, bY=1, bZ=1, bRX=1, bRY=1, bRZ=1)  # General support
-engine.boundary.create_master_slave(nMast=1, nSlav=2, dDir=1)           # Master-slave
-engine.boundary.create_release(nElem=1, iReleaseEnd=2)                  # End release
-engine.boundary.create_elstcspt(nNode=1, dK=[1e9, 1e9, 1e9, 0, 0, 0])  # Elastic support
-engine.boundary.create_general_elstcspt(nNode=1, bX=1, bY=1, bZ=1, dKx=1e9, dKy=1e9, dKz=1e9)  # General elastic
-engine.boundary.create_rigid(nNode1=1, nNode2=2)                        # Rigid link
-engine.boundary.create_section_factor(nElem=1, iEnd=1)                  # Section factor
+engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)           # General support
+engine.boundary.create_master_slave(no=1, node=1, dx=1, dy=1, dz=1, rx=0, ry=1, rz=1, coincident=2)  # Master-slave
+engine.boundary.create_rigid(no=1, nNodeI=1)                                               # Rigid link
+engine.boundary.create_elstcspt(no=1, coor="", x=0, dx=1e9, y=0, dy=1e9, z=0, dz=1e9)     # Elastic support
 
 # Tendons
 prop = engine.tendon.prop.create_in(
-    "15-10", mat_no=1, e_code="GBT5224_2014",
-    diameter=15.2, n_num=10, d_pipe=0.09
+    name="15-10", mat=3, code="GBT5224_2014",
+    diameter=15.2, num=10, pipe=0.09,
 )
 shape = engine.tendon.shape.create_arc3d(
-    "N1", n_num=2, prop="15-10",
+    name="N1", n_num=2, prop="15-10",
     element_group="MainGirderElements", curve_name="curve1"
 )
 
@@ -218,24 +215,29 @@ engine.display.set_plsm(1)              # 0 = off, 1 = on
 ### Property & Thickness Management
 
 ```python
-# Coordinate systems
-engine.prop.coord.create_local("CS1", origin=[0, 0, 0], x_axis=[1, 0, 0], y_axis=[0, 1, 0])
+# Coordinate systems (三点定义)
+engine.prop.coord.create_three_point(
+    no=1, p1x=0, p1y=0, p1z=0,
+    p2x=1, p2y=0, p2z=0,
+    p3x=0, p3y=1, p3z=0,
+)
 
-# Creep and shrinkage
-engine.prop.creep_shrink.create("Creep1", eCode="JTG3362_2018", eGrade="C30")
+# Creep and shrinkage(no, name, avg_humidity, birth_time, type_coeff, shrink_birth)
+engine.prop.creep_shrink.create(no=1, name="Creep1", avg_humidity=70.0,
+                                birth_time=7, type_coeff=5.0, shrink_birth=3)
 
-# Damping
-engine.prop.damping.create("Damping1", dDmp=0.05)
+# Damping (Rayleigh 自定义系数)
+engine.prop.damping.create_rayleigh_custom(name="Damping1", alpha=0.05, beta=0.005)
 
-# P-U curve (for soil-structure interaction)
-engine.prop.pu_curve.create("PU1", data=[(0, 0), (0.01, 1000), (0.02, 1500)])
+# P-U curve (no, name, curve_type, num, values)
+#   curve_type: 1=水平位移推力 2=竖向位移推力 3=竖向力位移
+engine.prop.pu_curve.create(no=1, name="PU1", curve_type=1, num=3, values=[0, 0.01, 1000, 0.02, 1500])
 
-# Element thickness assignment
-engine.prop.thickness.assign_element(nElem=1, dThick=0.3)
+# Element thickness assignment (thickness, op, *elems)
+engine.prop.assign_component_thickness(thickness=0.3, op="a", elems=[1])
 
-# Shell thickness properties
-engine.thickness.create_uniform("Thick1", dThick=0.3)
-engine.thickness.create_tapered("Thick2", dThick1=0.2, dThick2=0.4)
+# Shell thickness (no, in_plane, out_plane)
+engine.thickness.create(no=1, in_plane=0.3, out_plane=0.3)
 ```
 
 ### Geometry Queries
@@ -335,7 +337,7 @@ engine.section.create_circle("CircleSection2", d=0.180, tw=0.008, no=2)
 
 # Materials
 engine.material.create_steel(
-    "Steel1", eCode="JTGD64_2015", eGrade="Q345", dDmp=0.05, no=1
+    "Steel1", code="JTGD64_2015", grade="Q345", dmp=0.05, no=1
 )
 
 # Nodes

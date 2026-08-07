@@ -13,6 +13,8 @@
 
 from __future__ import annotations
 
+import os
+
 from .interface import (
     create_project,
     open_project,
@@ -39,7 +41,7 @@ class ProjectManager:
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        ok, err = create_project(type, filepath)
+        ok, err = create_project(type, os.path.abspath(filepath))
         if not ok:
             raise RuntimeError(f"创建项目失败: {err}")
 
@@ -52,7 +54,7 @@ class ProjectManager:
         Raises:
             RuntimeError: 打开失败时抛出异常
         """
-        ok, err = open_project(filepath)
+        ok, err = open_project(os.path.abspath(filepath))
         if not ok:
             raise RuntimeError(f"打开项目失败: {err}")
 
@@ -68,7 +70,7 @@ class ProjectManager:
         """
         if not filepath:
             filepath = self._current_project_file()
-        ok, err = save_project(filepath)
+        ok, err = save_project(os.path.abspath(filepath))
         if not ok:
             raise RuntimeError(f"保存项目失败: {err}")
 
@@ -81,7 +83,7 @@ class ProjectManager:
         Raises:
             RuntimeError: 另存为失败时抛出异常
         """
-        ok, err = save_project_as(filepath)
+        ok, err = save_project_as(os.path.abspath(filepath))
         if not ok:
             raise RuntimeError(f"另存为失败: {err}")
 
