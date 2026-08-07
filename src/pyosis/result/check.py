@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Literal, Any
 
+from .result import txt_file_path
 from ..project import interface
 from ..core import command
 import json
@@ -102,14 +103,14 @@ def osis_check_result(
         return False, error, None
 
     # 5 读取结果
-    txt_file_path = project_path / _CHECK_TXT_PATH / check_name
-    txt_file_path = txt_file_path.with_suffix(".txt")
+    txt_path = project_path / _CHECK_TXT_PATH / check_name
+    txt_path = txt_path.with_suffix(".txt")
     df = pd.read_csv(
-        txt_file_path,
+        txt_path,
         sep=r"\s+",          # 用正则匹配任意空白（空格/制表符）
         header=2,            # 表头在第3行（索引从0开始，这里跳过前两行标题）
         skiprows=[],         # 若还有多余空行可在这里加行号
-        encoding="gbk",    # 若乱码可换成 "gbk" / "gb2312"
+        encoding="utf-8",    # OSIS /output 生成的 .txt 是 UTF-8 编码
         on_bad_lines="skip"  # 跳过格式异常行
     )
 
