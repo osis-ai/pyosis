@@ -46,18 +46,18 @@ engine.control.set_calc_tendon(True)
 engine.control.set_calc_creep(True)
 
 # Create sections
-sec = engine.section.create_circle("CircleSection", d=0.5, tw=0.02)
+sec = engine.section.create_circle(no=1, name="CircleSection", d=0.5)
 
 # Create materials
 mat = engine.material.create_conc(no=1, name="C30Concrete", code="JTG3362_2018", grade="C30")
 
 # Create nodes
-n1 = engine.node.create(0, 0, 0)
-n2 = engine.node.create(15, 0, 0)
+n1 = engine.node.create(no=1, x=0, y=0, z=0)
+n2 = engine.node.create(no=2, x=15, y=0, z=0)
 
 # Create elements
 elem = engine.element.create_beam3d(
-    n1.no, n2.no, nMat=mat.no, nSec1=sec.no, nSec2=sec.no
+    no=1, node1=n1.no, node2=n2.no, nMat=mat.no, nSec1=sec.no, nSec2=sec.no
 )
 
 # Create boundaries
@@ -167,13 +167,13 @@ pyosis adopts a Manager pattern to organize code. Each module corresponds to a M
 Some managers contain sub-managers, accessed via attributes:
 
 ```python
-# Element groups
-grp = engine.element.group.create("MainGirderElements")
-grp.add([1, 2, 3])
+# Element groups (create + add elements in one call)
+engine.element.group.create("MainGirderElements", "c")            # create empty group
+engine.element.group.create("MainGirderElements", "a", "1to3")    # add elements 1-3
 
 # Boundary groups
-bg = engine.boundary.group.create("AbutmentBoundaries")
-bg.add([1, 2])
+engine.boundary.group.create("AbutmentBoundaries", "c")
+engine.boundary.group.create("AbutmentBoundaries", "a", "1to2")
 
 # Various boundary types
 engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)           # General support
@@ -192,9 +192,9 @@ shape = engine.tendon.shape.create_arc3d(
 )
 
 # Live loads
-grade = engine.live.grade.create("HighwayClassI")
-lane = engine.live.lane.create("Lane1")
-case = engine.live.case.create("LiveLoadCase 1")
+grade = engine.live.grade.create(name="HighwayClassI", code="JTGD60_2015", type="HIGHWAY_I")
+lane = engine.live.lane.create(name="Lane1", type="VE")
+case = engine.live.case.create(name="LiveLoadCase 1", code="JTGD60_2015")
 ```
 
 ### Display Control
@@ -277,10 +277,10 @@ Some `create_*` functions support explicit numbering via the `no` parameter. If 
 
 ```python
 # Auto-assigned number
-sec = engine.section.create_circle("Section1", d=0.5)
+sec = engine.section.create_circle(name="Section1", d=0.5)
 
 # Explicit number
-sec = engine.section.create_circle("Section1", d=0.5, no=100)
+sec = engine.section.create_circle(name="Section1", d=0.5, no=100)
 ```
 
 ## Result Export

@@ -11,34 +11,21 @@ boundary/loadcase/analysis/stage)的代码全部内嵌在一个文件里,无需�
 
 运行结束后在 ./demo_output/ 下生成:
     - proj/test.sis           工程文件
-    - proj/test/Result/       求解器生成的结果文件
-    - results/<工况>_<类型>.csv  导出成 CSV 的各工况结果
-    - summary.json             各工况导出结果汇总
+    - proj/test/Result/       求解器生成的二进制 .lcr/.env
+    - proj/test/Temperary/    求解器生成的 .txt + 导出的 UTF-8-BOM CSV
 """
 from __future__ import annotations
 
-import json
-import os
 import shutil
 import sys
 from pathlib import Path
-
-# 用 pip 装好的 osis-python(0.6.0+),不再 sys.path.insert 本地 src
-
-# 清掉系统代理(走本机回环,避免被外网 tinyproxy 劫走)
-for _k in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"):
-    os.environ.pop(_k, None)
-
-# 求解器 JSON 是 UTF-8,stdout 也用 UTF-8 避免中文乱码
-sys.stdout.reconfigure(encoding="utf-8")
-sys.stderr.reconfigure(encoding="utf-8")
 
 from pyosis.core.engine import OSISEngine
 from pyosis.core.solver import OSISSolver
 
 # ===== 1. 启动 solver + 建工程 =====
-# OSIS 安装目录 —— 支持任意分隔符(正反斜杠、混合),内部走 os.path.abspath 规范化
-OSIS_INSTALL = os.path.normpath(r"D:\OSIS_Solver/Rbin64")
+# OSIS 安装目录(含 PySolver.dll)。正反斜杠都行,Windows LoadLibrary 都接受。
+OSIS_INSTALL = "D:/OSIS_Solver/Rbin64"
 
 WORK_DIR = Path("./demo_output")
 if WORK_DIR.exists():
@@ -384,63 +371,37 @@ def main() -> None:
     engine.solve()
     print("== solve done ==", flush=True)
 
-    # ===== 13. 导出结果(LCND 节点位移 / LCEF 单元内力) =====
+    # ===== 13. 导出结果到 CSV =====
+    # 求解器在 PROJ_DIR/test/Result/ 下生成 .lcr/.env(二进制),/output 命令
+    # 会在 PROJ_DIR/test/Temperary/ 下生成可读的 .txt。这里把 .txt 读成 DataFrame
+    # 导出成 UTF-8-BOM 的 CSV,Excel/记事本打开中文不乱码。
     result_dir = PROJ_DIR / "test" / "Result"
-    out_dir = WORK_DIR / "results"
-    out_dir.mkdir(exist_ok=True)
-
+    temperary_dir = PROJ_DIR / "test" / "Temperary"
     if not result_dir.is_dir():
-        print(f"\n(无 {result_dir},无结果可导出)", flush=True)
+        print(f"\n(无 {result_dir})", flush=True)
         return
 
-    print(f"\n== 导出 Result/ 下结果到 {out_dir} ==", flush=True)
-    results_summary = {}
+    print(f"\n== 导出 CSV 到 {temperary_dir} ==", flush=True)
+    exported = 0
     for fname in sorted(result_dir.iterdir()):
         base = fname.stem
         ext = fname.suffix.lower()
-        if ext == ".lcr":
-            results_summary[base] = {}
-            for rt in ("LCND", "LCEF"):
-                try:
-                    df = engine.result.loadcase(base, rt)
-                    csv = out_dir / f"{base}_{rt}.csv"
-                    df.to_csv(csv, index=False, encoding="utf-8-sig")
-                    results_summary[base][rt] = {
-                        "shape": list(df.shape),
-                        "columns": list(df.columns),
-                        "csv": str(csv),
-                    }
-                    print(f"  {base}/{rt}: shape={df.shape}, -> {csv.name}", flush=True)
-                except Exception as e:
-                    print(f"  {base}/{rt}: <err: {str(e)[:80]}>", flush=True)
-                    results_summary[base][rt] = {"error": str(e)}
-        elif ext == ".env":
-            results_summary[base] = {}
-            for rt in ("EnvND", "EnvEF"):
-                try:
-                    df = engine.result.env(base, rt)
-                    csv = out_dir / f"{base}_{rt}.csv"
-                    df.to_csv(csv, index=False, encoding="utf-8-sig")
-                    results_summary[base][rt] = {
-                        "shape": list(df.shape),
-                        "columns": list(df.columns),
-                        "csv": str(csv),
-                    }
-                    print(f"  {base}/{rt}: shape={df.shape}, -> {csv.name}", flush=True)
-                except Exception as e:
-                    print(f"  {base}/{rt}: <err: {str(e)[:80]}>", flush=True)
-                    results_summary[base][rt] = {"error": str(e)}
+        types = (("LCND", "LCEF"), ("EnvND", "EnvEF"))[ext == ".env"]
+        for rt in types:
+            try:
+                r = engine.result.loadcase(base, rt) if ext == ".lcr" else engine.result.env(base, rt)
+                csv_path = temperary_dir / f"{base}_{rt}.csv"
+                r.to_csv(csv_path, index=False, encoding="utf-8-sig")
+                exported += 1
+                print(f"  {base}/{rt}: shape={r.shape}, -> {csv_path.name}", flush=True)
+            except Exception as e:
+                print(f"  {base}/{rt}: <err: {str(e)[:80]}>", flush=True)
 
-    summary_path = WORK_DIR / "summary.json"
-    summary_path.write_text(
-        json.dumps(results_summary, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    print(f"\n== summary.json -> {summary_path} ==", flush=True)
+    print(f"\n  共导出 {exported} 个 CSV 到 {temperary_dir}", flush=True)
 
 
 if __name__ == "__main__":
     main()
     print(f"\n== 工程 {PROJ_PATH} ==", flush=True)
-    print("== 结果 ./demo_output/results ==", flush=True)
+    print("== CSV 结果 ./demo_output/proj/test/Temperary/*.csv (UTF-8-BOM,Excel/记事本直开) ==", flush=True)
     print("ALL OK", flush=True)

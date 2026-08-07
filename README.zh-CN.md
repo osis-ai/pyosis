@@ -46,18 +46,18 @@ engine.control.set_calc_tendon(True)
 engine.control.set_calc_creep(True)
 
 # 创建截面
-sec = engine.section.create_circle("圆形截面", d=0.5, tw=0.02)
+sec = engine.section.create_circle(no=1, name="圆形截面", d=0.5)
 
 # 创建材料
 mat = engine.material.create_conc(no=1, name="C30混凝土", code="JTG3362_2018", grade="C30")
 
 # 创建节点
-n1 = engine.node.create(0, 0, 0)
-n2 = engine.node.create(15, 0, 0)
+n1 = engine.node.create(no=1, x=0, y=0, z=0)
+n2 = engine.node.create(no=2, x=15, y=0, z=0)
 
 # 创建单元
 elem = engine.element.create_beam3d(
-    n1.no, n2.no, nMat=mat.no, nSec1=sec.no, nSec2=sec.no
+    no=1, node1=n1.no, node2=n2.no, nMat=mat.no, nSec1=sec.no, nSec2=sec.no
 )
 
 # 创建边界
@@ -162,13 +162,13 @@ pyosis 采用 Manager 模式组织代码，每个模块对应一个 Manager：
 部分管理器包含子管理器，通过属性访问：
 
 ```python
-# 单元组
-grp = engine.element.group.create("主梁单元")
-grp.add([1, 2, 3])
+# 单元组(一次调用完成 创建 + 添加单元)
+engine.element.group.create("主梁单元", "c")            # 创建空组
+engine.element.group.create("主梁单元", "a", "1to3")    # 添加单元 1-3
 
 # 边界组
-bg = engine.boundary.group.create("桥台边界")
-bg.add([1, 2])
+engine.boundary.group.create("桥台边界", "c")
+engine.boundary.group.create("桥台边界", "a", "1to2")
 
 # 各类边界条件
 engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)           # 一般支撑
@@ -187,9 +187,9 @@ shape = engine.tendon.shape.create_arc3d(
 )
 
 # 活载
-grade = engine.live.grade.create("公路-I级")
-lane = engine.live.lane.create("车道1")
-case = engine.live.case.create("活载工况1")
+grade = engine.live.grade.create(name="公路-I级", code="JTGD60_2015", type="HIGHWAY_I")
+lane = engine.live.lane.create(name="车道1", type="VE")
+case = engine.live.case.create(name="活载工况1", code="JTGD60_2015")
 ```
 
 ### 显示控制
@@ -272,10 +272,10 @@ lc.create_nforce(1, dFx=1000)
 
 ```python
 # 自动分配编号
-sec = engine.section.create_circle("截面1", d=0.5)
+sec = engine.section.create_circle(name="截面1", d=0.5)
 
 # 显式指定编号
-sec = engine.section.create_circle("截面1", d=0.5, no=100)
+sec = engine.section.create_circle(name="截面1", d=0.5, no=100)
 ```
 
 ## 结果导出
