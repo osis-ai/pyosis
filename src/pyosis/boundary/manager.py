@@ -497,14 +497,14 @@ class BoundaryGroupManager:
         ...
 
     def _load(self) -> list[BoundaryGroup]:
-        """从服务端加载所有边界组信息"""
+        '''从服务端加载所有边界组信息'''
         resp = osis_client("GetAllBoundaryGroupInfo", {})
         if not resp["success"]:
             raise RuntimeError(resp["error"])
-        
+
         groups = [
-            BoundaryGroup._from_dict(d) 
-            for d in resp.get("data", []) 
+            BoundaryGroup._from_dict(d)
+            for d in resp.get("data", [])
             if isinstance(d, dict) and "groupName" in d
         ]
         return groups
@@ -512,31 +512,50 @@ class BoundaryGroupManager:
     # ── 增删改 ────────────────────────────────
 
     def create(self, name: str, op:Literal["c", "a", "s", "r", "aa", "ra", "m", "d"], *param) -> BoundaryGroup:
-        """创建边界组
+        '''创建边界组并返回刷新后的对象
 
         Args:
             name: 边界组名称
-            op: 操作
+            op: 操作类型
+                * c = 创建
+                * a = 添加
+                * s = 替换
+                * r = 移除
+                * aa = 添加全部
+                * ra = 移除全部
+                * m = 修改组名
+                * d = 删除
+            *param: 待操作的编号，支持格式：*，*to*；*by*（仅用于替换）。
+                例子：[2,3,5,"8to10"] ["2by3","5by6","8by10"] 重合的编号自动忽略
+
         Returns:
-            创建的 BoundaryGroup 对象
-        """
+            BoundaryGroup: 创建（或刷新后的）边界组对象
+        '''
         ok, err = osis_boundary_group(name, op, *param)
         if not ok:
             raise RuntimeError(f"创建边界组 {name} 失败: {err}")
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除边界组
+        '''删除边界组
 
         Args:
             name: 边界组名称
-        """
+
+        Raises:
+            RuntimeError: 删除失败时抛出异常
+        '''
         ok, err = osis_boundary_group(name, "d")
         if not ok:
             raise RuntimeError(f"删除边界组 {name} 失败: {err}")
         
     def rename(self, old_name, new_name) -> None:
-        """修改边界组名"""
+        '''修改边界组名称
+
+        Args:
+            old_name: 原边界组名称
+            new_name: 新边界组名称
+        '''
         ok, err = osis_boundary_group(old_name, "m", [new_name])
         if not ok:
             raise RuntimeError(f"修改边界组名  {old_name} -> {new_name} 失败:  失败: {err}")
@@ -575,15 +594,18 @@ class BoundaryGroupManager:
         return boundary_groups
     
     def all(self) -> list[BoundaryGroup]:
-        """获取所有边界组"""
+        '''获取所有边界组'''
         return self._load()
 
     def count(self) -> int:
-        """获取边界组总数"""
+        '''获取边界组总数'''
         return len(self._load())
 
     def clear(self) -> None:
-        """清空所有边界组"""
+        '''清空所有边界组
+
+        逐个删除服务端的所有边界组；若任一边界组被占用则抛出异常。
+        '''
         try:
             [self.delete(bg.name) for bg in self.all()]
         except Exception as e:
@@ -624,23 +646,30 @@ class BoundaryManager:
         resp = osis_client("GetAllBoundaryInfo", {})
         if not resp["success"]:
             raise RuntimeError(f"{resp['error']}")
-        
+
         boundaries = [
-            Boundary._from_dict(d) 
-            for d in resp.get("data", []) 
+            Boundary._from_dict(d)
+            for d in resp.get("data", [])
             if isinstance(d, dict) and "no" in d
         ]
         return boundaries
 
     def _next_no(self) -> int:
-        """生成下一个可用边界编号"""
+        """返回下一个可用的边界编号（当前最大编号 + 1，空模型为 1）"""
         boundaries = self._load()
         if not boundaries:
             return 1
         return max(bd.no for bd in boundaries) + 1
 
     def get_dependencies(self, no: int) -> dict[str, list]:
-        """查询边界被谁引用"""
+        """查询边界被哪些对象引用（用于删除前检查占用情况）
+
+        Args:
+            no: 边界编号
+
+        Returns:
+            dict[str, list]: 依赖项字典，键为引用类型，值为引用编号列表
+        """
         return get_references("Boundary", no=no)
 
     # ── 增删改 ────────────────────────────────
@@ -690,7 +719,28 @@ class BoundaryManager:
         rz: bool = 1,
         rw: bool = 1,
     ) -> GeneralBoundary:
-        """创建一般边界"""
+        '''创建一般支撑边界
+
+        在指定节点上约束 7 个自由度（UX/UY/UZ/RX/RY/RZ/RW），
+        可基于局部坐标系或全局坐标系。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            coor: 局部坐标系编号，"" 代表缺省（使用全局坐标系）
+            x: UX 方向约束标志，0 = 释放，1 = 约束
+            y: UY 方向约束标志，0 = 释放，1 = 约束
+            z: UZ 方向约束标志，0 = 释放，1 = 约束
+            rx: RX 方向约束标志，0 = 释放，1 = 约束
+            ry: RY 方向约束标志，0 = 释放，1 = 约束
+            rz: RZ 方向约束标志，0 = 释放，1 = 约束
+            rw: RW（翘曲）方向约束标志，0 = 释放，1 = 约束
+
+        Returns:
+            GeneralBoundary 对象
+
+        Examples:
+            >>> boundary_manager.create_general(None, x=1, y=1, z=1)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_general(no, "GENERAL", coor or "", x, y, z, rx, ry, rz, rw)
@@ -710,7 +760,28 @@ class BoundaryManager:
         rz: bool = 1,
         coincident: int | None = 1,
     ) -> MstSlvBoundary:
-        """创建主从约束"""
+        '''创建主从约束
+
+        将已分配本边界的从节点与指定的主节点在 6 个自由度上耦合，
+        常用于模拟桥梁支座、铰接等连接关系。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            node: 主节点编号
+            dx: UX 方向耦合标志，0 = 释放，1 = 约束
+            dy: UY 方向耦合标志，0 = 释放，1 = 约束
+            dz: UZ 方向耦合标志，0 = 释放，1 = 约束
+            rx: RX 方向耦合标志，0 = 释放，1 = 约束
+            ry: RY 方向耦合标志，0 = 释放，1 = 约束
+            rz: RZ 方向耦合标志，0 = 释放，1 = 约束
+            coincident: 0 = 仅同位移约束；1 = 完全主从约束（含转动耦合），默认 1
+
+        Returns:
+            MstSlvBoundary 对象
+
+        Examples:
+            >>> boundary_manager.create_master_slave(None, node=10, coincident=1)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_master_slave(no, "MSTSLV", node, dx, dy, dz, rx, ry, rz,coincident)
@@ -730,7 +801,52 @@ class BoundaryManager:
         fxj: float,fyj: float,fzj: float,
         mxj: float,myj: float,mzj: float,mbj: float,
     ) -> ReleaseBoundary:
-        """创建释放梁端约束"""
+        '''创建释放梁端约束
+
+        在梁单元的 I 端和 J 端分别释放 7 个自由度（FX/FY/FZ/MX/MY/MZ/MB），
+        每个自由度通过 _state（0 = 完全释放，1 = 完全约束）和对应 _value（0-1 之间，
+        表示释放后残余约束能力的百分比）共同控制。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            fxi_state: I 端 FX（轴力）状态，0 = 释放，1 = 约束
+            fyi_state: I 端 FY（剪力）状态，0 = 释放，1 = 约束
+            fzi_state: I 端 FZ（剪力）状态，0 = 释放，1 = 约束
+            mxi_state: I 端 MX（扭矩）状态，0 = 释放，1 = 约束
+            myi_state: I 端 MY（弯矩）状态，0 = 释放，1 = 约束
+            mzi_state: I 端 MZ（弯矩）状态，0 = 释放，1 = 约束
+            mbi_state: I 端 MB（双力矩）状态，0 = 释放，1 = 约束
+            fxi: I 端 FX 部分约束残余百分比（0-1）
+            fyi: I 端 FY 部分约束残余百分比（0-1）
+            fzi: I 端 FZ 部分约束残余百分比（0-1）
+            mxi: I 端 MX 部分约束残余百分比（0-1）
+            myi: I 端 MY 部分约束残余百分比（0-1）
+            mzi: I 端 MZ 部分约束残余百分比（0-1）
+            mbi: I 端 MB 部分约束残余百分比（0-1）
+            fxj_state: J 端 FX 状态，0 = 释放，1 = 约束
+            fyj_state: J 端 FY 状态，0 = 释放，1 = 约束
+            fzj_state: J 端 FZ 状态，0 = 释放，1 = 约束
+            mxj_state: J 端 MX 状态，0 = 释放，1 = 约束
+            myj_state: J 端 MY 状态，0 = 释放，1 = 约束
+            mzj_state: J 端 MZ 状态，0 = 释放，1 = 约束
+            mbj_state: J 端 MB 状态，0 = 释放，1 = 约束
+            fxj: J 端 FX 部分约束残余百分比（0-1）
+            fyj: J 端 FY 部分约束残余百分比（0-1）
+            fzj: J 端 FZ 部分约束残余百分比（0-1）
+            mxj: J 端 MX 部分约束残余百分比（0-1）
+            myj: J 端 MY 部分约束残余百分比（0-1）
+            mzj: J 端 MZ 部分约束残余百分比（0-1）
+            mbj: J 端 MB 部分约束残余百分比（0-1）
+
+        Returns:
+            ReleaseBoundary 对象
+
+        Examples:
+            >>> boundary_manager.create_release(None, 1,1,1,1,1,1,1,
+            ...     1.0,1.0,1.0,1.0,1.0,1.0,1.0,
+            ...     0,0,0,1,1,1,1,
+            ...     0.0,0.0,0.0,1.0,1.0,1.0,1.0)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_release(
@@ -761,7 +877,35 @@ class BoundaryManager:
         rz: bool = 1,
         drz: float | int = 1e16,
     ) -> ElstcSptBoundary:
-        """创建弹性支承"""
+        '''创建节点弹性支承
+
+        在节点 6 个自由度上分别设置弹性约束或固定约束。
+        每个方向由一个标志位（0 = 弹性，1 = 固定）和对应的弹性刚度组成。
+        注：弹性支撑与一般边界固定的自由度相同，且弹性支撑其余自由度上约束为零时，
+        二者结果完全相同，不存在数值差异。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            coor: 局部坐标系编号，"" 代表缺省
+            x: UX 方向，0 = 弹性，1 = 固定
+            dx: 坐标系 X 轴方向的弹性支承刚度
+            y: UY 方向，0 = 弹性，1 = 固定
+            dy: 坐标系 Y 轴方向的弹性支承刚度
+            z: UZ 方向，0 = 弹性，1 = 固定
+            dz: 坐标系 Z 轴方向的弹性支承刚度
+            rx: RX 方向，0 = 弹性，1 = 固定
+            drx: 绕坐标系 X 轴方向的转动弹性刚度
+            ry: RY 方向，0 = 弹性，1 = 固定
+            dry: 绕坐标系 Y 轴方向的转动弹性刚度
+            rz: RZ 方向，0 = 弹性，1 = 固定
+            drz: 绕坐标系 Z 轴方向的转动弹性刚度
+
+        Returns:
+            ElstcSptBoundary 对象
+
+        Examples:
+            >>> boundary_manager.create_elstcspt(None)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_elstcspt(
@@ -831,7 +975,10 @@ class BoundaryManager:
         no: int | None,
         nNodeI: int,
     ) -> Boundary:
-        """创建刚性连接
+        '''创建刚性连接
+
+        将主节点 nNodeI 与通过 assign 分配的从节点绑定为刚性区域，
+        刚性区域内所有节点的 6 个自由度保持完全一致。
 
         Args:
             no: 边界编号，None 时自动分配
@@ -841,8 +988,8 @@ class BoundaryManager:
             Boundary 对象
 
         Notes:
-            用于形成刚性区域的节点号 nodeJ, nodeK, ..., nodeL 由 assign 方法定义
-        """
+            用于形成刚性区域的从节点号 nodeJ, nodeK, ..., nodeL 由 assign 方法定义。
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_boundary_rigid(no, "RIGID", nNodeI)
@@ -866,21 +1013,28 @@ class BoundaryManager:
     # ── 查询 ──────────────────────────────────
 
     def get(self, no: int | list[int]) -> Boundary | list[Boundary | None] | None:
-        """根据编号获取单个或多个边界 (O(k))
-        
-        接口：GetBoundaryInfoByNos
-        """
+        '''根据编号获取单个或多个边界（O(k)）
+
+        内部调用接口 GetBoundaryInfoByNos。
+
+        Args:
+            no: 边界编号，支持单个 int 或编号列表
+
+        Returns:
+            单个 Boundary 对象；如果传入列表则按顺序返回对象列表；
+            不存在返回 None
+        '''
         if isinstance(no, int):
             no = [no]
         elif not isinstance(no, list):
             raise TypeError(f"不支持的编号类型: {type(no)}")
-        
+
         resp = osis_client("GetBoundaryInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        
+
         boundaries = [Boundary._from_dict(d) if d else None for d in resp.get("data", [])]
-        
+
         if len(boundaries) == 0:
             return None
         elif len(boundaries) == 1:
@@ -888,15 +1042,18 @@ class BoundaryManager:
         return boundaries
 
     def all(self) -> list[Boundary]:
-        """获取所有边界"""
+        '''获取所有边界'''
         return self._load()
 
     def count(self) -> int:
-        """获取边界总数"""
+        '''获取边界总数'''
         return len(self._load())
 
     def clear(self) -> None:
-        """清空所有边界"""
+        '''清空所有边界
+
+        逐个删除服务端的所有边界；若任一边界被占用则抛出异常。
+        '''
         try:
             [self.delete(b.no) for b in self.all()]
         except Exception as e:

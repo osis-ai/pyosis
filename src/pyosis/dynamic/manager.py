@@ -150,7 +150,14 @@ class LoadToMass:
         return self
 
     def get(self, lc_name: str) -> LoadToMassLcPara | None:
-        """按荷载工况名获取单个 lc_para"""
+        """按荷载工况名获取单个 lc_para。
+
+        Args:
+            lc_name: 荷载工况名称
+
+        Returns:
+            对应的 LoadToMassLcPara 对象，找不到则返回 None
+        """
         self._load()
         for p in self.lc_paras:
             if p.load_case == lc_name:
@@ -158,12 +165,12 @@ class LoadToMass:
         return None
 
     def all(self) -> list[LoadToMassLcPara]:
-        """获取当前荷载转换质量下的全部 lc_paras"""
+        """获取当前荷载转换质量下的全部 lc_paras。"""
         self._load()
         return list(self.lc_paras)
 
     def clear(self) -> None:
-        """清空当前荷载转换质量下的全部 lc_paras"""
+        """清空当前荷载转换质量下的全部 lc_paras（对每个 lc_para 单独下发 ``r`` 操作）。"""
         self._load()
         for p in list(self.lc_paras):
             ok, err = osis_ltm_anal_inc(self.name, "r", p.load_case, 0.0, 0.0)
@@ -189,7 +196,19 @@ class LoadToMassManager:
         return ltm
 
     def get(self, name: str | list[str]) -> LoadToMass | list[LoadToMass | None] | None:
-        """根据名称获取荷载转换质量"""
+        """根据名称获取单个或多个荷载转换质量。
+
+        Args:
+            name: 荷载转换质量名称，支持单个名称或名称列表
+
+        Returns:
+            单个 LoadToMass 对象；如果传入列表则返回对象列表；
+            不存在返回 None
+
+        Raises:
+            TypeError: 名称类型不支持时抛出
+            RuntimeError: 接口调用失败时抛出
+        """
 
         if isinstance(name, list):
             names = [str(x) for x in name]
@@ -198,7 +217,7 @@ class LoadToMassManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         resp = osis_client("GetLoadToMassInfoByNames", {"name": names})
-        if not resp['success']: 
+        if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         ltm = [LoadToMass._from_dict(d) if d else None for d in resp.get("data", [])]
         if len(ltm) == 0:
@@ -206,16 +225,31 @@ class LoadToMassManager:
         elif len(ltm) == 1:
             return ltm[0]
         return ltm
-        
+
     def all(self) -> list[LoadToMass]:
-        """获取所有荷载转换质量"""
+        """获取所有荷载转换质量。
+
+        Returns:
+            全部 LoadToMass 对象列表
+        """
         return self._load()
 
     def create(self, name: str) -> LoadToMass:
         """创建或修改荷载转换质量总体信息。
 
+        对应底层 `osis_ltm_anal(strName: str)`。
+
         Args:
-            name: 荷载转换质量标识名称
+            name (str): 荷载转换质量标识名称
+
+        Returns:
+            tuple (bool, str): 返回一个元组，包含：
+                - bool: 操作是否成功
+                - str: 失败原因（如果操作失败）
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+
         Note:
             - 无论荷载工况是否被激活，均可转化为质量
         """
@@ -227,15 +261,25 @@ class LoadToMassManager:
     def delete(self, name: str) -> None:
         """删除荷载转换质量。
 
+        对应底层 `osis_ltm_anal_del(strName: str)`。
+
         Args:
-            name: 荷载转换质量标识名称
+            name (str): 荷载转换质量标识名称
+
+        Returns:
+            tuple (bool, str): 返回一个元组，包含：
+                - bool: 操作是否成功
+                - str: 失败原因（如果操作失败）
+
+        Raises:
+            RuntimeError: 删除失败时抛出异常
         """
         ok, err = osis_ltm_anal_del(name)
         if not ok:
             raise RuntimeError(f"删除荷载转换质量 {name} 失败: {err}")
 
     def clear(self)->None:
-        """清空荷载转换质量"""
+        """清空当前工程内的全部荷载转换质量，按依赖顺序逐个 ``delete``。"""
         try:
             [self.delete(ltm.name) for ltm in self.all()]
         except Exception as e:
@@ -244,15 +288,30 @@ class LoadToMassManager:
     def rename(self, old_name: str, new_name: str) -> None:
         """修改荷载转换质量名称。
 
+        对应底层 `osis_ltm_anal_mod(old_name: str, new_name: str)`。
+
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
+
+        Returns:
+            tuple (bool, str): 返回一个元组，包含：
+                - bool: 操作是否成功
+                - str: 失败原因（如果操作失败）
+
+        Raises:
+            RuntimeError: 修改失败时抛出异常
         """
         ok, err = osis_ltm_anal_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"修改荷载转换质量名称 {old_name} -> {new_name} 失败: {err}")
 
-    def count(self):
+    def count(self) -> int:
+        """获取荷载转换质量数量。
+
+        Returns:
+            荷载转换质量数量
+        """
         return len(self.all())
     
     def __repr__(self):
@@ -352,7 +411,19 @@ class SeisRspSpecManager:
         return rsp
 
     def get(self, name: str | list[str]) -> SeisRspSpec | list[SeisRspSpec | None] | None:
-        """根据名称获取地震反应谱"""
+        """根据名称获取单个或多个地震反应谱。
+
+        Args:
+            name: 反应谱名称，支持单个名称或名称列表
+
+        Returns:
+            单个 SeisRspSpec 对象；如果传入列表则返回对象列表；
+            不存在返回 None
+
+        Raises:
+            TypeError: 名称类型不支持时抛出
+            RuntimeError: 接口调用失败时抛出
+        """
 
         if isinstance(name, list):
             names = [str(x) for x in name]
@@ -371,7 +442,11 @@ class SeisRspSpecManager:
         return rsp
 
     def all(self) -> list[SeisRspSpec]:
-        """获取所有地震反应谱"""
+        """获取所有地震反应谱。
+
+        Returns:
+            全部 SeisRspSpec 对象列表
+        """
         return self._load()
 
     def create(
@@ -515,22 +590,37 @@ class SeisRspSpecManager:
     def rename(self, old_name: str, new_name: str) -> None:
         """修改地震反应谱名称。
 
+        对应底层 `osis_seis_rsp_spec_mod(old_name: str, new_name: str)`。
+
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
+
+        Returns:
+            tuple (bool, str): 返回一个元组，包含：
+                - bool: 操作是否成功
+                - str: 失败原因（如果操作失败）
+
+        Raises:
+            RuntimeError: 修改失败时抛出异常
         """
         ok, err = osis_seis_rsp_spec_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"修改地震反应谱名称 {old_name} -> {new_name} 失败: {err}")
 
     def clear(self) -> None:
-        """清空所有地震反应谱"""
+        """清空所有地震反应谱。"""
         try:
             [self.delete(srs.name) for srs in self.all()]
         except Exception as e:
             raise Exception(f"清空所有地震反应谱失败: {e}，被占用,无法删除")
-        
+
     def count(self) -> int:
+        """获取地震反应谱数量。
+
+        Returns:
+            地震反应谱数量
+        """
         return len(self.all())
     
     def __repr__(self):
@@ -654,22 +744,40 @@ class RspecAnalManager:
     def rename(self, old_name: str, new_name: str) -> None:
         """修改反应谱工况名称。
 
+        对应底层 `osis_rspec_anal_mod(old_name: str, new_name: str)`。
+
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
+
+        Returns:
+            tuple (bool, str): 返回一个元组，包含：
+                - bool: 操作是否成功
+                - str: 失败原因（如果操作失败）
+
+        Raises:
+            RuntimeError: 修改失败时抛出异常
         """
         ok, err = osis_rspec_anal_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"修改反应谱工况名称 {old_name} -> {new_name} 失败: {err}")
-        
+
     def clear(self)->None:
-        """清空所有反应谱"""
+        """清空所有反应谱。
+
+        注：基础实现仅删除当前 Response Spectrum 工况集合。
+        """
         try:
             [self.delete(rspec.name) for rspec in self.all()]
         except Exception as e:
             raise Exception(f"清空所有反应谱失败: {e}，被占用,无法删除")
 
     def count(self) -> int:
+        """获取反应谱工况数量。
+
+        Returns:
+            反应谱工况数量
+        """
         return len(self.all())
     
     def __repr__(self):
@@ -716,7 +824,12 @@ class DynamicManager:
     def response_spectrum(self) -> RspecAnalManager:
         return self._response_spectrum
     
-    def count(self):
+    def count(self) -> dict:
+        """统计当前工程中荷载转换质量、地震反应谱、反应谱工况的数量。
+
+        Returns:
+            dict: 包含 load_to_masses、seismic、response_spectrum 三项计数的字典
+        """
         return {
             "load_to_masses": self._load_to_mass.count(),
             # "modal": self._modal.count(),
@@ -728,6 +841,10 @@ class DynamicManager:
         return "DynamicManager()"
 
     def clear(self)->None:
+        """清空当前工程内的全部动力分析相关对象（荷载转换质量、地震反应谱、反应谱工况）。
+
+        按依赖顺序调用各子管理器的 ``clear`` 实现。
+        """
         self.load_to_mass.clear()
         self._seismic.clear()
         self.response_spectrum.clear()

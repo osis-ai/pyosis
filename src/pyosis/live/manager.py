@@ -362,7 +362,9 @@ class LiveCase:
         mu_params: list[float] | None = None,
         lane_names: list[str] | None = None,
     ) -> LiveCase:
-        """添加活载子工况
+        """修改活载子工况。
+
+        对应底层 ``osis_live_analysis_inc(name, "m", ...)``。
 
         Args:
             sub_name: 子工况名称
@@ -391,7 +393,7 @@ class LiveCase:
             更新后的 LiveCase 对象
 
         Raises:
-            RuntimeError: 添加失败时抛出异常
+            RuntimeError: 修改失败时抛出异常
         """
         if calc_mu:
             ok, err = osis_live_analysis_inc(
@@ -409,7 +411,9 @@ class LiveCase:
         return self.refresh()
 
     def delete_sub(self, sub_name: str) -> None:
-        """删除活载子工况
+        """删除活载子工况。
+
+        对应底层 ``osis_live_analysis_inc_mod(strName, "d", strLiveSubName)``。
 
         Args:
             sub_name: 要删除的子工况名称
@@ -423,7 +427,9 @@ class LiveCase:
         self.refresh()
 
     def rename_sub(self, old_sub_name: str, new_sub_name: str) -> None:
-        """重命名活载子工况
+        """重命名活载子工况。
+
+        对应底层 ``osis_live_analysis_inc_mod(strName, "mn", old, new)``。
 
         Args:
             old_sub_name: 旧子工况名称
@@ -438,10 +444,13 @@ class LiveCase:
         self.refresh()
 
     def set_trans_reduction_factors(self, *factors: float) -> None:
-        """设置活载工况的横向布载折减系数
+        """设置活载工况的横向布载折减系数。
+
+        对应底层 ``osis_live_analysis_factor(strName, *factors)``，最少 1 个、最多 10 个，
+        不足 10 个时按最后一个系数补齐。
 
         Args:
-            factors: 折减系数列表，最多10个，不足10个按最后一个系数补齐
+            factors: 折减系数列表（变长），最多 10 个
 
         Raises:
             RuntimeError: 设置失败时抛出异常
@@ -712,7 +721,9 @@ class LiveGradeManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除活载等级
+        """删除活载等级。
+
+        对应底层 ``osis_livegrade_del(strName: str)``。
 
         Args:
             name: 活载等级名称
@@ -728,7 +739,9 @@ class LiveGradeManager:
             raise RuntimeError(f"删除活载等级 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> None:
-        """重命名活载等级
+        """重命名活载等级。
+
+        对应底层 ``osis_livegrade_mod(strOldName: str, strNewName: str)``。
 
         Args:
             old_name: 旧名称
@@ -784,7 +797,7 @@ class LiveGradeManager:
         return self._load()
 
     def count(self) -> int:
-        """获取活载等级数量
+        """获取活载等级数量。
 
         Returns:
             活载等级数量
@@ -792,7 +805,7 @@ class LiveGradeManager:
         return len(self._load())
 
     def clear(self)->None:
-        """清空所有活载等级"""
+        """清空所有活载等级。"""
         try:
             [self.delete(lg.name) for lg in self.all()]
         except Exception as e:
@@ -972,7 +985,9 @@ class LaneManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除车道
+        """删除车道。
+
+        对应底层 ``osis_lane_del(strName: str)``。
 
         Args:
             name: 车道名称
@@ -988,7 +1003,9 @@ class LaneManager:
             raise RuntimeError(f"删除车道 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> None:
-        """重命名车道
+        """重命名车道。
+
+        对应底层 ``osis_lane_mod(strOldName: str, strNewName: str)``。
 
         Args:
             old_name: 旧名称
@@ -1044,7 +1061,7 @@ class LaneManager:
         return self._load()
 
     def count(self) -> int:
-        """获取车道数量
+        """获取车道数量。
 
         Returns:
             车道数量
@@ -1052,7 +1069,7 @@ class LaneManager:
         return len(self._load())
 
     def clear(self)->None:
-        """清空所有车道"""
+        """清空所有车道。"""
         try:
             [self.delete(l.name) for l in self.all()]
         except Exception as e:
@@ -1110,7 +1127,9 @@ class LiveCaseManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除活载工况
+        """删除活载工况。
+
+        对应底层 ``osis_live_analysis_del(strName: str)``。
 
         Args:
             name: 活载工况名称
@@ -1123,7 +1142,9 @@ class LiveCaseManager:
             raise RuntimeError(f"删除活载工况 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> None:
-        """重命名活载工况
+        """重命名活载工况。
+
+        对应底层 ``osis_live_analysis_mod(strOldName: str, strNewName: str)``。
 
         Args:
             old_name: 旧名称
@@ -1179,7 +1200,7 @@ class LiveCaseManager:
         return self._load()
 
     def count(self) -> int:
-        """获取活载工况数量
+        """获取活载工况数量。
 
         Returns:
             活载工况数量
@@ -1187,7 +1208,7 @@ class LiveCaseManager:
         return len(self._load())
 
     def clear(self)->None:
-        """清空所有荷载工况"""
+        """清空所有活载工况。"""
         try:
             [self.delete(lc.name) for lc in self.all()]
         except Exception as e:
@@ -1286,6 +1307,10 @@ class LiveManager:
         }
 
     def clear(self) -> None:
+        """清空所有活载相关对象。
+
+        按依赖顺序执行：先清空活载工况（case），再清空车道（lane），最后清空活载等级（grade）。
+        """
         try:
             self.case.clear()  # 先删工况
             self.lane.clear()  # 再删车道

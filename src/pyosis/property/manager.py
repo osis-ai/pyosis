@@ -104,28 +104,28 @@ class CoordinateManager:
         *args: Any,
         **kwargs: Any,
     ) -> None:
-        """创建或修改空间坐标系（便捷入口，内部转发到对应 create_* 方法）
+        '''创建或修改空间坐标系（便捷入口，内部转发到对应 create_* 方法）
 
         type 路由映射：
-            * "TRIPT" → create_three_point
-            * "DBPT"  → create_two_point_rotation
+            * "TRIPT" -> create_three_point
+            * "DBPT"  -> create_two_point_rotation
 
         Args:
-            no: 坐标系编号
-            type: 坐标系类型
+            no (int): 坐标系编号
+            type (str): 坐标系类型
             *args: 按位置传给对应 create_* 的参数
             **kwargs: 按关键字传给对应 create_* 的参数
 
         Raises:
             ValueError: 未知 type
-            RuntimeError: 创建失败
+            RuntimeError: 创建失败时抛出
 
         Examples:
             >>> property_manager.coord.create(1, "TRIPT",
             ...     0, 0, 0, 10, 0, 0, 0, 10, 0)
             >>> property_manager.coord.create(2, "DBPT",
             ...     0, 0, 0, 10, 0, 0, angle=90.0)
-        """
+        '''
         _creator = {
             "TRIPT": self.create_three_point,
             "DBPT":  self.create_two_point_rotation,
@@ -144,14 +144,17 @@ class CoordinateManager:
         p2x: float, p2y: float, p2z: float,
         p3x: float, p3y: float, p3z: float,
     ) -> None:
-        """创建或修改三点空间坐标系
+        '''创建或修改三点空间坐标系
 
         Args:
-            no: 坐标系编号
-            p1x, p1y, p1z: 第 1 点坐标
-            p2x, p2y, p2z: 第 2 点坐标
-            p3x, p3y, p3z: 第 3 点坐标
-        """
+            no (int): 坐标系编号
+            p1x, p1y, p1z (float): 第 1 点坐标（原点）
+            p2x, p2y, p2z (float): 第 2 点坐标（x 轴正方向上的任意点）
+            p3x, p3y, p3z (float): 第 3 点坐标（xoy 平面上的任一点）
+
+        Raises:
+            RuntimeError: 创建失败时抛出
+        '''
         ok, err = osis_coord_sys_three_point(
             no, "TRIPT",
             p1x, p1y, p1z, p2x, p2y, p2z, p3x, p3y, p3z,
@@ -166,14 +169,17 @@ class CoordinateManager:
         p2x: float, p2y: float, p2z: float,
         angle: float,
     ) -> None:
-        """创建或修改两点+旋转角空间坐标系
+        '''创建或修改两点+旋转角空间坐标系
 
         Args:
-            no: 坐标系编号
-            p1x, p1y, p1z: 第 1 点坐标
-            p2x, p2y, p2z: 第 2 点坐标
-            angle: 旋转角
-        """
+            no (int): 坐标系编号
+            p1x, p1y, p1z (float): 第 1 点坐标
+            p2x, p2y, p2z (float): 第 2 点坐标
+            angle (float): x 轴的转角（角度）
+
+        Raises:
+            RuntimeError: 创建失败时抛出
+        '''
         ok, err = osis_coord_sys_two_point_rotation(
             no, "DBPT",
             p1x, p1y, p1z, p2x, p2y, p2z, angle,
@@ -182,16 +188,19 @@ class CoordinateManager:
             raise RuntimeError(f"创建坐标系 {no} 失败: {err}")
 
     def get_dependencies(self, no: int) -> dict[str, list]:
-        """查询坐标系被谁引用"""
+        '''查询坐标系被谁引用'''
         return get_references("CoorSys", no=no)
 
     def delete(self, no: int) -> None:
-        """删除坐标系
+        '''删除坐标系
+
+        Args:
+            no (int): 坐标系编号
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(no)
         raise_if_occupied("CoorSys", deps, no=no)
         ok, err = osis_coord_sys_del(no)
@@ -199,13 +208,28 @@ class CoordinateManager:
             raise RuntimeError(f"删除坐标系 {no} 失败: {err}")
 
     def renumber(self, old: str, new: str) -> None:
-        """修改坐标系编号"""
+        '''修改坐标系编号
+
+        Args:
+            old (str): 旧编号
+            new (str): 新编号
+
+        Raises:
+            RuntimeError: 修改失败时抛出异常
+        '''
         ok, err = osis_coord_sys_mod(old, new)
         if not ok:
             raise RuntimeError(f"修改坐标系编号 {old} -> {new} 失败: {err}")
 
     def all(self) -> list[Coordinate]:
-        """获取全部空间坐标系"""
+        '''获取全部空间坐标系
+
+        Returns:
+            全部 Coordinate 对象列表
+
+        Raises:
+            RuntimeError: 接口调用失败时抛出
+        '''
         resp = osis_client("GetAllCoorSysInfo", {})
         if not resp.get("success"):
             raise RuntimeError(resp.get("error", "GetAllCoorSysInfo 失败"))
@@ -216,7 +240,18 @@ class CoordinateManager:
         ]
 
     def get(self, no: int | list[int]) -> Coordinate | list[Coordinate | None] | None:
-        """根据编号获取空间坐标系"""
+        '''根据编号获取空间坐标系
+
+        Args:
+            no (int|list): 坐标系编号或编号列表
+
+        Returns:
+            单个 Coordinate 对象或对象列表；不存在返回 None
+
+        Raises:
+            TypeError: 不支持的编号类型
+            RuntimeError: 接口调用失败时抛出
+        '''
         if isinstance(no, int):
             nos = [no]
         elif isinstance(no, list):
@@ -240,7 +275,7 @@ class CoordinateManager:
         return coords
 
     def clear(self) -> None:
-        """清空所有空间坐标系"""
+        '''清空所有空间坐标系'''
         try:
             [self.delete(c.no) for c in self.all()]
         except Exception as e:
@@ -275,12 +310,16 @@ class CreepShrink:
         )
 
 class CreepShrinkManager:
-    """收缩徐变管理器"""
+    '''收缩徐变管理器'''
     def all(self):
-        """
-        获取全部收缩徐变
+        '''获取全部收缩徐变特性
+
         Returns:
-        """
+            全部 CreepShrink 对象列表
+
+        Raises:
+            RuntimeError: 接口调用失败时抛出
+        '''
         resp = osis_client("GetAllCreepShrinkInfo",{})
         if not resp["success"]:
             raise RuntimeError(resp["error"])
@@ -288,6 +327,18 @@ class CreepShrinkManager:
         return creep_shrinks
 
     def get(self, no:int | list[int]):
+        '''根据编号获取收缩徐变特性
+
+        Args:
+            no (int|list): 编号或编号列表
+
+        Returns:
+            单个 CreepShrink 对象或对象列表；不存在返回 None
+
+        Raises:
+            TypeError: 不支持的编号类型
+            RuntimeError: 接口调用失败时抛出
+        '''
         if isinstance(no, int):
             no = [no]
         elif not isinstance(no, list):
@@ -314,7 +365,22 @@ class CreepShrinkManager:
         type_coeff: float = 5.0,
         shrink_birth: int = 3,
     ) -> CreepShrink:
-        """创建或修改收缩徐变特性"""
+        '''创建或修改收缩徐变特性
+
+        Args:
+            no (int): 收缩徐变特性编号
+            name (str): 特性名称
+            avg_humidity (float): 年平均湿度（百分比）
+            birth_time (int): 混凝土龄期（天）
+            type_coeff (float): 水泥种类系数
+            shrink_birth (int): 收缩开始时的混凝土龄期（天数）
+
+        Returns:
+            创建的 CreepShrink 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出
+        '''
         ok, err = osis_creep_shrink(
             no, name, avg_humidity, birth_time, type_coeff, shrink_birth,
         )
@@ -327,12 +393,15 @@ class CreepShrinkManager:
         return get_references("CreepShrink", no=no)
 
     def delete(self, no: int) -> None:
-        """删除收缩徐变特性
+        '''删除收缩徐变特性
+
+        Args:
+            no (int): 收缩徐变特性编号
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(no)
         raise_if_occupied("CreepShrink", deps, no=no)
         ok, err = osis_creep_shrink_del(no)
@@ -340,19 +409,32 @@ class CreepShrinkManager:
             raise RuntimeError(f"删除收缩徐变特性 {no} 失败: {err}")
 
     def renumber(self, old: int, new: int) -> None:
-        """修改收缩徐变特性编号"""
+        '''修改收缩徐变特性编号。收缩徐变特性编号存在时，交换
+
+        Args:
+            old (int): 旧编号
+            new (int): 新编号
+
+        Raises:
+            RuntimeError: 修改失败时抛出异常
+        '''
         ok, err = osis_creep_shrink_mod(old, new)
         if not ok:
             raise RuntimeError(f"修改收缩徐变编号 {old} -> {new} 失败: {err}")
 
     def clear(self) -> None:
-        """清空所有收缩徐变特性"""
+        '''清空所有收缩徐变特性'''
         try:
             [self.delete(c.no) for c in self.all()]
         except Exception as e:
             raise Exception(f"清空所有收缩徐变特性失败: {e}，被占用,无法删除")
 
     def count(self) -> int:
+        '''获取收缩徐变特性数量
+
+        Returns:
+            收缩徐变特性数量
+        '''
         objs = self.all()
         return len(objs)
 
@@ -382,7 +464,7 @@ class Damping:
             relatedStages=d.get("relatedStages"))
 
 class DampingManager:
-    """阻尼管理器"""
+    '''阻尼管理器'''
 
     def create(
         self,
@@ -391,16 +473,16 @@ class DampingManager:
         *args: Any,
         **kwargs: Any,
     ) -> Damping:
-        """创建或修改阻尼模型（便捷入口，内部转发到对应 create_* 方法）
+        '''创建或修改阻尼模型（便捷入口，内部转发到对应 create_* 方法）
 
         type 路由映射：
-            * "modal" → create_modal
-            * "ryl"   → create_rayleigh_custom（当 method=1）
+            * "modal" -> create_modal
+            * "ryl"   -> create_rayleigh_custom（当 method=1）
                        或 create_rayleigh_formula（当 method=0）
 
         Args:
-            name: 阻尼模型名称
-            type: 阻尼类型
+            name (str): 阻尼模型名称
+            type (str): 阻尼类型
             *args: 按位置传给对应 create_* 的参数
                 - "modal": 下一个位置参数为 ksi
                 - "ryl": 下一个位置参数为 method (1=自定义, 0=公式)
@@ -415,7 +497,7 @@ class DampingManager:
             >>> property_manager.damping.create("D2", "ryl", 1, alpha=0.1, beta=0.01)
             >>> property_manager.damping.create("D3", "ryl", 0,
             ...     ksii=0.05, ksij=0.05, wi=1.0, wj=5.0)
-        """
+        '''
         _supported_types = {"MODAL", "RYL"}
         type_key = type.upper()
         if type_key not in _supported_types:
@@ -440,12 +522,18 @@ class DampingManager:
         return self.create_rayleigh_formula(name, *args, **kwargs)
 
     def create_modal(self, name: str, ksi: float) -> Damping:
-        """创建或修改振型阻尼
+        '''创建或修改振型阻尼
 
         Args:
-            name: 阻尼模型名称
-            ksi: 振型阻尼数值
-        """
+            name (str): 阻尼模型的名称
+            ksi (float): 振型阻尼数值
+
+        Returns:
+            创建的 Damping 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出
+        '''
         ok, err = osis_damping_modal(name, "modal", ksi)
         if not ok:
             raise RuntimeError(f"创建振型阻尼 {name} 失败: {err}")
@@ -454,13 +542,19 @@ class DampingManager:
     def create_rayleigh_custom(
         self, name: str, alpha: float, beta: float,
     ) -> Damping:
-        """创建或修改Rayleigh阻尼（自定义因子）
+        '''创建或修改Rayleigh阻尼（自定义因子）
 
         Args:
-            name: 阻尼模型名称
-            alpha: 质量因子
-            beta: 刚度因子
-        """
+            name (str): 阻尼模型的名称
+            alpha (float): 质量因子
+            beta (float): 刚度因子
+
+        Returns:
+            创建的 Damping 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出
+        '''
         ok, err = osis_damping_rayleigh_custom(name, "ryl", 1, alpha, beta)
         if not ok:
             raise RuntimeError(f"创建Rayleigh阻尼 {name} 失败: {err}")
@@ -472,31 +566,40 @@ class DampingManager:
         ksii: float, ksij: float,
         wi: float, wj: float,
     ) -> Damping:
-        """创建或修改Rayleigh阻尼（公式计算因子）
+        '''创建或修改Rayleigh阻尼（根据公式计算因子）
 
         Args:
-            name: 阻尼模型名称
-            ksii: 阻尼比
-            ksij: 阻尼比
-            wi: 圆频率
-            wj: 圆频率
-        """
+            name (str): 阻尼模型的名称
+            ksii (float): 阻尼比
+            ksij (float): 阻尼比
+            wi (float): 圆频率
+            wj (float): 圆频率
+
+        Returns:
+            创建的 Damping 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出
+        '''
         ok, err = osis_damping_rayleigh_formula(name, "ryl", 0, ksii, ksij, wi, wj)
         if not ok:
             raise RuntimeError(f"创建Rayleigh阻尼 {name} 失败: {err}")
         return self.get(name)
 
     def get_dependencies(self, name: str) -> dict[str, list]:
-        """查询阻尼模型被谁引用"""
+        '''查询阻尼模型被谁引用'''
         return get_references("Damping", name=name)
 
     def delete(self, name: str) -> None:
-        """删除阻尼模型
+        '''删除阻尼模型
+
+        Args:
+            name (str): 阻尼模型的名称
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(name)
         raise_if_occupied("Damping", deps, name=name)
         ok, err = osis_damping_del(name)
@@ -504,13 +607,21 @@ class DampingManager:
             raise RuntimeError(f"删除阻尼模型 {name} 失败: {err}")
 
     def rename(self, old: str, new: str) -> None:
-        """修改阻尼模型名称"""
+        '''修改阻尼模型名称。阻尼模型名称存在时，交换
+
+        Args:
+            old (str): 原阻尼名称
+            new (str): 新阻尼名称
+
+        Raises:
+            RuntimeError: 重命名失败时抛出
+        '''
         ok, err = osis_damping_mod(old, new)
         if not ok:
             raise RuntimeError(f"修改阻尼名称 {old} -> {new} 失败: {err}")
 
     def _load(self) -> list[Damping]:
-        """从服务端加载所有阻尼模型信息"""
+        '''从服务端加载所有阻尼模型信息'''
         resp = osis_client("GetAllDampingInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -518,7 +629,18 @@ class DampingManager:
         return dampings
 
     def get(self, name: str | list[str]) -> Damping | list[Damping | None] | None:
-        """根据名称获取阻尼模型"""
+        '''根据名称获取阻尼模型
+
+        Args:
+            name (str|list): 阻尼模型名称，支持单个名称或名称列表
+
+        Returns:
+            单个 Damping 对象或对象列表；不存在返回 None
+
+        Raises:
+            TypeError: 不支持的名称类型
+            RuntimeError: 接口调用失败时抛出
+        '''
         if isinstance(name, list):
             names = [str(x) for x in name]
         else:
@@ -536,17 +658,26 @@ class DampingManager:
         return dampings
 
     def all(self) -> list[Damping]:
-        """获取所有阻尼模型"""
+        '''获取所有阻尼模型
+
+        Returns:
+            全部 Damping 对象列表
+        '''
         return self._load()
 
     def clear(self)->None:
-        """清空所有阻尼模型"""
+        '''清空所有阻尼模型'''
         try:
             [self.delete(d.name) for d in self.all()]
         except Exception as e:
             raise Exception(f"清空所有阻尼模型失败: {e}，被占用,无法删除")
 
     def count(self) -> int:
+        '''获取阻尼模型数量
+
+        Returns:
+            阻尼模型数量
+        '''
         objs = self.all()
         return len(objs)
 
@@ -580,7 +711,7 @@ class PuCurve:
         return f"PuCurve(no={self.no}, name={self.name!r}, type={self.curve_type})"
 
 class PuCurveManager:
-    """荷载-位移曲线管理器"""
+    '''荷载-位移曲线管理器'''
 
     def create(
         self,
@@ -590,15 +721,20 @@ class PuCurveManager:
         num: int,
         *values: float,
     ) -> None:
-        """创建或修改荷载-位移曲线
+        '''创建或修改荷载-位移曲线，荷载与位移需要唯一对应
 
         Args:
-            no: 曲线编号
-            name: 曲线名称
-            curve_type: 0=力, 1=力矩
-            num: 曲线点数
-            values: num 个位移值 + num 个力值，共 2*num 个
-        """
+            no (int): 位移-力（矩）曲线编号
+            name (str): 曲线名称
+            curve_type (int): 曲线类型
+                * 0 = 力
+                * 1 = 力矩
+            num (int): 曲线点数
+            values (float): 前 num 个为位移值，后 num 个为力（矩）值，共 2*num 个
+
+        Raises:
+            RuntimeError: 创建失败时抛出
+        '''
         displacement = [float(x) for x in values[:num]]
         force = [float(x) for x in values[num:2 * num]]
         ok, err = osis_pu_curve(no, name, curve_type, num, displacement, force)
@@ -606,16 +742,19 @@ class PuCurveManager:
             raise RuntimeError(f"创建荷载-位移曲线 {no} 失败: {err}")
 
     def get_dependencies(self, no: int) -> dict[str, list]:
-        """查询荷载-位移曲线被谁引用"""
+        '''查询荷载-位移曲线被谁引用'''
         return get_references("PUCurve", no=no)
 
     def delete(self, no: int) -> None:
-        """删除荷载-位移曲线
+        '''删除位移-内力曲线
+
+        Args:
+            no (int): 位移-力（矩）曲线编号
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(no)
         raise_if_occupied("PUCurve", deps, no=no)
         ok, err = osis_pu_curve_del(no)
@@ -623,12 +762,28 @@ class PuCurveManager:
             raise RuntimeError(f"删除荷载-位移曲线 {no} 失败: {err}")
 
     def renumber(self, old: int, new: int) -> None:
-        """修改荷载-位移曲线编号"""
+        '''修改荷载-位移曲线编号。曲线编号存在时，交换
+
+        Args:
+            old (int): 旧编号
+            new (int): 新编号
+
+        Raises:
+            RuntimeError: 修改失败时抛出
+        '''
         ok, err = osis_pu_curve_mod(old, new)
         if not ok:
             raise RuntimeError(f"修改荷载-位移曲线编号 {old} -> {new} 失败: {err}")
 
     def all(self) -> list[PuCurve]:
+        '''获取全部荷载-位移曲线
+
+        Returns:
+            全部 PuCurve 对象列表
+
+        Raises:
+            RuntimeError: 接口调用失败时抛出
+        '''
         resp = osis_client("GetAllPuCurveInfo", {})
         if not resp.get("success"):
             raise RuntimeError(resp.get("error", "GetAllPuCurveInfo 失败"))
@@ -639,6 +794,18 @@ class PuCurveManager:
         ]
 
     def get(self, no: int | list[int]) -> PuCurve | list[PuCurve | None] | None:
+        '''根据编号获取荷载-位移曲线
+
+        Args:
+            no (int|list): 曲线编号或编号列表
+
+        Returns:
+            单个 PuCurve 对象或对象列表；不存在返回 None
+
+        Raises:
+            TypeError: 不支持的编号类型
+            RuntimeError: 接口调用失败时抛出
+        '''
         if isinstance(no, int):
             nos = [no]
         elif isinstance(no, list):
@@ -659,7 +826,7 @@ class PuCurveManager:
         return curves
 
     def clear(self) -> None:
-        """清空所有荷载-位移曲线"""
+        '''清空所有荷载-位移曲线'''
         try:
             [self.delete(c.no) for c in self.all()]
         except Exception as e:
@@ -718,18 +885,29 @@ class PropertyManager:
         op: Literal["a", "s", "r"],
         *elems: str | int,
     ) -> None:
-        """分配或重置单个单元的理论厚度
+        '''分配或重置单个单元的理论厚度，用于定义收缩徐变特性
 
         Args:
-            thickness: 构件理论厚度
-            op: a=添加, s=替换, r=移除
-            *elems: 待分配单元的编号，支持 *to* 格式
-        """
+            thickness (float): 构件理论厚度
+            op (str): 操作
+                * a = 添加
+                * s = 替换
+                * r = 移除
+            *elems (str|int): 待分配单元的编号。定义、修改、删除 elem 支持的格式：*to*
+
+        Raises:
+            RuntimeError: 分配失败时抛出
+        '''
         ok, err = osis_assign_component_thickness(thickness, op, *elems)
         if not ok:
             raise RuntimeError(f"分配构件厚度失败: {err}")
 
     def count(self) -> dict[str, int]:
+        '''统计各子管理器的对象数量
+
+        Returns:
+            dict: 包含各子管理器对象数量的字典
+        '''
         return {
             # "coords": self._coord.count(),
             "creep_shrinks": self._creep_shrink.count(),
@@ -739,6 +917,7 @@ class PropertyManager:
 
 
     def clear(self)->None:
+        '''清空所有属性对象（坐标系、收缩徐变、阻尼、荷载-位移曲线）'''
         self.coord.clear()
         self.creep_shrink.clear()
         self.damping.clear()

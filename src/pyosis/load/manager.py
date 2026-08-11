@@ -182,7 +182,14 @@ class LoadCase:
         self.cforce = d.get("cforce")
 
     def refresh(self) -> LoadCase:
-        """刷新当前工况荷载明细并同步到对象属性"""
+        '''刷新当前工况荷载明细并同步到对象属性
+
+        Returns:
+            更新后的 LoadCase 对象
+
+        Raises:
+            RuntimeError: 接口调用失败时抛出异常
+        '''
         resp = osis_client("GetLoadCaseInfoByNames", {"name": [self.name]})
         if not resp['success']:
             raise RuntimeError(f"刷新工况 {self.name} 失败: {resp['error']}")
@@ -194,22 +201,35 @@ class LoadCase:
     # ── 荷载添加 ──────────────────────────────
 
     def create(self, type: str, *args: Any, **kwargs: Any) -> LoadCase | None:
-        """添加荷载（便捷入口，内部转发到对应 create_* 方法）
+        '''添加荷载（便捷入口，内部转发到对应 create_* 方法）
 
-        type 决定具体荷载类型，对应关系:
-            GRAVITY      → create_gravity
-            NFORCE       → create_nforce
-            LINE         → create_line_load
-            DISPLACEMENT → create_displacement
-            INITIAL      → create_initial_force
-            UTEMP        → create_uniform_temperature
-            GTEMP        → create_gradient_temperature
-            PST          → create_prestress
-            CFORCE       → create_cable_force
-            CONCENTRATED → create_concentrated_force
-            SURFACE      → create_surface_load
-            SURFACE_VEC  → create_surface_load_vector
-        """
+        type 决定具体荷载类型，对应关系：
+            GRAVITY      -> create_gravity
+            NFORCE       -> create_nforce
+            LINE         -> create_line_load
+            DISPLACEMENT -> create_displacement
+            INITIAL      -> create_initial_force
+            UTEMP        -> create_uniform_temperature
+            GTEMP        -> create_gradient_temperature
+            PST          -> create_prestress
+            CFORCE       -> create_cable_force
+            CONCENTRATED -> create_concentrated_force
+            SURFACE      -> create_surface_load
+            SURFACE_VEC  -> create_surface_load_vector
+            PTF/PTM      -> create_concentrated_force (is_moment)
+
+        Args:
+            type (str): 荷载类型关键字
+            *args: 透传给具体 create_* 方法
+            **kwargs: 透传给具体 create_* 方法
+
+        Returns:
+            更新后的 LoadCase 对象
+
+        Raises:
+            ValueError: 未知的 type
+            RuntimeError: 创建失败时抛出异常
+        '''
         _creator = {
             "GRAVITY":      self.create_gravity,
             "NFORCE":       self.create_nforce,
@@ -236,114 +256,123 @@ class LoadCase:
 
     def create_gravity(
             self,
-            dXCoeff: float = 1.0,
-            dYCoeff: float = 1.0,
-            dZCoeff: float = 1.0,
+            x_coeff: float = 1.0,
+            y_coeff: float = 1.0,
+            z_coeff: float = 1.0,
     ) -> LoadCase:
-        """添加自重荷载
+        '''添加自重荷载
 
         Args:
-            dXCoeff: 全局坐标系x方向的系数，将作用于重力加速度
-            dYCoeff: 全局坐标系y方向的系数，将作用于重力加速度
-            dZCoeff: 全局坐标系z方向的系数，将作用于重力加速度
+            x_coeff (float): 全局坐标系x方向的系数，将作用于重力加速度
+            y_coeff (float): 全局坐标系y方向的系数，将作用于重力加速度
+            z_coeff (float): 全局坐标系z方向的系数，将作用于重力加速度
 
         Returns:
             更新后的 LoadCase 对象
-        """
-        ok, err = osis_load_gravity("GRAVITY", self.name, dXCoeff, dYCoeff, dZCoeff)
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
+        ok, err = osis_load_gravity("GRAVITY", self.name, x_coeff, y_coeff, z_coeff)
         if not ok:
             raise RuntimeError(f"添加自重荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
 
     def create_nforce(
             self,
-            nEntity: int,
-            dFx: float = 100,
-            dFy: float = 0,
-            dFz: float = 0,
-            dMx: float = 0,
-            dMy: float = 0,
-            dMz: float = 0,
+            entity: int,
+            fx: float = 100,
+            fy: float = 0,
+            fz: float = 0,
+            mx: float = 0,
+            my: float = 0,
+            mz: float = 0,
     ) -> LoadCase:
-        """添加节点荷载
+        '''添加节点荷载
 
         Args:
-            nEntity: 节点编号
-            dFx: 全局坐标系x方向的集中力
-            dFy: 全局坐标系y方向的集中力
-            dFz: 全局坐标系z方向的集中力
-            dMx: 全局坐标系x方向的集中弯矩
-            dMy: 全局坐标系y方向的集中弯矩
-            dMz: 全局坐标系z方向的集中弯矩
+            entity (int): 节点编号
+            fx (float): 全局坐标系x方向的集中力
+            fy (float): 全局坐标系y方向的集中力
+            fz (float): 全局坐标系z方向的集中力
+            mx (float): 全局坐标系x方向的集中弯矩
+            my (float): 全局坐标系y方向的集中弯矩
+            mz (float): 全局坐标系z方向的集中弯矩
 
         Returns:
             更新后的 LoadCase 对象
-        """
-        ok, err = osis_load_nforce("NFORCE", self.name, nEntity, dFx, dFy, dFz, dMx, dMy, dMz)
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
+        ok, err = osis_load_nforce("NFORCE", self.name, entity, fx, fy, fz, mx, my, mz)
         if not ok:
             raise RuntimeError(f"添加节点荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
 
     def create_line_load(
             self,
-            nEntity: int,
-            eCoordSystem: Literal[0, 1] = 1,
-            eLoadType: Literal[0, 1] = 1,
-            dOffsetXI: float = 0.0,
-            dOffsetYI: float = 0.0,
-            dOffsetZI: float = 0.0,
-            dFXI: float = 100,
-            dFYI: float = 100,
-            dFZI: float = 0,
-            dMXI: float = 0,
-            dMYI: float = 0,
-            dMZI: float = 0,
-            dOffsetXJ: float = 0.0,
-            dOffsetYJ: float = 0.0,
-            dOffsetZJ: float = 0.0,
-            dFXJ: float = 100,
-            dFYJ: float = 100,
-            dFZJ: float = 0,
-            dMXJ: float = 0,
-            dMYJ: float = 0,
-            dMZJ: float = 0,
+            entity: int,
+            coord_system: Literal[0, 1] = 1,
+            load_type: Literal[0, 1] = 1,
+            offset_x_i: float = 0.0,
+            offset_y_i: float = 0.0,
+            offset_z_i: float = 0.0,
+            fx_i: float = 100,
+            fy_i: float = 100,
+            fz_i: float = 0,
+            mx_i: float = 0,
+            my_i: float = 0,
+            mz_i: float = 0,
+            offset_x_j: float = 0.0,
+            offset_y_j: float = 0.0,
+            offset_z_j: float = 0.0,
+            fx_j: float = 100,
+            fy_j: float = 100,
+            fz_j: float = 0,
+            mx_j: float = 0,
+            my_j: float = 0,
+            mz_j: float = 0,
     ) -> LoadCase:
-        """添加线荷载
+        '''添加线荷载
 
         Args:
-            nEntity: 单元编号
-            eCoordSystem: 坐标系
+            entity (int): 单元编号
+            coord_system (int): 坐标系
                 * 0 = 单元坐标系
                 * 1 = 整体坐标系
-            eLoadType: 荷载类型
+            load_type (int): 荷载类型
                 * 0 = 连续荷载
                 * 1 = 离散荷载
-            dOffsetXI: I端偏移量X/L，输入范围[0,1]
-            dOffsetYI: I端Y轴偏移量
-            dOffsetZI: I端Z轴偏移量
-            dFXI: I端坐标系x方向的集中力
-            dFYI: I端坐标系y方向的集中力
-            dFZI: I端坐标系z方向的集中力
-            dMXI: I端坐标系x方向的集中弯矩
-            dMYI: I端坐标系y方向的集中弯矩
-            dMZI: I端坐标系z方向的集中弯矩
-            dOffsetXJ: J端偏移量X/L，输入范围[0,1]
-            dOffsetYJ: J端Y轴偏移量
-            dOffsetZJ: J端Z轴偏移量
-            dFXJ: J端坐标系x方向的集中力
-            dFYJ: J端坐标系y方向的集中力
-            dFZJ: J端坐标系z方向的集中力
-            dMXJ: J端坐标系x方向的集中弯矩
-            dMYJ: J端坐标系y方向的集中弯矩
-            dMZJ: J端坐标系z方向的集中弯矩
+            offset_x_i (float): I端偏移量X/L，输入范围[0,1]
+            offset_y_i (float): I端Y轴偏移量
+            offset_z_i (float): I端Z轴偏移量
+            fx_i (float): I端坐标系x方向的集中力
+            fy_i (float): I端坐标系y方向的集中力
+            fz_i (float): I端坐标系z方向的集中力
+            mx_i (float): I端坐标系x方向的集中弯矩
+            my_i (float): I端坐标系y方向的集中弯矩
+            mz_i (float): I端坐标系z方向的集中弯矩
+            offset_x_j (float): J端偏移量X/L，输入范围[0,1]
+            offset_y_j (float): J端Y轴偏移量
+            offset_z_j (float): J端Z轴偏移量
+            fx_j (float): J端坐标系x方向的集中力
+            fy_j (float): J端坐标系y方向的集中力
+            fz_j (float): J端坐标系z方向的集中力
+            mx_j (float): J端坐标系x方向的集中弯矩
+            my_j (float): J端坐标系y方向的集中弯矩
+            mz_j (float): J端坐标系z方向的集中弯矩
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         ok, err = osis_load_line(
-            "LINE", self.name, nEntity, eCoordSystem, eLoadType,
-            dOffsetXI, dOffsetYI, dOffsetZI, dFXI, dFYI, dFZI, dMXI, dMYI, dMZI,
-            dOffsetXJ, dOffsetYJ, dOffsetZJ, dFXJ, dFYJ, dFZJ, dMXJ, dMYJ, dMZJ,
+            "LINE", self.name, entity, coord_system, load_type,
+            offset_x_i, offset_y_i, offset_z_i, fx_i, fy_i, fz_i, mx_i, my_i, mz_i,
+            offset_x_j, offset_y_j, offset_z_j, fx_j, fy_j, fz_j, mx_j, my_j, mz_j,
         )
         if not ok:
             raise RuntimeError(f"添加线荷载到工况 {self.name} 失败: {err}")
@@ -351,27 +380,33 @@ class LoadCase:
 
     def create_concentrated_force(
             self,
-            nEntity: int,
-            eCoordSystem: Literal[0, 1] = 1,
+            entity: int,
+            coord_system: Literal[0, 1] = 1,
             is_moment: bool = False,
             forces: list[list[float]] = None,
     ) -> LoadCase:
-        """添加任意节间集中力/力矩
+        '''添加任意节间集中力/力矩
 
         Args:
-            nEntity: 单元编号
-            eCoordSystem: 坐标系
+            entity (int): 单元编号
+            coord_system (int): 坐标系
                 * 0 = 单元坐标系
                 * 1 = 整体坐标系
-            is_moment: 是否为集中力矩（True=力矩PTM，False=力PTF）
-            forces: 各组力/力矩参数列表，每组为 [offsetX, offsetY, offsetZ, Px, Py, Pz]
+            is_moment (bool): 是否为集中力矩（True=力矩PTM，False=力PTF）
+            forces (list): 各组力/力矩参数，按顺序填入：
+                [offsetX, offsetY, offsetZ, Px, Py, Pz]
+                每组包含6个参数：偏移量X/L, Y轴偏移量, Z轴偏移量, x方向力/力矩, y方向力/力矩, z方向力/力矩
                 最多5组，例如：
                 [[0.5, 0, 0, 100, 0, 0]]  # 1组力
                 [[0.25, 0, 0, 50, 0, 0], [0.75, 0, 0, 50, 0, 0]]  # 2组力
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            ValueError: forces 组数不在 1~5 范围内或每组参数数量不为 6
+            RuntimeError: 添加失败时抛出异常
+        '''
         if forces is None:
             forces = []
         
@@ -387,7 +422,7 @@ class LoadCase:
             params.extend(force)
 
         ok, err = osis_load_concentrated(
-            "PTM" if is_moment else "PTF", self.name, nEntity, eCoordSystem, nLoadRange, params
+            "PTM" if is_moment else "PTF", self.name, entity, coord_system, nLoadRange, params
         )
         if not ok:
             force_type = "集中力矩" if is_moment else "集中力"
@@ -410,26 +445,29 @@ class LoadCase:
             brz: int = 0,
             rz: float = 0.0,
     ) -> LoadCase:
-        """添加强迫位移
+        '''添加强迫位移
 
         Args:
-            entity：节点编号
-            bx：UX方向，0 = 自由，1 = 强迫位移
-            dx：强制位移在坐标系x方向的分量
-            by：UY方向，0 = 自由，1 = 强迫位移
-            dy：强制位移在坐标系y方向的分量
-            bz：UZ方向，0 = 自由，1 = 强迫位移
-            dz：强制位移在坐标系z方向的分量
-            brx：RX方向，0 = 自由，1 = 强迫位移
-            rx：绕坐标系x轴的强制旋转角度分量
-            bry：RY方向，0 = 自由，1 = 强迫位移
-            ry：绕坐标系y轴的强制旋转角度分量
-            brz：RZ方向，0 = 自由，1 = 强迫位移
-            rz：绕坐标系z轴的强制旋转角度分量
+            entity (int): 节点编号
+            bx (int): UX方向，0 = 自由，1 = 强迫位移
+            dx (float): 强制位移在坐标系x方向的分量
+            by (int): UY方向，0 = 自由，1 = 强迫位移
+            dy (float): 强制位移在坐标系y方向的分量
+            bz (int): UZ方向，0 = 自由，1 = 强迫位移
+            dz (float): 强制位移在坐标系z方向的分量
+            brx (int): RX方向，0 = 自由，1 = 强迫位移
+            rx (float): 绕坐标系x轴的强制旋转角度分量
+            bry (int): RY方向，0 = 自由，1 = 强迫位移
+            ry (float): 绕坐标系y轴的强制旋转角度分量
+            brz (int): RZ方向，0 = 自由，1 = 强迫位移
+            rz (float): 绕坐标系z轴的强制旋转角度分量
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         ok, err = osis_load_displacement(
             "DISPLACEMENT",self.name,entity,bx,dx,by,dy,bz,dz,brx,rx,bry,ry,brz,rz)
         if not ok:
@@ -443,20 +481,23 @@ class LoadCase:
             temp: float = 1.0,
             length: float = None,
     ) -> LoadCase:
-        """添加均匀温度荷载
+        '''添加均匀温度荷载
 
         Args:
-            entity: 单元编号
-            direct: 作用方向
+            entity (int): 单元编号
+            direct (str): 作用方向。单元坐标系X（轴向）/Y/Z方向温差，均匀升降温数值（正为升温）
                 * X: 可用来模拟整体升降温荷载
                 * Y: 可以用来模拟单元的横向梯度温度荷载
                 * Z: 可以用来模拟单元的横向梯度温度荷载
-            temp: 温差值，不影响系统温度
-            length: Y/Z方向的长度，为None则自动通过截面计算
+            temp (float): 温差值，不影响系统温度
+            length (float): Y/Z方向的长度，为 None 则自动通过截面计算
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         ok, err = osis_load_utemp("UTEMP", self.name, entity, direct, temp, length)
         if not ok:
             raise RuntimeError(f"添加均匀温度荷载到工况 {self.name} 失败: {err}")
@@ -470,20 +511,20 @@ class LoadCase:
             num: int = 1,
             *param: float | str,
     ) -> LoadCase:
-        """添加梯度温度荷载
+        '''添加梯度温度荷载
 
         Args:
-            entity: 单元编号
-            direct: 局部方向
+            entity (int): 单元编号
+            direct (str): 局部方向
                 * Y
                 * Z
-            g_temp_type: 定义梁的参考位置
-                * R
-                * T
-                * C
-                * B
-            num: 梯度温度荷载段数
-            param: 每个梯度温度荷载段对应一组参数，多组参数直接全部按顺序填入param中即可
+            g_temp_type (str): 定义梁的参考位置
+                * R: 从梁截面建模位置到温度变化点的距离
+                * T: 从梁顶到温度变化点的距离
+                * C: 从截面中心到温度变化点的距离
+                * B: 从梁底到温度变化点的距离
+            num (int): 梯度温度荷载段数
+            param (float|str): 每个梯度温度荷载段对应一组参数，多组参数直接全部按顺序填入param中即可
                 - B (float): 考虑温度变化的宽度，宽度可设置为空("")
                 - H1 (float): 参考位置至定义温度间距离
                 - T1 (float): H1处对应温度
@@ -492,7 +533,10 @@ class LoadCase:
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         if len(param) == 1 and isinstance(param[0], list):
             plist = list(param[0])   # 手写: ..., 2, [1.24, 0.0, ...]
         else:
@@ -520,18 +564,29 @@ class LoadCase:
             myj: float = 0,
             mzj: float = 0,
     ) -> LoadCase:
-        """添加初始内力荷载
+        '''添加初始内力荷载
 
         Args:
-            entity: 单元编号
-            fxi, fyi, fzi: I端局部坐标系x/y/z向轴力
-            mxi, myi, mzi: I端绕x/y/z弯矩
-            fxj, fyj, fzj: J端局部坐标系x/y/z向轴力
-            mxj, myj, mzj: J端绕x/y/z弯矩
+            entity (int): 单元编号
+            fxi (float): I端局部坐标系x向轴力
+            fyi (float): I端局部坐标系y向轴力
+            fzi (float): I端局部坐标系z向轴力
+            mxi (float): I端绕x弯矩
+            myi (float): I端绕y弯矩
+            mzi (float): I端绕z弯矩
+            fxj (float): J端局部坐标系x向轴力
+            fyj (float): J端局部坐标系y向轴力
+            fzj (float): J端局部坐标系z向轴力
+            mxj (float): J端绕x弯矩
+            myj (float): J端绕y弯矩
+            mzj (float): J端绕z弯矩
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         ok, err = osis_load_initial("INITIAL",self.name,entity,fxi,fyi,fzi,mxi,myi,mzi,fxj,fyj,fzj,mxj,myj,mzj)
         if not ok:
             raise RuntimeError(f"添加初始内力荷载到工况 {self.name} 失败: {err}")
@@ -545,23 +600,26 @@ class LoadCase:
             beg: float = 100,
             end: float = 100,
     ) -> LoadCase:
-        """添加预应力荷载
+        '''添加预应力荷载
 
         Args:
-            entity: 钢束形状名称，由TdShape定义
-            tension_type: 张拉类型
+            entity (str): 钢束形状名称，由 TdShape 定义
+            tension_type (str): 张拉类型
                 * BOTH = 两端张拉
                 * BEG = 起点张拉
                 * END = 终点张拉
-            tension_force_type: 张拉力类型
+            tension_force_type (str): 张拉力类型
                 * ST = 应力
                 * IF = 内力
-            beg: 起点应力或内力。eTensionType为END时填None
-            end: 终点应力或内力。eTensionType为BEG时填None
+            beg (float): 起点应力或内力。tension_type 为 END 时填 None
+            end (float): 终点应力或内力。tension_type 为 BEG 时填 None
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         ok, err = osis_load_pst("PST", self.name,entity, tension_type, tension_force_type, beg, end)
         if not ok:
             raise RuntimeError(f"添加预应力荷载到工况 {self.name} 失败: {err}")
@@ -573,18 +631,21 @@ class LoadCase:
             load_type: Literal["IN", "EX"] = "IN",
             force: float = 100,
     ) -> LoadCase:
-        """添加索力荷载
+        '''添加索力荷载
 
         Args:
-            entity: 单元编号
-            load_type: 施加方式
+            entity (int): 单元编号
+            load_type (str): 施加方式
                 * IN = 体内力
                 * EX = 体外力
-            force: 索力数值
+            force (float): 索力数值
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         ok, err = osis_load_cforce("CFORCE", self.name, entity, load_type, force)
         if not ok:
             raise RuntimeError(f"添加索力荷载到工况 {self.name} 失败: {err}")
@@ -593,35 +654,38 @@ class LoadCase:
     def create_surface_load(
             self,
             entity: str,
-            plane_i: str = "1",
-            s_dir: str = "X",
-            global_i: Literal["0", "1", "2"] = "0",
-            p1i: str = "0",
-            p2i: str = "0",
-            p3i: str = "0",
-            p4i: str = "0",
+            plane: str = "1",
+            direction: str = "X",
+            coord_type: Literal["0", "1", "2"] = "0",
+            p1: str = "0",
+            p2: str = "0",
+            p3: str = "0",
+            p4: str = "0",
     ) -> LoadCase:
-        """添加单元面荷载，不考虑边中节点荷载插值
+        '''添加单元面荷载，不考虑边中节点荷载插值
 
         Args:
-            entity: 单元编号
-            plane_i: 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
-            s_dir: 方向，默认为X
-            global_i: 坐标系
+            entity (str): 单元编号
+            plane (str): 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
+            direction (str): 方向，X, Y, Z
+            coord_type (str): 坐标系
                 * 0 = 局部
                 * 1 = 整体
                 * 2 = 整体 + 投影
-            p1i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
-            p2i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
-            p3i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
-            p4i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+            p1 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
+            p2 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
+            p3 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
+            p4 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         ok, err = osis_load_surface_load(
-            "ESRFC", self.name, entity, plane_i, s_dir,
-            global_i, p1i, p2i, p3i, p4i
+            "ESRFC", self.name, entity, plane, direction,
+            coord_type, p1, p2, p3, p4
         )
         if not ok:
             raise RuntimeError(f"添加单元面荷载到工况 {self.name} 失败: {err}")
@@ -630,37 +694,40 @@ class LoadCase:
     def create_surface_load_vector(
             self,
             entity: str,
-            plane_i: str = "1",
-            s_dir: str = "VECTOR",
-            xi: str = "0",
-            yi: str = "0",
-            zi: str = "-1",
-            p1i: str = "0",
-            p2i: str = "0",
-            p3i: str = "0",
-            p4i: str = "0",
+            plane: str = "1",
+            direction: str = "VECTOR",
+            vx: str = "0",
+            vy: str = "0",
+            vz: str = "-1",
+            p1: str = "0",
+            p2: str = "0",
+            p3: str = "0",
+            p4: str = "0",
     ) -> LoadCase:
-        """添加单元面荷载（方向向量定义），不考虑边中节点荷载插值
+        '''添加单元面荷载（方向向量定义），不考虑边中节点荷载插值
 
         Args:
-            entity: 单元编号
-            plane_i: 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
-            s_dir: 方向，默认为VECTOR
-            xi: VECTOR的具体值
-            yi: VECTOR的具体值
-            zi: VECTOR的具体值
-            p1i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
-            p2i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
-            p3i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
-            p4i: 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+            entity (str): 单元编号
+            plane (str): 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
+            direction (str): 方向，默认为 VECTOR
+            vx (str): VECTOR 的具体值
+            vy (str): VECTOR 的具体值
+            vz (str): VECTOR 的具体值
+            p1 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
+            p2 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
+            p3 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
+            p4 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
 
         Returns:
             更新后的 LoadCase 对象
-        """
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
         # raise Exception("暂不支持添加单元面荷载（方向向量）到工况")
         ok, err = osis_load_surface_load_vector(
-            "ESRFC", self.name, entity, plane_i, s_dir,
-            xi, yi, zi, p1i, p2i, p3i, p4i
+            "ESRFC", self.name, entity, plane, direction,
+            vx, vy, vz, p1, p2, p3, p4
         )
         if not ok:
             raise RuntimeError(
@@ -672,13 +739,13 @@ class LoadCase:
 
     def delete(
             self,
-            e_type: Literal["GRAVITY", "NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"],
+            load_type: Literal["GRAVITY", "NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"],
             entity: int | str | None = None
     ) -> None:
-        """删除荷载
+        '''删除荷载
 
         Args:
-            e_type: 荷载类型
+            load_type (str): 荷载类型
                 * GRAVITY = 自重荷载
                 * NFORCE = 节点荷载
                 * LINE = 线荷载
@@ -688,21 +755,21 @@ class LoadCase:
                 * GTEMP = 梯度温度荷载
                 * PST = 预应力荷载
                 * CFORCE = 索力荷载
-            entity: 要删除的荷载所作用的节点/单元/钢束形状编号。e_type为GRAVITY时填None
+            entity (int|str): 要删除的荷载所作用的节点/单元/钢束形状编号。load_type 为 GRAVITY 时填 None
 
         Raises:
-            TypeError: 删除非GRAVITY荷载时未指定entity
+            TypeError: 删除非 GRAVITY 荷载时未指定 entity
             RuntimeError: 删除失败时抛出异常
-        """
-        t = e_type.strip().upper()
+        '''
+        t = load_type.strip().upper()
         if t == "GRAVITY":
             ok, err = osis_load_del("GRAVITY", self.name, None)
         else:
             if entity is None:
                 raise TypeError(
-                    f"删除 {e_type} 必须指定 entity=...（节点/单元/钢束等编号），禁止省略"
+                    f"删除 {load_type} 必须指定 entity=...（节点/单元/钢束等编号），禁止省略"
                 )
-            ok, err = osis_load_del(e_type, self.name, entity)
+            ok, err = osis_load_del(load_type, self.name, entity)
         if not ok:
             raise RuntimeError(f"删除荷载失败: {err}")
         self.refresh()
@@ -710,14 +777,14 @@ class LoadCase:
     # ── 荷载修改 ──────────────────────────────
     def modify(
             self,
-            e_type: Literal["NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"],
+            load_type: Literal["NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"],
             old_entity: int | str,
             new_entity: int | str,
     ) -> LoadCase:
-        """修改工况内荷载的作用对象
+        '''修改工况内荷载的作用对象
 
         Args:
-            e_type: 荷载类型
+            load_type (str): 荷载类型
                 * NFORCE = 节点荷载
                 * LINE = 线荷载
                 * DISPLACEMENT = 强迫位移荷载
@@ -726,13 +793,16 @@ class LoadCase:
                 * GTEMP = 梯度温度荷载
                 * PST = 预应力荷载
                 * CFORCE = 索力荷载
-            old_entity: 旧编号
-            new_entity: 新编号
+            old_entity (int|str): 旧编号
+            new_entity (int|str): 新编号
 
         Returns:
             更新后的 LoadCase 对象
-        """
-        ok, err = osis_load_mod(e_type, self.name, old_entity, new_entity)
+
+        Raises:
+            RuntimeError: 修改失败时抛出异常
+        '''
+        ok, err = osis_load_mod(load_type, self.name, old_entity, new_entity)
         if not ok:
             raise RuntimeError(f"修改工况 {self.name} 中的荷载失败: {err}")
         return self.refresh()
@@ -790,15 +860,14 @@ class TendonProp:
         )
 
     def rename(self, new_name: str) -> None:
-        """重命名钢束特性
+        '''重命名钢束特性
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            new_name (str): 新名称
 
         Raises:
             RuntimeError: 重命名失败时抛出异常
-        """
+        '''
         ok, err = osis_tendon_prop_mod(self.name, new_name)
         if not ok:
             raise RuntimeError(f"重命名钢束特性 {self.name} -> {new_name} 失败: {err}")
@@ -844,45 +913,74 @@ class TendonShape:
     def layout(
         self,
         layout_type: Literal['GLOBAL', "ELEMENT"],
-        n_ele: int = None,
-        n_beg: Literal[0, 1] = 1,
-        n_dir: Literal[0, 1] = 1,
-        d_offset_x: float = None,
-        d_offset_y: float = None,
-        d_offset_z: float = None,
+        element: int = None,
+        begin: Literal[0, 1] = 1,
+        direction: Literal[0, 1] = 1,
+        offset_x: float = None,
+        offset_y: float = None,
+        offset_z: float = None,
     ) -> None:
-        """布置钢束形状"""
-        ok, err = osis_layout_tendons(self.name, layout_type, n_ele, n_beg, n_dir, d_offset_x, d_offset_y, d_offset_z)
+        '''布置钢束形状
+
+        Args:
+            layout_type (str): 分配钢束形状的方法
+                * GLOBAL = 参考整体坐标系原点
+                * ELEMENT = 参考单元分配
+            < 下面的参数仅当 layout_type = "ELEMENT" 时要填 >
+            element (int): 参考单元编号
+            begin (int): 起点
+                * 0 = i
+                * 1 = j
+            direction (int): 方向
+                * 0 = i->j
+                * 1 = j->i
+            offset_x (float): x方向起点偏移
+            offset_y (float): y方向起点偏移
+            offset_z (float): z方向起点偏移
+
+        Raises:
+            RuntimeError: 布置失败时抛出异常
+        '''
+        ok, err = osis_layout_tendons(self.name, layout_type, element, begin, direction, offset_x, offset_y, offset_z)
         if not ok:
             raise RuntimeError(f"布置钢束 {self.name} 失败: {err}")
 
     def wipe(self) -> None:
-        """擦除已布置钢束形状"""
+        '''擦除已布置钢束形状
+
+        Raises:
+            RuntimeError: 擦除失败时抛出异常
+        '''
         ok, err = osis_wipe_tendons(self.name)
         if not ok:
             raise RuntimeError(f"擦除钢束 {self.name} 失败: {err}")
 
-    def bottom(self, b_bot: int, *bot: int) -> None:
-        """定义是否沿梁单元底板布置钢束形状
+    def bottom(self, bottom_layout: int, *bot: int) -> None:
+        '''定义是否沿梁单元底板布置钢束形状
 
         Args:
-            b_bot: 0=不沿底板布置，1=沿底板布置
-            *bot: 底板布置对应的样条曲线行号，数量不限（Bot_i, Bot_j, ...）
-        """
-        ok, err = osis_bottom_tendons(self.name, b_bot, *bot)
+            bottom_layout (int): 是否沿底板布置
+                * 0 = 不沿底板布置
+                * 1 = 沿底板布置
+            bot (int): 底板布置钢束对应的样条曲线行号，数量不限
+                （如 Bot_i, Bot_j, Bot_k, ...）
+
+        Raises:
+            RuntimeError: 设置底板布置失败时抛出异常
+        '''
+        ok, err = osis_bottom_tendons(self.name, bottom_layout, *bot)
         if not ok:
             raise RuntimeError(f"设置钢束 {self.name} 底板布置失败: {err}")
 
     def rename(self, new_name: str) -> None:
-        """重命名钢束形状
+        '''重命名钢束形状
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            new_name (str): 新名称
 
         Raises:
             RuntimeError: 重命名失败时抛出异常
-        """
+        '''
         ok, err = osis_tendon_shape_mod(self.name, new_name)
         if not ok:
             raise RuntimeError(f"重命名钢束形状 {self.name} -> {new_name} 失败: {err}")
@@ -1000,27 +1098,30 @@ class TendonPropManager:
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
-        """创建体内钢束特性（按规范输入面积）
+        '''创建体内钢束特性（按规范输入面积）
 
         Args:
-            name: 钢束特性名称
-            mat: 材料编号
-            code: 规范名
+            name (str): 钢束特性名称
+            mat (int): 材料编号
+            code (str): 规范名
                 * GBT5224_2014
                 * GBT20065_2016
-            diameter: 公称直径
-            num: 每束钢束根数
-            pipe: 管道直径
-            friction_coeff: 摩擦系数
-            deviation_coeff: 偏差系数
-            starting_deform: 起点变形
-            end_deform: 终点变形
-            tensioning_coeff: 张拉系数
-            relaxation_coeff: 松弛系数
+            diameter (float): 公称直径
+            num (int): 每束钢束根数
+            pipe (float): 管道直径
+            friction_coeff (float): 摩擦系数
+            deviation_coeff (float): 偏差系数
+            starting_deform (float): 起点变形
+            end_deform (float): 终点变形
+            tensioning_coeff (float): 张拉系数
+            relaxation_coeff (float): 松弛系数
 
         Returns:
             创建的 TendonProp 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_prop_in_area1(
             name, "IN", mat, 1, code, diameter, num, pipe,
             friction_coeff, deviation_coeff, starting_deform,
@@ -1043,23 +1144,26 @@ class TendonPropManager:
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
-        """创建体内钢束特性（用户输入面积）
+        '''创建体内钢束特性（用户输入面积）
 
         Args:
-            name: 钢束特性名称
-            mat: 材料编号
-            val: 用户输入的钢束面积
-            pipe: 管道直径
-            friction_coeff: 摩擦系数
-            deviation_coeff: 偏差系数
-            starting_deform: 起点变形
-            end_deform: 终点变形
-            tensioning_coeff: 张拉系数
-            relaxation_coeff: 松弛系数
+            name (str): 钢束特性名称
+            mat (int): 材料编号
+            val (float): 用户输入的钢束面积
+            pipe (float): 管道直径
+            friction_coeff (float): 摩擦系数
+            deviation_coeff (float): 偏差系数
+            starting_deform (float): 起点变形
+            end_deform (float): 终点变形
+            tensioning_coeff (float): 张拉系数
+            relaxation_coeff (float): 松弛系数
 
         Returns:
             创建的 TendonProp 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_prop_in_area0(
             name, "IN", mat, 0, val, pipe,
             friction_coeff, deviation_coeff, starting_deform,
@@ -1083,26 +1187,29 @@ class TendonPropManager:
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
-        """创建体外钢束特性（按规范输入面积）
+        '''创建体外钢束特性（按规范输入面积）
 
         Args:
-            name: 钢束特性名称
-            mat: 材料编号
-            code: 规范名
+            name (str): 钢束特性名称
+            mat (int): 材料编号
+            code (str): 规范名
                 * GBT5224_2014
                 * GBT20065_2016
-            diameter: 公称直径
-            num: 每束钢束根数
-            pipe: 管道直径
-            friction_coeff: 摩擦系数
-            starting_deform: 起点变形
-            end_deform: 终点变形
-            tensioning_coeff: 张拉系数
-            relaxation_coeff: 松弛系数
+            diameter (float): 公称直径
+            num (int): 每束钢束根数
+            pipe (float): 管道直径
+            friction_coeff (float): 摩擦系数
+            starting_deform (float): 起点变形
+            end_deform (float): 终点变形
+            tensioning_coeff (float): 张拉系数
+            relaxation_coeff (float): 松弛系数
 
         Returns:
             创建的 TendonProp 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_prop_ex_area1(
             name, "EX", mat, 1, code, diameter, num, pipe,
             friction_coeff, starting_deform, end_deform,
@@ -1124,22 +1231,25 @@ class TendonPropManager:
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
-        """创建体外钢束特性（用户输入面积）
+        '''创建体外钢束特性（用户输入面积）
 
         Args:
-            name: 钢束特性名称
-            mat: 材料编号
-            val: 用户输入的钢束面积
-            pipe: 管道直径
-            friction_coeff: 摩擦系数
-            starting_deform: 起点变形
-            end_deform: 终点变形
-            tensioning_coeff: 张拉系数
-            relaxation_coeff: 松弛系数
+            name (str): 钢束特性名称
+            mat (int): 材料编号
+            val (float): 用户输入的钢束面积
+            pipe (float): 管道直径
+            friction_coeff (float): 摩擦系数
+            starting_deform (float): 起点变形
+            end_deform (float): 终点变形
+            tensioning_coeff (float): 张拉系数
+            relaxation_coeff (float): 松弛系数
 
         Returns:
             创建的 TendonProp 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_prop_ex_area0(
             name, "EX", mat, 0, val, pipe,
             friction_coeff, starting_deform, end_deform,
@@ -1161,23 +1271,27 @@ class TendonPropManager:
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
-        """创建先张法钢束特性（按规范输入面积）
+        '''创建先张法钢束特性（按规范输入面积）
 
         Args:
-            name: 钢束特性名称
-            mat: 材料编号
-            code: 规范名
+            name (str): 钢束特性名称
+            mat (int): 材料编号
+            code (str): 规范名
                 * GBT5224_2014
                 * GBT20065_2016
-            diameter: 公称直径
-            num: 每束钢束根数
-            delta_t: 与台座温差
-            tensioning_coeff: 张拉系数
-            relaxation_coeff: 松弛系数
+            diameter (float): 公称直径
+            num (int): 每束钢束根数
+            delta_t (float): 与台座温差
+            pipe (float): 管道直径，PRE 不使用，仅为占位
+            tensioning_coeff (float): 张拉系数
+            relaxation_coeff (float): 松弛系数
 
         Returns:
             创建的 TendonProp 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_prop_pre_area1(
             name, "PRE", mat, 1, code, diameter, num,
             delta_t, tensioning_coeff, relaxation_coeff,
@@ -1196,19 +1310,23 @@ class TendonPropManager:
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
-        """创建先张法钢束特性（用户输入面积）
+        '''创建先张法钢束特性（用户输入面积）
 
         Args:
-            name: 钢束特性名称
-            mat: 材料编号
-            val: 用户输入的钢束面积
-            delta_t: 与台座温差
-            tensioning_coeff: 张拉系数
-            relaxation_coeff: 松弛系数
+            name (str): 钢束特性名称
+            mat (int): 材料编号
+            val (float): 用户输入的钢束面积
+            delta_t (float): 与台座温差
+            pipe (float): 管道直径，PRE 不使用，仅为占位
+            tensioning_coeff (float): 张拉系数
+            relaxation_coeff (float): 松弛系数
 
         Returns:
             创建的 TendonProp 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_prop_pre_area0(
             name, "PRE", mat, 0, val,
             delta_t, tensioning_coeff, relaxation_coeff,
@@ -1218,15 +1336,15 @@ class TendonPropManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除钢束特性
+        '''删除钢束特性
 
         Args:
-            name: 钢束特性名称
+            name (str): 钢束特性名称
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(name)
         raise_if_occupied("TendonProp", deps, name=name)
         ok, err = osis_tendon_prop_del(name)
@@ -1234,15 +1352,15 @@ class TendonPropManager:
             raise RuntimeError(f"删除钢束特性 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> None:
-        """重命名钢束特性
+        '''重命名钢束特性
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
 
         Raises:
             RuntimeError: 重命名失败时抛出异常
-        """
+        '''
         ok, err = osis_tendon_prop_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名钢束特性 {old_name} -> {new_name} 失败: {err}")
@@ -1395,18 +1513,21 @@ class TendonShapeManager:
         element_group: str,
         curve_name: str,
     ) -> TendonShape:
-        """定义钢束形状-3D样条
+        '''定义钢束形状-3D样条
 
         Args:
-            name: 名称
-            n_num: 钢束数量
-            prop: 钢束特性
-            element_group: 作用的单元组
-            curve_name: 样条曲线名称
+            name (str): 名称
+            n_num (int): 钢束数量
+            prop (str): 钢束特性
+            element_group (str): 作用的单元组
+            curve_name (str): 样条曲线名称
 
         Returns:
             创建的 TendonShape 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_shape_spl3d(name, n_num, prop, element_group, "SPL3D", curve_name)
         if not ok:
             raise RuntimeError(f"创建钢束形状 {name} 失败: {err}")
@@ -1420,18 +1541,21 @@ class TendonShapeManager:
         element_group: str,
         curve_name: str,
     ) -> TendonShape:
-        """定义钢束形状-3D圆弧
+        '''定义钢束形状-3D圆弧
 
         Args:
-            name: 名称
-            n_num: 钢束数量
-            prop: 钢束特性
-            element_group: 作用的单元组
-            curve_name: 样条曲线名称
+            name (str): 名称
+            n_num (int): 钢束数量
+            prop (str): 钢束特性
+            element_group (str): 作用的单元组
+            curve_name (str): 样条曲线名称
 
         Returns:
             创建的 TendonShape 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         ok, err = osis_tendon_shape_arc3d(name, n_num, prop, element_group, "ARC3D", curve_name)
         if not ok:
             raise RuntimeError(f"创建钢束形状 {name} 失败: {err}")
@@ -1446,17 +1570,17 @@ class TendonShapeManager:
         e_type: Literal[0, 1],
         *param: str | int | float,
     ) -> TendonShape:
-        """定义钢束形状-2D圆弧
+        '''定义钢束形状-2D圆弧
 
         Args:
-            name: 名称
-            n_num: 钢束数量
-            prop: 钢束特性
-            element_group: 作用的单元组
-            e_type: 参考类型
+            name (str): 名称
+            n_num (int): 钢束数量
+            prop (str): 钢束特性
+            element_group (str): 作用的单元组
+            e_type (int): 参考类型
                 * 0 = 距离
                 * 1 = 坐标
-            param: 参数列表
+            param (list): 参数列表
                 - e_type = 0 时需要填入：
                     竖弯参考位置-梁顶缘线，
                     竖弯样条曲线名称，
@@ -1468,7 +1592,10 @@ class TendonShapeManager:
 
         Returns:
             创建的 TendonShape 对象
-        """
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
         if len(param) == 1 and isinstance(param[0], list):
             plist = list(param[0])  # 兼容手写: create_arc2d(..., 1, [a, b])
         else:
@@ -1481,15 +1608,15 @@ class TendonShapeManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除钢束形状
+        '''删除钢束形状
 
         Args:
-            name: 钢束形状名称
+            name (str): 钢束形状名称
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(name)
         raise_if_occupied("TendonShape", deps, name=name)
         ok, err = osis_tendon_shape_del(name)
@@ -1497,15 +1624,15 @@ class TendonShapeManager:
             raise RuntimeError(f"删除钢束形状 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> None:
-        """重命名钢束形状
+        '''重命名钢束形状
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
 
         Raises:
             RuntimeError: 重命名失败时抛出异常
-        """
+        '''
         ok, err = osis_tendon_shape_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名钢束形状 {old_name} -> {new_name} 失败: {err}")
@@ -1609,12 +1736,18 @@ class TendonManager:
         return self._shape_manager
 
     def count(self):
+        """统计钢束特性和钢束形状的数量
+
+        Returns:
+            dict: 包含 props 和 shapes 计数的字典
+        """
         return {
             "props": self.prop.count(),
             "shapes": self.shape.count()
         }
 
     def clear(self) -> None:
+        """清空所有钢束形状和钢束特性（先清空形状，再清空特性）"""
         self.shape.clear()
         self.prop.clear()
 
@@ -1668,11 +1801,11 @@ class LoadCaseManager:
             scalar: float = 1.0,
             prompt: str | None = None,
     ) -> LoadCase:
-        """创建荷载工况
+        '''创建荷载工况
 
         Args:
-            name: 荷载工况名称
-            load_case_type: 荷载工况类型
+            name (str): 荷载工况名称
+            load_case_type (str): 荷载工况类型
                 USER = 用户定义的荷载
                 CS = 施工阶段荷载
                 D = 结构重力
@@ -1703,27 +1836,30 @@ class LoadCaseManager:
                 CFD = 漂流物的撞击作用
                 CFV = 汽车撞击作用
                 E = 地震作用
-            scalar: 系数，默认1.0
-            prompt: 说明
+            scalar (float): 系数，默认1.0
+            prompt (str): 说明，默认 None
+
+        Returns:
+            创建的 LoadCase 对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
-        """
+        '''
         ok, err = osis_loadcase(name, load_case_type, scalar, prompt)
         if not ok:
             raise RuntimeError(f"创建荷载工况 {name} 失败: {err}")
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除荷载工况
+        '''删除荷载工况
 
         Args:
-            name: 荷载工况名称
+            name (str): 荷载工况名称
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(name)
         raise_if_occupied("LoadCase", deps, name=name)
         ok, err = osis_loadcase_del(name)
@@ -1731,15 +1867,18 @@ class LoadCaseManager:
             raise RuntimeError(f"删除荷载工况 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> LoadCase:
-        """重命名荷载工况
+        '''重命名荷载工况
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
+
+        Returns:
+            重命名后的 LoadCase 对象
 
         Raises:
             RuntimeError: 重命名失败时抛出异常
-        """
+        '''
         ok, err = osis_loadcase_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名荷载工况 {old_name} -> {new_name} 失败: {err}")
@@ -1748,14 +1887,18 @@ class LoadCaseManager:
     # ── 查询 ──────────────────────────────────
 
     def get(self, name: str | list[str]) -> LoadCase | list[LoadCase | None] | None:
-        """根据名称获取单个或多个荷载工况
+        '''根据名称获取单个或多个荷载工况
 
         Args:
-            name: 荷载工况名称
+            name (str|list): 荷载工况名称，支持单个名称或名称列表
 
         Returns:
             LoadCase 对象或数组；工况不存在返回 None
-        """
+
+        Raises:
+            TypeError: 名称类型不支持时抛出
+            RuntimeError: 接口调用失败时抛出
+        '''
 
         if isinstance(name, list):
             names = [str(x) for x in name]

@@ -227,7 +227,25 @@ class Section:
             offset_type_z: Literal["Top", "Center", "Bottom", "Manual"] = "Center",
             offset_value_z: float = 0.0,
     ) -> None:
-        """设置截面偏移。"""
+        '''设置截面偏移。
+
+        Args:
+            offset_type_y (str): Y方向偏移类型
+                * Left: 左对齐
+                * Middle: 居中对齐
+                * Right: 右对齐
+                * Manual: 手动指定偏移值
+            offset_value_y (float): Y方向偏移值（单位：m）。仅当 offset_type_y 为 "Manual" 时生效
+            offset_type_z (str): Z方向偏移类型
+                * Top: 顶部对齐
+                * Center: 居中对齐
+                * Bottom: 底部对齐
+                * Manual: 手动指定偏移值
+            offset_value_z (float): Z方向偏移值（单位：m）。仅当 offset_type_z 为 "Manual" 时生效
+
+        Raises:
+            RuntimeError: 设置失败时抛出
+        '''
         ok, err = osis_section_offset(
             self.no, offset_type_y, offset_value_y, offset_type_z, offset_value_z
         )
@@ -239,13 +257,27 @@ class Section:
             mesh_method: Literal[0, 1] = 0,
             mesh_size: float = 0.0,
     ) -> None:
-        """设置截面网格。"""
+        '''设置截面网格。
+
+        Args:
+            mesh_method (int): 网格划分方式
+                * 0 = 自动划分
+                * 1 = 手动划分
+            mesh_size (float): 网格划分尺寸，在 mesh_method=1 时起作用
+
+        Raises:
+            RuntimeError: 设置失败时抛出
+        '''
         ok, err = osis_section_mesh(self.no, mesh_method, mesh_size)
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 网格失败: {err}")
 
     def export_pic(self):
-        """生成截面图片，会在 image/section/ 目录下生成一张 {nSec}.jpg"""
+        '''生成截面图片，会在 image/section/ 目录下生成一张 {nSec}.jpg
+
+        Raises:
+            RuntimeError: 导出失败时抛出
+        '''
         ok, err = osis_export_section_pic(self.no)
         if not ok:
             raise RuntimeError(f"导出截面 {self.no} 图片失败: {err}")
@@ -260,7 +292,22 @@ class Section:
             contour_matrix: str,
             contour_width: str,
     ) -> None:
-        """添加自定义组合截面面域分部"""
+        '''添加自定义组合截面面域分部
+
+        Args:
+            part_index (int): Part 编号
+            part_mat_type (str): 分部材料类型
+                * Concrete = 混凝土，可布置钢筋
+                * Steel = 钢，不可布置钢筋
+            part_e (float): 分部弹性模量
+            part_mu (float): 分部泊松比
+            part_density (float): 分部重度
+            contour_matrix (str): 轮廓点矩阵，大小为 n*3，n 为点的个数，第一列为点所在的轮廓线编号，第二列为点的 x 坐标，第三列为点的 y 坐标
+            contour_width (str): 轮廓线宽度矩阵，大小为 n*1，n 为轮廓线数量
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_section_part_polygon(
             self.no, part_index, part_mat_type,
             part_e, part_mu, part_density, "Polygon",
@@ -282,7 +329,23 @@ class Section:
             line_matrix: str,
             width_matrix: str,
     ) -> None:
-        """添加自定义组合截面线域分部。"""
+        '''添加自定义组合截面线域分部。
+
+        Args:
+            part_index (int): Part 编号
+            part_mat_type (str): 分部材料类型
+                * Concrete = 混凝土，可布置钢筋
+                * Steel = 钢，不可布置钢筋
+            part_e (float): 分部弹性模量
+            part_mu (float): 分部泊松比
+            part_density (float): 分部重度
+            point_matrix (str): n 行 3 列，几何点矩阵，每行第一个元素为点的编号，第二个元素为点的 x 坐标，第三个元素为点的 y 坐标
+            line_matrix (str): n 行 2 列，几何线矩阵，第一列为点所在的轮廓线编号，第二列为点的编号
+            width_matrix (str): n 行 1 列，轮廓线宽度矩阵，n 为轮廓线数量
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_section_part_line(
             self.no, part_index, part_mat_type,
             part_e, part_mu, part_density, "Line",
@@ -467,7 +530,22 @@ class Section:
         interval: float,
         diameter: str,
         ) -> None:
-        """添加纵向钢筋（圆形输入）"""
+        '''添加纵向钢筋（圆形输入）
+
+        Args:
+            rebar_no (int): 钢筋编号
+            material_no (int): 钢筋材料编号
+            center_y (float): 圆心 Y 坐标
+            center_z (float): 圆心 Z 坐标
+            radius (float): 圆的半径
+            method (int): 1=输入数量，0=输入间距
+            num (int): 数量
+            interval (float): 间距
+            diameter (str): 钢筋直径，范围 D4-D50
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rebar_l_circle(
             self.no, rebar_no, "Circle", material_no,
             center_y, center_z, radius,
@@ -485,7 +563,17 @@ class Section:
         area: float,
         angle: float,
     ) -> None:
-        """添加弯起钢筋"""
+        '''添加弯起钢筋
+
+        Args:
+            material_no (int): 钢筋材料编号
+            interval (float): 间距
+            area (float): 面积
+            angle (float): 角度
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rebar_s_bent_up(self.no, "BentUpRebar", material_no, interval, area, angle)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 弯起钢筋失败: {err}")
@@ -496,7 +584,16 @@ class Section:
         interval: float,
         area: float,
     ) -> None:
-        """添加抗剪箍筋"""
+        '''添加抗剪箍筋
+
+        Args:
+            material_no (int): 钢筋材料编号
+            interval (float): 间距
+            area (float): 面积
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rebar_s_shear_stirrup(self.no, "ShearStirrup", material_no, interval, area)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 抗剪箍筋失败: {err}")
@@ -510,7 +607,19 @@ class Section:
         effective_stress: float,
         reduction_factor: float,
     ) -> None:
-        """添加腹板竖筋"""
+        '''添加腹板竖筋
+
+        Args:
+            material_no (int): 钢筋材料编号
+            interval (float): 间距
+            area (float): 面积
+            angle (float): 角度
+            effective_stress (float): 有效应力
+            reduction_factor (float): 折减系数
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rebar_s_web_vertical(
             self.no, "WebVerticalRebar", material_no,
             interval, area, angle, effective_stress, reduction_factor,
@@ -525,7 +634,17 @@ class Section:
         longi_area: float,
         stirrup_area: float,
     ) -> None:
-        """添加扭转箍筋"""
+        '''添加扭转箍筋
+
+        Args:
+            material_no (int): 钢筋材料编号
+            interval (float): 间距
+            longi_area (float): 纵筋面积
+            stirrup_area (float): 箍筋面积
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rebar_s_torsional_stirrup(
             self.no, "TorsionalStirrup", material_no,
             interval, longi_area, stirrup_area,
@@ -614,7 +733,16 @@ class Section:
         h: float,
         t: float,
     ) -> None:
-        """添加扁平加劲肋"""
+        '''添加扁平加劲肋
+
+        Args:
+            str_name (str): 加劲肋名称
+            h (float): 加劲肋高度
+            t (float): 加劲肋厚度
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rib_flat(self.no, "Flat", str_name, h, t)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} 扁平加劲肋 {str_name} 失败: {err}")
@@ -627,7 +755,18 @@ class Section:
         t1: float,
         t2: float,
     ) -> None:
-        """添加 T 形加劲肋"""
+        '''添加 T 形加劲肋
+
+        Args:
+            str_name (str): 加劲肋名称
+            h (float): 加劲肋高度
+            b (float): 加劲肋宽度
+            t1 (float): 竖肋厚度
+            t2 (float): 横肋厚度
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rib_t(self.no, "T", str_name, h, b, t1, t2)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} T形加劲肋 {str_name} 失败: {err}")
@@ -641,7 +780,19 @@ class Section:
         t: float,
         r: float,
     ) -> None:
-        """添加 U 形加劲肋"""
+        '''添加 U 形加劲肋
+
+        Args:
+            str_name (str): 加劲肋名称
+            h (float): 加劲肋高度
+            b1 (float): 加劲肋上端宽度
+            b2 (float): 加劲肋下端宽度
+            t (float): 加劲肋厚度
+            r (float): 加劲肋转角处圆弧半径
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rib_u(self.no, "U", str_name, h, b1, b2, t, r)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} U形加劲肋 {str_name} 失败: {err}")
@@ -655,7 +806,19 @@ class Section:
         t: float = 0.01,
         r: float = 0.01,
     ) -> None:
-        """添加 L 形加劲肋"""
+        '''添加 L 形加劲肋
+
+        Args:
+            str_name (str): 加劲肋名称
+            type (str): 加劲肋方向，LL = 左向L形，LR = 右向L形
+            h (float): 加劲肋高度
+            b (float): 加劲肋宽度
+            t (float): 加劲肋厚度
+            r (float): 加劲肋转角处圆弧半径
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+        '''
         ok, err = osis_rib_l(self.no, type, str_name, h, b, t, r)
         if not ok:
             raise RuntimeError(f"添加截面 {self.no} L形加劲肋 {str_name} 失败: {err}")
@@ -723,31 +886,44 @@ class Section:
 
 
     def delete_rebar_s(self, rebar_type: Literal["BentUpRebar", "ShearStirrup", "WebVerticalRebar", "TorsionalStirrup"]) -> None:
-        """删除箍筋
+        '''删除箍筋
 
         Args:
-            rebar_type (str): 钢筋类型，BentUpRebar=弯起钢筋，ShearStirrup=抗剪箍筋，WebVerticalRebar=腹板竖筋，TorsionalStirrup=扭转箍筋。
-        """
+            rebar_type (str): 钢筋类型
+                * BentUpRebar = 弯起钢筋
+                * ShearStirrup = 抗剪箍筋
+                * WebVerticalRebar = 腹板竖筋
+                * TorsionalStirrup = 扭转箍筋
+
+        Raises:
+            RuntimeError: 删除失败时抛出
+        '''
         ok, err = osis_rebar_s_del(self.no, rebar_type)
         if not ok:
             raise RuntimeError(f"删除截面 {self.no} 箍筋 {rebar_type} 失败: {err}")
 
     def delete_rebar_l(self, n_rebar_no: int) -> None:
-        """删除纵向钢筋
+        '''删除纵向钢筋
 
         Args:
-            n_rebar_no: 钢筋编号
-        """
+            n_rebar_no (int): 钢筋编号
+
+        Raises:
+            RuntimeError: 删除失败时抛出
+        '''
         ok, err = osis_rebar_l_del(self.no, n_rebar_no)
         if not ok:
             raise RuntimeError(f"删除截面 {self.no} 纵向钢筋 {n_rebar_no} 失败: {err}")
-        
+
     def delete_rib(self, str_name: str) -> None:
-        """删除加劲肋
+        '''删除加劲肋
 
         Args:
-            str_name: 加劲肋名称
-        """
+            str_name (str): 加劲肋名称
+
+        Raises:
+            RuntimeError: 删除失败时抛出
+        '''
         ok, err = osis_rib_del(self.no, str_name)
         if not ok:
             raise RuntimeError(f"删除截面 {self.no} 加劲肋 {str_name} 失败: {err}")
@@ -768,19 +944,38 @@ class Section:
             ],
             layout_no: int,
     ) -> None:
-        """删除加劲肋布置信息
+        '''删除加劲肋布置信息
 
         Args:
-            girder_type: 钢梁类型
-            plate_type: 板件所在位置
-            layout_no: 加劲肋布置信息的编号
-        """
+            girder_type (str): 钢梁类型
+                * STEELISIDE = 组合梁的边工字钢梁
+                * STEELIMIDDLE = 组合梁的中工字钢梁
+                * STEELBOX = 组合梁的钢箱梁
+                * STEELTROUGH = 组合梁的槽型钢梁
+                * STEEL = 一般钢梁截面
+            plate_type (str): 板件所在位置
+                * 顶板：TopFlange、TopFlange1~TopFlange5
+                * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5
+                * 底板：BottomFlange、BottomFlange1~BottomFlange5
+                * 斜底板：BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined5
+                * 边腹板：SideWeb、SideWebL、SideWebR
+                * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
+                * 无加劲肋的板件：PlateWithoutRib
+            layout_no (int): 加劲肋布置信息的编号
+
+        Raises:
+            RuntimeError: 删除失败时抛出
+        '''
         ok, err = osis_rib_layout_del(self.no, girder_type, plate_type, layout_no)
         if not ok:
             raise RuntimeError(f"删除截面 {self.no} 加劲肋布置 {layout_no} 失败: {err}")
 
     def clear_ribs(self) -> None:
-        """删除截面加劲肋及加劲肋布置信息"""
+        '''删除截面加劲肋及加劲肋布置信息
+
+        Raises:
+            RuntimeError: 清除失败时抛出
+        '''
         ok, err = osis_clear_section_rib(self.no, self.name)
         if not ok:
             raise RuntimeError(f"清除截面 {self.no} 加劲肋失败: {err}")
@@ -845,11 +1040,14 @@ class Section:
             raise RuntimeError(f"添加截面 {self.no} 板件 {plate_position} 失败: {err}")
 
     def renumber(self, new_no: int) -> None:
-        """修改截面编号
+        '''修改截面编号
 
         Args:
-            new_no: 新截面编号
-        """
+            new_no (int): 新截面编号
+
+        Raises:
+            RuntimeError: 修改失败时抛出
+        '''
         ok, err = osis_section_mod(self.no, new_no)
         if not ok:
             raise RuntimeError(f"修改截面编号 {self.no} -> {new_no} 失败: {err}")
@@ -2293,8 +2491,22 @@ class SectionManager:
         base_e: float,
         base_mu: float,
     ) -> Section:
+        '''创建自定义组合截面（COMPOSITECUSTOM）。
+
+        Args:
+            no (int|None): 截面编号，不填则自动分配
+            name (str): 截面名
+            part_num (int): 截面分部数量
+            base_e (float): 基准材料的弹性模量
+            base_mu (float): 基准材料的泊松比
+
+        Returns:
+            创建的 Section 对象
+
+        Raises:
+            RuntimeError: 暂不支持创建自定义组合截面
+        '''
         raise RuntimeError(f"暂不支持创建自定义组合截面")
-        """创建自定义组合截面（COMPOSITECUSTOM）。"""
         if no is None:
             no = self._next_no()
         ok, err = osis_section_composite_custom(
@@ -2334,12 +2546,15 @@ class SectionManager:
         return self.get(no)
 
     def delete(self, no: int) -> None:
-        """删除截面
+        '''删除截面
+
+        Args:
+            no (int): 截面编号
 
         Raises:
             DependencyError: 存在依赖项时
             RuntimeError: 删除失败时抛出异常
-        """
+        '''
         deps = self.get_dependencies(no)
         raise_if_occupied("Section", deps, no=no)
         ok, err = osis_section_del(no)
@@ -2347,7 +2562,15 @@ class SectionManager:
             raise RuntimeError(f"删除截面 {no} 失败: {err}")
 
     def renumber(self, old_no: int, new_no: int) -> None:
-        """修改截面编号"""
+        '''修改截面编号
+
+        Args:
+            old_no (int): 旧截面编号
+            new_no (int): 新截面编号
+
+        Raises:
+            RuntimeError: 修改失败时抛出
+        '''
         ok, err = osis_section_mod(old_no, new_no)
         if not ok:
             raise RuntimeError(f"修改截面编号 {old_no} -> {new_no} 失败: {err}")
@@ -2355,7 +2578,19 @@ class SectionManager:
     # ── 查询 ──────────────────────────────────
 
     def get(self, no: int | list[int], expected_cls: type[Section] = Section) -> None | Section | list[Section | None]:
-        """根据编号获取单个或多个截面 (O(k))"""
+        '''根据编号获取单个或多个截面 (O(k))
+
+        Args:
+            no (int|list): 截面编号或编号列表
+            expected_cls (type[Section]): 期望的 Section 子类类型
+
+        Returns:
+            单个 Section 对象或对象列表；不存在返回 None
+
+        Raises:
+            TypeError: 不支持的编号类型
+            RuntimeError: 接口调用失败时抛出
+        '''
         if isinstance(no, int):
             no = [no]
         elif isinstance(no, list):
@@ -2373,15 +2608,23 @@ class SectionManager:
         return secs
 
     def all(self) -> list[Section]:
-        """获取所有截面"""
+        '''获取所有截面
+
+        Returns:
+            全部 Section 对象列表
+        '''
         return self._load()
 
     def count(self) -> int:
-        """获取截面总数"""
+        '''获取截面总数
+
+        Returns:
+            截面数量
+        '''
         return len(self._load())
 
     def clear(self)->None:
-        """清空所有截面"""
+        '''清空所有截面'''
         try:
             [self.delete(s.no) for s in self.all()]
         except Exception as e:

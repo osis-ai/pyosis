@@ -278,14 +278,14 @@ class ElementGroupManager:
         ...
 
     def _load(self) -> list[ElementGroup]:
-        """从服务端加载所有单元组信息"""
+        '''从服务端加载所有单元组信息'''
         resp = osis_client("GetAllElementGroupInfo", {})
         if not resp["success"]:
             raise RuntimeError(resp["error"])
-        
+
         groups = [
-            ElementGroup._from_dict(d) 
-            for d in resp.get("data", []) 
+            ElementGroup._from_dict(d)
+            for d in resp.get("data", [])
             if isinstance(d, dict) and "groupName" in d
         ]
         return groups
@@ -317,11 +317,11 @@ class ElementGroupManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除单元组
+        '''删除单元组
 
         Args:
             name: 单元组名称
-        """
+        '''
         ok, err = osis_element_group(name, "d")
         if not ok:
             raise RuntimeError(f"删除单元组 {name} 失败: {err}")
@@ -329,29 +329,30 @@ class ElementGroupManager:
     # ── 查询 ──────────────────────────────────
 
     def get(self, name: str | list[str]) -> ElementGroup | list[ElementGroup | None] | None:
-        """根据名称获取单个或多个单元组
+        '''根据名称获取单个或多个单元组
+
+        内部调用接口 GetElementGroupInfoByNames。
 
         Args:
             name: 单元组名称，支持单个名称或名称列表
 
         Returns:
-            单个 ElementGroup 对象；如果传入列表则返回对象列表；
+            单个 ElementGroup 对象；如果传入列表则按顺序返回对象列表；
             不存在返回 None
-        """
-
+        '''
         if isinstance(name, list):
             names = [str(x) for x in name]
         else:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        
+
         resp = osis_client("GetElementGroupInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
-        
+
         element_groups = [ElementGroup._from_dict(d) if d else None for d in resp.get("data", [])]
-        
+
         if len(element_groups) == 0:
             return None
         elif len(element_groups) == 1:
@@ -375,7 +376,10 @@ class ElementGroupManager:
         return len(self._load())
 
     def clear(self)->None:
-        """清空所有单元组"""
+        '''清空所有单元组
+
+        逐个删除服务端的所有单元组；若任一单元组被占用则抛出异常。
+        '''
         try:
             [self.delete(eg.name) for eg in self.all()]
         except Exception as e:
@@ -395,7 +399,7 @@ class TaperEleGroupManager:
     def __init__(self) -> None:
         ...
     def _load(self) -> list[TaperEleGroup]:
-        """从服务端加载所有变截面单元组信息"""
+        '''从服务端加载所有变截面单元组信息'''
         resp = osis_client("GetAllTaperEleGroupInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -463,24 +467,42 @@ class TaperEleGroupManager:
         return self.get(name)
 
     def delete(self, name: str) -> None:
+        '''删除变截面单元组
+
+        Args:
+            name: 变截面单元组名称
+        '''
         ok, err = osis_tapereledel(name)
         if not ok:
             raise RuntimeError(f"删除变截面单元组 {name} 失败: {err}")
 
     def rename(self, old_name: str, new_name: str) -> TaperEleGroup:
+        '''重命名变截面单元组
+
+        Args:
+            old_name: 旧名称
+            new_name: 新名称
+
+        Returns:
+            重命名后的 TaperEleGroup 对象
+        '''
         ok, err = osis_taperelemod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"重命名变截面单元组 {old_name} -> {new_name} 失败: {err}")
         return self.get(new_name)
 
     def get(self, name: str | list[str]) -> TaperEleGroup | list[TaperEleGroup | None] | None:
-        """根据名称获取变截面单元组
+        '''根据名称获取变截面单元组
+
+        内部调用接口 GetTaperEleGroupInfoByNames。
+
         Args:
-            name: 变截面单元组名称
             name: 变截面单元组名称，支持单个名称或名称列表
+
         Returns:
-            TaperEleGroup | list[TaperEleGroup | None]: 变截面单元组对象
-        """
+            单个 TaperEleGroup 对象；如果传入列表则按顺序返回对象列表；
+            不存在返回 None
+        '''
 
         if isinstance(name, list):
             names = [str(x) for x in name]
@@ -507,7 +529,10 @@ class TaperEleGroupManager:
         return self._load()
 
     def clear(self)->None:
-        """清空所有变截面单元组"""
+        '''清空所有变截面单元组
+
+        逐个删除服务端的所有变截面单元组；若任一被占用则抛出异常。
+        '''
         try:
             [self.delete(tegroup.name) for tegroup in self.all()]
         except Exception as e:
@@ -548,7 +573,7 @@ class ElementManager:
     # ── 数据加载 ──────────────────────────────
 
     def _load(self) -> list[Element]:
-        """从服务端加载所有单元信息"""
+        '''从服务端加载所有单元信息'''
         resp = osis_client("GetAllElementInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -558,15 +583,22 @@ class ElementManager:
         return elements
 
     def _next_no(self) -> int:
-        """生成下一个可用单元编号"""
-        elements = self._load()        
+        '''返回下一个可用的单元编号（当前最大编号 + 1，空模型为 1）'''
+        elements = self._load()
         if len(elements) == 0:
             return 1
         ele_no = [ele.no for ele in elements]
         return max(ele_no) + 1
 
     def get_dependencies(self, no: int) -> dict[str, list]:
-        """查询单元被谁引用"""
+        '''查询单元被哪些对象引用（用于删除前检查占用情况）
+
+        Args:
+            no: 单元编号
+
+        Returns:
+            dict[str, list]: 依赖项字典，键为引用类型，值为引用编号列表
+        '''
         return get_references("Element", no=no)
 
     # ── 增删改 ────────────────────────────────
@@ -616,7 +648,37 @@ class ElementManager:
         dTheta: float = 0,
         bWarping: bool = 0,
     ) -> Element:
-        """创建梁柱单元"""
+        '''创建梁柱单元
+
+        在两个节点之间建立梁柱单元（BEAM3D），可独立设置 I/J 端截面、
+        材料、轴向转角以及翘曲效应等参数。
+
+        Args:
+            no: 单元编号，None 时自动分配
+            node1: 节点1编号
+            node2: 节点2编号
+            nMat: 材料编号
+            nSec1: I 端截面1编号
+            nSec2: J 端截面2编号
+            nYTrans: y 轴截面变化次方，可选值：1, 2, 3, 4
+            nZTrans: z 轴截面变化次方，可选值：1, 2, 3, 4
+            dStrain: 应变值，默认为 0.0
+            bFlag: 轴向转角定义方式：
+                * 0: 使用 beta 角定义
+                * 1: 使用关键点定义
+            dTheta: 轴向转角参数：
+                * bFlag=0 时: 轴向转角（beta 角）
+                * bFlag=1 时: 关键点
+            bWarping: 翘曲效应标志：
+                * 1: 考虑翘曲
+                * 0: 不考虑翘曲
+
+        Returns:
+            Element 对象
+
+        Examples:
+            >>> element_manager.create_beam3d(None, 1, 2, nMat=1, nSec1=1, nSec2=1)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_element_beam3d(
@@ -637,7 +699,25 @@ class ElementManager:
         nSec2: int,
         dStrain: float = 0.0,
     ) -> Element:
-        """创建桁架单元"""
+        '''创建桁架单元
+
+        在两个节点之间建立仅承受轴力的桁架单元（TRUSS）。
+
+        Args:
+            no: 单元编号，None 时自动分配
+            node1: 节点1编号
+            node2: 节点2编号
+            nMat: 材料编号
+            nSec1: I 端截面1编号
+            nSec2: J 端截面2编号
+            dStrain: 应变值，默认为 0.0
+
+        Returns:
+            Element 对象
+
+        Examples:
+            >>> element_manager.create_truss(None, 1, 2, nMat=1, nSec1=1, nSec2=1)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_element_truss(no, "TRUSS", node1, node2, nMat, nSec1, nSec2, dStrain)
@@ -659,7 +739,43 @@ class ElementManager:
         rz: float = 10,
         beta: float = 0.0,
     ) -> Element:
-        """创建弹簧单元"""
+        '''创建弹簧单元
+
+        在两个节点之间建立弹簧单元（SPRING），支持线性弹簧或非线性弹簧。
+
+        Args:
+            no: 单元编号，None 时自动分配
+            node1: 节点1编号
+            node2: 节点2编号
+            bLinear: 弹簧类型标志：
+                * 1: 线性弹簧
+                * 0: 非线性弹簧
+            dx: x 方向自由度参数：
+                * 线性弹簧 (bLinear=1): 局部坐标系下 dx 方向的刚度值
+                * 非线性弹簧 (bLinear=0): 局部坐标系下 dx 方向的力-位移曲线编号（PUCurve 定义）
+            dy: y 方向自由度参数：
+                * 线性弹簧 (bLinear=1): 局部坐标系下 dy 方向的刚度值
+                * 非线性弹簧 (bLinear=0): 局部坐标系下 dy 方向的力-位移曲线编号（PUCurve 定义）
+            dz: z 方向自由度参数：
+                * 线性弹簧 (bLinear=1): 局部坐标系下 dz 方向的刚度值
+                * 非线性弹簧 (bLinear=0): 局部坐标系下 dz 方向的力-位移曲线编号（PUCurve 定义）
+            rx: 绕 x 轴旋转自由度参数：
+                * 线性弹簧 (bLinear=1): 局部坐标系下 rx 方向的刚度值
+                * 非线性弹簧 (bLinear=0): 局部坐标系下 rx 方向的力-位移曲线编号（PUCurve 定义）
+            ry: 绕 y 轴旋转自由度参数：
+                * 线性弹簧 (bLinear=1): 局部坐标系下 ry 方向的刚度值
+                * 非线性弹簧 (bLinear=0): 局部坐标系下 ry 方向的力-位移曲线编号（PUCurve 定义）
+            rz: 绕 z 轴旋转自由度参数：
+                * 线性弹簧 (bLinear=1): 局部坐标系下 rz 方向的刚度值
+                * 非线性弹簧 (bLinear=0): 局部坐标系下 rz 方向的力-位移曲线编号（PUCurve 定义）
+            beta: 轴向转角（beta 角），默认为 0.0
+
+        Returns:
+            Element 对象
+
+        Examples:
+            >>> element_manager.create_spring(None, 1, 2, bLinear=1)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_element_spring(
@@ -679,7 +795,35 @@ class ElementManager:
         method: Literal["UL", "IF", "HF", "VF", "IS"] = "UL",
         para: float = 10.0,
     ) -> Element:
-        """创建拉索单元"""
+        '''创建拉索单元
+
+        在两个节点之间建立拉索单元（CABLE），可通过不同方法控制拉索参数。
+
+        Args:
+            no: 单元编号，None 时自动分配
+            node1: 节点1编号
+            node2: 节点2编号
+            mat: 材料编号
+            sec: 截面编号
+            method: 拉索参数定义方法，可选值：
+                * UL: 无应力长度控制
+                * IF: 初拉力控制
+                * HF: 水平力控制
+                * VF: 竖向力控制
+                * IS: 初应变控制
+            para: 拉索参数值，根据 method 的不同代表：
+                * UL: 无应力长度
+                * IF: 初拉力大小
+                * HF: 水平力大小
+                * VF: 竖向力大小
+                * IS: 初应变值
+
+        Returns:
+            Element 对象
+
+        Examples:
+            >>> element_manager.create_cable(None, 1, 2, mat=1, sec=1, method="UL", para=10.0)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_element_cable(no, "CABLE", node1, node2, mat, sec, method, para)
@@ -698,11 +842,31 @@ class ElementManager:
             node3: int,
             node4: int | None = None,
     ) -> Element:
-        """创建壳单元
+        '''创建壳单元
 
-        参数顺序与 OSIS 命令一致：
-            Element,no,SHELL,is_thin,mat,thk,node1,node2,node3[,node4]
-        """
+        在 3 个或 4 个节点之间建立壳单元（SHELL）。
+        参数顺序与 OSIS 命令流完全一致：
+        Element, no, SHELL, is_thin, mat, thk, node1, node2, node3[, node4]
+
+        Args:
+            no: 单元编号，None 时自动分配
+            is_thin: 0 = 厚壳，1 = 薄壳
+            mat: 材料编号
+            thk: 厚度编号
+            node1: 节点1编号
+            node2: 节点2编号
+            node3: 节点3编号
+            node4: 节点4编号，可缺省（三节点三角形壳）
+
+        Returns:
+            Element 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> element_manager.create_shell(None, True, mat=1, thk=1, node1=1, node2=2, node3=3, node4=4)
+        '''
         if no is None:
             no = self._next_no()
         ok, err = osis_element_shell(
@@ -726,7 +890,17 @@ class ElementManager:
             raise RuntimeError(f"删除单元 {no} 失败: {err}")
 
     def renumber(self, old_no: int, new_no: int) -> None:
-        """修改单元编号"""
+        '''修改单元编号
+
+        若 new_no 已存在则交换两者的编号。
+
+        Args:
+            old_no: 旧编号
+            new_no: 新编号
+
+        Returns:
+            修改后的 Element 对象（new_no 对应的单元）
+        '''
         ok, err = osis_element_mod(old_no, new_no)
         if not ok:
             raise RuntimeError(f"修改单元编号 {old_no} -> {new_no} 失败: {err}")
@@ -764,7 +938,17 @@ class ElementManager:
     # ── 查询 ──────────────────────────────────
 
     def get(self, no: int | list[int]) -> Element | list[Element | None] | None:
-        """根据编号获取单个或多个单元 (O(k))"""
+        '''根据编号获取单个或多个单元（O(k)）
+
+        内部调用接口 GetElementInfoByNos。
+
+        Args:
+            no: 单元编号，支持单个 int 或编号列表
+
+        Returns:
+            单个 Element 对象；如果传入列表则按顺序返回对象列表；
+            不存在返回 None
+        '''
         if isinstance(no, int):
             no = [no]
         elif isinstance(no, list):
@@ -781,18 +965,23 @@ class ElementManager:
         elif len(eles) == 1:   # 只查了一个
             return eles[0]
         return eles
-    
+
     def all(self) -> list[Element]:
-        """获取所有单元"""
+        '''获取所有单元'''
         elements  = self._load()
         return elements
 
     def count(self) -> int:
-        """获取单元总数"""
+        '''获取单元总数'''
         elements = self._load()
         return len(elements)
 
     def clear(self)->None:
+        '''清空所有单元
+
+        同时清空单元组、变截面单元组以及所有单元本身；
+        若任一项被占用则抛出异常。
+        '''
         try:
             self.group.clear()
             self.taper_group.clear()

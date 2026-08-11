@@ -85,7 +85,7 @@ class Settlement:
         )
 
     def _sync_from_dict(self, d: dict) -> None:
-        """用 dict 同步当前对象（内部使用）"""
+        """用接口返回的 dict 同步当前对象属性（内部使用）"""
         self.no = d.get("no")
         self.name = d.get("name")
         self.analysis_type = d.get("analysisType")
@@ -96,7 +96,14 @@ class Settlement:
         # self.groups = [SettlementGroup._from_dict(g) for g in d.get("groups", []) if isinstance(g, dict)]
 
     def refresh(self) -> Settlement:
-        """刷新当前沉降工况数据并同步到对象属性"""
+        """从服务端刷新当前沉降工况数据并同步到对象属性
+
+        Returns:
+            刷新后的 Settlement 对象（链式调用）
+
+        Raises:
+            RuntimeError: 刷新失败时抛出异常
+        """
         resp = osis_client("GetSettlementInfoByNames", {"name": [self.name]})
         if not resp['success']:
             raise RuntimeError(f"刷新沉降工况 {self.name} 失败: {resp['error']}")
@@ -106,14 +113,22 @@ class Settlement:
         return self
 
     def include(self, op:Literal["a", "r"], *group_names: str) -> Settlement:
-        """将沉降组添加至当前工况
+        """向当前沉降工况添加或移除沉降组
 
         Args:
-            op: 操作
-            group_names: 沉降组名称列表
+            op (str): 操作类型，"a"=添加，"r"=移除
+            *group_names (str): 一个或多个沉降组名称
 
         Returns:
-            更新后的 Settlement 对象
+            更新后的 Settlement 对象（链式调用）
+
+        Examples:
+            >>> s = settlement_manager.get("S1")
+            >>> s.include("a", "N1", "N2")  # 向 S1 添加沉降组 N1, N2
+            >>> s.include("r", "N1")        # 从 S1 移除沉降组 N1
+
+        Notes:
+            - 使用前需先通过 create() 创建沉降荷载工况
         """
         if not group_names:
             return self
@@ -123,13 +138,13 @@ class Settlement:
         return self.refresh()
 
     def remove(self, *group_names: str) -> Settlement:
-        """从当前工况移除沉降组
+        """从当前沉降工况移除一个或多个沉降组
 
         Args:
-            group_names: 沉降组名称列表
+            *group_names (str): 一个或多个沉降组名称
 
         Returns:
-            更新后的 Settlement 对象
+            更新后的 Settlement 对象（链式调用）
         """
         if not group_names:
             return self
@@ -178,12 +193,24 @@ class SettlementGroupManager:
         """创建或修改沉降组
 
         Args:
-            name: 组名
-            val: 沉降量
-            nodes: 沉降节点列表，创建时必须指定至少一个节点
+            name (str): 组名
+            val (float): 沉降量
+            *nodes (int): 沉降节点列表，创建时必须指定至少一个节点
 
         Returns:
-            创建的 SettlementGroup 对象
+            返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+
+        Examples:
+            >>> # 创建包含节点 1, 2 的沉降组
+            >>> sg = settlement_manager.group.create("N1", -0.001, 1, 2)
+            >>> # 修改沉降组为只包含节点 1（相当于删除节点 2）
+            >>> sg = settlement_manager.group.create("N1", -0.001, 1)
+
+        Notes:
+            - 创建时必须指定节点，不能仅指定名称和沉降量
+            - 重复使用同名组会修改现有沉降组
         """
         ok, err = osis_setl_grp(name, val, *nodes)
         if not ok:
@@ -194,7 +221,12 @@ class SettlementGroupManager:
         """删除沉降组
 
         Args:
-            name: 组名
+            name (str): 组名
+
+        Returns:
+            返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
         """
         ok, err = osis_setl_grp_del(name)
         if not ok:
@@ -204,8 +236,13 @@ class SettlementGroupManager:
         """修改沉降组名称
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
+
+        Returns:
+            返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
         """
         ok, err = osis_setl_grp_mod(old_name, new_name)
         if not ok:
@@ -215,11 +252,15 @@ class SettlementGroupManager:
         """根据名称获取单个或多个沉降组
 
         Args:
-            name: 沉降组名称，支持单个名称或名称列表
+            name (str | list[str]): 沉降组名称，支持单个名称或名称列表
 
         Returns:
-            单个 SettlementGroup 对象；如果传入列表则返回对象列表；
-            不存在返回 None
+            SettlementGroup | list[SettlementGroup | None] | None:
+                单个 SettlementGroup 对象；如果传入列表则返回对象列表；
+                不存在返回 None
+
+        Raises:
+            RuntimeError: 查询失败时抛出异常
         """
         if isinstance(name, list):
             names = [str(x) for x in name]
@@ -301,10 +342,12 @@ class SettlementManager:
         """创建沉降荷载工况
 
         Args:
-            name: 沉降荷载工况名称
+            name (str): 沉降荷载工况名称
 
         Returns:
-            创建的 Settlement 对象
+            返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
         """
         ok, err = osis_setl_anal(name)
         if not ok:
@@ -315,7 +358,12 @@ class SettlementManager:
         """删除沉降荷载工况
 
         Args:
-            name: 沉降荷载工况名称
+            name (str): 沉降荷载工况名称
+
+        Returns:
+            返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
         """
         ok, err = osis_setl_anal_del(name)
         if not ok:
@@ -325,8 +373,13 @@ class SettlementManager:
         """修改沉降荷载工况名称
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
+            old_name (str): 旧名称
+            new_name (str): 新名称
+
+        Returns:
+            返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
         """
         ok, err = osis_setl_anal_mod(old_name, new_name)
         if not ok:
@@ -336,11 +389,15 @@ class SettlementManager:
         """根据名称获取单个或多个沉降工况
 
         Args:
-            name: 沉降荷载工况名称，支持单个名称或名称列表
+            name (str | list[str]): 沉降荷载工况名称，支持单个名称或名称列表
 
         Returns:
-            单个 Settlement 对象；如果传入列表则返回对象列表；
-            不存在返回 None
+            Settlement | list[Settlement | None] | None:
+                单个 Settlement 对象；如果传入列表则返回对象列表；
+                不存在返回 None
+
+        Raises:
+            RuntimeError: 查询失败时抛出异常
         """
 
         if isinstance(name, list):

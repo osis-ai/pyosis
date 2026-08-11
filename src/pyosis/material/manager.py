@@ -204,15 +204,18 @@ class MaterialManager:
         dmp: float = 0.0,
 
     ) -> Material:
-        """创建钢材
+        """创建钢材。
 
         Args:
             no: 材料编号，不指定时自动生成（取最大编号+1）
             name: 材料名称
             code: 材料标准代码，可选值：
                 - JTGD64_2015
-            grade: 材料等级牌号，可选值：
-                Q235, Q345, Q390, Q420
+            grade: 材料等级牌号，根据材料类型可选：
+                - Q235
+                - Q345
+                - Q390
+                - Q420
             dmp: 材料阻尼比
 
         Returns:
@@ -220,6 +223,9 @@ class MaterialManager:
 
         Raises:
             RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> material_manager.create_steel(None, "Q345钢材", "JTGD64_2015", "Q345", 0.02)
         """
         if no is None:
             no = self._next_no()
@@ -237,7 +243,7 @@ class MaterialManager:
         dmp: float = 0.0,
 
     ) -> Material:
-        """创建预应力材料
+        """创建预应力材料。
 
         Args:
             no: 材料编号，不指定时自动生成（取最大编号+1）
@@ -256,6 +262,9 @@ class MaterialManager:
 
         Raises:
             RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> material_manager.create_prestressed(None, "Strand1860", "JTG3362_2018", "Strand1860", 0.0)
         """
         if no is None:
             no = self._next_no()
@@ -272,7 +281,7 @@ class MaterialManager:
         grade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"],
         dmp: float = 0.0,
     ) -> Material:
-        """创建钢筋材料
+        """创建钢筋材料。
 
         Args:
             no: 材料编号，不指定时自动生成（取最大编号+1）
@@ -280,7 +289,7 @@ class MaterialManager:
             code: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
-            grade: 材料等级牌号，根据材料标准可选：
+            grade: 材料等级牌号，根据材料类型可选（不按照规定填写可能会有错误）：
                 - JTG3362_2018: HPB300, HRB400, HRBF400, RRB400, HRB500
                 - JTGD62_2004: R235, HRB335, HRB400, KL400
             dmp: 材料阻尼比
@@ -290,6 +299,9 @@ class MaterialManager:
 
         Raises:
             RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> material_manager.create_rebar(None, "HRB400", "JTG3362_2018", "HRB400", 0.0)
         """
         if no is None:
             no = self._next_no()
@@ -311,7 +323,7 @@ class MaterialManager:
         dmp: float = 0,
 
     ) -> Material:
-        """创建自定义材料
+        """创建自定义材料。
 
         Args:
             no: 材料编号，不指定时自动生成（取最大编号+1）
@@ -329,6 +341,13 @@ class MaterialManager:
 
         Raises:
             RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> material_manager.create_custom(None, "自定义材料",
+            ...     e=3.45e10, g=1.5e10, mu=0.2,
+            ...     exp_coeff=1.0e-5, unit_weight=25000.0,
+            ...     density=2550.0, dmp=0.05,
+            ... )
         """
         if no is None:
             no = self._next_no()

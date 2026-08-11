@@ -221,11 +221,13 @@ class GeometryManager:
         owner: Literal["LIVE", "TENDON"],
         *coordinates: float,
     ) -> Spline:
-        """创建或修改三维样条曲线（自然边界/NATURAL）
+        """创建或修改三维样条曲线（自然边界/NATURAL）。
+
+        端点二阶导数为零，用于生成光滑路径，无需指定切向量，仅需提供三维坐标。
 
         Args:
             name: 曲线名称
-            owner: 用途
+            owner: 用途，LIVE=活载车道线，TENDON=钢束定义
             coordinates: 坐标序列，按 x, y, z 顺序交替排列
 
         Returns:
@@ -233,6 +235,13 @@ class GeometryManager:
 
         Raises:
             RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> geometry_manager.create_natural("Lane1", "LIVE",
+            ...     0.0, 0.0, 0.0,
+            ...     10.0, 0.0, 0.0,
+            ...     20.0, 0.0, 0.0,
+            ... )
         """
         ok, err = osis_spline3d_natural(name, "NATURAL", owner, *coordinates)
         if not ok:
@@ -245,18 +254,26 @@ class GeometryManager:
         owner: str,
         *coordinates: float,
     ) -> Spline:
-        """创建或修改三维样条曲线（2D圆弧/ARC2D）
+        """创建或修改三维样条曲线（2D圆弧/ARC2D）。
+
+        用于生成二维平面内的圆弧曲线，常用于钢束平面束型定义，z 坐标默认为 0。
 
         Args:
             name: 曲线名称
             owner: 用途，TENDON=钢束定义
-            coordinates: 坐标序列，按 x, y, R 顺序交替排列
+            coordinates: 坐标序列，按 x, y, R 顺序交替排列，表示各控制点的二维坐标 (x, y) 及该点处的圆弧半径 R
 
         Returns:
             创建后的 Spline 对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> geometry_manager.create_arc2d("Arc1", "TENDON",
+            ...     0.0, 0.0, 10.0,
+            ...     10.0, 0.0, 10.0,
+            ... )
         """
         ok, err = osis_spline3d_arc2d(name, "ARC2D", owner, *coordinates)
         if not ok:
@@ -269,18 +286,26 @@ class GeometryManager:
         owner: str,
         *coordinates: float,
     ) -> Spline:
-        """创建或修改三维样条曲线（3D圆弧/ARC3D）
+        """创建或修改三维样条曲线（3D圆弧/ARC3D）。
+
+        用于生成三维空间内的圆弧曲线，钢束空间布置常采用。
 
         Args:
             name: 曲线名称
             owner: 用途，TENDON=钢束定义
-            coordinates: 坐标序列，按 x, y, z, R 顺序交替排列
+            coordinates: 坐标序列，按 x, y, z, R 顺序交替排列，表示各控制点的三维坐标 (x, y, z) 及该点处的圆弧半径 R
 
         Returns:
             创建后的 Spline 对象
 
         Raises:
             RuntimeError: 创建失败时抛出异常
+
+        Examples:
+            >>> geometry_manager.create_arc3d("Arc3d1", "TENDON",
+            ...     0.0, 0.0, 0.0, 20.0,
+            ...     10.0, 0.0, 5.0, 20.0,
+            ... )
         """
         ok, err = osis_spline3d_arc3d(name, "ARC3D", owner, *coordinates)
         if not ok:

@@ -57,13 +57,13 @@ class BucklCase:
         scalar: float,
         lc_type: Literal[0, 1],
     ) -> None:
-        """添加或移除参与屈曲分析的荷载工况。
+        '''添加或移除参与屈曲分析的荷载工况
 
         Args:
-            op: 操作类型，"a"=添加，"r"=移除
-            lc_name: 荷载工况名称
-            scalar: 系数
-            lc_type: 荷载类型，1=可变，0=不变
+            op (str): 操作类型，"a"=添加，"r"=移除
+            lc_name (str): 荷载工况名称
+            scalar (float): 系数
+            lc_type (int): 荷载类型，1=可变，0=不变
 
         Examples:
             >>> # 创建屈曲工况
@@ -72,7 +72,7 @@ class BucklCase:
             >>> buck.include("a", "D", 1.0, 0)
             >>> # 从屈曲工况 B1 移除荷载工况 D
             >>> buck.include("r", "D", 1.0, 0)
-        """
+        '''
         ok, err = osis_buckl_anal_inc(self.name, op, lc_name, scalar, lc_type)
         if not ok:
             raise RuntimeError(f"{'添加' if op == 'a' else '移除'}荷载工况 {lc_name} {'到' if op == 'a' else '从'}屈曲工况 {self.name} 失败: {err}")
@@ -86,22 +86,22 @@ class BucklCase:
         old_scalar: float,
         old_type: Literal[0, 1],
     ) -> None:
-        """替换参与屈曲分析的荷载工况。
+        '''替换参与屈曲分析的荷载工况
 
         Args:
-            new_lc: 新的荷载工况名称
-            new_scalar: 新的系数
-            new_type: 新的荷载类型，1=可变，0=不变
-            old_lc: 被替换的荷载工况名称
-            old_scalar: 被替换的系数
-            old_type: 被替换的荷载类型，1=可变，0=不变
+            new_lc (str): 新的荷载工况名称
+            new_scalar (float): 新的系数
+            new_type (int): 新的荷载类型，1=可变，0=不变
+            old_lc (str): 被替换的荷载工况名称
+            old_scalar (float): 被替换的系数
+            old_type (int): 被替换的荷载类型，1=可变，0=不变
 
         Examples:
             >>> # 创建屈曲工况
             >>> buck = stability_manager.create("B1", num=5, accum=0, scalar=1.0, load_type=0)
             >>> # 将屈曲工况 B1 中的 D 替换为 DC
             >>> buck.replace("DC", 1.2, 0, "D", 1.0, 0)
-        """
+        '''
         ok, err = osis_buckl_anal_inc(
             self.name, "s", new_lc, new_scalar, new_type, old_lc, old_scalar, old_type
         )
@@ -141,9 +141,16 @@ class StabilityManager:
             raise RuntimeError(f"{resp['error']}")
         buckl_cases = [BucklCase._from_dict(d) for d in resp.get("data", []) if "name" in d]
         return buckl_cases
-    
+
     def get(self, name: str | list[str]) -> BucklCase | list[BucklCase | None] | None:
-        """根据名称获取屈曲工况"""
+        """根据名称获取单个或多个屈曲工况
+
+        Args:
+            name (str | list[str]): 屈曲工况名称，支持单个名称或名称列表
+
+        Returns:
+            单个 BucklCase 对象；如果传入列表则返回对象列表；不存在返回 None
+        """
 
         if isinstance(name, list):
             names = [str(x) for x in name]
@@ -173,49 +180,53 @@ class StabilityManager:
         scalar: float = 1.0,
         load_type: Literal[0, 1] = 0,
     ) -> BucklCase:
-        """定义或修改屈曲工况。
+        '''定义或修改屈曲工况
 
         Args:
-            name: 屈曲分析工况名称
-            num: 模态数量
-            accum: 当前施工阶段是否考虑合计，0=考虑，1=不考虑
-            scalar: 缩放系数
-            load_type: 荷载类型，1=可变，0=不变
-        """
+            name (str): 屈曲分析工况名称
+            num (int): 模态数量
+            accum (int): 当前施工阶段是否考虑合计，0=考虑，1=不考虑
+            scalar (float): 缩放系数
+            load_type (int): 荷载类型，1=可变，0=不变
+
+        Returns:
+            创建/修改后的 BucklCase 对象
+        '''
         ok, err = osis_buckl_anal(name, num, accum, scalar, load_type)
         if not ok:
             raise RuntimeError(f"创建/修改屈曲工况 {name} 失败: {err}")
         return self.get(name)
 
     def delete(self, name: str) -> None:
-        """删除屈曲工况。
+        '''删除屈曲工况
 
         Args:
-            name: 屈曲分析工况名称
-        """
+            name (str): 屈曲分析工况名称
+        '''
         ok, err = osis_buckl_anal_del(name)
         if not ok:
             raise RuntimeError(f"删除屈曲工况 {name} 失败: {err}")
 
     def clear(self)->None:
-        """清空所有屈曲工况"""
+        '''清空所有屈曲工况'''
         try:
             [self.delete(s.name) for s in self.all()]
         except Exception as e:
             raise Exception(f"清空所有屈曲工况失败: {e}，被占用,无法删除")
 
     def rename(self, old_name: str, new_name: str) -> None:
-        """修改屈曲工况名称。
+        '''修改屈曲工况名称
 
         Args:
-            old_name: 旧名称
-            new_name: 新名称
-        """
+            old_name (str): 旧名称
+            new_name (str): 新名称
+        '''
         ok, err = osis_buckl_anal_mod(old_name, new_name)
         if not ok:
             raise RuntimeError(f"修改屈曲工况名称 {old_name} -> {new_name} 失败: {err}")
 
     def count(self) -> int:
+        """获取屈曲工况总数"""
         return len(self.all())
 
     def __repr__(self) -> str:
