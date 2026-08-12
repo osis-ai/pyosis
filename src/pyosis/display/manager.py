@@ -83,7 +83,7 @@ class DisplayManager:
                 * right
                 * front
                 * zoom  缩放，value 越小模型越小
-                * move  移动模型，values: x,y
+                * move  移动模型位置，values: x,y
             *values: 附加参数
 
         Raises:
@@ -93,6 +93,7 @@ class DisplayManager:
             >>> display_manager.set_view("top")
             >>> display_manager.set_view("front")
             >>> display_manager.set_view("zoom", 0.8)
+            >>> display_manager.set_view("move", 30, 10)
         """
         self.control("view", view, *values)
 
