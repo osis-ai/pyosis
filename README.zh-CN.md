@@ -57,7 +57,7 @@ n2 = engine.node.create(no=2, x=15, y=0, z=0)
 
 # 创建单元
 elem = engine.element.create_beam3d(
-    no=1, node1=n1.no, node2=n2.no, nMat=mat.no, nSec1=sec.no, nSec2=sec.no
+    no=1, node1=n1.no, node2=n2.no, mat=mat.no, sec1=sec.no, sec2=sec.no
 )
 
 # 创建边界
@@ -102,7 +102,7 @@ from pyosis.material import material_manager
 from pyosis.node import node_manager
 
 mat = material_manager.create_conc(no=1, name="C30", code="JTG3362_2018", grade="C30")
-node = node_manager.create(0, 0, 0)
+node = node_manager.create(no=None, x=0, y=0, z=0)
 ```
 
 ### 4. 使用 OSISSolver 直接启动求解器（仅求解器模式）
@@ -172,8 +172,8 @@ engine.boundary.group.create("桥台边界", "a", "1to2")
 
 # 各类边界条件
 engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)           # 一般支撑
-engine.boundary.create_master_slave(no=1, node=1, dx=1, dy=1, dz=1, rx=0, ry=1, rz=1, coincident=2)  # 主从约束
-engine.boundary.create_rigid(no=1, nNodeI=1)                                               # 刚性连接
+engine.boundary.create_master_slave(no=1, node=1, dx=1, dy=1, dz=1, rx=0, ry=1, rz=1, coincident=1)  # 主从约束
+engine.boundary.create_rigid(no=1, node_i=1)                                               # 刚性连接
 engine.boundary.create_elstcspt(no=1, coor="", x=0, dx=1e9, y=0, dy=1e9, z=0, dz=1e9)     # 弹性支承
 
 # 钢束
@@ -224,12 +224,12 @@ engine.prop.creep_shrink.create(no=1, name="Creep1", avg_humidity=70.0,
 # 阻尼（Rayleigh 自定义系数）
 engine.prop.damping.create_rayleigh_custom(name="Damping1", alpha=0.05, beta=0.005)
 
-# P-U 曲线（no, name, curve_type, num, values）
-#   curve_type: 1=水平位移推力 2=竖向位移推力 3=竖向力位移
-engine.prop.pu_curve.create(no=1, name="PU1", curve_type=1, num=3, values=[0, 0.01, 1000, 0.02, 1500])
+# P-U 曲线（no, name, curve_type, num, *values）
+#   curve_type: 0=力，1=力矩
+engine.prop.pu_curve.create(1, "PU1", 1, 3, 0, 0.01, 1000, 0.02, 1500)
 
 # 构件厚度分配（thickness, op, *elems）
-engine.prop.assign_component_thickness(thickness=0.3, op="a", elems=[1])
+engine.prop.assign_component_thickness(0.3, "a", 1)
 
 # 壳厚度（no, in_plane, out_plane）
 engine.thickness.create(no=1, in_plane=0.3, out_plane=0.3)
@@ -241,13 +241,13 @@ engine.thickness.create(no=1, in_plane=0.3, out_plane=0.3)
 
 ```python
 # 获取所有样条曲线
-splines = engine.geometry.all("spline")
+splines = engine.geometry.all()
 
 # 获取指定样条曲线
-spline = engine.geometry.get("spline", name="curve1")
+spline = engine.geometry.get("curve1")
 
-# 按类型筛选
-arcs = engine.geometry.filter("spline", spline_type="ARC3D")
+# 按类型筛选（General / Natural / Arc3D / Arc2D）
+arcs = [s for s in engine.geometry.all() if s.spline_type.name == "Arc3D"]
 ```
 
 ### 数据类对象
@@ -263,7 +263,7 @@ print(elem.mat)         # 材料编号
 # 对象支持操作（操作下沉）
 lc = engine.load.get("自重")
 lc.create_gravity()
-lc.create_nforce(1, dFx=1000)
+lc.create_nforce(1, fx=1000)
 ```
 
 ### 显式编号
@@ -327,8 +327,8 @@ engine.control.set_inc_tendon(True)
 engine.control.set_nonlinear(geom=False, link=False)
 
 # 截面
-engine.section.create_circle("圆形截面1", d=0.219, tw=0.012, no=1)
-engine.section.create_circle("圆形截面2", d=0.180, tw=0.008, no=2)
+engine.section.create_circle(no=1, name="圆形截面1", d=0.219, tw=0.012)
+engine.section.create_circle(no=2, name="圆形截面2", d=0.180, tw=0.008)
 
 # 材料
 engine.material.create_steel(
@@ -336,14 +336,14 @@ engine.material.create_steel(
 )
 
 # 节点
-engine.node.create(0, 5, 0, no=1)
-engine.node.create(15, 5, 0, no=2)
-engine.node.create(7.5, 0, 0, no=3)
-engine.node.create(20, 0, 0, no=4)
+engine.node.create(no=1, x=0, y=5, z=0)
+engine.node.create(no=2, x=15, y=5, z=0)
+engine.node.create(no=3, x=7.5, y=0, z=0)
+engine.node.create(no=4, x=20, y=0, z=0)
 
 # 单元
-engine.element.create_beam3d(1, 3, nMat=1, nSec1=1, nSec2=1, no=1)
-engine.element.create_beam3d(2, 3, nMat=1, nSec1=2, nSec2=2, no=2)
+engine.element.create_beam3d(no=1, node1=1, node2=3, mat=1, sec1=1, sec2=1)
+engine.element.create_beam3d(no=2, node1=2, node2=3, mat=1, sec1=2, sec2=2)
 
 # 边界
 engine.boundary.create_general(no=1)
@@ -355,8 +355,8 @@ lc = engine.load.create(
     load_case_type="USER",
     prompt="施加于节点3和4的两个力"
 )
-lc.create_nforce(3, dFx=0, dFy=-1000000, dFz=0)
-lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
+lc.create_nforce(3, fx=0, fy=-1000000, fz=0)
+lc.create_nforce(4, fx=200000, fy=0, fz=0)
 
 # 求解
 engine.solve()

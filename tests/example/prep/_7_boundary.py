@@ -41,7 +41,7 @@ def build_boundaries(engine: OSISEngine, node_nos: list[int]) -> Tuple[list[int]
     bd6 = boundary.create(6,"GES",coor="", stiffness_matrix=[1e9, 0, 0, 0, 0, 0, 1e9, 0, 0, 0, 0, 0, 1e9, 0, 0, 0, 0, 0, 1e9, 0, 0])
     _expect_attr(bd6,"no",6)
 
-    bd7 = boundary.create(7,"RIGID",nNodeI=node_nos[1])
+    bd7 = boundary.create(7,"RIGID",node_i=node_nos[1])
     _expect_attr(bd7,"no",7)
 
     bds = boundary.all()

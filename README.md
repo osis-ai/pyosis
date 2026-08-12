@@ -57,7 +57,7 @@ n2 = engine.node.create(no=2, x=15, y=0, z=0)
 
 # Create elements
 elem = engine.element.create_beam3d(
-    no=1, node1=n1.no, node2=n2.no, nMat=mat.no, nSec1=sec.no, nSec2=sec.no
+    no=1, node1=n1.no, node2=n2.no, mat=mat.no, sec1=sec.no, sec2=sec.no
 )
 
 # Create boundaries
@@ -105,7 +105,7 @@ from pyosis.material import material_manager
 from pyosis.node import node_manager
 
 mat = material_manager.create_conc(no=1, name="C30", code="JTG3362_2018", grade="C30")
-node = node_manager.create(0, 0, 0)
+node = node_manager.create(no=None, x=0, y=0, z=0)
 ```
 
 ### 4. Using OSISSolver — Start the Solver Directly (Solver-Only Mode)
@@ -177,8 +177,8 @@ engine.boundary.group.create("AbutmentBoundaries", "a", "1to2")
 
 # Various boundary types
 engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)           # General support
-engine.boundary.create_master_slave(no=1, node=1, dx=1, dy=1, dz=1, rx=0, ry=1, rz=1, coincident=2)  # Master-slave
-engine.boundary.create_rigid(no=1, nNodeI=1)                                               # Rigid link
+engine.boundary.create_master_slave(no=1, node=1, dx=1, dy=1, dz=1, rx=0, ry=1, rz=1, coincident=1)  # Master-slave
+engine.boundary.create_rigid(no=1, node_i=1)                                               # Rigid link
 engine.boundary.create_elstcspt(no=1, coor="", x=0, dx=1e9, y=0, dy=1e9, z=0, dz=1e9)     # Elastic support
 
 # Tendons
@@ -229,12 +229,12 @@ engine.prop.creep_shrink.create(no=1, name="Creep1", avg_humidity=70.0,
 # Damping (Rayleigh 自定义系数)
 engine.prop.damping.create_rayleigh_custom(name="Damping1", alpha=0.05, beta=0.005)
 
-# P-U curve (no, name, curve_type, num, values)
-#   curve_type: 1=水平位移推力 2=竖向位移推力 3=竖向力位移
-engine.prop.pu_curve.create(no=1, name="PU1", curve_type=1, num=3, values=[0, 0.01, 1000, 0.02, 1500])
+# P-U curve (no, name, curve_type, num, *values)
+#   curve_type: 0 = force, 1 = moment
+engine.prop.pu_curve.create(1, "PU1", 1, 3, 0, 0.01, 1000, 0.02, 1500)
 
 # Element thickness assignment (thickness, op, *elems)
-engine.prop.assign_component_thickness(thickness=0.3, op="a", elems=[1])
+engine.prop.assign_component_thickness(0.3, "a", 1)
 
 # Shell thickness (no, in_plane, out_plane)
 engine.thickness.create(no=1, in_plane=0.3, out_plane=0.3)
@@ -246,13 +246,13 @@ The `GeometryManager` supports querying geometric entities:
 
 ```python
 # Get all splines
-splines = engine.geometry.all("spline")
+splines = engine.geometry.all()
 
 # Get a specific spline
-spline = engine.geometry.get("spline", name="curve1")
+spline = engine.geometry.get("curve1")
 
-# Filter by type
-arcs = engine.geometry.filter("spline", spline_type="ARC3D")
+# Filter by type (General / Natural / Arc3D / Arc2D)
+arcs = [s for s in engine.geometry.all() if s.spline_type.name == "Arc3D"]
 ```
 
 ### Data Class Objects
@@ -268,7 +268,7 @@ print(elem.mat)         # Material ID
 # Objects support operations (operations下沉 to object)
 lc = engine.load.get("Self-weight")
 lc.create_gravity()
-lc.create_nforce(1, dFx=1000)
+lc.create_nforce(1, fx=1000)
 ```
 
 ### Explicit Numbering
@@ -332,23 +332,23 @@ engine.control.set_inc_tendon(True)
 engine.control.set_nonlinear(geom=False, link=False)
 
 # Sections
-engine.section.create_circle("CircleSection1", d=0.219, tw=0.012, no=1)
-engine.section.create_circle("CircleSection2", d=0.180, tw=0.008, no=2)
+engine.section.create_circle(no=1, name="CircleSection1", d=0.219, tw=0.012)
+engine.section.create_circle(no=2, name="CircleSection2", d=0.180, tw=0.008)
 
 # Materials
 engine.material.create_steel(
-    "Steel1", code="JTGD64_2015", grade="Q345", dmp=0.05, no=1
+    no=1, name="Steel1", code="JTGD64_2015", grade="Q345", dmp=0.05
 )
 
 # Nodes
-engine.node.create(0, 5, 0, no=1)
-engine.node.create(15, 5, 0, no=2)
-engine.node.create(7.5, 0, 0, no=3)
-engine.node.create(20, 0, 0, no=4)
+engine.node.create(no=1, x=0, y=5, z=0)
+engine.node.create(no=2, x=15, y=5, z=0)
+engine.node.create(no=3, x=7.5, y=0, z=0)
+engine.node.create(no=4, x=20, y=0, z=0)
 
 # Elements
-engine.element.create_beam3d(1, 3, nMat=1, nSec1=1, nSec2=1, no=1)
-engine.element.create_beam3d(2, 3, nMat=1, nSec1=2, nSec2=2, no=2)
+engine.element.create_beam3d(no=1, node1=1, node2=3, mat=1, sec1=1, sec2=1)
+engine.element.create_beam3d(no=2, node1=2, node2=3, mat=1, sec1=2, sec2=2)
 
 # Boundaries
 engine.boundary.create_general(no=1)
@@ -360,8 +360,8 @@ lc = engine.load.create(
     load_case_type="USER",
     prompt="Two forces applied at nodes 3 and 4"
 )
-lc.create_nforce(3, dFx=0, dFy=-1000000, dFz=0)
-lc.create_nforce(4, dFx=200000, dFy=0, dFz=0)
+lc.create_nforce(3, fx=0, fy=-1000000, fz=0)
+lc.create_nforce(4, fx=200000, fy=0, fz=0)
 
 # Solve
 engine.solve()

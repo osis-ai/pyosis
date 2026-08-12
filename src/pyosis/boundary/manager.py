@@ -688,9 +688,9 @@ class BoundaryManager:
             RuntimeError: 创建失败
 
         Examples:
-            >>> boundary_manager.create(None, "GENERAL", bX=1, bY=1, bZ=1)
-            >>> boundary_manager.create(1, "MSTSLV", nNode=10)
-            >>> boundary_manager.create(2, "RIGID", nNodeI=5)
+            >>> boundary_manager.create(None, "GENERAL", x=1, y=1, z=1)
+            >>> boundary_manager.create(1, "MSTSLV", node=10)
+            >>> boundary_manager.create(2, "RIGID", node_i=5)
         """
         _creator = {
             "GENERAL": self.create_general,
@@ -973,26 +973,26 @@ class BoundaryManager:
     def create_rigid(
         self,
         no: int | None,
-        nNodeI: int,
+        node_i: int,
     ) -> Boundary:
         '''创建刚性连接
 
-        将主节点 nNodeI 与通过 assign 分配的从节点绑定为刚性区域，
+        将主节点 node_i 与通过 assign 分配的从节点绑定为刚性区域，
         刚性区域内所有节点的 6 个自由度保持完全一致。
 
         Args:
             no: 边界编号，None 时自动分配
-            nNodeI: 节点1编号（刚性区域的主节点）
+            node_i: 节点1编号（刚性区域的主节点）
 
         Returns:
             Boundary 对象
 
         Notes:
-            用于形成刚性区域的从节点号 nodeJ, nodeK, ..., nodeL 由 assign 方法定义。
+            用于形成刚性区域的从节点号 node_j, node_k, ..., node_l 由 assign 方法定义。
         '''
         if no is None:
             no = self._next_no()
-        ok, err = osis_boundary_rigid(no, "RIGID", nNodeI)
+        ok, err = osis_boundary_rigid(no, "RIGID", node_i)
         if not ok:
             raise RuntimeError(f"创建刚性连接 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]

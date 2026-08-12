@@ -553,7 +553,7 @@ class ElementManager:
 
     用法:
         >>> from pyosis.element import element_manager
-        >>> elem = element_manager.create_beam3d(1, 2, nMat=1, nSec1=1, nSec2=1)
+        >>> elem = element_manager.create_beam3d(1, 2, mat=1, sec1=1, sec2=1)
         >>> elem.no
         >>> elem.element_type
         >>> all_elems = element_manager.all()
@@ -616,7 +616,7 @@ class ElementManager:
             RuntimeError: 创建失败
 
         Examples:
-            >>> element_manager.create(None, "BEAM3D", 1, 2, nMat=1, nSec1=1, nSec2=1)
+            >>> element_manager.create(None, "BEAM3D", 1, 2, mat=1, sec1=1, sec2=1)
             >>> element_manager.create(10, "TRUSS", 1, 2, 1, 1, 1)
         """
         _creator = {
@@ -638,15 +638,15 @@ class ElementManager:
         no: int | None,
         node1: int,
         node2: int,
-        nMat: int,
-        nSec1: int,
-        nSec2: int,
-        nYTrans: Literal[1, 2, 3, 4] = 1,
-        nZTrans: Literal[1, 2, 3, 4] = 1,
-        dStrain: float = 0.0,
-        bFlag: bool = 0,
-        dTheta: float = 0,
-        bWarping: bool = 0,
+        mat: int,
+        sec1: int,
+        sec2: int,
+        y_trans: Literal[1, 2, 3, 4] = 1,
+        z_trans: Literal[1, 2, 3, 4] = 1,
+        strain: float = 0.0,
+        flag: bool = 0,
+        theta: float = 0,
+        warping: bool = 0,
     ) -> Element:
         '''创建梁柱单元
 
@@ -657,19 +657,19 @@ class ElementManager:
             no: 单元编号，None 时自动分配
             node1: 节点1编号
             node2: 节点2编号
-            nMat: 材料编号
-            nSec1: I 端截面1编号
-            nSec2: J 端截面2编号
-            nYTrans: y 轴截面变化次方，可选值：1, 2, 3, 4
-            nZTrans: z 轴截面变化次方，可选值：1, 2, 3, 4
-            dStrain: 应变值，默认为 0.0
-            bFlag: 轴向转角定义方式：
+            mat: 材料编号
+            sec1: I 端截面1编号
+            sec2: J 端截面2编号
+            y_trans: y 轴截面变化次方，可选值：1, 2, 3, 4
+            z_trans: z 轴截面变化次方，可选值：1, 2, 3, 4
+            strain: 应变值，默认为 0.0
+            flag: 轴向转角定义方式：
                 * 0: 使用 beta 角定义
                 * 1: 使用关键点定义
-            dTheta: 轴向转角参数：
-                * bFlag=0 时: 轴向转角（beta 角）
-                * bFlag=1 时: 关键点
-            bWarping: 翘曲效应标志：
+            theta: 轴向转角参数：
+                * flag=0 时: 轴向转角（beta 角）
+                * flag=1 时: 关键点
+            warping: 翘曲效应标志：
                 * 1: 考虑翘曲
                 * 0: 不考虑翘曲
 
@@ -677,13 +677,13 @@ class ElementManager:
             Element 对象
 
         Examples:
-            >>> element_manager.create_beam3d(None, 1, 2, nMat=1, nSec1=1, nSec2=1)
+            >>> element_manager.create_beam3d(None, 1, 2, mat=1, sec1=1, sec2=1)
         '''
         if no is None:
             no = self._next_no()
         ok, err = osis_element_beam3d(
-            no, "BEAM3D", node1, node2, nMat, nSec1, nSec2,
-            nYTrans, nZTrans, dStrain, bFlag, dTheta, bWarping
+            no, "BEAM3D", node1, node2, mat, sec1, sec2,
+            y_trans, z_trans, strain, flag, theta, warping
         )
         if not ok:
             raise RuntimeError(f"创建梁单元 {no} 失败: {err}")
@@ -694,10 +694,10 @@ class ElementManager:
         no: int | None,
         node1: int,
         node2: int,
-        nMat: int,
-        nSec1: int,
-        nSec2: int,
-        dStrain: float = 0.0,
+        mat: int,
+        sec1: int,
+        sec2: int,
+        strain: float = 0.0,
     ) -> Element:
         '''创建桁架单元
 
@@ -707,20 +707,20 @@ class ElementManager:
             no: 单元编号，None 时自动分配
             node1: 节点1编号
             node2: 节点2编号
-            nMat: 材料编号
-            nSec1: I 端截面1编号
-            nSec2: J 端截面2编号
-            dStrain: 应变值，默认为 0.0
+            mat: 材料编号
+            sec1: I 端截面1编号
+            sec2: J 端截面2编号
+            strain: 应变值，默认为 0.0
 
         Returns:
             Element 对象
 
         Examples:
-            >>> element_manager.create_truss(None, 1, 2, nMat=1, nSec1=1, nSec2=1)
+            >>> element_manager.create_truss(None, 1, 2, mat=1, sec1=1, sec2=1)
         '''
         if no is None:
             no = self._next_no()
-        ok, err = osis_element_truss(no, "TRUSS", node1, node2, nMat, nSec1, nSec2, dStrain)
+        ok, err = osis_element_truss(no, "TRUSS", node1, node2, mat, sec1, sec2, strain)
         if not ok:
             raise RuntimeError(f"创建桁架单元 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]
@@ -730,7 +730,7 @@ class ElementManager:
         no: int | None,
         node1: int,
         node2: int,
-        bLinear: int = 1,
+        is_linear: int = 1,
         dx: float = 10,
         dy: float = 10,
         dz: float = 10,
@@ -747,39 +747,39 @@ class ElementManager:
             no: 单元编号，None 时自动分配
             node1: 节点1编号
             node2: 节点2编号
-            bLinear: 弹簧类型标志：
+            is_linear: 弹簧类型标志：
                 * 1: 线性弹簧
                 * 0: 非线性弹簧
             dx: x 方向自由度参数：
-                * 线性弹簧 (bLinear=1): 局部坐标系下 dx 方向的刚度值
-                * 非线性弹簧 (bLinear=0): 局部坐标系下 dx 方向的力-位移曲线编号（PUCurve 定义）
+                * 线性弹簧 (is_linear=1): 局部坐标系下 dx 方向的刚度值
+                * 非线性弹簧 (is_linear=0): 局部坐标系下 dx 方向的力-位移曲线编号（PUCurve 定义）
             dy: y 方向自由度参数：
-                * 线性弹簧 (bLinear=1): 局部坐标系下 dy 方向的刚度值
-                * 非线性弹簧 (bLinear=0): 局部坐标系下 dy 方向的力-位移曲线编号（PUCurve 定义）
+                * 线性弹簧 (is_linear=1): 局部坐标系下 dy 方向的刚度值
+                * 非线性弹簧 (is_linear=0): 局部坐标系下 dy 方向的力-位移曲线编号（PUCurve 定义）
             dz: z 方向自由度参数：
-                * 线性弹簧 (bLinear=1): 局部坐标系下 dz 方向的刚度值
-                * 非线性弹簧 (bLinear=0): 局部坐标系下 dz 方向的力-位移曲线编号（PUCurve 定义）
+                * 线性弹簧 (is_linear=1): 局部坐标系下 dz 方向的刚度值
+                * 非线性弹簧 (is_linear=0): 局部坐标系下 dz 方向的力-位移曲线编号（PUCurve 定义）
             rx: 绕 x 轴旋转自由度参数：
-                * 线性弹簧 (bLinear=1): 局部坐标系下 rx 方向的刚度值
-                * 非线性弹簧 (bLinear=0): 局部坐标系下 rx 方向的力-位移曲线编号（PUCurve 定义）
+                * 线性弹簧 (is_linear=1): 局部坐标系下 rx 方向的刚度值
+                * 非线性弹簧 (is_linear=0): 局部坐标系下 rx 方向的力-位移曲线编号（PUCurve 定义）
             ry: 绕 y 轴旋转自由度参数：
-                * 线性弹簧 (bLinear=1): 局部坐标系下 ry 方向的刚度值
-                * 非线性弹簧 (bLinear=0): 局部坐标系下 ry 方向的力-位移曲线编号（PUCurve 定义）
+                * 线性弹簧 (is_linear=1): 局部坐标系下 ry 方向的刚度值
+                * 非线性弹簧 (is_linear=0): 局部坐标系下 ry 方向的力-位移曲线编号（PUCurve 定义）
             rz: 绕 z 轴旋转自由度参数：
-                * 线性弹簧 (bLinear=1): 局部坐标系下 rz 方向的刚度值
-                * 非线性弹簧 (bLinear=0): 局部坐标系下 rz 方向的力-位移曲线编号（PUCurve 定义）
+                * 线性弹簧 (is_linear=1): 局部坐标系下 rz 方向的刚度值
+                * 非线性弹簧 (is_linear=0): 局部坐标系下 rz 方向的力-位移曲线编号（PUCurve 定义）
             beta: 轴向转角（beta 角），默认为 0.0
 
         Returns:
             Element 对象
 
         Examples:
-            >>> element_manager.create_spring(None, 1, 2, bLinear=1)
+            >>> element_manager.create_spring(None, 1, 2, is_linear=1)
         '''
         if no is None:
             no = self._next_no()
         ok, err = osis_element_spring(
-            no, "SPRING", node1, node2, bLinear, dx, dy, dz, rx, ry, rz, beta
+            no, "SPRING", node1, node2, is_linear, dx, dy, dz, rx, ry, rz, beta
         )
         if not ok:
             raise RuntimeError(f"创建弹簧单元 {no} 失败: {err}")
