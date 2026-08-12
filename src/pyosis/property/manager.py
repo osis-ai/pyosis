@@ -890,8 +890,8 @@ class PropertyManager:
         Args:
             thickness (float): 构件理论厚度
             op (str): 操作
-                * a = 添加
-                * s = 替换
+                * a = 添加，再次调用会覆盖旧参数
+                * s = 替换，仅支持 *by* 格式的elems参数，将第二个元素的厚度值赋给第一个，thickness参数被忽略
                 * r = 移除
             *elems (str|int): 待分配单元的编号。定义、修改、删除 elem 支持的格式：*to*
 
