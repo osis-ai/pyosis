@@ -55,15 +55,24 @@ class DisplayManager:
         if not ok:
             raise RuntimeError(f"显示控制失败: {err}")
 
-    def control(self, action: str, arg: str | None = None, *values=None) -> None:
+    def control(self, action: str, arg: str | None = None, *values) -> None:
         """视图 / 界面控制（对应 ``/control,...``）。
 
         Args:
             action: 子命令，如 ``view``、``quickCreateModel``
-            arg: 子命令参数；``view`` 时为 ``standard`` / ``top`` / ``right`` / ``front`` / ``zoom`` / ``move``
+            arg: 子命令参数；``view`` 时为 ``standard`` / ``top`` / ``right`` /
+                ``front`` / ``zoom`` / ``move``
+            *values: 附加参数。``view`` 子命令下：
+                * ``zoom``: 缩放系数（值越小模型越小）
+                * ``move``: (x, y) 像素偏移
 
         Raises:
             RuntimeError: 操作失败时抛出异常
+
+        Examples:
+            >>> display_manager.control("view", "top")
+            >>> display_manager.control("view", "zoom", 0.8)
+            >>> display_manager.control("view", "move", 30, 10)
         """
         ok, err = osis_control(action, arg, *values)
         if not ok:
@@ -72,19 +81,19 @@ class DisplayManager:
     def set_view(
         self,
         view: Literal["standard", "top", "right", "front", "zoom", "move"] = "standard",
-        *values: None
+        *values,
     ) -> None:
         """切换视图方向。
 
         Args:
             view: 视图
-                * standard
-                * top
-                * right
-                * front
-                * zoom  缩放，value 越小模型越小
-                * move  移动模型位置，values: x,y
-            *values: 附加参数
+                * ``standard``: 标准视图
+                * ``top``: 俯视
+                * ``right``: 右视
+                * ``front``: 前视
+                * ``zoom``: 缩放（附加系数：值越小模型越小）
+                * ``move``: 平移（附加参数：x, y）
+            *values: ``zoom`` 时为缩放系数，``move`` 时为 x, y 像素偏移
 
         Raises:
             RuntimeError: 操作失败时抛出异常
@@ -117,27 +126,22 @@ class DisplayManager:
     def capture(self, path: str) -> None:
         """截图工具（对应 ``jpeg,...``）。
 
-        把当前画面截图并保存到 ``path``。格式固定 jpg
+        把当前画面截图保存到 ``path``。文件扩展名固定为 ``.jpg``。
+        若仅传入文件名（不含目录分隔符），图片默认保存到
+        ``<project_dir>/image/{path}.jpg``；传入完整路径则保存到对应位置。
 
         Args:
-            path: 图片保存路径 / 文件名
+            path: 图片保存路径或文件名
 
         Raises:
             RuntimeError: 截图失败时抛出异常
-            ValueError: ``path`` 为空或不含文件名
 
         Examples:
             >>> display_manager.capture("D:\\reports\\fig1.jpg")
-            >>> display_manager.capture("crack.jpg")    # 默认保存到 <project_dir>/image/crack.jpg
-            >>> display_manager.capture("crack")        # 默认保存到 <project_dir>/image/crack.jpg
+            >>> display_manager.capture("crack.jpg")    # 保存到 <project_dir>/image/crack.jpg
+            >>> display_manager.capture("crack")        # 保存到 <project_dir>/image/crack.jpg
         """
-        from pathlib import Path
-
-        p = Path(path)
-        name = p.stem  # 去掉扩展名
-        if not name:
-            raise ValueError(f"无法从路径 {path!r} 抽取有效的文件名")
-        ok, err = osis_jpeg(name)
+        ok, err = osis_jpeg(path)
         if not ok:
             raise RuntimeError(f"截图失败: {err}")
 

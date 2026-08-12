@@ -60,7 +60,7 @@ def osis_disp_ctrl(
 def osis_control(
     eAction: str,
     eArg: str | None = None,
-    *dValues = None
+    *dValues,
 ):
     """视图 / 界面控制命令。
 
@@ -71,8 +71,9 @@ def osis_control(
             * ``view`` = 切换视图方向（配合 eArg）
             * 其他如 ``quickCreateModel`` 等
         eArg (str | None): 子命令参数
-            * 当 eAction 为 ``view`` 时: ``standard`` / ``top`` / ``right`` / ``front`` / ``zoom`` / ``move``
-        dValues (unknown): 附加参数
+            * 当 eAction 为 ``view`` 时: ``standard`` / ``top`` / ``right`` /
+              ``front`` / ``zoom`` / ``move``
+        dValues: 附加参数
 
     Returns:
         tuple (bool, str): 是否成功，失败原因
@@ -112,12 +113,16 @@ def osis_jpeg(path: str = "image"):
     格式: ``jpeg,path``
 
     Args:
-        path (str): 图片保存名字，将保存到 `{path}.jpg`
+        path (str): 图片保存路径/文件名。文件扩展名固定为 ``.jpg``。
+            当仅传入文件名（不含目录分隔符）时，图片默认保存到
+            ``<project_dir>/image/{path}.jpg``；
+            传入完整路径（如 ``D:\\reports\\fig1``）则保存到对应位置。
 
     Returns:
         tuple (bool, str): 是否成功，失败原因
 
     Examples:
-        >>> osis_jepg("IMG_盖梁裂缝宽度计算结果图")
+        >>> osis_jpeg("IMG_盖梁裂缝宽度计算结果图")
+        >>> osis_jpeg(r"D:\\reports\\fig1")
     """
     pass
