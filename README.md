@@ -1,5 +1,8 @@
 [简体中文](README.zh-CN.md) | [English](README.md)
 
+> ⚠️ **Notice: this branch (`qildev-5.0`) is stale and no longer maintained.**
+> Please refer to the [`main` branch documentation](https://github.com/osis-ai/pyosis/tree/main) for the currently supported API, parameter names, and examples.
+
 # pyosis
 
 Python client library for **OSIS** Bridge & Tunnel Analysis Platform (developed by CCCC Highway Consultants Co., Ltd.).

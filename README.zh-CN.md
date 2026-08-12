@@ -1,5 +1,8 @@
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+> ⚠️ **注意：本分支（`qildev-5.0`）已落后，不再维护。**
+> 请参考 [`main` 分支的最新文档](https://github.com/osis-ai/pyosis/tree/main) 以获取当前支持的 API、参数名称与示例。
+
 # pyosis
 
 中交公路规划设计院自研 **OSIS** 桥隧分析平台的 Python 接口库。
