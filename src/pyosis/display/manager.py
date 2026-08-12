@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Literal, Sequence, Union
 
-from .interface import osis_control, osis_disp_ctrl, osis_plsm
+from .interface import osis_control, osis_disp_ctrl, osis_plsm, osis_jpeg
 
 
 class DisplayManager:
@@ -55,28 +55,36 @@ class DisplayManager:
         if not ok:
             raise RuntimeError(f"显示控制失败: {err}")
 
-    def control(self, action: str, arg: str | None = None) -> None:
+    def control(self, action: str, arg: str | None = None, *values=None) -> None:
         """视图 / 界面控制（对应 ``/control,...``）。
 
         Args:
             action: 子命令，如 ``view``、``quickCreateModel``
-            arg: 子命令参数；``view`` 时为 ``standard`` / ``top`` / ``right`` / ``front``
+            arg: 子命令参数；``view`` 时为 ``standard`` / ``top`` / ``right`` / ``front`` / ``zoom`` / ``move``
 
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = osis_control(action, arg)
+        ok, err = osis_control(action, arg, *values)
         if not ok:
             raise RuntimeError(f"界面控制失败: {err}")
 
     def set_view(
         self,
-        view: Literal["standard", "top", "right", "front"] = "standard",
+        view: Literal["standard", "top", "right", "front", "zoom", "move"] = "standard",
+        *values: None
     ) -> None:
         """切换视图方向。
 
         Args:
-            view: ``standard`` / ``top`` / ``right`` / ``front``
+            view: 视图
+                * standard
+                * top
+                * right
+                * front
+                * zoom  缩放，value 越小模型越小
+                * move  移动模型，values: x,y
+            *values: 附加参数
 
         Raises:
             RuntimeError: 操作失败时抛出异常
@@ -84,8 +92,9 @@ class DisplayManager:
         Examples:
             >>> display_manager.set_view("top")
             >>> display_manager.set_view("front")
+            >>> display_manager.set_view("zoom", 0.8)
         """
-        self.control("view", view)
+        self.control("view", view, *values)
 
     def set_plsm(self, enabled: Literal[0, 1] = 1) -> None:
         """显示开关（Plsm）。
@@ -103,6 +112,33 @@ class DisplayManager:
         ok, err = osis_plsm(enabled)
         if not ok:
             raise RuntimeError(f"设置 Plsm 失败: {err}")
+
+    def capture(self, path: str) -> None:
+        """截图工具（对应 ``jpeg,...``）。
+
+        把当前画面截图并保存到 ``path``。格式固定 jpg
+
+        Args:
+            path: 图片保存路径 / 文件名
+
+        Raises:
+            RuntimeError: 截图失败时抛出异常
+            ValueError: ``path`` 为空或不含文件名
+
+        Examples:
+            >>> display_manager.capture("D:\\reports\\fig1.jpg")
+            >>> display_manager.capture("crack.jpg")    # 默认保存到 <project_dir>/image/crack.jpg
+            >>> display_manager.capture("crack")        # 默认保存到 <project_dir>/image/crack.jpg
+        """
+        from pathlib import Path
+
+        p = Path(path)
+        name = p.stem  # 去掉扩展名
+        if not name:
+            raise ValueError(f"无法从路径 {path!r} 抽取有效的文件名")
+        ok, err = osis_jpeg(name)
+        if not ok:
+            raise RuntimeError(f"截图失败: {err}")
 
     def __repr__(self) -> str:
         return "DisplayManager()"

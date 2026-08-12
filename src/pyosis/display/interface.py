@@ -60,6 +60,7 @@ def osis_disp_ctrl(
 def osis_control(
     eAction: str,
     eArg: str | None = None,
+    *dValues = None
 ):
     """视图 / 界面控制命令。
 
@@ -70,7 +71,8 @@ def osis_control(
             * ``view`` = 切换视图方向（配合 eArg）
             * 其他如 ``quickCreateModel`` 等
         eArg (str | None): 子命令参数
-            * 当 eAction 为 ``view`` 时: ``standard`` / ``top`` / ``right`` / ``front``
+            * 当 eAction 为 ``view`` 时: ``standard`` / ``top`` / ``right`` / ``front`` / ``zoom`` / ``move``
+        dValues (unknown): 附加参数
 
     Returns:
         tuple (bool, str): 是否成功，失败原因
@@ -80,6 +82,7 @@ def osis_control(
         >>> osis_control("view", "top")
         >>> osis_control("view", "right")
         >>> osis_control("view", "front")
+        >>> osis_control("view", "zoom", 0.8)
     """
     pass
 
@@ -99,5 +102,22 @@ def osis_plsm(bFlag: Literal[0, 1] = 1):
     Examples:
         >>> osis_plsm(1)
         >>> osis_plsm(0)
+    """
+    pass
+
+@REGISTRY.register("jpeg")
+def osis_jpeg(path: str = "image"):
+    """截图工具。
+
+    格式: ``jpeg,path``
+
+    Args:
+        path (str): 图片保存名字，将保存到 `{path}.jpg`
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+
+    Examples:
+        >>> osis_jepg("IMG_盖梁裂缝宽度计算结果图")
     """
     pass
