@@ -208,12 +208,27 @@ def _split_commands(text: str) -> List[str]:
     return commands
 
 
+# 5.01 版 .out 使用缩写命令名，此处统一归一化为全名后再分发
+CMD_ALIASES = {
+    "N": "Node",
+    "Ele": "Element",
+    "Sec": "Section",
+    "SecOff": "SectionOffset",
+    "SecMesh": "SectionMesh",
+    "Mat": "Material",
+    "LC": "LoadCase",
+    "Bd": "Boundary",
+    "Stg": "Stage",
+}
+
+
 def _split_cmd(cmd: str) -> List[str]:
     """分割命令参数
 
     命令已经过 _split_commands 处理，去除了注释和多余空白。
     只需按逗号分割，保留空值。
     方括号 [] 内的逗号不分割（支持矩阵下标如 Matrix[0,0]）。
+    命令名经 CMD_ALIASES 归一化（5.01 缩写名 → 全名）。
     """
     if not cmd:
         return []
@@ -239,6 +254,8 @@ def _split_cmd(cmd: str) -> List[str]:
             current += char
     # 总是添加最后一部分（即使为空）
     parts.append(current.strip())
+    if parts and parts[0] in CMD_ALIASES:
+        parts[0] = CMD_ALIASES[parts[0]]
     return parts
 
 
@@ -298,6 +315,8 @@ def generate_control(commands: List[str]) -> str:
         "CalcShear": ("set_calc_shear", [0], True),
         "CalcRlx": ("set_calc_relaxation", [0], True),
         "ModLocCoor": ("set_mod_loc_coor", [0], True),
+        "CalcRebarGravity": ("set_calc_rebar_gravity", [0], True),
+        "IncRebar": ("set_inc_rebar", [0], True),
         "IncTendon": ("set_inc_tendon", [0], True),
         "LnSrch": ("set_line_search", [0], True),
         "AutoTs": ("set_auto_time_step", [0], True),
@@ -1886,8 +1905,7 @@ def build_project(command_file: Optional[str] = None, output_dir: Optional[str] 
 
     在当前目录自动创建:
     - post/     后处理目录
-    - prep/     建模模块目录
-    - main.py   主入口文件
+    - prep/     建模模块目录（含 main.py 主入口）
 
     Args:
         command_file: 命令流文件路径 (.out 或 .sml)，为 None 时自动从当前 OSIS 项目导出
@@ -1973,14 +1991,14 @@ def build_project(command_file: Optional[str] = None, output_dir: Optional[str] 
     if total_todos > 0:
         print(f"\n警告: 共 {total_todos} 条命令未转换 (# TODO)，请手动检查")
 
-    # 创建 main.py（在当前目录）
-    main_file = base_dir / "main.py"
+    # 创建 main.py（与其他模块一起放在 prep/ 内）
+    main_file = prep_dir / "main.py"
     main_content = '''"""
 从命令流构建的桥梁建模项目
 
 使用方式:
-    python main.py              # 完整建模（自动清空重建）
-    python main.py --solve      # 建模后自动运行分析
+    python prep/main.py          # 完整建模（自动清空重建）
+    python prep/main.py --solve  # 建模后自动运行分析
 
 也可以直接执行单个模块（注意：单独跑某个模块时，OSIS 中应已有对应节点/材料等数据）:
     python prep/_5_node.py   # 只执行节点创建
@@ -1991,17 +2009,17 @@ import argparse
 
 from pyosis import batch
 
-from prep._0_engine import engine
-from prep._1_control import setup_control
-from prep._2_property import build_property
-from prep._3_material import build_materials
-from prep._4_section import build_sections
-from prep._5_node import build_nodes
-from prep._6_element import build_elements
-from prep._7_boundary import build_boundaries
-from prep._8_loadcase import build_loadcases
-from prep._9_analysis import build_analysis
-from prep._10_stage import build_stages
+from _0_engine import engine
+from _1_control import setup_control
+from _2_property import build_property
+from _3_material import build_materials
+from _4_section import build_sections
+from _5_node import build_nodes
+from _6_element import build_elements
+from _7_boundary import build_boundaries
+from _8_loadcase import build_loadcases
+from _9_analysis import build_analysis
+from _10_stage import build_stages
 
 
 def build_model(run_analysis: bool = False):
@@ -2015,14 +2033,16 @@ def build_model(run_analysis: bool = False):
     """
 
     print("清空项目...")
-    engine.clear()
-    engine.clc()
 
     print("=" * 50)
     print("开始建模")
     print("=" * 50)
 
     with batch():
+        # 0. 清空项目（与后续命令合并为一次请求）
+        engine.clear()
+        engine.clc()
+
         # 1. 全局设置（无依赖）
         print("\\n[1/10] 设置全局控制参数...")
         setup_control(engine)
@@ -2182,13 +2202,14 @@ if __name__ == "__main__":
     print("项目结构:")
     print(f"  {base_dir.name}/")
     print(f"  ├── build.py")
-    print(f"  ├── main.py")
     print(f"  ├── post/")
     print(f"  └── prep/")
+    print("      ├── main.py")
+    print("      └── _N_*.py")
     print("\n提示:")
     print("  1. 生成的代码可直接运行，但部分复杂命令标记为 # TODO 需要手动检查")
     print("  2. 建议先运行单个模块测试：python prep/_5_node.py")
-    print("  3. 完整建模：python main.py")
+    print("  3. 完整建模：python prep/main.py")
 
 
 def build_from_sml(sml_file: str, output_dir: Optional[str] = None) -> None:

@@ -1,5 +1,5 @@
 """对 4 个生成的项目跑 main.py（假 OSIS），对比 开/关 batch 的 OSIS_Run 请求数"""
-import sys, os, json, runpy, types, io, contextlib, traceback
+import sys, os, json, runpy, types, io, contextlib, traceback, re
 
 PYOSIS_SRC = r"D:\OSIS 5\pyosis\src"
 BASE = os.path.join(os.environ["TEMP"], "pyosis_batch_test")
@@ -50,7 +50,9 @@ client_mod.session.post = fake_post
 def run(proj: str, with_batch: bool):
     REQS.clear()
     # 清理上一项目的模块缓存，确保每个项目跑自己的代码
-    for k in [k for k in sys.modules if k.startswith('prep') or k == 'main']:
+    stale = [k for k in sys.modules
+             if k.startswith('prep') or k == 'main' or re.match(r'_\d', k)]
+    for k in stale:
         del sys.modules[k]
     real = pyosis.batch
     if not with_batch:
@@ -59,10 +61,17 @@ def run(proj: str, with_batch: bool):
     try:
         old = sys.argv, sys.path
         sys.argv = ["main.py"]
+        # main.py 在 prep/ 内（新布局）或项目根（旧布局）
+        main_py = os.path.join(proj, "prep", "main.py")
+        if not os.path.exists(main_py):
+            main_py = os.path.join(proj, "main.py")
+        main_dir = os.path.dirname(main_py)
+        if main_dir not in sys.path:
+            sys.path.insert(0, main_dir)
         if proj not in sys.path:
             sys.path.insert(0, proj)
         with contextlib.redirect_stdout(io.StringIO()):
-            runpy.run_path(os.path.join(proj, "main.py"), run_name="__main__")
+            runpy.run_path(main_py, run_name="__main__")
         sys.argv, sys.path = old
     except SystemExit:
         pass

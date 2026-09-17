@@ -221,7 +221,7 @@ class GeometryManager(BasicManager):
         self,
         name: str,
         owner: Literal["LIVE", "TENDON"],
-        *coordinates: float,
+        coordinates: list[float],
     ) -> Spline:
         """创建或修改三维样条曲线（自然边界/NATURAL）。
 
@@ -240,9 +240,7 @@ class GeometryManager(BasicManager):
 
         Examples:
             >>> geometry_manager.create_natural("Lane1", "LIVE",
-            ...     0.0, 0.0, 0.0,
-            ...     10.0, 0.0, 0.0,
-            ...     20.0, 0.0, 0.0,
+            ...     [0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 20.0, 0.0, 0.0],
             ... )
         """
         ok, err = osis_spline3d_natural(name, "NATURAL", owner, *coordinates)
@@ -254,7 +252,7 @@ class GeometryManager(BasicManager):
         self,
         name: str,
         owner: str,
-        *coordinates: float,
+        coordinates: list[float],
     ) -> Spline:
         """创建或修改三维样条曲线（2D圆弧/ARC2D）。
 
@@ -273,8 +271,7 @@ class GeometryManager(BasicManager):
 
         Examples:
             >>> geometry_manager.create_arc2d("Arc1", "TENDON",
-            ...     0.0, 0.0, 10.0,
-            ...     10.0, 0.0, 10.0,
+            ...     [0.0, 0.0, 10.0, 10.0, 0.0, 10.0],
             ... )
         """
         ok, err = osis_spline3d_arc2d(name, "ARC2D", owner, *coordinates)
@@ -286,7 +283,7 @@ class GeometryManager(BasicManager):
         self,
         name: str,
         owner: str,
-        *coordinates: float,
+        coordinates: list[float],
     ) -> Spline:
         """创建或修改三维样条曲线（3D圆弧/ARC3D）。
 
@@ -305,8 +302,7 @@ class GeometryManager(BasicManager):
 
         Examples:
             >>> geometry_manager.create_arc3d("Arc3d1", "TENDON",
-            ...     0.0, 0.0, 0.0, 20.0,
-            ...     10.0, 0.0, 5.0, 20.0,
+            ...     [0.0, 0.0, 0.0, 20.0, 10.0, 0.0, 5.0, 20.0],
             ... )
         """
         ok, err = osis_spline3d_arc3d(name, "ARC3D", owner, *coordinates)

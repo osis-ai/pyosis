@@ -103,6 +103,32 @@ def osis_mod_loc_coor(bFlag: int=1):
     '''
     pass
 
+@REGISTRY.register("CalcRebarGravity")
+def osis_calc_rebar_gravity(bFlag: int=1):
+    '''
+    是否考虑钢筋钢束自重
+
+    Args:
+        bFlag (bool): 1=考虑，0=不考虑
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("IncRebar")
+def osis_inc_rebar(bFlag: int=1):
+    '''
+    是否考虑钢筋对截面几何特性的影响
+
+    Args:
+        bFlag (bool): 1=考虑，0=不考虑
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
 @REGISTRY.register("IncTendon")
 def osis_inc_tendon(bFlag: int=1):
     '''

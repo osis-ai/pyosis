@@ -27,6 +27,8 @@ from .control import (
     osis_calc_shear,
     osis_calc_rlx,
     osis_mod_loc_coor,
+    osis_calc_rebar_gravity,
+    osis_inc_rebar,
     osis_inc_tendon,
 )
 from .io import osis_apdl
@@ -229,6 +231,38 @@ class ControlManager:
         ok, err = osis_mod_loc_coor(enabled)
         if not ok:
             raise RuntimeError(f"设置局部坐标轴修正失败: {err}")
+
+    def set_calc_rebar_gravity(self, enabled: Literal[0,1] = 1) -> None:
+        '''设置是否考虑钢筋钢束自重
+
+        Args:
+            enabled (int): 1=考虑，0=不考虑
+
+        Returns:
+            None
+
+        Raises:
+            RuntimeError: 设置失败时抛出异常
+        '''
+        ok, err = osis_calc_rebar_gravity(enabled)
+        if not ok:
+            raise RuntimeError(f"设置钢筋钢束自重考虑失败: {err}")
+
+    def set_inc_rebar(self, enabled: Literal[0,1] = 1) -> None:
+        '''设置是否考虑钢筋对截面几何特性的影响
+
+        Args:
+            enabled (int): 1=考虑，0=不考虑
+
+        Returns:
+            None
+
+        Raises:
+            RuntimeError: 设置失败时抛出异常
+        '''
+        ok, err = osis_inc_rebar(enabled)
+        if not ok:
+            raise RuntimeError(f"设置钢筋截面特性影响失败: {err}")
 
     def set_inc_tendon(self, enabled: Literal[0,1] = 1) -> None:
         '''设置是否考虑钢束自重及钢束对截面几何特性的影响
