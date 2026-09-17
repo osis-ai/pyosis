@@ -100,8 +100,8 @@ class SectionType(Enum):
     RIBBEDSLAB = 13  # 肋板式
     CUSTOM = 14  # 常规自定义截面
 
-    STEELI = 21  # 工字钢梁截面
-    STEELBOX = 22  # 箱型钢梁截面
+    STEELBEAMI = 21  # 工字钢梁截面
+    STEELBEAMBOX = 22  # 箱型钢梁截面
     STEELBOXTHREECELL = 23  # 单箱单/三室钢梁截面
     STEELBOXITF = 24  # 单箱单室斜顶板钢梁界面
     STEELCANTIBOX = 25  # 悬臂单箱单/双室钢梁界面
@@ -112,9 +112,26 @@ class SectionType(Enum):
     COMPOSITESTEELI = 41  # 钢-工字型组合截面
     COMPOSITESTEELTROUGH = 42  # 钢-槽型组合截面
     COMPOSITESTEELBOX = 43  # 钢-箱型组合截面
-    COMPOSITECUSTOM = 44  # 自定义组合截面
 
-    NUMERICAL = 51  # 数值截面
+    COMPOSITECUSTOM = 61  # 自定义组合截面
+
+    NUMERICAL = 71  # 数值截面
+
+    BUDOUBLEANGLE = 81  # 双角钢截面
+    BUDOUBLEC = 82  # 双槽钢截面
+    BUDOUBLEH = 83  # 双H型钢截面
+    BUDOUBLECWEB1 = 84  # 双槽钢+腹板截面1
+    BUDOUBLECWEB2 = 85  # 双槽钢+腹板截面2
+    BUHWITHPLATES = 86  # H型钢+双板截面
+
+    STEELL = 100  # 型钢-L型
+    STEELC = 101  # 型钢-槽型
+    STEELI = 102  # 型钢-工字型
+    STEELBOX = 103  # 型钢-箱型
+    STEELT = 104  # 型钢-T型
+    STEELCC = 105  # 型钢-双C型
+    STEELCIRCULARHOLLOW = 106  # 型钢-圆管
+    STEELZ = 107  # 型钢-Z型
 
 @dataclass(frozen=False)
 class Rebar:
@@ -1105,7 +1122,7 @@ class SectionManager:
         Args:
             no: 截面编号，None 则自动分配
             name: 截面名称
-            type: OSIS 截面类型，如 "CIRCLE" / "RECT" / "STEELBOX" 等
+            type: OSIS 截面类型，如 "CIRCLE" / "RECT" / "STEELBEAMBOX" 等
             *args: 按位置传给对应 create_* 的参数
             **kwargs: 按关键字传给对应 create_* 的参数
         Raises:
@@ -1127,8 +1144,8 @@ class SectionManager:
             "TGIRDER": self.create_TGirder,
             "HOLLOWSLAB": self.create_hollowslab,
             "CUSTOM": self.create_custom,
-            "STEELI": self.create_steel_i,
-            "STEELBOX": self.create_steel_box,
+            "STEELBEAMI": self.create_steel_i,
+            "STEELBEAMBOX": self.create_steel_box,
             "STEELBOXTHREECELL": self.create_steel_box_three_cell,
             "STEELBOXITF": self.create_steel_box_itf,
             "STEELCANTIBOX": self.create_steel_canti_box,
@@ -1918,7 +1935,7 @@ class SectionManager:
         tw: float,
         web_rib_pos: Literal["Left", "Right", "Both"] = "Both",
     ) -> Section:
-        """创建工字形钢截面(STEELI)。
+        """创建工字钢梁截面(STEELBEAMI)。
 
         Args:
             no: 截面编号，不填则自动分配
@@ -1933,7 +1950,7 @@ class SectionManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_section_steel_i(no, name, "STEELI", h, bt, bb, tt, tb, tw, web_rib_pos)
+        ok, err = osis_section_steel_i(no, name, "STEELBEAMI", h, bt, bb, tt, tb, tw, web_rib_pos)
         if not ok:
             raise RuntimeError(f"创建工字形钢截面 {no} 失败: {err}")
         return self.get(no)
@@ -1952,7 +1969,7 @@ class SectionManager:
         tw: float,
         same_layout: Literal[0, 1] = 1,
     ) -> Section:
-        """创建箱型钢截面(STEELBOX)。
+        """创建箱型钢梁截面(STEELBEAMBOX)。
 
         Args:
             no: 截面编号，不填则自动分配
@@ -1969,7 +1986,7 @@ class SectionManager:
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_section_steel_box(no, name, "STEELBOX", h, bt, bct, bb, bcb, tt, tb, tw, same_layout)
+        ok, err = osis_section_steel_box(no, name, "STEELBEAMBOX", h, bt, bct, bb, bcb, tt, tb, tw, same_layout)
         if not ok:
             raise RuntimeError(f"创建箱型钢截面 {no} 失败: {err}")
         return self.get(no)

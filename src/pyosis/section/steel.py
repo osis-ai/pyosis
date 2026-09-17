@@ -2,15 +2,15 @@ from typing import Any, Dict, Literal, List
 from ..core import REGISTRY
 
 @REGISTRY.register("Section")
-def osis_section_steel_i(Index: int, Name: str, Type: Literal["STEELI"], 
-                         H: float, Bt: float, Bb: float, Tt: float, Tb: float, Tw: float, 
+def osis_section_steel_i(Index: int, Name: str, Type: Literal["STEELBEAMI"],
+                         H: float, Bt: float, Bb: float, Tt: float, Tb: float, Tw: float,
                          WebRibPos: Literal["Left", "Right", "Both"]):
-    """定义或修改工字形截面。
+    """定义或修改工字钢梁截面。
 
     Args:
         Index (int): 编号。
         Name (str): 截面名。
-        Type (str): 截面类型，固定为 STEELI。
+        Type (str): 截面类型，固定为 STEELBEAMI。
         H (float): 梁高。
         Bt (float): 上翼缘宽度。
         Bb (float): 下翼缘宽度。
@@ -27,15 +27,15 @@ def osis_section_steel_i(Index: int, Name: str, Type: Literal["STEELI"],
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_box(Index: int, Name: str, Type: Literal["STEELBOX"], 
-                           H: float, Bt: float, Bct: float, Bb: float, Bcb: float, 
+def osis_section_steel_box(Index: int, Name: str, Type: Literal["STEELBEAMBOX"],
+                           H: float, Bt: float, Bct: float, Bb: float, Bcb: float,
                            Tt: float, Tb: float, Tw: float, SameLayout: Literal[0, 1]):
-    """定义或修改箱型截面。
+    """定义或修改箱型钢梁截面。
 
     Args:
         Index (int): 编号。
         Name (str): 截面名。
-        Type (str): 截面类型，固定为 STEELBOX。
+        Type (str): 截面类型，固定为 STEELBEAMBOX。
         H (float): 梁高。
         Bt (float): 上翼缘宽度。
         Bct (float): 上翼缘悬出宽。

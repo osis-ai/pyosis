@@ -66,7 +66,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     i_sec3 = section.create(78, "空心I形截面", "ISHAPE", 2.0000,1.5000,1.5000,0.2500,0.2500,0.2000)
     _expect_attr(i_sec3, "name", "空心I形截面")
     # 宽翼缘H型钢
-    h_sec1 = section.create(8, "宽翼缘H型钢", "STEELI", 400.0000,300.0000,300.0000,20.0000,20.0000,12.0000,"Right")
+    h_sec1 = section.create(8, "宽翼缘H型钢", "STEELBEAMI", 400.0000,300.0000,300.0000,20.0000,20.0000,12.0000,"Right")
     _expect_attr(h_sec1,"name","宽翼缘H型钢")
 
     # 创建圆倒角-实腹-凹槽
@@ -189,22 +189,22 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     _expect_attr(hollow_sec3, "name", "空心板梁-右空心板")
 
     # 创建工字形钢截面1
-    si_sec1 = section.create(25,"工字形钢截面1","STEELI", 3, 10, 10, 1, 1, 1, "Left")
+    si_sec1 = section.create(25,"工字形钢截面1","STEELBEAMI", 3, 10, 10, 1, 1, 1, "Left")
     _expect_attr(si_sec1, "name", "工字形钢截面1")
 
     # 创建工字形钢截面2
-    si_sec2 = section.create(26,"工字形钢截面2", "STEELI",2700.0000, 1000.0000, 1200.0000, 36.0000, 60.0000, 30.0000,
+    si_sec2 = section.create(26,"工字形钢截面2", "STEELBEAMI",2700.0000, 1000.0000, 1200.0000, 36.0000, 60.0000, 30.0000,
                                      "Right")
     _expect_attr(si_sec2, "name", "工字形钢截面2")
 
     # 创建工字形钢截面3
-    si_sec3 = section.create(27,"工字形钢截面3","STEELI", 5, 15, 15, 1, 1, 1, "Both")
+    si_sec3 = section.create(27,"工字形钢截面3","STEELBEAMI", 5, 15, 15, 1, 1, 1, "Both")
     _expect_attr(si_sec3, "name", "工字形钢截面3")
     # 对称工字截面
-    si_sec4 = section.create(271,"对称工字截面","STEELI", 1200.0000,600.0000,600.0000,30.0000,30.0000,20.0000, "Right")
+    si_sec4 = section.create(271,"对称工字截面","STEELBEAMI", 1200.0000,600.0000,600.0000,30.0000,30.0000,20.0000, "Right")
     _expect_attr(si_sec4, "name", "对称工字截面")
     # 焊接工字梁
-    si_sec5 = section.create(272,"焊接工字梁", "STEELI",1.2000,0.5000,0.5000,0.0200,0.0200,0.0120, "Right")
+    si_sec5 = section.create(272,"焊接工字梁", "STEELBEAMI",1.2000,0.5000,0.5000,0.0200,0.0200,0.0120, "Right")
     _expect_attr(si_sec5, "name", "焊接工字梁")
     # 加劲肋
     si_sec3.add_rib_t("T形加劲肋", 0.1, 0.01, 0.01, 0.01)
@@ -214,7 +214,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     si_sec3.delete_rib("U形加劲肋")
 
     # 创建箱型钢截面1
-    sb_sec1 = section.create(28,"箱型钢截面1","STEELBOX", 1850.0000, 2400.0000, 100.0000, 2800.0000, 300.0000, 35.0000,
+    sb_sec1 = section.create(28,"箱型钢截面1","STEELBEAMBOX", 1850.0000, 2400.0000, 100.0000, 2800.0000, 300.0000, 35.0000,
                                        60.0000, 28.0000, 1)
     _expect_attr(sb_sec1, "name", "箱型钢截面1")
     # 加劲肋布置信息
@@ -299,13 +299,13 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     # )
     # comp_custom.set_material(steel_no, conc_no)
     # 创建箱型钢截面2
-    sb_sec2 = section.create(33,"箱型钢截面2","STEELBOX", 2.0, 2.0, 0.5, 2.0, 0.5, 0.2, 0.2, 2.0, 1)
+    sb_sec2 = section.create(33,"箱型钢截面2","STEELBEAMBOX", 2.0, 2.0, 0.5, 2.0, 0.5, 0.2, 0.2, 2.0, 1)
     _expect_attr(sb_sec2, "name", "箱型钢截面2")
     # 箱型截面
-    sb_sec3 = section.create(331,"箱型截面","STEELBOX", 1850.0000,2400.0000,100.0000,2800.0000,300.0000,35.0000,60.0000,28.0000,1)
+    sb_sec3 = section.create(331,"箱型截面","STEELBEAMBOX", 1850.0000,2400.0000,100.0000,2800.0000,300.0000,35.0000,60.0000,28.0000,1)
     _expect_attr(sb_sec3, "name", "箱型截面")
     # 焊接箱形梁-2变厚
-    sb_sec4 = section.create(332,"焊接箱形梁-2变厚","STEELBOX", 1850.0000,2400.0000,100.0000,2800.0000,300.0000,35.0000,60.0000,28.0000,1)
+    sb_sec4 = section.create(332,"焊接箱形梁-2变厚","STEELBEAMBOX", 1850.0000,2400.0000,100.0000,2800.0000,300.0000,35.0000,60.0000,28.0000,1)
     _expect_attr(sb_sec4, "name", "焊接箱形梁-2变厚")
 
     # 创建三室钢截面1
