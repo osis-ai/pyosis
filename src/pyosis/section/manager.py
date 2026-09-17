@@ -274,19 +274,21 @@ class Section:
             self,
             mesh_method: Literal[0, 1] = 0,
             mesh_size: float = 0.0,
+            part_id: int = 1,
     ) -> None:
-        '''设置截面网格。
+        '''设置截面网格（适用于混凝土截面、模板组合截面与自定义组合截面）。
 
         Args:
             mesh_method (int): 网格划分方式
                 * 0 = 自动划分
                 * 1 = 手动划分
             mesh_size (float): 网格划分尺寸，在 mesh_method=1 时起作用
+            part_id (int): 分部编号，混凝土截面输入 1，模板组合截面输入 2
 
         Raises:
             RuntimeError: 设置失败时抛出
         '''
-        ok, err = osis_section_mesh(self.no, mesh_method, mesh_size)
+        ok, err = osis_section_mesh(self.no, part_id, mesh_method, mesh_size)
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 网格失败: {err}")
 

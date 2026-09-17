@@ -48,12 +48,13 @@ def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Rig
     pass
 
 @REGISTRY.register('SectionMesh')
-def osis_section_mesh(nSec: int=1, nMeshMethod: Literal[0, 1]=0, dMeshSize: float=0.0):
+def osis_section_mesh(nSec: int=1, nPartID: int=1, nMeshMethod: Literal[0, 1]=0, dMeshSize: float=0.0):
     """设置截面网格。
 
     Args:
         nSec (int): 截面编号。
-        nMeshMethod (int): Y定义截面网格划分，可选值：
+        nPartID (int): 分部编号，混凝土截面需输入 1，模板组合截面输入 2。
+        nMeshMethod (int): 定义截面网格划分方法，可选值：
             * 0 = 自动划分
             * 1 = 手动划分
         dMeshSize (float): 网格划分尺寸，在 nMeshMethod=1 时该项起作用
@@ -62,7 +63,7 @@ def osis_section_mesh(nSec: int=1, nMeshMethod: Literal[0, 1]=0, dMeshSize: floa
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
-        
+
     """
     pass
 

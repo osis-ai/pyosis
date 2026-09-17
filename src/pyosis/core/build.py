@@ -678,9 +678,19 @@ def generate_section(commands: List[str]) -> str:
             lines.append("")
 
         elif args[0] == "SectionMesh":
-            lines.append(f"    sec.set_mesh(")
-            lines.append(f"        mesh_method={args[2]}, mesh_size={args[3]}")
-            lines.append("    )")
+            # 新格式: SectionMesh,Index,PartID,MeshMethod,MeshSize
+            if len(args) == 5:
+                lines.append(f"    sec.set_mesh(")
+                lines.append(
+                    f"        mesh_method={args[3]}, mesh_size={args[4]},"
+                    f" part_id={args[2]}"
+                )
+                lines.append("    )")
+            # 旧格式: SectionMesh,Index,MeshMethod,MeshSize（PartID 缺省 = 1）
+            else:
+                lines.append(f"    sec.set_mesh(")
+                lines.append(f"        mesh_method={args[2]}, mesh_size={args[3]}")
+                lines.append("    )")
             lines.append("")
 
         elif args[0] == "StressPoint":
