@@ -7,7 +7,7 @@
 
 支持的荷载类型：
 - 荷载工况（USER, D, DC, DW, DD, CS）
-- 静力荷载（自重、节点荷载、线荷载、面荷载、强迫位移、初始内力、温度荷载、预应力、索力）
+- 静力荷载（自重、节点荷载、线荷载、面荷载、平面荷载、强迫位移、初始内力、温度荷载、预应力、索力）
 """
 
 from __future__ import annotations
@@ -54,9 +54,43 @@ from .static import (
     osis_load_gtemp,
     osis_load_pst,
     osis_load_cforce,
+    osis_load_plane,
+    osis_planar_load_point,
+    osis_planar_load_line,
+    osis_planar_load_area,
+    osis_planar_load_copy,
     osis_load_del,
     osis_load_mod,
 )
+
+
+# ──────────────────────────────────────────────
+# 内部工具
+# ──────────────────────────────────────────────
+
+def _flatten_params(items: list | None, size: int, label: str) -> list:
+    """将平铺列表或分组列表统一展平（内部使用）
+
+    items 既支持 [v1, v2, v3, ...] 平铺形式，也支持 [[v1, v2, v3], ...] 分组形式，
+    每组必须包含 size 个参数，返回展平后的列表。
+
+    Raises:
+        ValueError: 分组内参数数量不为 size 或平铺数量不是 size 的整数倍
+    """
+    if not items:
+        return []
+    # 分组形式：元素为 list/tuple
+    if any(isinstance(it, (list, tuple)) for it in items):
+        flat = []
+        for it in items:
+            if not isinstance(it, (list, tuple)) or len(it) != size:
+                raise ValueError(f"{label} 必须按每组 {size} 个参数填入，当前为 {it!r}")
+            flat.extend(it)
+        return flat
+    # 平铺形式
+    if len(items) % size != 0:
+        raise ValueError(f"{label} 必须按每组 {size} 个参数平铺填入，当前数量为 {len(items)}")
+    return list(items)
 
 
 # ──────────────────────────────────────────────
@@ -216,6 +250,7 @@ class LoadCase:
             CONCENTRATED -> create_concentrated_force
             SURFACE      -> create_surface_load
             SURFACE_VEC  -> create_surface_load_vector
+            PLANE        -> create_plane_load
             PTF/PTM      -> create_concentrated_force (is_moment)
 
         Args:
@@ -245,6 +280,7 @@ class LoadCase:
             # "PTM":          self.create_concentrated_force,
             "SURFACE":      self.create_surface_load,
             "SURFACE_VEC":  self.create_surface_load_vector,
+            "PLANE":        self.create_plane_load,
         }
         type_key = type.strip().upper()
 
@@ -733,6 +769,78 @@ class LoadCase:
             raise RuntimeError(
                 f"添加单元面荷载（方向向量）到工况 {self.name} 失败: {err}"
             )
+        return self.refresh()
+
+    def create_plane_load(
+            self,
+            planar_load_name: str,
+            elem_type: str,
+            p1: tuple[float, float, float] = (0.0, 0.0, 0.0),
+            p2: tuple[float, float, float] = (1.0, 0.0, 0.0),
+            p3: tuple[float, float, float] = (0.0, 1.0, 0.0),
+            tolerance: float = 0.0,
+            load_position: Literal[0, 1] = 1,
+            elem_group: str = "",
+            load_surface: str = "",
+            direction: Literal["SurfaceN", "ElementN", "GlobalX", "GlobalY", "GlobalZ"] = "SurfaceN",
+            projection: Literal["NoProjection", "LoadDir", "LoadPlane"] = "NoProjection",
+            copy_op: Literal[0, 1] = 0,
+            copy_dir: Literal["X", "Y", "Z"] = "X",
+            copies: list | None = None,
+    ) -> LoadCase:
+        '''布置平面荷载（需先由 osis_planar_load_* 定义平面荷载）
+
+        Args:
+            planar_load_name (str): 定义的平面荷载名称，由 PlanarLoad 定义
+            elem_type (str): 要加载平面荷载的单元类型
+            p1 (tuple): 加载平面原点在整体坐标系中的坐标 (x, y, z)
+            p2 (tuple): 平面坐标系x轴上的任意点在整体坐标系中的坐标 (x, y, z)
+            p3 (tuple): 平面坐标系x-y平面上任意点在整体坐标系中的坐标 (x, y, z)
+            tolerance (float): 决定平面坐标系坐标的容许误差
+            load_position (int): 加载对象
+                * 1 = 加载平面上的单元
+                * 0 = 单元组
+            elem_group (str): 单元组名称，load_position = 0 时必填
+            load_surface (str): 实体单元加载面（1~6），平面单元无用填 ""
+            direction (str): 平面荷载加载方向
+                * SurfaceN = 法向（加载平面）
+                * ElementN = 法向（单元）
+                * GlobalX = 整体坐标系X
+                * GlobalY = 整体坐标系Y
+                * GlobalZ = 整体坐标系Z
+            projection (str): 投影选项
+                * NoProjection = 不投影
+                * LoadDir = 荷载方向
+                * LoadPlane = 加载平面
+            copy_op (int): 是否根据输入间距将平面荷载以相同大小复制到其他区域
+                * 1 = 复制
+                * 0 = 不复制
+            copy_dir (str): 复制方向，X、Y、Z
+            copies (list): 复制的次数与距离，支持两种形式：
+                * 分组：[[CopyCount1, CopyDistance1], ...]
+                * 平铺：[CopyCount1, CopyDistance1, ...]
+                每组包含2个参数：复制的次数, 复制的距离
+
+        Returns:
+            更新后的 LoadCase 对象
+
+        Raises:
+            ValueError: load_position = 0 未填 elem_group，或 copies 参数数量不成对
+            RuntimeError: 布置失败时抛出异常
+        '''
+        if load_position == 0 and not elem_group:
+            raise ValueError("load_position = 0（按单元组加载）时必须指定 elem_group")
+
+        flat_copies = _flatten_params(copies, 2, "copies") if copy_op == 1 else []
+
+        ok, err = osis_load_plane(
+            "Plane", self.name, planar_load_name, elem_type,
+            p1[0], p1[1], p1[2], p2[0], p2[1], p2[2], p3[0], p3[1], p3[2],
+            tolerance, load_position, elem_group, load_surface,
+            direction, projection, copy_op, copy_dir, flat_copies,
+        )
+        if not ok:
+            raise RuntimeError(f"布置平面荷载 {planar_load_name} 到工况 {self.name} 失败: {err}")
         return self.refresh()
 
     # ── 荷载删除 ──────────────────────────────
@@ -1763,7 +1871,7 @@ class TendonManager:
 class LoadCaseManager:
     """荷载工况管理器
 
-    统一管理荷载工况的创建、删除、修改和查询。
+    统一管理荷载工况的创建、删除、修改和查询，兼平面荷载的定义（PlanarLoad）。
 
     用法:
         >>> from pyosis.load import loadcase_manager
@@ -1883,6 +1991,141 @@ class LoadCaseManager:
         if not ok:
             raise RuntimeError(f"重命名荷载工况 {old_name} -> {new_name} 失败: {err}")
         return self.get(new_name)
+
+    # ── 平面荷载定义 ────────────────────────
+
+    def planar_load_point(self, name: str, description: str = "", points: list = None) -> str:
+        '''定义平面荷载（集中荷载）
+
+        Args:
+            name (str): 荷载名称
+            description (str): 荷载说明
+            points (list): 集中荷载的坐标与数值，支持两种形式：
+                * 分组：[[x1, y1, F1], [x2, y2, F2], ...]
+                * 平铺：[x1, y1, F1, x2, y2, F2, ...]
+                每组包含3个参数：x坐标, y坐标, 荷载数值，组数不限
+
+        Returns:
+            荷载名称字符串
+
+        Raises:
+            ValueError: points 为空或参数数量不符
+            RuntimeError: 创建失败时抛出异常
+        '''
+        flat = _flatten_params(points, 3, "points")
+        if not flat:
+            raise ValueError("points 不能为空，至少需要一组 [x, y, F]")
+        ok, err = osis_planar_load_point(name, description, "Point", flat)
+        if not ok:
+            raise RuntimeError(f"创建平面荷载（集中荷载）{name} 失败: {err}")
+        return name
+
+    def planar_load_line(
+            self,
+            name: str,
+            description: str = "",
+            uniform: Literal[0, 1] = 1,
+            force_type: Literal[0, 1] = 1,
+            x1: float = 0.0,
+            y1: float = 0.0,
+            f1: float = 100,
+            x2: float = 1.0,
+            y2: float = 0.0,
+            f2: float = 100,
+    ) -> str:
+        '''定义平面荷载（线荷载）
+
+        Args:
+            name (str): 荷载名称
+            description (str): 荷载说明
+            uniform (int): 1 = 均布荷载，0 = 非均布荷载
+            force_type (int): 1 = 力，0 = 弯矩
+            x1 (float): 线荷载起点的x坐标
+            y1 (float): 线荷载起点的y坐标
+            f1 (float): 线荷载起点的荷载数值
+            x2 (float): 线荷载终点的x坐标
+            y2 (float): 线荷载终点的y坐标
+            f2 (float): 线荷载终点的荷载数值
+
+        Returns:
+            荷载名称字符串
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        '''
+        ok, err = osis_planar_load_line(
+            name, description, "Line", uniform, force_type, x1, y1, f1, x2, y2, f2
+        )
+        if not ok:
+            raise RuntimeError(f"创建平面荷载（线荷载）{name} 失败: {err}")
+        return name
+
+    def planar_load_area(
+            self,
+            name: str,
+            description: str = "",
+            uniform: Literal[0, 1] = 1,
+            points: list = None,
+    ) -> str:
+        '''定义平面荷载（面荷载）
+
+        Args:
+            name (str): 荷载名称
+            description (str): 荷载说明
+            uniform (int): 1 = 均布荷载，0 = 非均布荷载
+            points (list): 面荷载各点处的坐标与数值（3点或4点），支持两种形式：
+                * 分组：[[x1, y1, F1], [x2, y2, F2], ...]
+                * 平铺：[x1, y1, F1, x2, y2, F2, ...]
+                每组包含3个参数：x坐标, y坐标, 荷载数值
+
+        Returns:
+            荷载名称字符串
+
+        Raises:
+            ValueError: points 点数不为 3 或 4，或参数数量不符
+            RuntimeError: 创建失败时抛出异常
+        '''
+        flat = _flatten_params(points, 3, "points")
+        n_point_num = len(flat) // 3
+        if n_point_num not in (3, 4):
+            raise ValueError(f"面荷载点数必须为 3 或 4，当前为 {n_point_num}")
+        ok, err = osis_planar_load_area(name, description, "Area", uniform, n_point_num, flat)
+        if not ok:
+            raise RuntimeError(f"创建平面荷载（面荷载）{name} 失败: {err}")
+        return name
+
+    def planar_load_copy(
+            self,
+            name: str,
+            direction: Literal["X", "Y"] = "X",
+            copies: list = None,
+    ) -> str:
+        '''复制平面荷载
+
+        Args:
+            name (str): 荷载名称
+            direction (str): 复制方向
+                * X
+                * Y
+            copies (list): 复制的次数与距离，支持两种形式：
+                * 分组：[[CopyCount1, CopyDistance1], ...]
+                * 平铺：[CopyCount1, CopyDistance1, ...]
+                每组包含2个参数：复制的次数, 复制的距离
+
+        Returns:
+            荷载名称字符串
+
+        Raises:
+            ValueError: copies 为空或参数数量不成对
+            RuntimeError: 复制失败时抛出异常
+        '''
+        flat = _flatten_params(copies, 2, "copies")
+        if not flat:
+            raise ValueError("copies 不能为空，至少需要一组 [次数, 距离]")
+        ok, err = osis_planar_load_copy(name, direction, flat)
+        if not ok:
+            raise RuntimeError(f"复制平面荷载 {name} 失败: {err}")
+        return name
 
     # ── 查询 ──────────────────────────────────
 

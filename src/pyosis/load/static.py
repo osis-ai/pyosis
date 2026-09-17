@@ -370,6 +370,137 @@ def osis_load_cforce(eType: str="CFORCE", strLCName: str="自定义工况1", nEn
     '''
     pass
 
+@REGISTRY.register("PlanarLoad")
+def osis_planar_load_point(strName: str="平面荷载1", strDescription: str="", eType: Literal["Point"]="Point", points: list=None):
+    '''
+    创建或修改平面荷载（集中荷载）
+
+    Args:
+        strName (str): 荷载名称
+        strDescription (str): 荷载说明
+        eType (str): 荷载类型，不区分大小写。固定为 Point = 集中荷载
+        points (list): 集中荷载的坐标与数值，按顺序平铺填入：
+            [x1, y1, F1, x2, y2, F2, ...]
+            每组包含3个参数：x坐标, y坐标, 荷载数值，组数不限
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("PlanarLoad")
+def osis_planar_load_line(strName: str="平面荷载1", strDescription: str="", eType: Literal["Line"]="Line",
+                          bUniform: Literal[0, 1]=1, bForceType: Literal[0, 1]=1,
+                          dX1: float=0.0, dY1: float=0.0, dF1: float=100,
+                          dX2: float=1.0, dY2: float=0.0, dF2: float=100):
+    '''
+    创建或修改平面荷载（线荷载）
+
+    Args:
+        strName (str): 荷载名称
+        strDescription (str): 荷载说明
+        eType (str): 荷载类型，不区分大小写。固定为 Line = 线荷载
+        bUniform (int): 1 = 均布荷载，0 = 非均布荷载
+        bForceType (int): 1 = 力，0 = 弯矩
+        dX1 (float): 线荷载起点的x坐标
+        dY1 (float): 线荷载起点的y坐标
+        dF1 (float): 线荷载起点的荷载数值
+        dX2 (float): 线荷载终点的x坐标
+        dY2 (float): 线荷载终点的y坐标
+        dF2 (float): 线荷载终点的荷载数值
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("PlanarLoad")
+def osis_planar_load_area(strName: str="平面荷载1", strDescription: str="", eType: Literal["Area"]="Area",
+                          bUniform: Literal[0, 1]=1, nPointNum: Literal[3, 4]=3, points: list=None):
+    '''
+    创建或修改平面荷载（面荷载）
+
+    Args:
+        strName (str): 荷载名称
+        strDescription (str): 荷载说明
+        eType (str): 荷载类型，不区分大小写。固定为 Area = 面荷载
+        bUniform (int): 1 = 均布荷载，0 = 非均布荷载
+        nPointNum (int): 点数，3 = 3点，4 = 4点，其他输入非法
+        points (list): 面荷载各点处的坐标与数值，按顺序平铺填入：
+            [x1, y1, F1, x2, y2, F2, x3, y3, F3]（nPointNum = 3）
+            [x1, y1, F1, x2, y2, F2, x3, y3, F3, x4, y4, F4]（nPointNum = 4）
+            每组包含3个参数：x坐标, y坐标, 荷载数值
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("PlanarLoadCopy")
+def osis_planar_load_copy(strName: str="平面荷载1", eDir: Literal["X", "Y"]="X", copies: list=None):
+    '''
+    复制平面荷载
+
+    Args:
+        strName (str): 荷载名称
+        eDir (str): 复制方向
+            * X
+            * Y
+        copies (list): 复制的次数与距离，按顺序平铺填入：
+            [CopyCount1, CopyDistance1, ..., CopyCountN, CopyDistanceN]
+            每组包含2个参数：复制的次数, 复制的距离
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("Load")
+def osis_load_plane(eType: Literal["Plane"]="Plane", strLCName: str="自定义工况1", strPlanarLoadName: str="平面荷载1",
+                    strElemType: str="",
+                    dP1x: float=0.0, dP1y: float=0.0, dP1z: float=0.0,
+                    dP2x: float=1.0, dP2y: float=0.0, dP2z: float=0.0,
+                    dP3x: float=0.0, dP3y: float=1.0, dP3z: float=0.0,
+                    dTolerance: float=0.0,
+                    bLoadPosition: Literal[0, 1]=1, strElemGroup: str="", strLoadSurface: str="",
+                    eDir: Literal["SurfaceN", "ElementN", "GlobalX", "GlobalY", "GlobalZ"]="SurfaceN",
+                    eProjectionOp: Literal["NoProjection", "LoadDir", "LoadPlane"]="NoProjection",
+                    bCopyOp: Literal[0, 1]=0, eCopyDir: str="", copies: list=None):
+    '''
+    布置平面荷载
+
+    Args:
+        eType (str): 荷载类型，不区分大小写。固定为 Plane = 平面荷载
+        strLCName (str): 荷载工况名称
+        strPlanarLoadName (str): 定义的平面荷载名称，由 PlanarLoad 定义
+        strElemType (str): 要加载平面荷载的单元类型
+        dP1x/dP1y/dP1z (float): 加载平面原点P1在整体坐标系中的坐标
+        dP2x/dP2y/dP2z (float): 平面坐标系x轴上的任意点P2在整体坐标系中的坐标
+        dP3x/dP3y/dP3z (float): 平面坐标系x-y平面上任意点P3在整体坐标系中的坐标
+        dTolerance (float): 决定平面坐标系坐标的容许误差
+        bLoadPosition (int): 加载对象
+            * 1 = 加载平面上的单元
+            * 0 = 单元组
+        strElemGroup (str): 单元组名称，bLoadPosition = 0 时有效，无效时填 ""
+        strLoadSurface (str): 实体单元加载面（1~6），平面单元无用，填 ""
+        eDir (str): 平面荷载加载方向
+            * SurfaceN = 法向（加载平面）
+            * ElementN = 法向（单元）
+            * GlobalX = 整体坐标系X
+            * GlobalY = 整体坐标系Y
+            * GlobalZ = 整体坐标系Z
+        eProjectionOp (str): 投影选项
+            * NoProjection = 不投影
+            * LoadDir = 荷载方向
+            * LoadPlane = 加载平面
+        bCopyOp (int): 是否根据输入间距将平面荷载以相同大小复制到其他区域
+            * 1 = 复制
+            * 0 = 不复制
+        eCopyDir (str): 复制方向，X、Y、Z。bCopyOp = 0 时填 ""
+        copies (list): 复制的次数与距离，按顺序平铺填入：
+            [CopyCount1, CopyDistance1, ..., CopyCountN, CopyDistanceN]
+            每组包含2个参数：复制的次数, 复制的距离
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
 @REGISTRY.register("LoadDel")
 def osis_load_del(eType: Literal["GRAVITY", "NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"]="NFORCE", strLCName: str="自定义工况1", entity: int|str=1):
     '''
