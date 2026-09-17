@@ -39,6 +39,7 @@ from .pu_curve import (
 from .component_thickness import osis_assign_component_thickness
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
+from ..core.basic_manager import BasicManager
 
 @dataclass(frozen=False)
 class Point3D:
@@ -94,8 +95,10 @@ class Coordinate:
 # ──────────────────────────────────────────────
 
 
-class CoordinateManager:
+class CoordinateManager(BasicManager):
     """坐标系管理器"""
+    _entity_class = Coordinate
+    _entity_key_attr = "no"
 
     def create(
         self,
@@ -259,6 +262,10 @@ class CoordinateManager:
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(nos)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetCoorSysInfoByNos", {"no": nos})
         if not resp.get("success"):
             raise RuntimeError(resp.get("error", "GetCoorSysInfoByNos 失败"))
@@ -309,8 +316,10 @@ class CreepShrink:
             type_coeff = d.get("typeCoeff"),
         )
 
-class CreepShrinkManager:
+class CreepShrinkManager(BasicManager):
     '''收缩徐变管理器'''
+    _entity_class = CreepShrink
+    _entity_key_attr = "no"
     def all(self):
         '''获取全部收缩徐变特性
 
@@ -344,6 +353,10 @@ class CreepShrinkManager:
         elif not isinstance(no, list):
             raise TypeError(f"不支持的编号类型: {type(no)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(no)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetCreepShrinkInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -463,8 +476,9 @@ class Damping:
             relatedAnalysis=d.get("relatedAnalysis"),
             relatedStages=d.get("relatedStages"))
 
-class DampingManager:
+class DampingManager(BasicManager):
     '''阻尼管理器'''
+    _entity_class = Damping
 
     def create(
         self,
@@ -647,6 +661,10 @@ class DampingManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetDampingInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -710,8 +728,10 @@ class PuCurve:
     def __repr__(self) -> str:
         return f"PuCurve(no={self.no}, name={self.name!r}, type={self.curve_type})"
 
-class PuCurveManager:
+class PuCurveManager(BasicManager):
     '''荷载-位移曲线管理器'''
+    _entity_class = PuCurve
+    _entity_key_attr = "no"
 
     def create(
         self,
@@ -812,6 +832,10 @@ class PuCurveManager:
             nos = no
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(nos)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetPuCurveInfoByNos", {"no": nos})
         if not resp.get("success"):
             raise RuntimeError(resp.get("error", "GetPuCurveInfoByNos 失败"))

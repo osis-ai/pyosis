@@ -24,6 +24,8 @@ from enum import IntEnum
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
+from ..core.basic_manager import BasicManager
+from ..core.batch import batch_state
 from .interface import (
     osis_boundary_general,
     osis_boundary_elstcspt,
@@ -386,6 +388,8 @@ class BoundaryGroup:
 
     def refresh(self) -> BoundaryGroup:
         """刷新当前边界组对象并同步到对象属性"""
+        if batch_state.active:
+            return self
         resp = osis_client("GetBoundaryGroupInfoByNames", {"name": [self.name]})
         if not resp['success']:
             raise RuntimeError(f"刷新边界组 {self.name} 失败: {resp['error']}")
@@ -476,7 +480,7 @@ class BoundaryGroup:
 # ──────────────────────────────────────────────
 
 
-class BoundaryGroupManager:
+class BoundaryGroupManager(BasicManager):
     """边界组管理器
 
     统一管理边界组的创建、删除和查询。组成员操作在 BoundaryGroup 对象上进行。
@@ -492,6 +496,7 @@ class BoundaryGroupManager:
         >>> bg.remove(1)
         >>> bg.replace("3by4")   # 组内把边界 3 替换为 4
     """
+    _entity_class = BoundaryGroup
 
     def __init__(self) -> None:
         ...
@@ -581,6 +586,10 @@ class BoundaryGroupManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetBoundaryGroupInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -620,7 +629,7 @@ class BoundaryGroupManager:
 # ──────────────────────────────────────────────
 
 
-class BoundaryManager:
+class BoundaryManager(BasicManager):
     """边界管理器
 
     统一管理边界的创建、删除、修改和查询。
@@ -635,6 +644,8 @@ class BoundaryManager:
         >>> bg.add(1, 2)
         >>> bg = boundary_manager.group.get("桥台1")
     """
+    _entity_class = Boundary
+    _entity_key_attr = "no"
 
     def __init__(self) -> None:
         self._group_manager = BoundaryGroupManager()
@@ -1029,6 +1040,10 @@ class BoundaryManager:
         elif not isinstance(no, list):
             raise TypeError(f"不支持的编号类型: {type(no)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(no)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetBoundaryInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

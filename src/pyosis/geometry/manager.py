@@ -20,6 +20,7 @@ from typing import Literal, Any
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
+from ..core.basic_manager import BasicManager
 from .interface import (
     osis_spline3d_general,
     osis_spline3d_natural,
@@ -140,11 +141,12 @@ class Spline:
 # ──────────────────────────────────────────────
 
 
-class GeometryManager:
+class GeometryManager(BasicManager):
     """几何管理器
 
     统一管理三维样条曲线的增删改查。
     """
+    _entity_class = Spline
 
     def _load(self) -> list[Spline]:
         """从服务端加载所有样条曲线信息"""
@@ -351,6 +353,10 @@ class GeometryManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetSplineInfoByNames", {"name": names})
         if not resp["success"]:
             raise RuntimeError(f"{resp['error']}")

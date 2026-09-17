@@ -18,6 +18,8 @@ from enum import Enum
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
+from ..core.batch import batch_state
+from ..core.basic_manager import BasicManager
 from .loadcase import (
     osis_loadcase,
     osis_loadcase_del,
@@ -218,12 +220,17 @@ class LoadCase:
     def refresh(self) -> LoadCase:
         '''刷新当前工况荷载明细并同步到对象属性
 
+        batch 模式下跳过回查直接返回自身（命令尚未冲刷执行，回查无意义；
+        链式调用 create_* 不打断批量，退出 batch 后可再 refresh 取全量）
+
         Returns:
             更新后的 LoadCase 对象
 
         Raises:
             RuntimeError: 接口调用失败时抛出异常
         '''
+        if batch_state.active:
+            return self
         resp = osis_client("GetLoadCaseInfoByNames", {"name": [self.name]})
         if not resp['success']:
             raise RuntimeError(f"刷新工况 {self.name} 失败: {resp['error']}")
@@ -1103,8 +1110,9 @@ class TendonShape:
 # ──────────────────────────────────────────────
 
 
-class TendonPropManager:
+class TendonPropManager(BasicManager):
     """钢束特性管理器"""
+    _entity_class = TendonProp
 
     def _load(self) -> list[TendonProp]:
         """从服务端加载所有钢束特性信息"""
@@ -1495,6 +1503,10 @@ class TendonPropManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetTendonPropInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -1534,11 +1546,12 @@ class TendonPropManager:
         return f"TendonPropManager(count={self.count()})"
 
 
-class TendonShapeManager:
+class TendonShapeManager(BasicManager):
     """钢束形状管理器
 
     统一管理钢束形状的创建、删除、修改和查询。
     """
+    _entity_class = TendonShape
 
     def _load(self) -> list[TendonShape]:
         """从服务端加载所有钢束形状信息（内部使用）
@@ -1767,6 +1780,10 @@ class TendonShapeManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetTendonShapeInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -1868,7 +1885,7 @@ class TendonManager:
 # ──────────────────────────────────────────────
 
 
-class LoadCaseManager:
+class LoadCaseManager(BasicManager):
     """荷载工况管理器
 
     统一管理荷载工况的创建、删除、修改和查询，兼平面荷载的定义（PlanarLoad）。
@@ -1880,6 +1897,7 @@ class LoadCaseManager:
         >>> all_lcs = loadcase_manager.all()
         >>> loadcase_manager.delete("工况1")
         """
+    _entity_class = LoadCase
 
     def __init__(self) -> None:
         pass
@@ -2149,7 +2167,12 @@ class LoadCaseManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
-        
+
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
+
         resp = osis_client("GetLoadCaseInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

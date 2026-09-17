@@ -7,10 +7,11 @@ A library for extending OSIS functionality.
 A library that allows users to use CAE with great flexibility.
 """
 
-__version__ = "0.6.5"
+__version__ = "0.7.0"
 __author__ = "CCCC Highway Consultant Co. Ltd." # 中交公路规划设计院 - 工程技术研究中心 - lzh - wjh - myf
 
 from .core.engine import OSISEngine
+from .core.batch import batch, flush, batch_state, BatchError
 # from .core import engine
 # from .ai.agents import BaseAgent
 # from .core import osis_run

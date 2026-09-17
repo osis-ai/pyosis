@@ -26,6 +26,7 @@ from .seismic import (
     osis_rspec_anal_mod,
 )
 from ..core.client import osis_client
+from ..core.basic_manager import BasicManager
 
 @dataclass(frozen=False)
 class LoadToMassLcPara:
@@ -180,11 +181,12 @@ class LoadToMass:
                 )
         self._load()
 
-class LoadToMassManager:
+class LoadToMassManager(BasicManager):
     """荷载转换质量管理器
     统一管理荷载转换质量的创建、删除、修改和查询。
 
     """
+    _entity_class = LoadToMass
     def __init__(self) -> None:
         ...
     def _load(self) -> list[LoadToMass]:
@@ -216,6 +218,10 @@ class LoadToMassManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetLoadToMassInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -395,10 +401,11 @@ class SeisRspSpec:
             site=d.get("site"),
         )
 
-class SeisRspSpecManager:
+class SeisRspSpecManager(BasicManager):
     """地震反应谱管理器
     统一管理地震反应谱的创建、删除、修改和查询。
     """
+    _entity_class = SeisRspSpec
     def __init__(self):
         pass
 
@@ -431,6 +438,10 @@ class SeisRspSpecManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetSeisRspSpecByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -660,10 +671,11 @@ class RspecAnal:
             seisSpec=d.get("seisSpec"),
         )
 
-class RspecAnalManager:
+class RspecAnalManager(BasicManager):
     """反应谱工况管理器
     统一管理反应谱工况的创建、删除、修改和查询。
     """
+    _entity_class = RspecAnal
     def __init__(self):
         ...
 
@@ -684,6 +696,10 @@ class RspecAnalManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetRespSpecInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

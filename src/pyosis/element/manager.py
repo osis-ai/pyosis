@@ -16,6 +16,8 @@ from typing import Any, Literal
 from enum import Enum
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
+from ..core.basic_manager import BasicManager
+from ..core.batch import batch_state
 from .interface import (
     osis_element_beam3d,
     osis_element_truss,
@@ -144,6 +146,8 @@ class ElementGroup:
 
     def refresh(self) -> ElementGroup:
         """刷新当前单元组对象并同步到对象属性"""
+        if batch_state.active:
+            return self
         resp = osis_client("GetElementGroupInfoByNames", {"name": [self.name]})
         if not resp['success']:
             raise RuntimeError(f"刷新单元组 {self.name} 失败: {resp['error']}")
@@ -257,7 +261,7 @@ class TaperEleGroup:
             elements=d.get("elements"),
         )
 
-class ElementGroupManager:
+class ElementGroupManager(BasicManager):
     """单元组管理器
 
     统一管理单元组的创建、删除和查询。组成员操作在 ElementGroup 对象上进行。
@@ -273,6 +277,7 @@ class ElementGroupManager:
         >>> eg = element_manager.group.get("主梁单元")  # 查询刷新后的状态
         >>> eg.elements
     """
+    _entity_class = ElementGroup
 
     def __init__(self) -> None:
         ...
@@ -347,6 +352,10 @@ class ElementGroupManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetElementGroupInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -393,8 +402,9 @@ class ElementGroupManager:
 # TaperEleGroup 管理类
 # ──────────────────────────────────────────────
 
-class TaperEleGroupManager:
+class TaperEleGroupManager(BasicManager):
     """变截面单元组信息"""
+    _entity_class = TaperEleGroup
 
     def __init__(self) -> None:
         ...
@@ -510,6 +520,10 @@ class TaperEleGroupManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetTaperEleGroupInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")  
@@ -546,7 +560,7 @@ class TaperEleGroupManager:
 # ──────────────────────────────────────────────
 
 
-class ElementManager:
+class ElementManager(BasicManager):
     """单元管理器
 
     统一管理单元的创建、删除、修改和查询。
@@ -559,12 +573,14 @@ class ElementManager:
         >>> all_elems = element_manager.all()
         >>> element_manager.delete(elem.no)
         >>> element_manager.renumber(elem.no, 100)
-        >>> 
+        >>>
         >>> # 单元组操作
         >>> eg = element_manager.group.create("主梁单元")
         >>> eg.add(1, 2, 3)
         >>> eg = element_manager.group.get("主梁单元")
     """
+    _entity_class = Element
+    _entity_key_attr = "no"
 
     def __init__(self) -> None:
         self._element_manager = ElementGroupManager()
@@ -583,7 +599,10 @@ class ElementManager:
         return elements
 
     def _next_no(self) -> int:
-        '''返回下一个可用的单元编号（当前最大编号 + 1，空模型为 1）'''
+        '''返回下一个可用的单元编号（当前最大编号 + 1，空模型为 1）
+
+        （batch 模式下由基类守卫直接报错，要求显式编号）
+        '''
         elements = self._load()
         if len(elements) == 0:
             return 1
@@ -955,6 +974,10 @@ class ElementManager:
             ...
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(no)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetElementInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

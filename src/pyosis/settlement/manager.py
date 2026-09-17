@@ -14,6 +14,8 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from ..core.client import osis_client
+from ..core.basic_manager import BasicManager
+from ..core.batch import batch_state
 from .interface import (
     osis_setl_grp,
     osis_setl_grp_del,
@@ -104,6 +106,8 @@ class Settlement:
         Raises:
             RuntimeError: 刷新失败时抛出异常
         """
+        if batch_state.active:
+            return self
         resp = osis_client("GetSettlementInfoByNames", {"name": [self.name]})
         if not resp['success']:
             raise RuntimeError(f"刷新沉降工况 {self.name} 失败: {resp['error']}")
@@ -162,7 +166,7 @@ class Settlement:
 # ──────────────────────────────────────────────
 
 
-class SettlementGroupManager:
+class SettlementGroupManager(BasicManager):
     """沉降组管理器
 
     统一管理沉降组的创建、删除和查询。由 SettlementManager 持有，不单独导出。
@@ -173,6 +177,7 @@ class SettlementGroupManager:
         >>> sg = settlement_manager.group.get("N1")
         >>> settlement_manager.group.delete("N1")
     """
+    _entity_class = SettlementGroup
 
     def _load(self) -> list[SettlementGroup]:
         """从服务端加载所有沉降组信息"""
@@ -269,6 +274,10 @@ class SettlementGroupManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetSetlGrpInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -305,7 +314,7 @@ class SettlementGroupManager:
 # ──────────────────────────────────────────────
 
 
-class SettlementManager:
+class SettlementManager(BasicManager):
     """沉降工况管理器
 
     统一管理沉降荷载工况的创建、删除、修改和查询。
@@ -319,6 +328,7 @@ class SettlementManager:
         >>> s.include("N1")
         >>> settlement_manager.delete("S1")
     """
+    _entity_class = Settlement
 
     def __init__(self) -> None:
         self._group_manager = SettlementGroupManager()
@@ -407,6 +417,10 @@ class SettlementManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
 
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetSettlementInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

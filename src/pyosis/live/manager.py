@@ -18,6 +18,8 @@ from typing import Literal, Any
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
+from ..core.basic_manager import BasicManager
+from ..core.batch import batch_state
 from .grade import (
     osis_livegrade_highway,
     osis_livegrade_vehicle,
@@ -234,6 +236,8 @@ class LiveCase:
         Returns:
             刷新后的 LiveCase 对象
         """
+        if batch_state.active:
+            return self
         resp = osis_client("GetLiveInfoByNames", {"name": [self.name]})
         if not resp['success']:
             raise RuntimeError(f"刷新活载工况 {self.name} 失败: {resp['error']}")
@@ -488,12 +492,13 @@ class LiveCase:
 # ──────────────────────────────────────────────
 
 
-class LiveGradeManager:
+class LiveGradeManager(BasicManager):
     """活载等级管理器
     
     统一管理活载等级的创建、删除、修改和查询。
     活载等级包括：公路活载、车辆荷载、人群荷载、疲劳荷载等。
     """
+    _entity_class = LiveGrade
 
     def _load(self) -> list[LiveGrade]:
         """从服务端加载所有活载等级信息（内部使用）
@@ -776,6 +781,10 @@ class LiveGradeManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetGradeInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -815,12 +824,13 @@ class LiveGradeManager:
         return f"LiveGradeManager()"
 
 
-class LaneManager:
+class LaneManager(BasicManager):
     """车道管理器
     
     统一管理车道的创建、删除、修改和查询。
     支持两种影响线算法：车道单元法（VE）和横向联系梁法（TCB）。
     """
+    _entity_class = Lane
 
     def _load(self) -> list[Lane]:
         """从服务端加载所有车道信息（内部使用）
@@ -1040,6 +1050,10 @@ class LaneManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetLaneInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
@@ -1079,12 +1093,13 @@ class LaneManager:
         return f"LaneManager()"
 
 
-class LiveCaseManager:
+class LiveCaseManager(BasicManager):
     """活载工况管理器
     
     统一管理活载工况的创建、删除、修改和查询。
     活载工况包含多个子工况，每个子工况对应一种加载方案。
     """
+    _entity_class = LiveCase
 
     def _load(self) -> list[LiveCase]:
         """从服务端加载所有活载工况信息（内部使用）
@@ -1179,6 +1194,10 @@ class LiveCaseManager:
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
         
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetLiveInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

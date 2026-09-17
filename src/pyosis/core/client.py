@@ -59,7 +59,16 @@ def osis_client(
         timeout: HTTP 超时秒数，默认 DEFAULT_TIMEOUT
     Returns:
         异常时返回 (False, 错误信息)
+
+    Note:
+        batch 模式激活且缓冲非空时，除冲刷自身外的任何调用（查询/求解/
+        用户直接 OSIS_Run）都会先自动冲刷缓冲，保证命令执行顺序与查询实时性
     """
+    # batch 拦截：保证"先执行缓冲命令，再处理本次请求"的顺序
+    from .batch import batch_state, flush as _flush
+    if batch_state.active and batch_state.buffer and not batch_state.flushing:
+        _flush()
+
     base_url = base_url or os.environ.get("OSIS_URL", f"{DEFAULT_URL}:{DEFAULT_PORT}")
     url = f"{base_url}/{func_name}"
 

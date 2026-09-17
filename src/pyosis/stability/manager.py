@@ -17,6 +17,7 @@ from .buckling import (
     osis_buckl_anal_inc,
 )
 from ..core.client import osis_client
+from ..core.basic_manager import BasicManager
 
 
 # ──────────────────────────────────────────────
@@ -113,7 +114,7 @@ class BucklCase:
 # ──────────────────────────────────────────────
 
 
-class StabilityManager:
+class StabilityManager(BasicManager):
     """稳定分析管理器
 
     统一管理屈曲工况的创建、删除、修改及荷载工况管理。
@@ -129,6 +130,7 @@ class StabilityManager:
         >>> # 删除屈曲工况
         >>> stability_manager.delete("B1")
     """
+    _entity_class = BucklCase
 
     def __init__(self) -> None:
         ...
@@ -158,6 +160,10 @@ class StabilityManager:
             names = [str(name)]
         if not isinstance(names, list):
             raise TypeError(f"不支持的名称类型: {type(name)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(names)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetBucklingInfoByNames", {"name": names})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

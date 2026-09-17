@@ -24,6 +24,7 @@ from .interface import (
     osis_material_mod,
 )
 from ..core import get_references, raise_if_occupied
+from ..core.basic_manager import BasicManager
 
 # ──────────────────────────────────────────────
 # 数据类
@@ -88,7 +89,7 @@ class Material:
 # ──────────────────────────────────────────────
 
 
-class MaterialManager:
+class MaterialManager(BasicManager):
     """材料管理器
 
     统一管理材料的创建、删除、修改和查询。
@@ -101,6 +102,8 @@ class MaterialManager:
         >>> material_manager.delete(mat.no)                                        # 删除材料
         >>> material_manager.renumber(mat.no, 100)                                 # 修改编号
     """
+    _entity_class = Material
+    _entity_key_attr = "no"
 
     def __init__(self) -> None:
         ...
@@ -406,6 +409,10 @@ class MaterialManager:
             ...
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(no)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetMaterialInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

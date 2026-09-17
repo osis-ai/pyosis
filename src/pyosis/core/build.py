@@ -257,14 +257,28 @@ def _module_header(module_name: str, imports: List[str] = None) -> List[str]:
 
 
 def _module_footer(module_name: str, test_code: str = None) -> List[str]:
-    """生成模块文件尾（测试代码）"""
-    lines = ["", 'if __name__ == "__main__":', "    from _0_engine import engine"]
-    if test_code:
-        lines.append("    " + test_code)
-    else:
-        func_name = module_name.lower()
-        lines.append(f"    build_{func_name}(engine)")
-    return lines
+    """生成模块文件尾（测试代码，batch 模式批量执行）"""
+    body = test_code if test_code else f"build_{module_name.lower()}(engine)"
+    # test_code 编码约定：首行顶格、续行自带 4 空格（原 if 块缩进）。
+    # 先归一化（续行去掉 if 级缩进），再统一加 8 空格放入 with batch(): 块内。
+    norm = []
+    for i, ln in enumerate(body.split("\n")):
+        if not ln.strip():
+            norm.append("")
+        elif i == 0:
+            norm.append(ln.lstrip())
+        else:
+            norm.append(ln[4:] if ln.startswith("    ") else ln.lstrip())
+    body_lines = ["        " + ln if ln else ln for ln in norm]
+    return [
+        "",
+        'if __name__ == "__main__":',
+        "    from _0_engine import engine",
+        "    from pyosis import batch",
+        "",
+        "    with batch():  # 批量执行：块内所有命令退出时一次性发送",
+        *body_lines,
+    ]
 
 
 # ========== 各模块专门的代码生成函数 ==========
@@ -462,14 +476,14 @@ def generate_material(commands: List[str]) -> str:
                     nCrepShrk = _val(args[6])
                     dDmp = args[7]
                     lines.append(f"    mat = engine.material.create_conc(")
-                    lines.append(f"        {name}, eCode={code}, eGrade={grade},")
-                    lines.append(f"        nCrepShrk={nCrepShrk}, dDmp={dDmp}, no={no}")
+                    lines.append(f"        no={no}, name={name}, code={code}, grade={grade},")
+                    lines.append(f"        crep_shrk={nCrepShrk}, dmp={dDmp}")
                     lines.append("    )")
                 else:
                     dDmp = args[6] if len(args) > 6 else "0.0"
                     lines.append(f"    mat = engine.material.create_conc(")
                     lines.append(
-                        f"        {name}, eCode={code}, eGrade={grade}, dDmp={dDmp}, no={no}"
+                        f"        no={no}, name={name}, code={code}, grade={grade}, dmp={dDmp}"
                     )
                     lines.append("    )")
 
@@ -477,7 +491,7 @@ def generate_material(commands: List[str]) -> str:
                 dDmp = args[6] if len(args) > 6 else "0.0"
                 lines.append(f"    mat = engine.material.create_steel(")
                 lines.append(
-                    f"        {name}, eCode={code}, eGrade={grade}, dDmp={dDmp}, no={no}"
+                    f"        no={no}, name={name}, code={code}, grade={grade}, dmp={dDmp}"
                 )
                 lines.append("    )")
 
@@ -485,7 +499,7 @@ def generate_material(commands: List[str]) -> str:
                 dDmp = args[6] if len(args) > 6 else "0.0"
                 lines.append(f"    mat = engine.material.create_rebar(")
                 lines.append(
-                    f"        {name}, eCode={code}, eGrade={grade}, dDmp={dDmp}, no={no}"
+                    f"        no={no}, name={name}, code={code}, grade={grade}, dmp={dDmp}"
                 )
                 lines.append("    )")
 
@@ -493,7 +507,7 @@ def generate_material(commands: List[str]) -> str:
                 dDmp = args[6] if len(args) > 6 else "0.0"
                 lines.append(f"    mat = engine.material.create_prestressed(")
                 lines.append(
-                    f"        {name}, eCode={code}, eGrade={grade}, dDmp={dDmp}, no={no}"
+                    f"        no={no}, name={name}, code={code}, grade={grade}, dmp={dDmp}"
                 )
                 lines.append("    )")
 
@@ -638,11 +652,10 @@ def generate_section(commands: List[str]) -> str:
             if method == "create_custom":
                 _flush_matrix()
 
-            # 构建参数列表：name 是第一个参数，然后是其他参数，最后是 no
-            param_strs = [_val(name)]
+            # 构建参数列表：按真实签名 (no, name, 参数...) 顺序位置传参
+            param_strs = [no, _val(name)]
             for p in params:
                 param_strs.append(_val(p))
-            param_strs.append(f"no={no}")
 
             # 格式化输出，每行最多 4 个参数
             lines.append(f"    sec = engine.section.{method}(")
@@ -780,7 +793,7 @@ def generate_node(commands: List[str]) -> str:
 
         no = args[1]
         x, y, z = args[2], args[3], args[4]
-        lines.append(f"    n = engine.node.create({x}, {y}, {z}, no={no})")
+        lines.append(f"    n = engine.node.create({no}, {x}, {y}, {z})")
         lines.append("    node_nos.append(n.no)")
         lines.append("")
 
@@ -826,8 +839,7 @@ def generate_element(commands: List[str]) -> str:
             no = args[1]
             elem_type = args[2].upper()
             # 从 TYPE 后面的参数开始，按顺序传入
-            params = [_val(p) for p in args[3:]]
-            params.append(f"no={no}")
+            params = [no] + [_val(p) for p in args[3:]]
 
             method_map = {
                 "BEAM3D": "create_beam3d",
@@ -848,7 +860,7 @@ def generate_element(commands: List[str]) -> str:
             op = _val(args[2])
             items = ", ".join(_item_val(item) for item in args[3:])
             lines.append(
-                f"    engine.prop.assign_component_thickness({thickness}, op={op}, elems=[{items}])"
+                f"    engine.prop.assign_component_thickness({thickness}, {op}, {items})"
             )
             lines.append("")
 
@@ -857,7 +869,7 @@ def generate_element(commands: List[str]) -> str:
             raw_name = args[1]
             name = _val(raw_name)
             if op == "c":
-                lines.append(f"    eg = engine.element.group.create({name})")
+                lines.append(f"    eg = engine.element.group.create({name}, 'c')")
                 lines.append("    elem_group_names.append(eg.name)")
                 lines.append("")
                 current_elem_group = raw_name
@@ -930,21 +942,21 @@ def generate_boundary(commands: List[str]) -> str:
                 bX, bY, bZ = args[4], args[5], args[6]
                 bRX, bRY, bRZ, bRW = args[7], args[8], args[9], args[10]
 
-                params = [f"nCoor={nCoor}"]
+                params = [f"coor={nCoor}"]
                 if bX != "1":
-                    params.append(f"bX={bX}")
+                    params.append(f"x={bX}")
                 if bY != "1":
-                    params.append(f"bY={bY}")
+                    params.append(f"y={bY}")
                 if bZ != "1":
-                    params.append(f"bZ={bZ}")
+                    params.append(f"z={bZ}")
                 if bRX != "1":
-                    params.append(f"bRX={bRX}")
+                    params.append(f"rx={bRX}")
                 if bRY != "1":
-                    params.append(f"bRY={bRY}")
+                    params.append(f"ry={bRY}")
                 if bRZ != "1":
-                    params.append(f"bRZ={bRZ}")
+                    params.append(f"rz={bRZ}")
                 if bRW != "1":
-                    params.append(f"bRW={bRW}")
+                    params.append(f"rw={bRW}")
                 params.append(f"no={no}")
 
                 lines.append(
@@ -959,19 +971,19 @@ def generate_boundary(commands: List[str]) -> str:
                 bX, bY, bZ = args[4], args[5], args[6]
                 bRX, bRY, bRZ = args[7], args[8], args[9]
 
-                params = [f"nNode={master}"]
+                params = [f"node={master}"]
                 if bX != "1":
-                    params.append(f"bX={bX}")
+                    params.append(f"dx={bX}")
                 if bY != "1":
-                    params.append(f"bY={bY}")
+                    params.append(f"dy={bY}")
                 if bZ != "1":
-                    params.append(f"bZ={bZ}")
+                    params.append(f"dz={bZ}")
                 if bRX != "1":
-                    params.append(f"bRX={bRX}")
+                    params.append(f"rx={bRX}")
                 if bRY != "1":
-                    params.append(f"bRY={bRY}")
+                    params.append(f"ry={bRY}")
                 if bRZ != "1":
-                    params.append(f"bRZ={bRZ}")
+                    params.append(f"rz={bRZ}")
                 params.append(f"no={no}")
 
                 lines.append(
@@ -983,24 +995,24 @@ def generate_boundary(commands: List[str]) -> str:
 
             elif bd_type == "ELSTCSPT":
                 nCoor = _val(args[3]) if args[3] else '""'
-                params = [f"nCoor={nCoor}"]
+                params = [f"coor={nCoor}"]
 
                 # 成对参数: (flag, stiffness) -- 仅当 flag!=1 或 stiffness!=默认值时传入
                 pair_defaults = {
-                    "bX": ("1", "1e13"),
-                    "bY": ("1", "1e13"),
-                    "bZ": ("1", "1e13"),
-                    "bRX": ("1", "1e16"),
-                    "bRY": ("1", "1e16"),
-                    "bRZ": ("1", "1e16"),
+                    "x": ("1", "1e13"),
+                    "y": ("1", "1e13"),
+                    "z": ("1", "1e13"),
+                    "rx": ("1", "1e16"),
+                    "ry": ("1", "1e16"),
+                    "rz": ("1", "1e16"),
                 }
                 pair_names = [
-                    ("bX", "DX"),
-                    ("bY", "DY"),
-                    ("bZ", "DZ"),
-                    ("bRX", "RX"),
-                    ("bRY", "RY"),
-                    ("bRZ", "RZ"),
+                    ("x", "dx"),
+                    ("y", "dy"),
+                    ("z", "dz"),
+                    ("rx", "drx"),
+                    ("ry", "dry"),
+                    ("rz", "drz"),
                 ]
                 idx = 4
                 for bname, dname in pair_names:
@@ -1047,7 +1059,7 @@ def generate_boundary(commands: List[str]) -> str:
             name = _val(raw_name)
             op = args[2]
             if op == "c":
-                lines.append(f"    bg = engine.boundary.group.create({name})")
+                lines.append(f"    bg = engine.boundary.group.create({name}, 'c')")
                 lines.append("    bd_group_names.append(bg.name)")
                 lines.append("")
                 current_bd_group = raw_name
@@ -1154,32 +1166,32 @@ def generate_loadcase(commands: List[str]) -> str:
                 j_params = args[15:24]  # dOffsetXJ ~ dMZJ
 
                 i_names = [
-                    "dOffsetXI",
-                    "dOffsetYI",
-                    "dOffsetZI",
-                    "dFXI",
-                    "dFYI",
-                    "dFZI",
-                    "dMXI",
-                    "dMYI",
-                    "dMZI",
+                    "offset_x_i",
+                    "offset_y_i",
+                    "offset_z_i",
+                    "fx_i",
+                    "fy_i",
+                    "fz_i",
+                    "mx_i",
+                    "my_i",
+                    "mz_i",
                 ]
                 j_names = [
-                    "dOffsetXJ",
-                    "dOffsetYJ",
-                    "dOffsetZJ",
-                    "dFXJ",
-                    "dFYJ",
-                    "dFZJ",
-                    "dMXJ",
-                    "dMYJ",
-                    "dMZJ",
+                    "offset_x_j",
+                    "offset_y_j",
+                    "offset_z_j",
+                    "fx_j",
+                    "fy_j",
+                    "fz_j",
+                    "mx_j",
+                    "my_j",
+                    "mz_j",
                 ]
 
                 params = [
-                    f"nEntity={elem}",
-                    f"eCoordSystem={eCoord}",
-                    f"eLoadType={eType}",
+                    f"entity={elem}",
+                    f"coord_system={eCoord}",
+                    f"load_type={eType}",
                 ]
                 for name, val in zip(i_names, i_params):
                     params.append(f"{name}={val}")
@@ -1194,7 +1206,7 @@ def generate_loadcase(commands: List[str]) -> str:
                 direct = _val(args[4])
                 temp = args[5]
                 lines.append(
-                    f"    {prefix}create_uniform_temperature({elem}, eDirect={direct}, dTemp={temp})"
+                    f"    {prefix}create_uniform_temperature({elem}, direct={direct}, temp={temp})"
                 )
                 lines.append("")
 
@@ -1205,7 +1217,7 @@ def generate_loadcase(commands: List[str]) -> str:
                 num = args[6]
                 params = ", ".join(_val(p) for p in args[7:])
                 lines.append(
-                    f"    {prefix}create_gradient_temperature({elem}, eDirect={direct}, eGTempType={gtype}, nNum={num}, param=[{params}])"
+                    f"    {prefix}create_gradient_temperature({elem}, {direct}, {gtype}, {num}, {params})"
                 )
                 lines.append("")
 
@@ -1217,21 +1229,21 @@ def generate_loadcase(commands: List[str]) -> str:
                 if len(args) > 7:
                     end = args[7]
                     lines.append(
-                        f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg={beg}, dEnd={end})"
+                        f"    {prefix}create_prestress({shape}, tension_type={tension_type}, tension_force_type={force_type}, beg={beg}, end={end})"
                     )
                 else:
                     # OSIS 导出时可能省略末尾的 0 值
                     if args[4].upper() == "BEG":
                         lines.append(
-                            f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg={beg}, dEnd=None)"
+                            f"    {prefix}create_prestress({shape}, tension_type={tension_type}, tension_force_type={force_type}, beg={beg}, end=None)"
                         )
                     elif args[4].upper() == "END":
                         lines.append(
-                            f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg=None, dEnd={beg})"
+                            f"    {prefix}create_prestress({shape}, tension_type={tension_type}, tension_force_type={force_type}, beg=None, end={beg})"
                         )
                     else:
                         lines.append(
-                            f"    {prefix}create_prestress({shape}, eTensionType={tension_type}, eTensionForceType={force_type}, dBeg={beg}, dEnd={beg})"
+                            f"    {prefix}create_prestress({shape}, tension_type={tension_type}, tension_force_type={force_type}, beg={beg}, end={beg})"
                         )
                 lines.append("")
 
@@ -1246,7 +1258,7 @@ def generate_loadcase(commands: List[str]) -> str:
                 fy = args[10]
                 fz = args[11]
                 lines.append(
-                    f"    {prefix}create_concentrated_force({elem}, eCoordSystem={eCoord}, is_moment={is_moment}, forces=[[{offset_x}, {offset_y}, {offset_z}, {fx}, {fy}, {fz}]])"
+                    f"    {prefix}create_concentrated_force({elem}, coord_system={eCoord}, is_moment={is_moment}, forces=[[{offset_x}, {offset_y}, {offset_z}, {fx}, {fy}, {fz}]])"
                 )
                 lines.append("")
 
@@ -1273,20 +1285,20 @@ def generate_loadcase(commands: List[str]) -> str:
                 if bArea == "1":
                     # IN 按规范: eCode, diameter, nNum, dPipe, [friction, deviation, startDef, endDef, tension, relax]
                     params = [
-                        f"n_mat={mat}",
-                        f"e_code={_val(rem[0])}",
+                        f"mat={mat}",
+                        f"code={_val(rem[0])}",
                         f"diameter={rem[1]}",
-                        f"n_num={rem[2]}",
-                        f"d_pipe={rem[3]}",
+                        f"num={rem[2]}",
+                        f"pipe={rem[3]}",
                     ]
                     # 可选参数
                     opts = [
-                        (4, "d_friction_coeff"),
-                        (5, "d_deviation_coeff"),
-                        (6, "d_starting_deform"),
-                        (7, "d_end_deform"),
-                        (8, "d_tensioning_coeff"),
-                        (9, "d_relaxation_coeff"),
+                        (4, "friction_coeff"),
+                        (5, "deviation_coeff"),
+                        (6, "starting_deform"),
+                        (7, "end_deform"),
+                        (8, "tensioning_coeff"),
+                        (9, "relaxation_coeff"),
                     ]
                     for idx, pname in opts:
                         s = _fmt_param(idx, pname)
@@ -1296,17 +1308,17 @@ def generate_loadcase(commands: List[str]) -> str:
                 else:
                     # IN 用户输入: dVal, dPipe, [friction, deviation, startDef, endDef, tension, relax]
                     params = [
-                        f"n_mat={mat}",
-                        f"d_val={rem[0]}",
-                        f"d_pipe={rem[1]}",
+                        f"mat={mat}",
+                        f"val={rem[0]}",
+                        f"pipe={rem[1]}",
                     ]
                     opts = [
-                        (2, "d_friction_coeff"),
-                        (3, "d_deviation_coeff"),
-                        (4, "d_starting_deform"),
-                        (5, "d_end_deform"),
-                        (6, "d_tensioning_coeff"),
-                        (7, "d_relaxation_coeff"),
+                        (2, "friction_coeff"),
+                        (3, "deviation_coeff"),
+                        (4, "starting_deform"),
+                        (5, "end_deform"),
+                        (6, "tensioning_coeff"),
+                        (7, "relaxation_coeff"),
                     ]
                     for idx, pname in opts:
                         s = _fmt_param(idx, pname)
@@ -1319,18 +1331,18 @@ def generate_loadcase(commands: List[str]) -> str:
                 if bArea == "1":
                     # EX 按规范: eCode, diameter, nNum, dPipe, [friction, startDef, endDef, tension, relax]
                     params = [
-                        f"n_mat={mat}",
-                        f"e_code={_val(rem[0])}",
+                        f"mat={mat}",
+                        f"code={_val(rem[0])}",
                         f"diameter={rem[1]}",
-                        f"n_num={rem[2]}",
-                        f"d_pipe={rem[3]}",
+                        f"num={rem[2]}",
+                        f"pipe={rem[3]}",
                     ]
                     opts = [
-                        (4, "d_friction_coeff"),
-                        (5, "d_starting_deform"),
-                        (6, "d_end_deform"),
-                        (7, "d_tensioning_coeff"),
-                        (8, "d_relaxation_coeff"),
+                        (4, "friction_coeff"),
+                        (5, "starting_deform"),
+                        (6, "end_deform"),
+                        (7, "tensioning_coeff"),
+                        (8, "relaxation_coeff"),
                     ]
                     for idx, pname in opts:
                         s = _fmt_param(idx, pname)
@@ -1340,16 +1352,16 @@ def generate_loadcase(commands: List[str]) -> str:
                 else:
                     # EX 用户输入: dVal, dPipe, [friction, startDef, endDef, tension, relax]
                     params = [
-                        f"n_mat={mat}",
-                        f"d_val={rem[0]}",
-                        f"d_pipe={rem[1]}",
+                        f"mat={mat}",
+                        f"val={rem[0]}",
+                        f"pipe={rem[1]}",
                     ]
                     opts = [
-                        (2, "d_friction_coeff"),
-                        (3, "d_starting_deform"),
-                        (4, "d_end_deform"),
-                        (5, "d_tensioning_coeff"),
-                        (6, "d_relaxation_coeff"),
+                        (2, "friction_coeff"),
+                        (3, "starting_deform"),
+                        (4, "end_deform"),
+                        (5, "tensioning_coeff"),
+                        (6, "relaxation_coeff"),
                     ]
                     for idx, pname in opts:
                         s = _fmt_param(idx, pname)
@@ -1362,15 +1374,15 @@ def generate_loadcase(commands: List[str]) -> str:
                 if bArea == "1":
                     # PRE 按规范: eCode, diameter, nNum, dDeltaT, [tension, relax]
                     params = [
-                        f"n_mat={mat}",
-                        f"e_code={_val(rem[0])}",
+                        f"mat={mat}",
+                        f"code={_val(rem[0])}",
                         f"diameter={rem[1]}",
-                        f"n_num={rem[2]}",
-                        f"d_delta_t={rem[3]}",
+                        f"num={rem[2]}",
+                        f"delta_t={rem[3]}",
                     ]
                     opts = [
-                        (4, "d_tensioning_coeff"),
-                        (5, "d_relaxation_coeff"),
+                        (4, "tensioning_coeff"),
+                        (5, "relaxation_coeff"),
                     ]
                     for idx, pname in opts:
                         s = _fmt_param(idx, pname)
@@ -1380,13 +1392,13 @@ def generate_loadcase(commands: List[str]) -> str:
                 else:
                     # PRE 用户输入: dVal, dDeltaT, [tension, relax]
                     params = [
-                        f"n_mat={mat}",
-                        f"d_val={rem[0]}",
-                        f"d_delta_t={rem[1]}",
+                        f"mat={mat}",
+                        f"val={rem[0]}",
+                        f"delta_t={rem[1]}",
                     ]
                     opts = [
-                        (2, "d_tensioning_coeff"),
-                        (3, "d_relaxation_coeff"),
+                        (2, "tensioning_coeff"),
+                        (3, "relaxation_coeff"),
                     ]
                     for idx, pname in opts:
                         s = _fmt_param(idx, pname)
@@ -1426,7 +1438,7 @@ def generate_loadcase(commands: List[str]) -> str:
                 curve1 = _val(args[7])
                 curve2 = _val(args[8])
                 lines.append(
-                    f"    shape = engine.tendon.shape.create_arc2d({name}, n_num={num}, prop={prop}, element_group={elem_group}, e_type={e_type}, param=[{curve1}, {curve2}])"
+                    f"    shape = engine.tendon.shape.create_arc2d({name}, {num}, {prop}, {elem_group}, {e_type}, {curve1}, {curve2})"
                 )
                 lines.append("")
                 current_shape_name = raw_name
@@ -1553,7 +1565,7 @@ def generate_analysis(commands: List[str]) -> str:
             code = _val(args[2])
             grade = _val(args[3])
             lines.append(
-                f"    engine.live.grade.create_highway({name}, eCode={code}, eLiveLoadType={grade})"
+                f"    engine.live.grade.create_highway({name}, code={code}, live_load_type={grade})"
             )
             lines.append("")
 
@@ -1571,12 +1583,12 @@ def generate_analysis(commands: List[str]) -> str:
                     offset_y = args[8] if len(args) > 8 else "0.0"
                     offset_z = args[9] if len(args) > 9 else "0.0"
                     lines.append(
-                        f"    engine.live.lane.create_ve({name}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=0, ref_elems={esel}, offsetY={offset_y}, offsetZ={offset_z})"
+                        f"    engine.live.lane.create_ve({name}, length={length}, wheel={wheel}, orientation={ori}, ref=0, ref_elems={esel}, offset_y={offset_y}, offset_z={offset_z})"
                     )
                 else:
                     spline = _val(args[8]) if len(args) > 8 else '""'
                     lines.append(
-                        f"    engine.live.lane.create_ve({name}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=1, spline_name={spline})"
+                        f"    engine.live.lane.create_ve({name}, length={length}, wheel={wheel}, orientation={ori}, ref=1, spline_name={spline})"
                     )
 
             elif algo_type == "TCB":
@@ -1590,12 +1602,12 @@ def generate_analysis(commands: List[str]) -> str:
                     offset_y = args[9] if len(args) > 9 else "0.0"
                     offset_z = args[10] if len(args) > 10 else "0.0"
                     lines.append(
-                        f"    engine.live.lane.create_tcb({name}, crossbeam_elems={crossbeam}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=0, ref_elems={ref_elems}, offsetY={offset_y}, offsetZ={offset_z})"
+                        f"    engine.live.lane.create_tcb({name}, crossbeam_elems={crossbeam}, length={length}, wheel={wheel}, orientation={ori}, ref=0, ref_elems={ref_elems}, offset_y={offset_y}, offset_z={offset_z})"
                     )
                 else:
                     spline = _val(args[8]) if len(args) > 8 else '""'
                     lines.append(
-                        f"    engine.live.lane.create_tcb({name}, crossbeam_elems={crossbeam}, dLength={length}, wheel={wheel}, eOriention={ori}, eRef=1, spline_name={spline})"
+                        f"    engine.live.lane.create_tcb({name}, crossbeam_elems={crossbeam}, length={length}, wheel={wheel}, orientation={ori}, ref=1, spline_name={spline})"
                     )
 
             else:
@@ -1739,11 +1751,11 @@ def generate_stage(commands: List[str]) -> str:
             part = args[6] if len(args) > 6 else "None"
             if stage_no == _current_stage:
                 lines.append(
-                    f"    stg.define_element({eOP}, {eType}, {group_name}, nBirth={birth}, ePart={part})"
+                    f"    stg.define_element({eOP}, {eType}, {group_name}, birth={birth}, part={part})"
                 )
             else:
                 lines.append(
-                    f"    engine.stage.get({stage_no}).define_element({eOP}, {eType}, {group_name}, nBirth={birth}, ePart={part})"
+                    f"    engine.stage.get({stage_no}).define_element({eOP}, {eType}, {group_name}, birth={birth}, part={part})"
                 )
             lines.append("")
 
@@ -1967,6 +1979,8 @@ def build_project(command_file: Optional[str] = None, output_dir: Optional[str] 
 
 import argparse
 
+from pyosis import batch
+
 from prep._0_engine import engine
 from prep._1_control import setup_control
 from prep._2_property import build_property
@@ -1983,6 +1997,9 @@ from prep._10_stage import build_stages
 def build_model(run_analysis: bool = False):
     """完整的桥梁建模流程（先清空 OSIS 数据，再依次重建所有组件）
 
+    建模步骤在 batch 模式下执行：块内所有命令在退出时一次性发送，
+    中途的查询（get/all 等）会自动先冲刷缓冲，保证结果正确。
+
     Args:
         run_analysis: 是否自动运行分析，默认 False（只建模）
     """
@@ -1995,45 +2012,46 @@ def build_model(run_analysis: bool = False):
     print("开始建模")
     print("=" * 50)
 
-    # 1. 全局设置（无依赖）
-    print("\\n[1/10] 设置全局控制参数...")
-    setup_control(engine)
+    with batch():
+        # 1. 全局设置（无依赖）
+        print("\\n[1/10] 设置全局控制参数...")
+        setup_control(engine)
 
-    # 2. 几何属性（无依赖）
-    print("[2/10] 设置几何属性...")
-    geo_names = build_property(engine)
+        # 2. 几何属性（无依赖）
+        print("[2/10] 设置几何属性...")
+        geo_names = build_property(engine)
 
-    # 3. 材料（无依赖）
-    print("[3/10] 创建材料...")
-    mat_nos = build_materials(engine)
+        # 3. 材料（无依赖）
+        print("[3/10] 创建材料...")
+        mat_nos = build_materials(engine)
 
-    # 4. 截面（无依赖）
-    print("[4/10] 创建截面...")
-    sec_nos = build_sections(engine)
+        # 4. 截面（无依赖）
+        print("[4/10] 创建截面...")
+        sec_nos = build_sections(engine)
 
-    # 5. 节点（无依赖）
-    print("[5/10] 创建节点...")
-    node_nos = build_nodes(engine)
+        # 5. 节点（无依赖）
+        print("[5/10] 创建节点...")
+        node_nos = build_nodes(engine)
 
-    # 6. 单元（依赖节点、截面、材料）
-    print("[6/10] 创建单元...")
-    elem_nos, elem_group_names = build_elements(engine, mat_nos, sec_nos, node_nos)
+        # 6. 单元（依赖节点、截面、材料）
+        print("[6/10] 创建单元...")
+        elem_nos, elem_group_names = build_elements(engine, mat_nos, sec_nos, node_nos)
 
-    # 7. 边界（依赖节点）
-    print("[7/10] 创建边界条件...")
-    bd_nos, bd_group_names = build_boundaries(engine, node_nos)
+        # 7. 边界（依赖节点）
+        print("[7/10] 创建边界条件...")
+        bd_nos, bd_group_names = build_boundaries(engine, node_nos)
 
-    # 8. 荷载工况（依赖单元、材料、几何）
-    print("[8/10] 创建荷载工况...")
-    lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
+        # 8. 荷载工况（依赖单元、材料、几何）
+        print("[8/10] 创建荷载工况...")
+        lc_names = build_loadcases(engine, geo_names, mat_nos, elem_nos, elem_group_names)
 
-    # 9. 分析设置（依赖节点编号和单元组名称）
-    print("[9/10] 创建分析设置...")
-    settle_names, live_names = build_analysis(engine, node_nos, elem_group_names)
+        # 9. 分析设置（依赖节点编号和单元组名称）
+        print("[9/10] 创建分析设置...")
+        settle_names, live_names = build_analysis(engine, node_nos, elem_group_names)
 
-    # 10. 施工阶段（依赖所有组）
-    print("[10/10] 创建施工阶段...")
-    build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_names, live_names)
+        # 10. 施工阶段（依赖所有组）
+        print("[10/10] 创建施工阶段...")
+        build_stages(engine, elem_group_names, bd_group_names, lc_names, settle_names, live_names)
 
     print("\\n" + "=" * 50)
     print("建模完成！")

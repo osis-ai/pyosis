@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 from ..core.client import osis_client
+from ..core.basic_manager import BasicManager
 from .overall import (
     osis_stage,
     osis_stage_del,
@@ -202,7 +203,7 @@ class Stage:
 # ──────────────────────────────────────────────
 
 
-class StageManager:
+class StageManager(BasicManager):
     """施工阶段管理器
 
     统一管理施工阶段的创建、删除、修改和查询。
@@ -214,6 +215,8 @@ class StageManager:
         >>> all_stgs = stage_manager.all()                                  # 获取全部阶段
         >>> stage_manager.delete(1)                                         # 删除阶段
     """
+    _entity_class = Stage
+    _entity_key_attr = "no"
 
     def __init__(self) -> None:
         pass
@@ -324,6 +327,10 @@ class StageManager:
         elif not isinstance(no, list):
             raise TypeError(f"不支持的编号类型: {type(no)}")
         
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(no)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetStageInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")

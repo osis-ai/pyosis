@@ -11,6 +11,7 @@ import functools
 from typing import Dict, Any, Tuple, Literal, Optional
 # from .engine import OSISEngine
 from .client import osis_client
+from .batch import batch_state, batch, flush, BatchError
 
 # def _log(text, filename="pyosis.log"):
 #     """简单的日志函数"""
@@ -154,33 +155,37 @@ class OSISFunctionRegistry:
             @functools.wraps(func)
             def wrapper(*args, **kwargs):   # 函数执行时，都会走这个路径
                 # 包装参数
-                cmd = self._process_arguments(func, cmd_name, *args, **kwargs)
+                cmd, _bound_args = self._process_arguments(func, cmd_name, *args, **kwargs)
+                # batch 模式：进缓冲，退出上下文时统一发送
+                if batch_state.active:
+                    batch_state.buffer.append(cmd)
+                    return (True, "queued")
                 # 发送到软件
                 return self._execute_command(cmd)
-            
+
             return wrapper
-        
+
         return decorator
 
     def _process_arguments(self, func, cmd_name, *args, **kwargs):
-        """处理参数并生成命令字符串"""
-        
+        """处理参数并生成命令字符串，同时返回绑定参数（供 batch 影子登记）"""
+
         # 获取函数签名
         sig = inspect.signature(func)
-        
+
         # 绑定用户参数
         try:
             bound = sig.bind(*args, **kwargs)
             bound.apply_defaults()
         except TypeError as e:
             raise ValueError(f"参数错误: {e}")
-        
+
         # 收集参数值
         param_values = []
-        
+
         for param_name, param in sig.parameters.items():    # 参数值为空字符串时会加一个空的参数
             value = bound.arguments[param_name]
-            
+
             # 自动展开list/tuple
             if isinstance(value, (list, tuple)):
                 for item in value:
@@ -199,9 +204,10 @@ class OSISFunctionRegistry:
             else:
                 # 普通值
                 param_values.append(str(value))
-        
+
         # 生成命令字符
-        return f"{cmd_name},{','.join(param_values)};" if len(param_values) != 0 else f"{cmd_name};"
+        cmd = f"{cmd_name},{','.join(param_values)};" if len(param_values) != 0 else f"{cmd_name};"
+        return cmd, dict(bound.arguments)
     
     def _execute_command(self, cmd) -> Tuple[bool, str, Any]:
         """执行命令（发送到软件）"""

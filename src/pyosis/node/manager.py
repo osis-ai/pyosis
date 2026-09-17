@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
+from ..core.basic_manager import BasicManager
 from .interface import osis_node, osis_node_del, osis_node_mod
 
 
@@ -78,7 +79,7 @@ class Node:
 # ──────────────────────────────────────────────
 
 
-class NodeManager:
+class NodeManager(BasicManager):
     """节点管理器
 
     统一管理节点的创建、删除、修改和查询。
@@ -95,6 +96,8 @@ class NodeManager:
         >>> node_manager.delete(100)                   # 删除节点
         >>> node_manager.create(100, 1.0, 0.0, 0.0)    # 修改坐标（create 覆盖）
     """
+    _entity_class = Node
+    _entity_key_attr = "no"
 
     def __init__(self) -> None:
         ...
@@ -115,6 +118,7 @@ class NodeManager:
         """生成下一个可用节点编号
 
         取已有节点编号的最大值+1，如果没有节点则从1开始。
+        （batch 模式下由基类守卫直接报错，要求显式编号）
         """
         nodes = self._load()
         node_no = [n.no for n in nodes]
@@ -207,6 +211,10 @@ class NodeManager:
             ...
         else:
             raise TypeError(f"不支持的编号类型: {type(no)}")
+        # batch 模式：返回延迟对象（零查询），访问真实属性时才物化
+        lazy = self._batch_lazy(no)
+        if lazy is not None:
+            return lazy
         resp = osis_client("GetNodeInfoByNos", {"no": no})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
