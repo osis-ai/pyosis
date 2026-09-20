@@ -22,11 +22,11 @@ pip install osis-python -i https://pypi.org/simple
 
 ## 环境要求
 
-- OSIS >= 5.0（已支持 5.01：转换器和运行时同时兼容 `N`/`Ele`/`Sec` 等缩写命令名）
+- OSIS >= 5.1（转换器和运行时同时兼容 `N`/`Ele`/`Sec` 等缩写命令名）
 - Python >= 3.8
 - **仅求解器模式（solver-only）** 额外显式提供 OSIS 求解器的安装目录（例如 `D:\OSIS_Solver`）。
 
-> OSIS 5.01 HTTP 服务端已知 bug 规避：`/OSIS_Run` 的命令流切分器不会剥离 `//` 行注释，导致注释行与紧随其后的命令被合并成一条非法命令而一起被丢弃。pyosis 的 `.out` 转换器在发送前已剥除注释；如果您自行拼接 `.out` 载荷，请预先去除 `//` 注释行，或直接通过生成的 `main.py` 使用 `osis_run()`。
+> OSIS 5.1 HTTP 服务端已知 bug 规避：`/OSIS_Run` 的命令流切分器不会剥离 `//` 行注释，导致注释行与紧随其后的命令被合并成一条非法命令而一起被丢弃。pyosis 的 `.out` 转换器在发送前已剥除注释；如果您自行拼接 `.out` 载荷，请预先去除 `//` 注释行，或直接通过生成的 `main.py` 使用 `osis_run()`。
 
 ## 快速开始
 
@@ -364,16 +364,16 @@ lc.create_nforce(4, fx=200000, fy=0, fz=0)
 engine.solve()
 ```
 
-## 端到端示例
+## 端到端示例（求解器模式）
 
-见 [`tests/pyosis_demo.py`](tests/pyosis_demo.py):一个可运行的端到端示例,完成以下流程:
+见 [`tests/pyosis_demo.py`](tests/pyosis_demo.py)：一个可运行的端到端示例，完成以下流程：
 
-- 通过 `OSISSolver` 直接启动求解器(无需 GUI)
-- 建模 25m 简支小箱梁示例(10 个 prep 模块)
+- 通过 `OSISSolver` 直接启动求解器（无需 GUI）
+- 建模 25m 简支小箱梁示例（10 个 prep 模块）
 - 执行 `engine.solve()`
 - 导出 LCND / LCEF / EnvND / EnvEF 结果到 CSV
 
-该 demo 复用了 `tests/output/output_py/25m简支小箱梁中梁-solveronly/` 的 prep 模块,既可作为冒烟测试,也可作为可复制粘贴的模板。
+该 demo 复用了 `tests/output/output_py/25m简支小箱梁中梁-solveronly/` 的 prep 模块，既可作为冒烟测试，也可作为可复制粘贴的模板。
 
 ## 批量执行（batch）
 
@@ -445,7 +445,7 @@ python prep/main.py --solve    # 建模 + 求解
 
 转换器特性：
 
-- 同时识别长名（`Node`/`Element`/`Section`/`Material`/`LoadCase`/`Boundary`/`Stage`）和 OSIS 5.01 缩写名（`N`/`Ele`/`Sec`/`SecOff`/`SecMesh`/`Mat`/`LC`/`Bd`/`Stg`），自动归一化；
+- 同时识别长名（`Node`/`Element`/`Section`/`Material`/`LoadCase`/`Boundary`/`Stage`）和 OSIS 5.1 缩写名（`N`/`Ele`/`Sec`/`SecOff`/`SecMesh`/`Mat`/`LC`/`Bd`/`Stg`），自动归一化；
 - `SectionMesh` 按手册 7.3.6.2 的新格式 `Index, PartID, MeshMethod, MeshSize` 生成（混凝土截面 `PartID=1`，模板组合截面 `PartID=2`）；
 - `Spline3D` 按类型字段分发到 `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d`；
 - 暂未建模的命令会标记为 `# TODO`，方便人工跟进。
@@ -464,7 +464,22 @@ with batch():
 
 身份属性（`lc.no`、`lc.name`）不触发服务器交互；数据字段（`lc.type`、`lc.elements`）首次访问会物化（一次冲刷+查询），后续直接读缓存。
 
-## 许可证
+## 端到端示例（GUI 模式）
 
-仅限内部使用 — © 中交公路规划设计院有限公司。
+除了 pyosis 自带的求解器模式 [`pyosis_demo.py`](tests/pyosis_demo.py)，[`tests/output/`](tests/output/) 目录还提供了从真实 `.out` 文件生成的 GUI 模式示例。代表性的是 `xiaoxiangliang.out`——一个使用 OSIS 5.1 缩写命令名的 20 m 简支小箱梁：
+
+```bash
+# 先手动打开 OSIS GUI（让 engine.clear() / clc() 能清空当前工程），
+# 然后在仓库根目录执行：
+python tests/output/output_py/xiaoxiangliang/prep/main.py            # 仅建模
+python tests/output/output_py/xiaoxiangliang/prep/main.py --solve    # 建模 + 求解
+```
+
+整个 10 个模块的建模流程都包在 `with batch():` 内，一次 HTTP 请求就把全部命令送达 OSIS。与通过转换器的 `osis_run` 裸发同一份 `.out` 的耗时对比，见 [`tests/_bench_out_vs_batch.py`](tests/_bench_out_vs_batch.py)。xiaoxiangliang 在本地 socket 上两种方式都约 7 s 完成；不开 batch 的同等规模项目需 1000+ 次往返。
+
+从源 `.out` 重新生成该项目：
+
+```bash
+python src/pyosis/core/build.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
+```
 

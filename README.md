@@ -22,11 +22,11 @@ pip install osis-python -i https://pypi.org/simple
 
 ## Requirements
 
-- OSIS >= 5.0 (5.01 supported — short-form command names like `N`/`Ele`/`Sec` are accepted by both the converter and runtime)
+- OSIS >= 5.1 (short-form command names like `N`/`Ele`/`Sec` are accepted by both the converter and runtime)
 - Python >= 3.8
 - **Solver-only mode** additionally requires the solver distribution that ships `PySolver.dll` (e.g. `D:\OSIS_Solver\Rbin64`).
 
-> OSIS 5.01 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
+> OSIS 5.1 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
 
 ## Quick Start
 
@@ -369,7 +369,7 @@ lc.create_nforce(4, fx=200000, fy=0, fz=0)
 engine.solve()
 ```
 
-## End-to-End Demo
+## End-to-End Demo (Solver-Only Mode)
 
 See [`tests/pyosis_demo.py`](tests/pyosis_demo.py) for a runnable end-to-end example that:
 
@@ -450,7 +450,7 @@ python prep/main.py --solve    # build + solve
 
 Notes on the converter:
 
-- Both long-form command names (`Node`, `Element`, `Section`, `Material`, `LoadCase`, `Boundary`, `Stage`) and OSIS 5.01 short-form aliases (`N`, `Ele`, `Sec`/`SecOff`/`SecMesh`, `Mat`, `LC`, `Bd`, `Stg`) are recognized and normalized.
+- Both long-form command names (`Node`, `Element`, `Section`, `Material`, `LoadCase`, `Boundary`, `Stage`) and OSIS 5.1 short-form aliases (`N`, `Ele`, `Sec`/`SecOff`/`SecMesh`, `Mat`, `LC`, `Bd`, `Stg`) are recognized and normalized.
 - `SectionMesh` is emitted with the new `Index, PartID, MeshMethod, MeshSize` layout (Section 7.3.6.2) — `PartID = 1` for concrete sections, `2` for templated composite sections.
 - `Spline3D` is dispatched to `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d` based on the type field.
 - Commands that are not yet modeled are written as `# TODO` comments for follow-up manual editing.
@@ -469,8 +469,23 @@ with batch():
 
 Accessing identity attributes (`lc.no`, `lc.name`) does not touch the server. Accessing data fields (`lc.type`, `lc.elements`) materializes the object (one-time flush + query), then caches it.
 
-> OSIS 5.01 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
+> OSIS 5.1 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
 
-## License
+## End-to-End Demo (GUI Mode)
 
-Internal use only — © CCCC Highway Consultant Co., Ltd.
+In addition to the solver-only [`pyosis_demo.py`](tests/pyosis_demo.py) shipped with pyosis, the [`tests/output/`](tests/output/) directory includes GUI-mode demos generated from real `.out` files. The most representative is `xiaoxiangliang.out` — a 5.1 short-form-command 20 m simply-supported small box girder:
+
+```bash
+# Open OSIS GUI manually first (so engine.clear() / clc() can clear the current project),
+# then from the repo root:
+python tests/output/output_py/xiaoxiangliang/prep/main.py            # build the model
+python tests/output/output_py/xiaoxiangliang/prep/main.py --solve    # build + solve
+```
+
+The whole 10-module flow runs inside `with batch():` so the project is sent to OSIS in a single HTTP request. Compare with running the same `.out` via the converter's `osis_run` raw path — see [`tests/_bench_out_vs_batch.py`](tests/_bench_out_vs_batch.py) for the benchmark. On xiaoxiangliang both paths complete in ~7 s on a local socket; without `batch()`, a 1000-command project would take ~3000 round-trips.
+
+To regenerate this project from the source `.out`:
+
+```bash
+python src/pyosis/core/build.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
+```
