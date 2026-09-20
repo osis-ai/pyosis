@@ -22,9 +22,11 @@ pip install osis-python -i https://pypi.org/simple
 
 ## Requirements
 
-- OSIS >= 5.0 (includes the required Python runtime environment)
+- OSIS >= 5.0 (5.01 supported — short-form command names like `N`/`Ele`/`Sec` are accepted by both the converter and runtime)
 - Python >= 3.8
 - **Solver-only mode** additionally requires the solver distribution that ships `PySolver.dll` (e.g. `D:\OSIS_Solver\Rbin64`).
+
+> OSIS 5.01 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
 
 ## Quick Start
 
@@ -377,3 +379,98 @@ See [`tests/pyosis_demo.py`](tests/pyosis_demo.py) for a runnable end-to-end exa
 - Exports LCND / LCEF / EnvND / EnvEF results to CSV
 
 The demo reuses the prep modules from `tests/output/output_py/25m简支小箱梁中梁-solveronly/`, so it serves both as a smoke test and a copy-paste template.
+
+## Batch Execution
+
+For non-interactive workflows (large models, customer scripts that took tens of minutes per command), wrap your script in `with batch():` to merge **all** OSIS commands into a **single** `OSIS_Run` HTTP request when the block exits:
+
+```python
+from pyosis import batch
+
+with batch():
+    engine.clear()
+    engine.clc()
+    engine.control.set_gravity_acceleration(9.8066)
+    engine.material.create_conc(no=1, name="C50", ...)
+    for i in range(1000):
+        engine.node.create(no=i + 1, x=i * 0.1, y=0.0, z=0.0)
+    for i in range(999):
+        engine.element.create_beam3d(no=i + 1, node1=i + 1, node2=i + 2, ...)
+```
+
+Server-side `OSIS_Run` calls `SplitOsisCommands` once and then a single `Execution(&v)`, so the network round-trip cost is paid exactly once instead of once per command. Intermediate reads (`get`, `all`) auto-flush the buffer first, so cached objects stay correct.
+
+Notes:
+
+- Nested `with batch():` is supported — the inner exit does not flush; only the outermost exit does.
+- If the block raises, the buffered commands added since `__enter__` are discarded.
+- `flush()` can be called inside the block to force an early flush.
+- `next_no()` (auto-numbering) raises inside `batch()` because it would need to query the server mid-batch; pass `no=...` explicitly, or run auto-numbering outside the batch.
+
+Benchmark on the `25m简支小箱梁中梁` project (`.out` of ~3000 commands): before `batch()` ~3000 round-trips; with `batch()` 3 round-trips (clear + clc + one final flush), **~1000x compression**.
+
+## .out → pyosis Converter
+
+pyosis ships a converter that turns an OSIS command stream (`.out`) into a clean, runnable pyosis project. This is the easiest way to migrate a legacy APDL/SML script.
+
+```bash
+python src/pyosis/core/build.py path/to/model.out path/to/output_project
+```
+
+Generated layout:
+
+```
+output_project/
+├── build.py             # Build script
+├── post/                # Post-processing directory
+├── 项目画像.md          # Project profile (AI-maintained)
+└── prep/
+    ├── main.py          # Entry point (batch mode, runs all 10 modules)
+    ├── _1_control.py    # Global control parameters
+    ├── _2_property.py   # Geometry / coordinate / damping / creep properties
+    ├── _3_material.py   # Materials
+    ├── _4_section.py    # Sections (incl. mesh)
+    ├── _5_node.py       # Nodes
+    ├── _6_element.py    # Elements
+    ├── _7_boundary.py   # Boundaries
+    ├── _8_loadcase.py   # Load cases
+    ├── _9_analysis.py   # Analysis settings (settlement / live / dynamic / stability)
+    └── _10_stage.py     # Construction stages
+```
+
+The generated `main.py` wraps the entire modelling flow in `with batch():`, so the whole project is sent to OSIS in one HTTP request — matching the OSIS server's native batching path.
+
+Run it:
+
+```bash
+cd output_project
+python prep/main.py            # build the model
+python prep/main.py --solve    # build + solve
+```
+
+Notes on the converter:
+
+- Both long-form command names (`Node`, `Element`, `Section`, `Material`, `LoadCase`, `Boundary`, `Stage`) and OSIS 5.01 short-form aliases (`N`, `Ele`, `Sec`/`SecOff`/`SecMesh`, `Mat`, `LC`, `Bd`, `Stg`) are recognized and normalized.
+- `SectionMesh` is emitted with the new `Index, PartID, MeshMethod, MeshSize` layout (Section 7.3.6.2) — `PartID = 1` for concrete sections, `2` for templated composite sections.
+- `Spline3D` is dispatched to `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d` based on the type field.
+- Commands that are not yet modeled are written as `# TODO` comments for follow-up manual editing.
+
+## Chained Method Calls
+
+The dataclass returned by `get()` supports method chaining without server round-trips:
+
+```python
+with batch():
+    lc = engine.load.create("Self-weight", load_case_type="D")
+    lc.create_gravity()
+    lc.create_nforce(node=1, fx=0, fy=-1000, fz=0)
+    # ↑ all three commands are queued; the OSIS_Run request only fires at exit
+```
+
+Accessing identity attributes (`lc.no`, `lc.name`) does not touch the server. Accessing data fields (`lc.type`, `lc.elements`) materializes the object (one-time flush + query), then caches it.
+
+> OSIS 5.01 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
+
+## License
+
+Internal use only — © CCCC Highway Consultant Co., Ltd.

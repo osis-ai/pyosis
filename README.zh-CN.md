@@ -22,9 +22,11 @@ pip install osis-python -i https://pypi.org/simple
 
 ## 环境要求
 
-- OSIS >= 5.0（包含所需的 Python 运行环境）
+- OSIS >= 5.0（已支持 5.01：转换器和运行时同时兼容 `N`/`Ele`/`Sec` 等缩写命令名）
 - Python >= 3.8
 - **仅求解器模式（solver-only）** 额外显式提供 OSIS 求解器的安装目录（例如 `D:\OSIS_Solver`）。
+
+> OSIS 5.01 HTTP 服务端已知 bug 规避：`/OSIS_Run` 的命令流切分器不会剥离 `//` 行注释，导致注释行与紧随其后的命令被合并成一条非法命令而一起被丢弃。pyosis 的 `.out` 转换器在发送前已剥除注释；如果您自行拼接 `.out` 载荷，请预先去除 `//` 注释行，或直接通过生成的 `main.py` 使用 `osis_run()`。
 
 ## 快速开始
 
@@ -372,4 +374,97 @@ engine.solve()
 - 导出 LCND / LCEF / EnvND / EnvEF 结果到 CSV
 
 该 demo 复用了 `tests/output/output_py/25m简支小箱梁中梁-solveronly/` 的 prep 模块,既可作为冒烟测试,也可作为可复制粘贴的模板。
+
+## 批量执行（batch）
+
+面对大型模型或客制化脚本逐条执行太慢时，把建模代码包进 `with batch():`：退出时块内**所有** OSIS 命令合并为**一次** `OSIS_Run` HTTP 请求发出。
+
+```python
+from pyosis import batch
+
+with batch():
+    engine.clear()
+    engine.clc()
+    engine.control.set_gravity_acceleration(9.8066)
+    engine.material.create_conc(no=1, name="C50", ...)
+    for i in range(1000):
+        engine.node.create(no=i + 1, x=i * 0.1, y=0.0, z=0.0)
+    for i in range(999):
+        engine.element.create_beam3d(no=i + 1, node1=i + 1, node2=i + 2, ...)
+```
+
+服务端 `OSIS_Run` 调用一次 `SplitOsisCommands` 后只跑一次 `Execution(&v)`，网络往返只付一次。块内的查询（`get`、`all`）会先自动冲刷缓冲再发起读取，保证结果正确。
+
+要点：
+
+- 支持嵌套 `with batch():`，仅最外层退出时统一冲刷；
+- 块内若抛异常，自 `__enter__` 起入队的命令全部丢弃，原异常再抛出；
+- 块内可手动调用 `flush()` 提前冲刷；
+- `next_no()`（自动编号）在 batch 内直接抛错（会强制回查服务器），请显式传入 `no=...`，或退出 batch 再做自动编号。
+
+`25m简支小箱梁中梁` 实测对比：未启用 batch ~3000 次往返；启用后 3 次（clear + clc + 最终冲刷），**约 1000x 压缩**。
+
+## .out → pyosis 转换器
+
+pyosis 自带把 OSIS 命令流（`.out`）一键转换为可运行 pyosis 项目的工具——迁移旧 APDL/SML 脚本最直接的方式。
+
+```bash
+python src/pyosis/core/build.py path/to/model.out path/to/output_project
+```
+
+生成的项目结构：
+
+```
+output_project/
+├── build.py              # 构建脚本
+├── post/                 # 后处理目录
+├── 项目画像.md           # 项目画像（由 AI 维护）
+└── prep/
+    ├── main.py           # 入口（batch 模式跑完所有 10 个模块）
+    ├── _1_control.py     # 全局控制参数
+    ├── _2_property.py    # 几何/坐标系/阻尼/收缩徐变等属性
+    ├── _3_material.py    # 材料
+    ├── _4_section.py     # 截面（含网格划分）
+    ├── _5_node.py        # 节点
+    ├── _6_element.py     # 单元
+    ├── _7_boundary.py    # 边界条件
+    ├── _8_loadcase.py    # 荷载工况
+    ├── _9_analysis.py    # 分析设置（沉降/活载/动力/稳定）
+    └── _10_stage.py      # 施工阶段
+```
+
+生成的 `main.py` 把整个建模流程包进 `with batch():`，所有命令一次性发送到 OSIS，复用服务端原生的批量执行路径。
+
+运行：
+
+```bash
+cd output_project
+python prep/main.py            # 仅建模
+python prep/main.py --solve    # 建模 + 求解
+```
+
+转换器特性：
+
+- 同时识别长名（`Node`/`Element`/`Section`/`Material`/`LoadCase`/`Boundary`/`Stage`）和 OSIS 5.01 缩写名（`N`/`Ele`/`Sec`/`SecOff`/`SecMesh`/`Mat`/`LC`/`Bd`/`Stg`），自动归一化；
+- `SectionMesh` 按手册 7.3.6.2 的新格式 `Index, PartID, MeshMethod, MeshSize` 生成（混凝土截面 `PartID=1`，模板组合截面 `PartID=2`）；
+- `Spline3D` 按类型字段分发到 `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d`；
+- 暂未建模的命令会标记为 `# TODO`，方便人工跟进。
+
+## 链式调用
+
+`get()` 返回的数据类对象支持零服务器往返的链式调用：
+
+```python
+with batch():
+    lc = engine.load.create("Self-weight", load_case_type="D")
+    lc.create_gravity()
+    lc.create_nforce(node=1, fx=0, fy=-1000, fz=0)
+    # ↑ 三条命令全部入队，OSIS_Run 请求只在块退出时发出一次
+```
+
+身份属性（`lc.no`、`lc.name`）不触发服务器交互；数据字段（`lc.type`、`lc.elements`）首次访问会物化（一次冲刷+查询），后续直接读缓存。
+
+## 许可证
+
+仅限内部使用 — © 中交公路规划设计院有限公司。
 
