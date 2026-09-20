@@ -466,92 +466,19 @@ with batch():
 
 ## 端到端示例（GUI 模式）
 
-下面这段是 `tests/output/output_py/xiaoxiangliang/prep/main.py` 的精简版——也就是上面求解器模式 `pyosis_demo.py` 的 GUI 模式对手示例。在已打开的 OSIS 5.1+ GUI 上直接运行即可：
-
-```python
-from pyosis import batch
-from pyosis.core.engine import OSISEngine
-
-engine = OSISEngine()
-
-with batch():
-    # 1. 全局控制
-    engine.clear()
-    engine.clc()
-    engine.control.set_gravity_acceleration(9.8066)
-    engine.control.set_calc_tendon(True)
-    engine.control.set_calc_concurrent_force(True)
-    engine.control.set_calc_shrink(True)
-    engine.control.set_calc_creep(True)
-    engine.control.set_calc_shear(True)
-    engine.control.set_calc_relaxation(True)
-    engine.control.set_mod_loc_coor(False)
-    engine.control.set_calc_rebar_gravity(False)
-    engine.control.set_inc_rebar(True)
-    engine.control.set_inc_tendon(True)
-    engine.control.set_nonlinear(geom=False, link=False)
-    engine.control.set_line_search(False)
-    engine.control.set_auto_time_step(False)
-    engine.control.set_substitution_steps(1, 20)
-    engine.control.set_modal_opt(0)
-
-    # 2. 几何属性（钢束 3D 圆弧）
-    engine.geometry.create_arc3d(
-        "钢束-1-N1", "TENDON",
-        [0.16, 0, -0.3, 0, 6.90373, 0, -0.89, 30,
-         13.0163, 0, -0.89, 30, 19.76, 0, -0.3, 0],
-    )
-
-    # 3. 材料（含收缩徐变特性）
-    engine.prop.creep_shrink.create(
-        no=1, name="收缩徐变", avg_humidity=75.00,
-        birth_time=7, type_coeff=5.0, shrink_birth=3,
-    )
-    engine.material.create_conc(no=1, name="C50", code="JTG3362_2018", grade="C50",
-                                crep_shrk=1, dmp=0.050)
-    engine.material.create_rebar(no=2, name="HRB400", code="JTG3362_2018",
-                                 grade="HRB400", dmp=0.050)
-    engine.material.create_prestressed(no=3, name="钢绞线-1860", code="JTG3362_2018",
-                                      grade="Strand1860", dmp=0.050)
-
-    # 4. 截面（混凝土小箱梁 + 网格划分：PartID=1）
-    engine.section.create_smallbox(
-        no=1, name="标准截面", offset="Middle",
-        width=1.2, height=1.65, top_w=1.2, top_t=0.18,
-        bot_w=1.0, bot_t=0.18, web_t=0.2, web_h=0.2,
-        left_haunch_l=4.0, left_haunch_t=0.18,
-        right_haunch_t=0.25, right_haunch_l=0.2, type_flag=0,
-    )
-    engine.section.set_offset(no=1, offset="Middle", dy=0.0, top="Top", top_dy=0.0)
-    engine.section.set_mesh(no=1, mesh_method=0, mesh_size=0.1, part_id=1)
-
-    # 5. 节点 + 单元
-    xs = [0.04, 0.45, 0.84, 2.84, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0,
-          17.16, 19.16, 19.55, 19.96]
-    for i, x in enumerate(xs, 1):
-        engine.node.create(no=i, x=x, y=0.0, z=0.0)
-    for i in range(len(xs) - 1):
-        engine.element.create_beam3d(
-            no=i + 1, node1=i + 1, node2=i + 2,
-            mat=1, sec1=1, sec2=1, group=0, flag=1, angle=0.0,
-        )
-
-    # 6. 边界条件（一般支承 + 节点指派）
-    engine.boundary.create_general(coor="", rx=1, ry=1, rw=1, no=1)
-    engine.boundary.create_general(coor="", ry=1, rw=1, no=2)
-    engine.boundary.get(1).assign("a", [1, 4])    # 节点 1, 4
-    engine.boundary.get(2).assign("a", [11, 14])  # 节点 11, 14
-
-    # 7. 荷载工况
-    lc = engine.load.create("主梁单元自重", load_case_type="CS")
-    lc.create_gravity()
-
-engine.solve()
-```
-
-整个流程包在 `with batch():` 里，约 250 条命令一次性通过 `OSIS_Run` 送到 OSIS。对应的 `.out` 源文件是 `tests/output/xiaoxiangliang.out`；如需重新生成完整的多模块项目结构，运行：
+单文件 demo [`tests/demo_gui.py`](tests/demo_gui.py) 是由 `tests/output/xiaoxiangliang.out` 转换后的项目合并而来。在已打开的 OSIS 5.1+ GUI 上直接运行即可：
 
 ```bash
+python tests/demo_gui.py            # 仅建模
+python tests/demo_gui.py --solve    # 建模 + 求解
+```
+
+文件内含 engine 初始化、全部 10 个 `build_*` 函数（control/property/material/section/node/element/boundary/loadcase/analysis/stage）以及驱动函数 `build_model()`，整体包在 `with batch():` 内，约 250 条命令一次性通过 `OSIS_Run` 送到 OSIS。
+
+如需同时重新生成单文件 demo 与多模块项目：
+
+```bash
+python tests/_merge_demo_gui.py                                    # 生成 tests/demo_gui.py
 python src/pyosis/core/build.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
 ```
 

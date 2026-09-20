@@ -48,3 +48,6 @@ Thumbs.db
 *.tar.gz
 
 pyosis_logs/
+
+# One-off merge helpers (regenerate with: python tests/_merge_demo_gui.py)
+tests/_merge_*.py
