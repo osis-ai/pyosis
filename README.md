@@ -473,18 +473,90 @@ Accessing identity attributes (`lc.no`, `lc.name`) does not touch the server. Ac
 
 ## End-to-End Demo (GUI Mode)
 
-In addition to the solver-only [`pyosis_demo.py`](tests/pyosis_demo.py) shipped with pyosis, the [`tests/output/`](tests/output/) directory includes GUI-mode demos generated from real `.out` files. The most representative is `xiaoxiangliang.out` — a 5.1 short-form-command 20 m simply-supported small box girder:
+Below is the condensed version of `tests/output/output_py/xiaoxiangliang/prep/main.py` — the live, GUI-mode counterpart of the solver-only `pyosis_demo.py` above. Run it against an open OSIS 5.1+ GUI:
 
-```bash
-# Open OSIS GUI manually first (so engine.clear() / clc() can clear the current project),
-# then from the repo root:
-python tests/output/output_py/xiaoxiangliang/prep/main.py            # build the model
-python tests/output/output_py/xiaoxiangliang/prep/main.py --solve    # build + solve
+```python
+from pyosis import batch
+from pyosis.core.engine import OSISEngine
+
+engine = OSISEngine()
+
+with batch():
+    # 1. 全局控制
+    engine.clear()
+    engine.clc()
+    engine.control.set_gravity_acceleration(9.8066)
+    engine.control.set_calc_tendon(True)
+    engine.control.set_calc_concurrent_force(True)
+    engine.control.set_calc_shrink(True)
+    engine.control.set_calc_creep(True)
+    engine.control.set_calc_shear(True)
+    engine.control.set_calc_relaxation(True)
+    engine.control.set_mod_loc_coor(False)
+    engine.control.set_calc_rebar_gravity(False)
+    engine.control.set_inc_rebar(True)
+    engine.control.set_inc_tendon(True)
+    engine.control.set_nonlinear(geom=False, link=False)
+    engine.control.set_line_search(False)
+    engine.control.set_auto_time_step(False)
+    engine.control.set_substitution_steps(1, 20)
+    engine.control.set_modal_opt(0)
+
+    # 2. 几何属性（钢束 3D 圆弧）
+    engine.geometry.create_arc3d(
+        "钢束-1-N1", "TENDON",
+        [0.16, 0, -0.3, 0, 6.90373, 0, -0.89, 30,
+         13.0163, 0, -0.89, 30, 19.76, 0, -0.3, 0],
+    )
+
+    # 3. 材料（含收缩徐变特性）
+    engine.prop.creep_shrink.create(
+        no=1, name="收缩徐变", avg_humidity=75.00,
+        birth_time=7, type_coeff=5.0, shrink_birth=3,
+    )
+    engine.material.create_conc(no=1, name="C50", code="JTG3362_2018", grade="C50",
+                                crep_shrk=1, dmp=0.050)
+    engine.material.create_rebar(no=2, name="HRB400", code="JTG3362_2018",
+                                 grade="HRB400", dmp=0.050)
+    engine.material.create_prestressed(no=3, name="钢绞线-1860", code="JTG3362_2018",
+                                      grade="Strand1860", dmp=0.050)
+
+    # 4. 截面（混凝土小箱梁 + 网格划分：PartID=1）
+    engine.section.create_smallbox(
+        no=1, name="标准截面", offset="Middle",
+        width=1.2, height=1.65, top_w=1.2, top_t=0.18,
+        bot_w=1.0, bot_t=0.18, web_t=0.2, web_h=0.2,
+        left_haunch_l=4.0, left_haunch_t=0.18,
+        right_haunch_t=0.25, right_haunch_l=0.2, type_flag=0,
+    )
+    engine.section.set_offset(no=1, offset="Middle", dy=0.0, top="Top", top_dy=0.0)
+    engine.section.set_mesh(no=1, mesh_method=0, mesh_size=0.1, part_id=1)
+
+    # 5. 节点 + 单元
+    xs = [0.04, 0.45, 0.84, 2.84, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0, 16.0,
+          17.16, 19.16, 19.55, 19.96]
+    for i, x in enumerate(xs, 1):
+        engine.node.create(no=i, x=x, y=0.0, z=0.0)
+    for i in range(len(xs) - 1):
+        engine.element.create_beam3d(
+            no=i + 1, node1=i + 1, node2=i + 2,
+            mat=1, sec1=1, sec2=1, group=0, flag=1, angle=0.0,
+        )
+
+    # 6. 边界条件（一般支承 + 节点指派）
+    engine.boundary.create_general(coor="", rx=1, ry=1, rw=1, no=1)
+    engine.boundary.create_general(coor="", ry=1, rw=1, no=2)
+    engine.boundary.get(1).assign("a", [1, 4])    # 节点 1, 4
+    engine.boundary.get(2).assign("a", [11, 14])  # 节点 11, 14
+
+    # 7. 荷载工况
+    lc = engine.load.create("主梁单元自重", load_case_type="CS")
+    lc.create_gravity()
+
+engine.solve()
 ```
 
-The whole 10-module flow runs inside `with batch():` so the project is sent to OSIS in a single HTTP request. Compare with running the same `.out` via the converter's `osis_run` raw path — see [`tests/_bench_out_vs_batch.py`](tests/_bench_out_vs_batch.py) for the benchmark. On xiaoxiangliang both paths complete in ~7 s on a local socket; without `batch()`, a 1000-command project would take ~3000 round-trips.
-
-To regenerate this project from the source `.out`:
+The whole flow runs inside `with batch():`, so ~250 commands hit OSIS in a single `OSIS_Run` request. The corresponding `.out` file is `tests/output/xiaoxiangliang.out`; to regenerate a full multi-module project from it run:
 
 ```bash
 python src/pyosis/core/build.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
