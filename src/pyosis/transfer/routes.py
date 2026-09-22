@@ -10,6 +10,47 @@
                     生成: engine.get(key).method(args...)
 """
 
+# 5.01 版 .out 使用缩写命令名，生成代码前统一归一化为全名（与 core/build.CMD_ALIASES 一致）
+CMD_ALIASES = {
+    "N": "Node",
+    "Ele": "Element",
+    "Sec": "Section",
+    "SecOff": "SectionOffset",
+    "SecMesh": "SectionMesh",
+    "Mat": "Material",
+    "LC": "LoadCase",
+    "Bd": "Boundary",
+    "Stg": "Stage",
+}
+
+# 命令流字段顺序 ≠ 方法形参顺序的命令，按字段名重排后再生成调用
+def _fix_section_mesh(rest: list[str]) -> list[str]:
+    """SectionMesh 字段序 → set_mesh(mesh_method, mesh_size, part_id)
+
+    新格式: PartID, MeshMethod, MeshSize  →  MeshMethod, MeshSize, PartID
+    旧格式: MeshMethod, MeshSize          →  原样（part_id 缺省 1）
+    """
+    if len(rest) == 3:
+        part_id, mesh_method, mesh_size = rest
+        return [mesh_method, mesh_size, part_id]
+    return rest
+
+
+def _fix_section_part(rest: list[str]) -> list[str]:
+    """SectionPart 字段序 → add_part(type, part_index, mat_type, e, mu, density, *matrices)
+
+    命令流: PartIndex, PartMatType, PartE, PartMu, PartDensity, PartGeoType, Matrices...
+    """
+    if len(rest) >= 6:
+        return [rest[5], *rest[:5], *rest[6:]]
+    return rest
+
+
+REST_FIXERS = {
+    "SectionMesh": _fix_section_mesh,
+    "SectionPart": _fix_section_part,
+}
+
 ROUTES = {
     # ─── CONTROL ───
     "Acel": "engine.control.set_gravity_acceleration",

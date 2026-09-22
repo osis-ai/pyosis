@@ -14,7 +14,7 @@ from typing import List
 
 from .matrix import MatrixAccumulator
 from .parser import ParsedCommand
-from .routes import ROUTES
+from .routes import CMD_ALIASES, REST_FIXERS, ROUTES
 
 _ROUTE_ALIASES = {
     "clear": "Clear",
@@ -42,7 +42,8 @@ def _format_value(raw: str) -> str:
 
 
 def _route_key(name: str) -> str:
-    return _ROUTE_ALIASES.get(name.lower(), name)
+    canonical = _ROUTE_ALIASES.get(name.lower(), name)
+    return CMD_ALIASES.get(canonical, canonical)
 
 
 def _fallback_run(cmd: ParsedCommand) -> str:
@@ -72,6 +73,9 @@ def _render_route(cmd: ParsedCommand) -> str:
             return f"{get_path}().{method_name}()"
         key = fields[skip]
         rest_fields = list(fields[:rest_prefix]) + list(fields[skip + 1:])
+        fixer = REST_FIXERS.get(_route_key(cmd.name))
+        if fixer is not None:
+            rest_fields = fixer(rest_fields)
         formatted_key = _format_value(key)
         formatted_rest = [_format_value(v) for v in rest_fields]
         if formatted_rest:
