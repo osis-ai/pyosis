@@ -518,9 +518,9 @@ class DampingManager(BasicManager):
             raise ValueError(
                 f"未知阻尼类型: {type!r}，支持: {', '.join(sorted(_supported_types))}"
             )
-        if type_key == "modal":
+        if type_key == "MODAL":
             return self.create_modal(name, *args, **kwargs)
-        # type_key == "ryl"
+        # type_key == "RYL"
         method = args[0] if args else kwargs.get("method")
         _supported_methods = {0: "根据公式计算因子", 1: "自定义因子"}
         if method not in _supported_methods:

@@ -384,15 +384,18 @@ class Section:
         """添加或修改组合截面 Part（按类型分发）
 
         Args:
-            type: Part 类型
+            type: Part 类型（大小写不敏感）
                 * POLYGON = 多边形
                 * LINE    = 折线
             args: 剩余参数透传给对应子方法
         """
-        if type == "POLYGON":
+        key = str(type).upper()
+        if key == "POLYGON":
             self.add_composite_part_polygon(*args)
-        elif type == "LINE":
+        elif key == "LINE":
             self.add_composite_part_line(*args)
+        else:
+            raise ValueError(f"未知 Part 类型: {type!r}，支持 POLYGON/LINE")
 
     # ── 组合截面材料 ──────────────────────────
 
@@ -682,21 +685,26 @@ class Section:
 
         Args:
             rebar_no: 钢筋编号
-            type: 钢筋输入方式
+            type: 钢筋输入方式（大小写不敏感，兼容命令流全大写写法 LINEA 等）
                 * Point  = 点输入
                 * LineA  = 直线-垂直方式 A
                 * LineB  = 直线-垂直方式 B
                 * Circle = 圆周输入
             args: 剩余参数透传给对应子方法
         """
-        if type == "Point":
+        key = str(type).upper()
+        if key == "POINT":
             self.add_rebar_point(rebar_no, *args)
-        elif type == "LineA":
+        elif key == "LINEA":
             self.add_rebar_line_a(rebar_no, *args)
-        elif type == "LineB":
+        elif key == "LINEB":
             self.add_rebar_line_b(rebar_no, *args)
-        elif type == "Circle":
+        elif key == "CIRCLE":
             self.add_rebar_circle(rebar_no, *args)
+        else:
+            raise ValueError(
+                f"未知纵向钢筋类型: {type!r}，支持 Point/LineA/LineB/Circle"
+            )
 
     def add_rebar_s(
         self,
@@ -706,21 +714,26 @@ class Section:
         """添加或修改抗剪钢筋（按类型分发）
 
         Args:
-            type: 钢筋类型
+            type: 钢筋类型（大小写不敏感，兼容 SHEARSTIRRUP 等命令流写法）
                 * BentUpRebar      = 弯起钢筋
                 * ShearStirrup     = 抗剪箍筋
                 * WebVerticalRebar = 腹板竖筋
                 * TorsionalStirrup = 扭转箍筋
             args: 剩余参数透传给对应子方法
         """
-        if type == "BentUpRebar":
+        key = str(type).upper()
+        if key == "BENTUPREBAR":
             self.add_rebar_s_bent_up(*args)
-        elif type == "ShearStirrup":
+        elif key == "SHEARSTIRRUP":
             self.add_rebar_s_shear_stirrup(*args)
-        elif type == "WebVerticalRebar":
+        elif key == "WEBVERTICALREBAR":
             self.add_rebar_s_web_vertical(*args)
-        elif type == "TorsionalStirrup":
+        elif key == "TORSIONALSTIRRUP":
             self.add_rebar_s_torsional_stirrup(*args)
+        else:
+            raise ValueError(
+                f"未知抗剪钢筋类型: {type!r}，支持 BentUpRebar/ShearStirrup/WebVerticalRebar/TorsionalStirrup"
+            )
 
     def add_rib(
         self,
@@ -730,7 +743,7 @@ class Section:
         """添加或修改加劲肋（按类型分发）
 
         Args:
-            type: 加劲肋类型
+            type: 加劲肋类型（大小写不敏感）
                 * Flat = 扁平加劲肋
                 * T    = T 形加劲肋
                 * U    = U 形加劲肋
@@ -738,14 +751,19 @@ class Section:
                 * LR   = 右 L 形加劲肋
             args: 剩余参数透传给对应子方法
         """
-        if type == "Flat":
+        key = str(type).upper()
+        if key == "FLAT":
             self.add_rib_flat(*args)
-        elif type == "T":
+        elif key == "T":
             self.add_rib_t(*args)
-        elif type == "U":
+        elif key == "U":
             self.add_rib_u(*args)
-        elif type in ("LL", "LR"):
-            self.add_rib_l(args[0], type, *args[1:])
+        elif key in ("LL", "LR"):
+            self.add_rib_l(args[0], key, *args[1:])
+        else:
+            raise ValueError(
+                f"未知加劲肋类型: {type!r}，支持 Flat/T/U/LL/LR"
+            )
 
     def add_rib_flat(
         self,
@@ -909,15 +927,22 @@ class Section:
         '''删除箍筋
 
         Args:
-            rebar_type (str): 钢筋类型
+            rebar_type (str): 钢筋类型（大小写不敏感）
                 * BentUpRebar = 弯起钢筋
                 * ShearStirrup = 抗剪箍筋
                 * WebVerticalRebar = 腹板竖筋
                 * TorsionalStirrup = 扭转箍筋
 
         Raises:
+            ValueError: 未知的钢筋类型
             RuntimeError: 删除失败时抛出
         '''
+        if str(rebar_type).strip().upper() not in (
+            "BENTUPREBAR", "SHEARSTIRRUP", "WEBVERTICALREBAR", "TORSIONALSTIRRUP",
+        ):
+            raise ValueError(
+                f"未知抗剪钢筋类型: {rebar_type!r}，支持 BentUpRebar/ShearStirrup/WebVerticalRebar/TorsionalStirrup"
+            )
         ok, err = osis_rebar_s_del(self.no, rebar_type)
         if not ok:
             raise RuntimeError(f"删除截面 {self.no} 箍筋 {rebar_type} 失败: {err}")

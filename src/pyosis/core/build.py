@@ -386,7 +386,7 @@ def generate_property(commands: List[str]) -> str:
 
         if args[0] == "Spline3D":
             name = args[1]
-            stype = args[2]
+            stype = args[2].upper()
             owner = args[3]
             points = args[4:]
             points_str = ", ".join(_val(p) for p in points)
@@ -659,7 +659,7 @@ def generate_section(commands: List[str]) -> str:
         if args[0] == "Section":
             no = args[1]
             name = args[2]
-            sec_type = args[3]
+            sec_type = args[3].upper()
             params = args[4:]
 
             method = SECTION_TYPE_MAP.get(sec_type)
@@ -1696,7 +1696,7 @@ def generate_analysis(commands: List[str]) -> str:
                     # 各桥型需要的 para_i 数量
                     mu_param_counts = {
                         "SIMPLE": 4,
-                        "CONTINUOUS": 5,
+                        "CONTINUOUS": 6,
                         "ARCH": 5,
                         "CABLE_STAYED": 2,
                         "CABLE_STAYED_AUX": 2,

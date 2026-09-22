@@ -316,7 +316,7 @@ class ElementGroupManager(BasicManager):
         Returns:
             ElementGroup: 创建的单元组对象
         """
-        ok, err = osis_element_group(name, op, *param)
+        ok, err = osis_element_group(name, str(op).lower(), *param)
         if not ok:
             raise RuntimeError(f"创建单元组 {name} 失败: {err}")
         return self.get(name)

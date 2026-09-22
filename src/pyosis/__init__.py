@@ -7,7 +7,7 @@ A library for extending OSIS functionality.
 A library that allows users to use CAE with great flexibility.
 """
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"
 
 from .core.engine import OSISEngine
 from .core.batch import batch, flush, batch_state, BatchError

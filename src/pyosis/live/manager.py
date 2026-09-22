@@ -265,6 +265,7 @@ class LiveCase:
         Returns:
             更新后的 LiveCase 对象
         """
+        op = str(op).lower()
         if op in ("a", "m"):
             _MU_PARAM_COUNT = {
                 "SIMPLE": 4,
@@ -278,7 +279,7 @@ class LiveCase:
             grade_name, scalar, mu_flag = args[0], float(args[1]), int(args[2])
             rest = args[4:]
             if mu_flag == 1:
-                bridge_type = args[3] or "SIMPLE"
+                bridge_type = (args[3] or "SIMPLE").strip().upper()
                 mu_count = _MU_PARAM_COUNT.get(bridge_type, 1)
                 mu_params: list[float] = [float(x) for x in rest[:mu_count]]
                 lane_names: list[str] = list(rest[mu_count:])

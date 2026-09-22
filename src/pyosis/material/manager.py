@@ -158,9 +158,10 @@ class MaterialManager(BasicManager):
             "REBAR": self.create_rebar,
             "CUSTOM": self.create_custom,
         }
-        if type not in _creator:
-            raise ValueError(f"未知材料类型: {type}")
-        return _creator[type](no, name, *args, **kwargs)
+        type_key = str(type).strip().upper()
+        if type_key not in _creator:
+            raise ValueError(f"未知材料类型: {type!r}，支持: {', '.join(_creator)}")
+        return _creator[type_key](no, name, *args, **kwargs)
 
     def create_conc(
         self,

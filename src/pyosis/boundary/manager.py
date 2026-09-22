@@ -536,7 +536,7 @@ class BoundaryGroupManager(BasicManager):
         Returns:
             BoundaryGroup: 创建（或刷新后的）边界组对象
         '''
-        ok, err = osis_boundary_group(name, op, *param)
+        ok, err = osis_boundary_group(name, str(op).lower(), *param)
         if not ok:
             raise RuntimeError(f"创建边界组 {name} 失败: {err}")
         return self.get(name)

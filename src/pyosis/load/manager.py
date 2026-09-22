@@ -295,6 +295,8 @@ class LoadCase:
             elem, e_coord, n_range, *rest = args
             forces = [list(rest[i: i + 6]) for i in range(0, len(rest), 6)]
             return self.create_concentrated_force(elem,e_coord,is_moment=(type_key == "PTM"),forces=forces)
+        if type_key not in _creator:
+            raise ValueError(f"未知荷载类型: {type!r}，支持: {', '.join(_creator)}")
         return _creator[type_key](*args, **kwargs)
 
     def create_gravity(
