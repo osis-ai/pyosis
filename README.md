@@ -414,16 +414,13 @@ Benchmark on the `25m简支小箱梁中梁` project (`.out` of ~3000 commands): 
 pyosis ships a converter that turns an OSIS command stream (`.out`) into a clean, runnable pyosis project. This is the easiest way to migrate a legacy APDL/SML script.
 
 ```bash
-python src/pyosis/core/build.py path/to/model.out path/to/output_project
+python src/pyosis/transfer/out_to_python.py path/to/model.out path/to/output_project
 ```
 
 Generated layout:
 
 ```
 output_project/
-├── build.py             # Build script
-├── post/                # Post-processing directory
-├── 项目画像.md          # Project profile (AI-maintained)
 └── prep/
     ├── main.py          # Entry point (batch mode, runs all 10 modules)
     ├── _1_control.py    # Global control parameters
@@ -453,7 +450,7 @@ Notes on the converter:
 - Both long-form command names (`Node`, `Element`, `Section`, `Material`, `LoadCase`, `Boundary`, `Stage`) and OSIS 5.1 short-form aliases (`N`, `Ele`, `Sec`/`SecOff`/`SecMesh`, `Mat`, `LC`, `Bd`, `Stg`) are recognized and normalized.
 - `SectionMesh` is emitted with the new `Index, PartID, MeshMethod, MeshSize` layout (Section 7.3.6.2) — `PartID = 1` for concrete sections, `2` for templated composite sections.
 - `Spline3D` is dispatched to `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d` based on the type field.
-- Commands that are not yet modeled are written as `# TODO` comments for follow-up manual editing.
+- Commands that are not yet modeled are passed through verbatim via `engine.run(...)` so the model still runs; rewrite them into pyosis calls manually if needed.
 
 ## Chained Method Calls
 
@@ -486,5 +483,5 @@ To regenerate both the single-file demo and the multi-module project:
 
 ```bash
 python tests/_merge_demo_gui.py                                    # -> tests/demo_gui.py
-python src/pyosis/core/build.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
+python src/pyosis/transfer/out_to_python.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
 ```

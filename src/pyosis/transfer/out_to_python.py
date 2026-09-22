@@ -413,3 +413,24 @@ def write_prep_outputs(out_path: Path, prep_dir: Path) -> tuple[int, list[Path]]
     )
     prep_paths.append(_write_main_py(prep_dir, preamble_lines))
     return code_line_count, prep_paths
+
+
+def main(argv: list[str] | None = None) -> int:
+    """CLI: python src/pyosis/transfer/out_to_python.py <model.out> <output_project>
+
+    生成结果写入 <output_project>/prep/（_0_engine.py + _1~_10 模块 + main.py）。
+    """
+    args = list(sys.argv[1:] if argv is None else argv)
+    if len(args) != 2:
+        print("用法: python src/pyosis/transfer/out_to_python.py <model.out> <output_project>")
+        return 2
+    out_path = Path(args[0])
+    prep_dir = Path(args[1]) / "prep"
+    prep_dir.mkdir(parents=True, exist_ok=True)
+    count, paths = write_prep_outputs(out_path, prep_dir)
+    print(f"已生成 {len(paths)} 个文件（{count} 行代码）→ {prep_dir}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

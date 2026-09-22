@@ -10,7 +10,7 @@
                     生成: engine.get(key).method(args...)
 """
 
-# 5.01 版 .out 使用缩写命令名，生成代码前统一归一化为全名（与 core/build.CMD_ALIASES 一致）
+# 5.01 版 .out 使用缩写命令名，生成代码前统一归一化为全名
 CMD_ALIASES = {
     "N": "Node",
     "Ele": "Element",
@@ -55,6 +55,7 @@ ROUTES = {
     # ─── CONTROL ───
     "Acel": "engine.control.set_gravity_acceleration",
     "CalcTendon": "engine.control.set_calc_tendon",
+    "CalcRebarGravity": "engine.control.set_calc_rebar_gravity",
     "CalcConForce": "engine.control.set_calc_concurrent_force",
     "CalcShrink": "engine.control.set_calc_shrink",
     "CalcCreep": "engine.control.set_calc_creep",
@@ -62,6 +63,7 @@ ROUTES = {
     "CalcRlx": "engine.control.set_calc_relaxation",
     "ModLocCoor": "engine.control.set_mod_loc_coor",
     "IncTendon": "engine.control.set_inc_tendon",
+    "IncRebar": "engine.control.set_inc_rebar",
     "ModOpt": "engine.dynamic.modal.set_modal_opt",
     "NL": "engine.control.set_nonlinear",
     "LnSrch": "engine.control.set_line_search",

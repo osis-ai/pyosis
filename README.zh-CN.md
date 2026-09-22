@@ -409,16 +409,13 @@ with batch():
 pyosis 自带把 OSIS 命令流（`.out`）一键转换为可运行 pyosis 项目的工具——迁移旧 APDL/SML 脚本最直接的方式。
 
 ```bash
-python src/pyosis/core/build.py path/to/model.out path/to/output_project
+python src/pyosis/transfer/out_to_python.py path/to/model.out path/to/output_project
 ```
 
 生成的项目结构：
 
 ```
 output_project/
-├── build.py              # 构建脚本
-├── post/                 # 后处理目录
-├── 项目画像.md           # 项目画像（由 AI 维护）
 └── prep/
     ├── main.py           # 入口（batch 模式跑完所有 10 个模块）
     ├── _1_control.py     # 全局控制参数
@@ -448,7 +445,7 @@ python prep/main.py --solve    # 建模 + 求解
 - 同时识别长名（`Node`/`Element`/`Section`/`Material`/`LoadCase`/`Boundary`/`Stage`）和 OSIS 5.1 缩写名（`N`/`Ele`/`Sec`/`SecOff`/`SecMesh`/`Mat`/`LC`/`Bd`/`Stg`），自动归一化；
 - `SectionMesh` 按手册 7.3.6.2 的新格式 `Index, PartID, MeshMethod, MeshSize` 生成（混凝土截面 `PartID=1`，模板组合截面 `PartID=2`）；
 - `Spline3D` 按类型字段分发到 `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d`；
-- 暂未建模的命令会标记为 `# TODO`，方便人工跟进。
+- 暂未建模的命令用 `engine.run(...)` 原样透传给 OSIS，保证模型可执行；如需拆成 pyosis 调用可人工改写。
 
 ## 链式调用
 
@@ -479,6 +476,6 @@ python tests/demo_gui.py --solve    # 建模 + 求解
 
 ```bash
 python tests/_merge_demo_gui.py                                    # 生成 tests/demo_gui.py
-python src/pyosis/core/build.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
+python src/pyosis/transfer/out_to_python.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
 ```
 
