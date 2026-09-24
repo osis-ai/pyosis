@@ -2727,7 +2727,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     sec1.set_mesh(0, 0.1000)
 
     # 点号、x、y 按 OSIS/截面默认应力点编号修改
-    sec1.set_stress_point(1, 0.0, 0.0)
+    sec1.set_stress_point(1, 1, 0.0, 0.0)
 
     # 截面 2: 墩顶截面
     sec2 = section.create(70,"墩顶截面","HOLLOWSLAB","MIDDLE",

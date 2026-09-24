@@ -121,24 +121,26 @@ def osis_section_mod(nOld: int, nNew: int):
     """
     pass
 
-# StressPoint, SecIndex, PointIndex, CoordX, CoordY
+# StressPoint, SecIndex, PartID, PointIndex, CoordX, CoordY
 # 简介：修改截面应力点
 # SecIndex：截面编号
+# PartID：分部编号，混凝土截面需输入1
 # PointIndex：应力点编号
 # CoordX：应力点x坐标
 # CoordY：应力点y坐标
 # 注：
 
 @REGISTRY.register('StressPoint')
-def osis_stress_point(nSec, nPoint, dCoordX, dCoordY):
+def osis_stress_point(nSec, nPartID, nPoint, dCoordX, dCoordY):
     '''
     修改截面应力点
-    
+
     nSec (int): 截面编号
+    nPartID (int): 分部编号，混凝土截面需输入1
     nPoint (int): 应力点编号
     dCoordX (int): 应力点 x 坐标
     dCoordY (int): 应力点 y 坐标
-    
+
     Returns:
         tuple (bool, str):
             - bool: 操作是否成功

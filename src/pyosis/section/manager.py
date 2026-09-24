@@ -429,15 +429,16 @@ class Section:
 
     # ── 应力点 ────────────────────────────────
 
-    def set_stress_point(self, n_point: int, d_coord_x: float, d_coord_y: float) -> None:
+    def set_stress_point(self, n_part_id: int, n_point: int, d_coord_x: float, d_coord_y: float) -> None:
         """修改截面应力点
 
         Args:
+            n_part_id: 分部编号，混凝土截面需输入1
             n_point: 应力点编号
             d_coord_x: 应力点 x 坐标
             d_coord_y: 应力点 y 坐标
         """
-        ok, err = osis_stress_point(self.no, n_point, d_coord_x, d_coord_y)
+        ok, err = osis_stress_point(self.no, n_part_id, n_point, d_coord_x, d_coord_y)
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 应力点 {n_point} 失败: {err}")
 
