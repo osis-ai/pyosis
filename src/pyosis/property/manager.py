@@ -3,7 +3,7 @@
 用法:
     >>> from pyosis.property import property_manager
     >>> property_manager.coord.create_three_point(1, 0, 0, 0, 10, 0, 0, 0, 10, 0)
-    >>> property_manager.creep_shrink.create(1, "CS1", 70.0, 7, 5.0, 3)
+    >>> property_manager.creep_shrink.create(1, "CS1", "JTG3362_2018", 5.0e7, 70.0, 1.0, 5.0, 3)
     >>> property_manager.damping.create_modal("Damp1", 0.05)
     >>> property_manager.pu_curve.create(1, "PU1", 0, 3, 0.0, 0.01, 0.02, 0.0, 100.0, 150.0)
 """
@@ -295,24 +295,39 @@ class CoordinateManager(BasicManager):
 class CreepShrink:
     """收缩徐变对象"""
     avg_humidity: float
-    birth_by_shrinking: int
-    birth_time: int
+    birth_by_shrinking: int   # 收缩起始龄期(天)，接口字段 birthByShrinking
+    birth_time: int           # 只读遗留字段，当前命令流已不再写入
+    code: str                 # 规范，仅 JTG3362_2018
+    component_approximate_size: float  # 构件大致尺寸(m)
+    fcuk: float               # 28天龄期混凝土强度，工程当前压力单位
+    fly_ash_ratio: float      # 粉煤灰添加量(%)
     name: str
     no: int
-    shrink_birth: int
     related_material: list[int]
+    shrink_birth: int         # 同 birth_by_shrinking 的旧名，读到的是同一个值
     type_coeff: float
     @classmethod
     def _from_dict(cls, d: dict) -> CreepShrink:
-        """从接口 dict 构造 CreepShrink 对象（内部使用）"""
+        """从接口 dict 构造 CreepShrink 对象（内部使用）
+
+        收缩起始龄期的接口字段名是 birthByShrinking；旧的 shrinkBirth 读出来
+        恒为 None，因此 birth_by_shrinking 与 shrink_birth 两个属性都取该字段。
+        """
+        birth = d.get("birthByShrinking")
+        if birth is None:
+            birth = d.get("shrinkBirth")
         return cls(
             avg_humidity=d.get("avgHumidity"),
-            birth_by_shrinking=d.get("birthByShrinking"),
+            birth_by_shrinking=birth,
             birth_time=d.get("birthTime"),
+            code=d.get("code"),
+            component_approximate_size=d.get("componentApproximateSize"),
+            fcuk=d.get("fcuk"),
+            fly_ash_ratio=d.get("flyAshRatio"),
             name=d.get("name"),
             no=d.get("no"),
-            shrink_birth=d.get("shrinkBirth"),
             related_material=list(d.get("relatedMaterial") or []),
+            shrink_birth=birth,
             type_coeff = d.get("typeCoeff"),
         )
 
@@ -373,20 +388,33 @@ class CreepShrinkManager(BasicManager):
         self,
         no: int = 1,
         name: str = "收缩徐变1",
+        code: str = "JTG3362_2018",
+        fcuk: float = 5.0e7,
         avg_humidity: float = 70.0,
-        birth_time: int = 7,
+        component_approximate_size: float = 1.0,
         type_coeff: float = 5.0,
-        shrink_birth: int = 3,
+        birth_by_shrinking: int = 3,
+        fly_ash_ratio: float = 0.0,
+        shrink_birth: int | None = None,
     ) -> CreepShrink:
         '''创建或修改收缩徐变特性
+
+        形参顺序与命令流字段顺序一致：
+        CrpShrk, Index, Name, Code, Fcuk, AVG.Humidity,
+        ComponentApproximateSize, Type.Coeff, BirthByShrinking, FlyAshRatio
 
         Args:
             no (int): 收缩徐变特性编号
             name (str): 特性名称
-            avg_humidity (float): 年平均湿度（百分比）
-            birth_time (int): 混凝土龄期（天）
+            code (str): 规范，目前只支持 JTG3362_2018
+            fcuk (float): 28天龄期的混凝土强度，按工程当前压力单位填写，
+                默认单位 Pa 下 5.0e7 即 50MPa，合法区间 1MPa~200MPa
+            avg_humidity (float): 周围环境的相对湿度（百分比），40~99
+            component_approximate_size (float): 构件大致尺寸（m），大于 0
             type_coeff (float): 水泥种类系数
-            shrink_birth (int): 收缩开始时的混凝土龄期（天数）
+            birth_by_shrinking (int): 收缩开始时的混凝土龄期（天数）
+            fly_ash_ratio (float): 粉煤灰添加量（百分比），0~50
+            shrink_birth (int|None): birth_by_shrinking 的旧写法，传了就覆盖上面的值
 
         Returns:
             创建的 CreepShrink 对象
@@ -394,8 +422,18 @@ class CreepShrinkManager(BasicManager):
         Raises:
             RuntimeError: 创建失败时抛出
         '''
+        if shrink_birth is not None:
+            birth_by_shrinking = shrink_birth
         ok, err = osis_creep_shrink(
-            no, name, avg_humidity, birth_time, type_coeff, shrink_birth,
+            nNO=no,
+            strName=name,
+            strCode=code,
+            dFcuk=fcuk,
+            dAvgHumidity=avg_humidity,
+            dComponentApproximateSize=component_approximate_size,
+            dTypeCoeff=type_coeff,
+            nBirthByShrinking=birth_by_shrinking,
+            dFlyAshRatio=fly_ash_ratio,
         )
         if not ok:
             raise RuntimeError(f"创建收缩徐变特性 {no} 失败: {err}")

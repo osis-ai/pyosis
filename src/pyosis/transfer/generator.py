@@ -61,6 +61,9 @@ def _render_route(cmd: ParsedCommand) -> str:
     fields = cmd.fields[1:]
 
     if isinstance(route, str):
+        fixer = REST_FIXERS.get(_route_key(cmd.name))
+        if fixer is not None:
+            fields = fixer(fields)
         formatted = [_format_value(v) for v in fields]
         if not formatted:
             return f"{route}()"

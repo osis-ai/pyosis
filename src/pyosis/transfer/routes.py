@@ -46,9 +46,36 @@ def _fix_section_part(rest: list[str]) -> list[str]:
     return rest
 
 
+def _fix_creep_shrk(rest: list[str]) -> list[str]:
+    """CrpShrk 旧命令流 → 新 9 字段序（同软件侧 UpdatePreviousCommand 的升级逻辑）
+
+    新:        Index, Name, Code, Fcuk, AVG.Humidity, ComponentApproximateSize,
+               Type.Coeff, BirthByShrinking, FlyAshRatio
+    早期5.01:  Index, Name, Humidity, Birth, Type.Coeff, BirthByShrinking,
+               FlyAshRatio, ComponentApproximateSize          (8 字段)
+    4.9.6:     Index, Name, Humidity, Birth, Type.Coeff, BirthByShrinking (6 字段)
+
+    旧格式的 Birth（加载龄期）在新命令流里已取消，直接丢弃；
+    Code/Fcuk/尺寸/粉煤灰补齐为软件升级时写入的默认值。
+    """
+    n = len(rest)
+    if n == 9:
+        return rest
+    if n == 6:
+        index, name, humidity, _birth, type_coeff, shrink_age = rest
+        fly_ash, size = "0", "1"
+    elif n == 8:
+        index, name, humidity, _birth, type_coeff, shrink_age, fly_ash, size = rest
+    else:
+        return rest
+    return [index, name, "JTG3362_2018", "50000000", humidity, size,
+            type_coeff, shrink_age, fly_ash]
+
+
 REST_FIXERS = {
     "SectionMesh": _fix_section_mesh,
     "SectionPart": _fix_section_part,
+    "CrpShrk": _fix_creep_shrk,
 }
 
 ROUTES = {

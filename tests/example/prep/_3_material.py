@@ -20,7 +20,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
     material = engine.material
     
     # 收缩徐变模型（编号 1，供 C50 使用）
-    creep_shrink = engine.prop.creep_shrink.create(1, "收缩徐变", 75.00, 7, 5.000, 3)
+    creep_shrink = engine.prop.creep_shrink.create(1, "收缩徐变", "JTG3362_2018", 5.0e7, 75.00, 1.0, 5.000, 3, 0.0)
     _expect_attr(creep_shrink, "no", 1)
     # 获取收缩徐变模型
     cs = engine.prop.creep_shrink.get(1)
@@ -34,7 +34,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
     if len(all_cs) != 1:
       raise ValueError(f"creep_shrink.all() 期望 1 条，实际 {len(all_cs)}")
     # 创建新的收缩徐变模型
-    cs2 = engine.prop.creep_shrink.create(2, "测试收缩徐变", 70.0, 7, 5.0, 3)
+    cs2 = engine.prop.creep_shrink.create(2, "测试收缩徐变", "JTG3362_2018", 5.0e7, 70.0, 1.0, 5.0, 3, 0.0)
     _expect_attr(cs2, "no", 2)
     # 重编号
     engine.prop.creep_shrink.renumber(2,3)

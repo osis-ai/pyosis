@@ -76,7 +76,7 @@ def build_materials(engine: OSISEngine) -> list[int]:
 
     engine.prop.creep_shrink.create(
         no=1, name='收缩徐变', avg_humidity=75.00,
-        birth_time=7, type_coeff=5.000, shrink_birth=3
+        type_coeff=5.000, birth_by_shrinking=3
     )
 
     mat = engine.material.create_conc(

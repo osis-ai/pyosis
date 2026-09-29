@@ -73,7 +73,7 @@ def build_property(engine: OSISEngine) -> None:
 
 # ===== 4. MATERIAL 材料 =====
 def build_materials(engine: OSISEngine) -> None:
-    engine.prop.creep_shrink.create(1, "收缩徐变", 75.0, 7, 5.0, 3)
+    engine.prop.creep_shrink.create(1, "收缩徐变", "JTG3362_2018", 5.0e7, 75.0, 1.0, 5.0, 3, 0.0)
     engine.material.create(1, "C50", "CONC", "JTG3362_2018", "C50", 1, 0.05)
     engine.material.create(2, "HRB400", "REBAR", "JTG3362_2018", "HRB400", 0.05)
     engine.material.create(3, "钢绞线-1860", "PRESTRESSED", "JTG3362_2018", "Strand1860", 0.05)

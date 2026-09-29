@@ -224,9 +224,10 @@ engine.prop.coord.create_three_point(
     p3x=0, p3y=1, p3z=0,
 )
 
-# Creep and shrinkage(no, name, avg_humidity, birth_time, type_coeff, shrink_birth)
+# Creep and shrinkage(no, name, code, fcuk, avg_humidity,
+#                     component_approximate_size, type_coeff, birth_by_shrinking, fly_ash_ratio)
 engine.prop.creep_shrink.create(no=1, name="Creep1", avg_humidity=70.0,
-                                birth_time=7, type_coeff=5.0, shrink_birth=3)
+                                type_coeff=5.0, birth_by_shrinking=3)
 
 # Damping (Rayleigh 自定义系数)
 engine.prop.damping.create_rayleigh_custom(name="Damping1", alpha=0.05, beta=0.005)

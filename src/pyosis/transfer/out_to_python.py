@@ -20,6 +20,16 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Iterable
 
+# 以脚本方式直接运行(python src/pyosis/transfer/out_to_python.py)时,
+# sys.path[0] 是本文件所在目录,`pyosis` 会被 site-packages 里 pip 装的那份
+# 旧副本先解析掉,本仓库的改动一律不生效。这里把本仓库的 src 顶到最前。
+_SRC_ROOT = Path(__file__).resolve().parents[2]
+if (_SRC_ROOT / "pyosis" / "__init__.py").is_file():
+    _src = str(_SRC_ROOT)
+    if _src in sys.path:
+        sys.path.remove(_src)
+    sys.path.insert(0, _src)
+
 from pyosis.transfer.generator import generate_lines
 from pyosis.transfer.parser import (
     BLANK_RE,
