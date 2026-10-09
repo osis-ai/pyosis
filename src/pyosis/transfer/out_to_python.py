@@ -138,8 +138,12 @@ def _split_by_module(text: str) -> tuple[list[ParsedCommand], dict[str, list[Par
 
 
 # 读取 .out 文件内容(容错编码)
+# 实测 5.1(2026-10 构建)export_apdl 导出为 UTF-8(无 BOM,"混"=e6b7b7);
+# 该文件按 GBK 解码会失败,但部分 UTF-8 中文恰好是合法 GBK → 会静默乱码,
+# 所以 UTF-8 必须在前。旧版(≤5.01)若导出 GBK:GBK 双字节第二字节常为
+# 0x40-0x7E,不是合法 UTF-8 连续字节,按 UTF-8 解码会抛错并正确回落到 GBK。
 def _read_out_text(path: Path) -> str:
-    for encoding in ("gbk", "utf-8", "gb2312", "gb18030", "latin-1"):
+    for encoding in ("utf-8-sig", "utf-8", "gbk", "gb18030", "latin-1"):
         try:
             return path.read_text(encoding=encoding)
         except UnicodeDecodeError:
@@ -300,6 +304,40 @@ def _insert_method_doc_comments(lines: list[str]) -> list[str]:
     return out
 
 
+# ── 跨命令下文:CONC 材料 → 收缩徐变引用 ────────────────────────────
+
+def _strip_quotes(raw: str) -> str:
+    return raw.strip().strip("\"'")
+
+
+def _scan_creep_grades(commands: Iterable[ParsedCommand]) -> dict[str, set[str]]:
+    """预扫描 Material 命令,建立 {收缩徐变编号: {混凝土等级, ...}}。
+
+    命令流: Material,No,Name,CONC,Code,Grade,CrepShrk[,Dmp]
+    .out 中 PROPERTY(CrpShrk) 段在 MATERIAL 段之前,前向引用必须先扫全量。
+    """
+    grades: dict[str, set[str]] = {}
+    for cmd in commands:
+        if _route_key(cmd.name) != "Material":
+            continue
+        f = cmd.fields
+        for i in range(1, len(f)):
+            if _strip_quotes(f[i]).upper() != "CONC":
+                continue
+            grade = _strip_quotes(f[i + 2]) if i + 2 < len(f) else ""
+            creep = _strip_quotes(f[i + 3]) if i + 3 < len(f) else ""
+            if grade and creep:
+                grades.setdefault(creep, set()).add(grade)
+            break
+    return grades
+
+
+def _route_key(name: str) -> str:
+    """与 generator._route_key 一致的命令名归一(此处避免循环导入,本地实现)。"""
+    from pyosis.transfer.routes import CMD_ALIASES
+    return CMD_ALIASES.get(name, name)
+
+
 # 写入 prep 模块
 def _write_prep_module(prep_dir: Path, module: str, lines: list[str]) -> Path:
     """写入 prep 模块；lines 为空时写 pass stub。
@@ -401,17 +439,25 @@ def write_prep_outputs(out_path: Path, prep_dir: Path) -> tuple[int, list[Path]]
     text = _read_out_text(out_path)
     preamble, by_module = _split_by_module(text)
 
+    # 跨命令下文:先扫全量命令拿到 CONC 材料等级 → 收缩徐变编号 的引用关系,
+    # _fix_creep_shrk 升级旧 CrpShrk 时据此推断 fcuk(而不是写死 50MPa)。
+    # engine 只用于方法签名内省(生成关键字实参),不产生连接。
+    all_cmds: list[ParsedCommand] = list(preamble)
+    for cmds in by_module.values():
+        all_cmds.extend(cmds)
+    ctx: dict = {"engine": _get_engine(), "creep_grades": _scan_creep_grades(all_cmds)}
+
     code_line_count = 0
     prep_paths: list[Path] = []
 
     for module in MODULE_ORDER:
         cmds = by_module.get(module, [])
-        lines = generate_lines(cmds) if cmds else []
+        lines = generate_lines(cmds, ctx) if cmds else []
         code_line_count += len(lines)
         prep_paths.append(_write_prep_module(prep_dir, module, lines))
 
     # 前言(典型 clear/clc)放到 main.py 顶部;无前言时为空列表
-    preamble_lines = generate_lines(preamble) if preamble else []
+    preamble_lines = generate_lines(preamble, ctx) if preamble else []
 
     (prep_dir / "_0_engine.py").write_text(
         '"""模块级单例 OSISEngine,供同包内其他 prep 模块 import 使用。\n\n'

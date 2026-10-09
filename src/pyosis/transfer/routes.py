@@ -8,7 +8,14 @@
         "chain":    (engine_get_path, obj_method_name, skip_fields)
                     Cmd,fields[skip_fields=0]=key, fields[skip_fields+1:]=args
                     生成: engine.get(key).method(args...)
+
+fixer 签名: fixer(rest, ctx=None) -> list[str]
+    ctx 为生成器下文(dict),无跨命令信息时忽略;key 约定:
+        ctx["creep_grades"]: {收缩徐变编号(str): {"C40", ...}} 引用它的 CONC 材料等级
+        ctx["warnings"]: list[str],fixer 追加、生成器作为注释行输出
 """
+
+import re
 
 # 5.01 版 .out 使用缩写命令名，生成代码前统一归一化为全名
 CMD_ALIASES = {
@@ -24,7 +31,7 @@ CMD_ALIASES = {
 }
 
 # 命令流字段顺序 ≠ 方法形参顺序的命令，按字段名重排后再生成调用
-def _fix_section_mesh(rest: list[str]) -> list[str]:
+def _fix_section_mesh(rest: list[str], ctx=None) -> list[str]:
     """SectionMesh 字段序 → set_mesh(mesh_method, mesh_size, part_id)
 
     新格式: PartID, MeshMethod, MeshSize  →  MeshMethod, MeshSize, PartID
@@ -36,7 +43,7 @@ def _fix_section_mesh(rest: list[str]) -> list[str]:
     return rest
 
 
-def _fix_section_part(rest: list[str]) -> list[str]:
+def _fix_section_part(rest: list[str], ctx=None) -> list[str]:
     """SectionPart 字段序 → add_part(type, part_index, mat_type, e, mu, density, *matrices)
 
     命令流: PartIndex, PartMatType, PartE, PartMu, PartDensity, PartGeoType, Matrices...
@@ -46,7 +53,42 @@ def _fix_section_part(rest: list[str]) -> list[str]:
     return rest
 
 
-def _fix_creep_shrk(rest: list[str]) -> list[str]:
+_GRADE_RE = re.compile(r"^C(\d+)$", re.IGNORECASE)
+
+
+def _resolve_fcuk(index: str, ctx: dict | None) -> str:
+    """从引用该收缩徐变特性的 CONC 材料等级推断 fcuk（如 C50 → 5e7，单位随工程）。
+
+    软件侧 UpdatePreviousCommand 与本转换器旧逻辑都硬编码 50MPa——C40/C55 的
+    旧模型会静默算错收缩徐变，这里改为按材料等级取值；多等级共用/无引用时
+    保持 50MPa 并追加告警注释。
+    """
+    default = "50000000"
+    if not ctx:
+        return default
+    grades = (ctx.get("creep_grades") or {}).get(index.strip().strip('"\'')) or set()
+    if not grades:
+        (ctx.setdefault("warnings", [])).append(
+            f"CrpShrk {index}: 未找到引用它的 CONC 材料，fcuk 保持默认 50MPa"
+            "（旧命令流未记录强度，请核对该特性参数）"
+        )
+        return default
+    if len(grades) > 1:
+        (ctx.setdefault("warnings", [])).append(
+            f"CrpShrk {index}: 被 {'/'.join(sorted(grades))} 多种强度等级共用，"
+            f"无法唯一推断 fcuk，保持默认 50MPa；请核对该特性参数"
+        )
+        return default
+    m = _GRADE_RE.match(next(iter(grades)).strip())
+    if not m:
+        (ctx.setdefault("warnings", [])).append(
+            f"CrpShrk {index}: 材料等级 {next(iter(grades))!r} 无法换算 fcuk，保持默认 50MPa"
+        )
+        return default
+    return f"{int(m.group(1))}e6"
+
+
+def _fix_creep_shrk(rest: list[str], ctx=None) -> list[str]:
     """CrpShrk 旧命令流 → 新 9 字段序（同软件侧 UpdatePreviousCommand 的升级逻辑）
 
     新:        Index, Name, Code, Fcuk, AVG.Humidity, ComponentApproximateSize,
@@ -56,7 +98,8 @@ def _fix_creep_shrk(rest: list[str]) -> list[str]:
     4.9.6:     Index, Name, Humidity, Birth, Type.Coeff, BirthByShrinking (6 字段)
 
     旧格式的 Birth（加载龄期）在新命令流里已取消，直接丢弃；
-    Code/Fcuk/尺寸/粉煤灰补齐为软件升级时写入的默认值。
+    Code 固定 JTG3362_2018；Fcuk 优先按引用材料的混凝土强度等级取值
+    （C40→4e7），取不到时回退软件升级用的默认值 50MPa 并追加告警。
     """
     n = len(rest)
     if n == 9:
@@ -68,7 +111,8 @@ def _fix_creep_shrk(rest: list[str]) -> list[str]:
         index, name, humidity, _birth, type_coeff, shrink_age, fly_ash, size = rest
     else:
         return rest
-    return [index, name, "JTG3362_2018", "50000000", humidity, size,
+    fcuk = _resolve_fcuk(index, ctx)
+    return [index, name, "JTG3362_2018", fcuk, humidity, size,
             type_coeff, shrink_age, fly_ash]
 
 

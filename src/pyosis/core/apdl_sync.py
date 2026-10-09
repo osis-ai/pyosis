@@ -51,8 +51,11 @@ class ApdlSessionStore:
 
 
 # 读取 .out 文件内容
+# 实测 5.1(2026-10 构建)export_apdl 导出为 UTF-8(无 BOM);UTF-8 中文可能
+# 恰好是合法 GBK,GBK 优先会静默乱码,所以 UTF-8 在前。旧版若导出 GBK,
+# 按 UTF-8 解码通常直接抛错并回落到 GBK,不会误判。
 def _read_out_text(path: Path) -> str:
-    for encoding in ("gbk", "utf-8", "gb2312", "gb18030", "latin-1"):
+    for encoding in ("utf-8-sig", "utf-8", "gbk", "gb18030", "latin-1"):
         try:
             return path.read_text(encoding=encoding)
         except UnicodeDecodeError:
