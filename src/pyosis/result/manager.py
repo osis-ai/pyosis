@@ -28,6 +28,11 @@ except ImportError:
 from .loadcase import osis_loadcase_result
 from .env import osis_env_result
 from .check import osis_check_result
+from .headless import (
+    node_displacement_df,
+    element_force_df,
+    support_reaction_df,
+)
 
 
 class ResultManager:
@@ -196,6 +201,67 @@ class ResultManager:
                 f"导出验算结果 {sheet_type}/{check_item}/{check_name} 失败: {err}"
             )
         return df
+
+    # ═══════════════════════════════════════════
+    # 求解后无头查询（直接读求解器结果，不经 GUI 导出）
+    # ═══════════════════════════════════════════
+
+    def node_displacement(self, name: str | list[str] | None = None) -> pd.DataFrame:
+        """查询求解后节点位移
+
+        走 /GetAllNodeDisplacement、/GetNodeDisplacementByNames 端点，
+        优先从结果文件读，文件失败回落内存。
+
+        Args:
+            name: 工况名（str 或 list[str]）；None 时返回全部工况
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, no, ux, uy, uz, rx, ry, rz, rw）
+
+        Raises:
+            ImportError: 未安装 pandas 时抛出
+            RuntimeError: 查询失败时抛出异常
+        """
+        self._ensure_pandas()
+        return node_displacement_df(name)
+
+    def element_force(self, name: str | list[str] | None = None) -> pd.DataFrame:
+        """查询求解后单元内力
+
+        走 /GetAllElementForce、/GetElementForceByNames 端点，
+        优先从结果文件读，文件失败回落内存。
+
+        Args:
+            name: 工况名（str 或 list[str]）；None 时返回全部工况
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, ele, node, fx, fy, fz, mx, my, mz, mw）
+
+        Raises:
+            ImportError: 未安装 pandas 时抛出
+            RuntimeError: 查询失败时抛出异常
+        """
+        self._ensure_pandas()
+        return element_force_df(name)
+
+    def support_reaction(self, name: str | list[str] | None = None) -> pd.DataFrame:
+        """查询求解后支座反力
+
+        走 /GetAllSupportReaction、/GetSupportReactionByNames 端点，
+        优先从结果文件读，文件失败回落内存。
+
+        Args:
+            name: 工况名（str 或 list[str]）；None 时返回全部工况
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, no, sys, fx, fy, fz, mx, my, mz, mw）
+
+        Raises:
+            ImportError: 未安装 pandas 时抛出
+            RuntimeError: 查询失败时抛出异常
+        """
+        self._ensure_pandas()
+        return support_reaction_df(name)
 
     # ═══════════════════════════════════════════
     # 验算结果全量导出

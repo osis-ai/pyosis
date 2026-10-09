@@ -102,4 +102,54 @@ def osis_client(
 
     except requests.RequestException as e:
         return {"success": False, "error": f"调用失败: {str(e)}"}
+
+
+def osis_get(
+    path: str,
+    base_url=None,
+    timeout: float | None = None,
+) -> dict:
+    """
+    通用 OSIS GET 客户端（复用连接池）
+
+    用于只绑定 GET 的端点（如 /instance）；/health、/sdk/* 同时支持
+    GET/POST，查询类调用统一走本函数。
+
+    Args:
+        path: 端点路径（如 "instance"，无需前导斜杠）
+    Returns:
+        成功时返回端点 JSON；失败时返回 {"success": False, "error": ...}
+    """
+    from .batch import batch_state, flush as _flush
+    if batch_state.active and batch_state.buffer and not batch_state.flushing:
+        _flush()
+
+    base_url = base_url or os.environ.get("OSIS_URL", f"{DEFAULT_URL}:{DEFAULT_PORT}")
+    url = f"{base_url}/{path.lstrip('/')}"
+
+    try:
+        response = session.get(
+            url,
+            timeout=timeout if timeout is not None else DEFAULT_TIMEOUT,
+        )
+
+        data = None
+        if response.content:
+            try:
+                data = response.json()
+            except ValueError:
+                pass
+
+        if response.status_code == 404:
+            return {"success": False, "error": f"接口不存在: {path}"}
+
+        if response.ok:  # 200-299
+            if data is not None:
+                return data
+            return {"success": False, "error": f"接口返回空数据: {path}"}
+
+        return {"success": False, "error": f"HTTP {response.status_code}: {response.text[:200]}"}
+
+    except requests.RequestException as e:
+        return {"success": False, "error": f"调用失败: {str(e)}"}
     

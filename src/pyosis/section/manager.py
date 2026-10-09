@@ -1135,6 +1135,23 @@ class SectionManager(BasicManager):
         sections = [Section._from_dict(d) for d in data if isinstance(d, dict) and "no" in d]
         return sections
 
+    def all_longitudinal_rebar(self) -> list[Rebar]:
+        """获取所有截面的纵向钢筋信息（走 GetAllLongitudinalRebarInfo 端点）
+
+        按截面内部映射顺序返回,与 all() 相比数据更轻量——
+        只有钢筋标志位与纵筋明细,不含截面几何/属性。
+
+        Returns:
+            list[Rebar]: 各截面的钢筋信息列表
+
+        Raises:
+            RuntimeError: 查询失败时抛出异常
+        """
+        resp = osis_client("GetAllLongitudinalRebarInfo", {})
+        if not resp.get("success"):
+            raise RuntimeError(f"{resp.get('error')}")
+        return [Rebar._from_dict(d) for d in resp.get("data", []) if isinstance(d, dict) and d]
+
     def _next_no(self) -> int:
         """分配新截面编号"""
         sections = self._load()

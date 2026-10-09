@@ -111,6 +111,26 @@ class NodeManager(BasicManager):
             raise RuntimeError(f"{resp['error']}")
         nodes = [Node._from_dict(d) for d in resp.get("data", []) if "no" in d]
         return nodes
+
+    def coordinates(self) -> dict[int, tuple[float, float, float]]:
+        """获取所有节点坐标（走 GetCoordinate 端点）
+
+        比 all() 更轻量——只要坐标不要分组等附加信息时用这个。
+
+        Returns:
+            dict: {节点编号: (x, y, z)}
+
+        Raises:
+            RuntimeError: 查询失败时抛出异常
+        """
+        resp = osis_client("GetCoordinate", {})
+        if not resp.get("success"):
+            raise RuntimeError(f"{resp.get('error')}")
+        return {
+            d["id"]: (d.get("x", 0.0), d.get("y", 0.0), d.get("z", 0.0))
+            for d in resp.get("data") or []
+            if isinstance(d, dict) and "id" in d
+        }
     
     # ── 增删改 ────────────────────────────────
 

@@ -121,6 +121,26 @@ class MaterialManager(BasicManager):
 
         return materials
 
+    def all_prestressed(self) -> list[Material]:
+        """获取所有预应力材料（走 GetAllPrestressedMaterialInfo 端点）
+
+        与 all() 的区别:只返回材料类型为预应力(PRESTRESSED)的材料,
+        服务端按类型过滤,不需要客户端再筛。
+
+        Returns:
+            list[Material]: 预应力材料列表
+
+        Raises:
+            RuntimeError: 查询失败时抛出异常
+        """
+        resp = osis_client("GetAllPrestressedMaterialInfo", {})
+        if not resp.get("success"):
+            raise RuntimeError(f"{resp.get('error')}")
+        return [
+            Material._from_dict(d) for d in resp.get("data", [])
+            if isinstance(d, dict) and "no" in d
+        ]
+
     def get_dependencies(self, no: int) -> dict[str, list]:
         """查询材料被谁引用"""
         return get_references("Material", no=no)

@@ -1873,6 +1873,23 @@ class TendonManager:
             "shapes": self.shape.count()
         }
 
+    def prestress_loads(self) -> list[dict]:
+        """获取所有预应力荷载（走 GetAllPrestressedLoadInfo 端点）
+
+        遍历所有荷载工况下的预应力荷载(钢束张拉信息)。
+
+        Returns:
+            list[dict]: 每条含 name/tensionMethod/tensionMethodName/
+            tensionForce/tensionForceName/beg/end/relatedLoadCase/loadCase
+
+        Raises:
+            RuntimeError: 查询失败时抛出异常
+        """
+        resp = osis_client("GetAllPrestressedLoadInfo", {})
+        if not resp.get("success"):
+            raise RuntimeError(f"{resp.get('error')}")
+        return [d for d in resp.get("data") or [] if isinstance(d, dict) and d]
+
     def clear(self) -> None:
         """清空所有钢束形状和钢束特性（先清空形状，再清空特性）"""
         self.shape.clear()

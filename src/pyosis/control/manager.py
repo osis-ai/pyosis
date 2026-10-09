@@ -18,6 +18,7 @@ from __future__ import annotations
 from typing import Literal
 
 from ..core import osis_run
+from ..core.client import osis_client
 from .control import (
     osis_acel,
     osis_calc_tendon,
@@ -372,6 +373,25 @@ class ControlManager:
         ok, err = osis_mod_opt(num)
         if not ok:
             raise RuntimeError(f"设置模态分析参数失败: {err}")
+
+    # ── 查询 ────────────────────────────────────
+
+    def summary(self) -> list[dict]:
+        '''获取分析控制摘要（走 GetAnalysisControlSummary 端点）
+
+        汇总当前模型将要执行的分析类型（特征值分析、施工阶段分析等），
+        每项含 name/type/summary/count。
+
+        Returns:
+            list[dict]: 分析控制摘要列表，未定义分析时为空列表
+
+        Raises:
+            RuntimeError: 查询失败时抛出异常
+        '''
+        resp = osis_client("GetAnalysisControlSummary", {})
+        if not resp.get("success"):
+            raise RuntimeError(f"{resp.get('error')}")
+        return list(resp.get("data") or [])
 
     def __repr__(self) -> str:
         return "ControlManager()"

@@ -22,7 +22,8 @@ class OSISSolver:
 
     Args:
         osis_install_path: OSIS 安装根目录,根目录下需有 PySolver.dll。
-        port: HTTP server 端口;<0 用 PySolver 默认 18080。端口被占会失败。
+        port: HTTP server 端口;<=0 由系统随机分配(bind :0),实际端口
+            回写 self.port;默认 18080。指定端口被占会失败。
         host: 监听地址,默认 127.0.0.1。
 
     Raises:
@@ -83,7 +84,18 @@ class OSISSolver:
         self._add_dll_search_dir(os.path.dirname(path))
 
         try:
-            lib = ctypes.CDLL(path)
+            # Debug 构建的依赖(如 HPDI.OSIS.IO 的 DebugWnd)会在 DLL 静态初始化里
+            # AllocConsole + freopen 劫持 stdio——python 宿主的输出被抢走、
+            # 解释器退出码变 120。加载前 dup 一份标准流,加载完立刻恢复。
+            saved_out = os.dup(1)
+            saved_err = os.dup(2)
+            try:
+                lib = ctypes.CDLL(path)
+            finally:
+                os.dup2(saved_out, 1)
+                os.dup2(saved_err, 2)
+                os.close(saved_out)
+                os.close(saved_err)
         except OSError as e:
             raise RuntimeError(f"OSISSolver: 加载 {path} 失败: {e}")
 
@@ -102,6 +114,10 @@ class OSISSolver:
 
         self._lib = lib
         self._started = True
+        # port<=0(随机分配)时 AutoBootstrap 返回系统分配的实际端口,回写,
+        # self.url / engine 连接才指向正确地址
+        if actual_port > 0:
+            self._port = actual_port
         self._wait_ready()
         return self
 

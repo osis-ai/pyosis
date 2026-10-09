@@ -52,6 +52,7 @@ from ..general.interface import (
 )
 from .command import osis_run
 from .client import set_osis_port, set_osis_url
+from .sdk import sdk_version, list_commands, instance_info, health as _sdk_health
 
 
 class OSISEngine:
@@ -328,6 +329,30 @@ class OSISEngine:
     def output_result_for_calc_book(self) -> dict:
         """输出计算书所需结果"""
         return output_result_for_calc_book()
+
+    # ──────────────────────────────────────────
+    # 服务端元信息（/sdk/*、/instance）
+    # ──────────────────────────────────────────
+
+    def sdk_version(self) -> dict:
+        """查询 SDK/OSIS 版本与 ABI
+
+        Returns:
+            {"success": True, "sdk": 版本串, "osis": 版本串, "abi": ABI, "port": 端口}
+        """
+        return sdk_version()
+
+    def list_commands(self) -> list[str]:
+        """查询运行时可用命令名（GUI 书册命令不列出）"""
+        return list_commands()
+
+    def instance_info(self) -> dict:
+        """查询 OSIS 实例信息（pid/port/project/version/state）"""
+        return instance_info()
+
+    def is_alive(self) -> bool:
+        """存活探测（POST /health，不碰工程状态）"""
+        return _sdk_health()
 
     # ──────────────────────────────────────────
     # 便捷方法（委托给 project manager）
