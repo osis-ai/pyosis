@@ -1,106 +1,105 @@
-[简体中文](README.zh-CN.md) | [English](README.md)
+[English](README.en.md) | [简体中文](README.md)
 
 # pyosis
 
-Python client library for **OSIS** Bridge & Tunnel Analysis Platform (developed by CCCC Highway Consultants Co., Ltd.).
+中交公路规划设计院自研 **OSIS** 桥隧分析平台的 Python 接口库。
 
-pyosis provides an object-oriented Python API for automating the creation of bridge/tunnel finite element models, executing analysis solvers, and extracting post-processing results.
+pyosis 提供一套面向对象的 Python API，用于自动化创建桥梁/隧道有限元模型、执行分析求解以及后处理结果提取。
 
-## Installation
+## 安装
 
-Due to naming conflicts on PyPI, please install using:
+PyPI 上 `pyosis` 已被占用，包名是 `osis-python`：
 
 ```bash
 pip install osis-python
 ```
 
-If your mirror hasn't synced yet, use:
+镜像站未同步时：
 
 ```bash
 pip install osis-python -i https://pypi.org/simple
 ```
 
-## Requirements
+## 环境要求
 
-- OSIS >= 5.1 (short-form command names like `N`/`Ele`/`Sec` are accepted by both the converter and runtime)
+- OSIS >= 5.1（转换器和运行时同时兼容 `N`/`Ele`/`Sec` 等缩写命令名）
 - Python >= 3.8
-- **Solver-only mode** additionally requires the solver distribution that ships `osisSdk.dll` (e.g. `D:\OSIS_Solver\Rbin64`).
+- **仅求解器模式（solver-only）** 额外需要含 `osisSdk.dll` 的求解器安装目录（例如 `D:\OSIS_Solver\Rbin64`）。
 
-> OSIS 5.1 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
+> `osis_init` 需要许可文件 `osis.lic`（HMAC 签名）才能启动。查找顺序：环境变量 `OSIS_LICENSE_FILE` → `%ProgramData%\OSIS\osis.lic` → 安装目录下的 `osis.lic`。许可向 OSIS 供应方获取。
 
-## Quick Start
+> `/OSIS_Run` 的命令流切分器不剥离 `//` 行注释，注释行会与紧随其后的命令合并成一条非法命令。pyosis 的 `.out` 转换器发送前已剥除注释；自行拼接 `.out` 载荷时需预先去掉注释行，或改用生成的 `main.py` 走 `osis_run()`。
 
-### 1. Using OSISEngine (Recommended)
+## 快速开始
 
-`OSISEngine` is the core facade class of pyosis, integrating all module managers and providing a unified project-level entry point:
+### 1. 使用 OSISEngine（推荐）
+
+`OSISEngine` 是 pyosis 的核心门面类（Facade），整合了所有模块的管理器，提供统一的项目级入口：
 
 ```python
 from pyosis.core.engine import OSISEngine
 
 engine = OSISEngine()
 
-# Clear project
+# 清空项目
 engine.clear()
 
-# Set global parameters
+# 设置全局参数
 engine.control.set_gravity_acceleration(9.8066)
 engine.control.set_calc_tendon(True)
 engine.control.set_calc_creep(True)
 
-# Create sections
-sec = engine.section.create_circle(no=1, name="CircleSection", d=0.5)
+# 创建截面
+sec = engine.section.create_circle(no=1, name="圆形截面", d=0.5)
 
-# Create materials
-mat = engine.material.create_conc(no=1, name="C30Concrete", code="JTG3362_2018", grade="C30")
+# 创建材料
+mat = engine.material.create_conc(no=1, name="C30混凝土", code="JTG3362_2018", grade="C30")
 
-# Create nodes
+# 创建节点
 n1 = engine.node.create(no=1, x=0, y=0, z=0)
 n2 = engine.node.create(no=2, x=15, y=0, z=0)
 
-# Create elements
+# 创建单元
 elem = engine.element.create_beam3d(
     no=1, node1=n1.no, node2=n2.no, mat=mat.no, sec1=sec.no, sec2=sec.no
 )
 
-# Create boundaries
+# 创建边界
 bd = engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)
 bd.assign("a", [n1.no])
 
-# Create load case and add loads
-lc = engine.load.create("Self-weight", load_case_type="D")
+# 创建荷载工况并添加荷载
+lc = engine.load.create("自重", load_case_type="D")
 lc.create_gravity()
 
-# Solve
+# 求解
 engine.solve()
 ```
 
-### 2. Engine Convenience Methods
+### 2. Engine 便捷方法
 
-`OSISEngine` provides project-level convenience methods:
+`OSISEngine` 提供项目级别的便捷方法：
 
 ```python
-# Project management
-engine.new_project()           # Create new project
-engine.save_project()          # Save current project
-engine.open_project(path)      # Open existing project
+# 项目管理
+engine.new_project()           # 新建项目
+engine.save_project()          # 保存当前项目
+engine.open_project(path)      # 打开已有项目
 
-# Model information
-summary = engine.model_summary()  # Returns dict with all manager counts
+# 模型信息
+summary = engine.model_summary()  # 返回包含各管理器数量的字典
 
-# Import/Export
-engine.export_apdl(path)       # Export to APDL format
-engine.import_apdl(path)       # Import from APDL format
+# 导入/导出
+engine.export_apdl(path)       # 导出为 APDL 格式
+engine.import_apdl(path)       # 从 APDL 格式导入
 
-# Result output for calculation book
-engine.output_result_for_calc_book()
-
-# Matrix output
-engine.matrix("matrix_1", [[1, 2],[3, 4]])
+# 矩阵定义
+engine.matrix("矩阵1", [[1, 2],[3, 4]])
 ```
 
-### 3. Using Managers Directly
+### 3. 直接使用 Manager
 
-If you don't need the convenience methods of Engine, you can also import individual managers directly:
+不经过 Engine 的便捷方法时，可直接导入各模块管理器：
 
 ```python
 from pyosis.material import material_manager
@@ -110,233 +109,240 @@ mat = material_manager.create_conc(no=1, name="C30", code="JTG3362_2018", grade=
 node = node_manager.create(no=None, x=0, y=0, z=0)
 ```
 
-### 4. Using OSISSolver — Start the Solver Directly (Solver-Only Mode)
+### 4. 使用 OSISSolver 直接启动求解器（仅求解器模式）
 
-By default, `OSISEngine()` connects to an already-running OSIS GUI process. If you want to drive the solver **without opening the GUI** (e.g. for headless batch runs, CI, or server-side automation), use `OSISSolver` to load the solver DLL directly via ctypes and launch its HTTP server:
+`OSISEngine()` 默认连接已打开的 OSIS 图形界面进程。**不打开 GUI** 直接驱动求解器（无头批量计算、CI、服务端自动化）时，用 `OSISSolver` 通过 ctypes 加载求解器 DLL 并起 HTTP 服务：
 
 ```python
 from pyosis.core.solver import OSISSolver
 from pyosis.core.engine import OSISEngine
 
-# Load <install>/osisSdk.dll and start the HTTP server (default port 18080)
+# 加载 <安装目录>/osisSdk.dll 并启动 HTTP 服务（默认端口 18080）
 solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver\Rbin64")
 engine = OSISEngine.from_solver(solver)
 
-# Create a project (type 101 = bridge analysis), then build the model as usual
+# 建工程（类型 101 = 通用桥梁分析），之后照常建模
 engine.project.create(101, r"D:\work\my_bridge\my_bridge.sis")
 engine.control.set_gravity_acceleration(9.8066)
-# ... build sections / materials / nodes / elements ...
+# ... 截面 / 材料 / 节点 / 单元 ...
 engine.solve()
 ```
 
-Notes on solver-only mode:
+仅求解器模式注意事项：
 
-- `osis_install_path` must be the directory containing `osisSdk.dll` (and its dependency DLLs).
-- `osis_init` validates a license file (`osis.lic`, HMAC-signed) before anything runs. Search order: the `OSIS_LICENSE_FILE` environment variable, then `%ProgramData%\OSIS\osis.lic`, then `osis.lic` in the install directory. Contact the OSIS vendor to obtain one.
-- The solver needs a project to exist before model commands run: call `engine.project.create()` / `open()` first.
-- Crash minidumps are written to `<install>\Error\dmp\` (created on startup).
+- `osis_install_path` 必须是含 `osisSdk.dll`（及其依赖 DLL）的目录。
+- `port=0` 时由系统随机分配端口并回写到 `solver.port`。
+- 求解器必须先有工程才能执行建模命令：先 `engine.project.create()` / `open()`。
+- 崩溃时 dmp 文件写入 `<安装目录>\Error\dmp\`。
 
-## Core Architecture
+## 核心架构
 
-### Manager System
+### Manager 体系
 
-pyosis adopts a Manager pattern to organize code. Each module corresponds to a Manager:
+pyosis 采用 Manager 模式组织代码，每个模块对应一个 Manager：
 
-| Manager | Attribute | Description |
-|---------|-----------|-------------|
-| MaterialManager | `engine.material` | Materials (concrete, steel, prestressed, rebar, etc.) |
-| SectionManager | `engine.section` | Sections (box girder, T-girder, hollow slab, steel box, etc.) |
-| NodeManager | `engine.node` | Nodes |
-| ElementManager | `engine.element` | Elements (beam, truss, spring, cable, shell) |
-| BoundaryManager | `engine.boundary` | Boundaries (general support, master-slave, elastic support, etc.) |
-| GeometryManager | `engine.geometry` | Geometric entities (splines, spatial curves) |
-| PropertyManager | `engine.prop` | Properties (coordinate systems, creep/shrinkage, damping, P-U curves, element thickness assignments) |
-| ThicknessManager | `engine.thickness` | Shell thickness properties |
-| LoadCaseManager | `engine.load` | Load cases |
-| StageManager | `engine.stage` | Construction stages |
-| TendonManager | `engine.tendon` | Tendons (properties + shapes) |
-| LiveManager | `engine.live` | Live loads (grades + lanes + cases) |
-| SettlementManager | `engine.settlement` | Settlement analysis |
-| StabilityManager | `engine.stability` | Stability analysis |
-| DynamicManager | `engine.dynamic` | Dynamic analysis |
-| PostManager | `engine.post` | Post-processing (load combinations, design checks) |
-| ResultManager | `engine.result` | Result export (load case / envelope / check results) |
-| ControlManager | `engine.control` | Global control parameters |
-| ProjectManager | `engine.project` | Project operations |
-| DisplayManager | `engine.display` | Display control (show/hide boundaries, loads, tendons; view orientation; display switches) |
+| 管理器 | 属性名 | 说明 |
+|--------|--------|------|
+| MaterialManager | `engine.material` | 材料（混凝土、钢材、预应力、钢筋等） |
+| SectionManager | `engine.section` | 截面（箱梁、T梁、空心板、钢箱梁等） |
+| NodeManager | `engine.node` | 节点 |
+| ElementManager | `engine.element` | 单元（梁、桁架、弹簧、拉索、壳） |
+| BoundaryManager | `engine.boundary` | 边界（一般支撑、主从、弹性支承等） |
+| GeometryManager | `engine.geometry` | 几何实体（样条曲线、空间曲线等） |
+| PropertyManager | `engine.prop` | 属性（坐标系、收缩徐变、阻尼、P-U曲线、构件厚度分配） |
+| ThicknessManager | `engine.thickness` | 壳厚度特性 |
+| LoadCaseManager | `engine.load` | 荷载工况 |
+| StageManager | `engine.stage` | 施工阶段 |
+| TendonManager | `engine.tendon` | 钢束（特性+形状） |
+| LiveManager | `engine.live` | 活载（等级+车道+工况） |
+| SettlementManager | `engine.settlement` | 沉降分析 |
+| StabilityManager | `engine.stability` | 稳定分析 |
+| DynamicManager | `engine.dynamic` | 动力分析 |
+| PostManager | `engine.post` | 后处理（荷载组合、规范验算） |
+| ResultManager | `engine.result` | 结果导出（工况/包络/验算结果） |
+| ControlManager | `engine.control` | 全局控制参数 |
+| ProjectManager | `engine.project` | 项目操作 |
+| DisplayManager | `engine.display` | 显示控制（边界/荷载/钢束显隐、视图方向、显示开关） |
 
-### Sub-Managers
+### 子管理器
 
-Some managers contain sub-managers, accessed via attributes:
+部分管理器包含子管理器，通过属性访问：
 
 ```python
-# Element groups (create + add elements in one call)
-engine.element.group.create("MainGirderElements", "c")            # create empty group
-engine.element.group.create("MainGirderElements", "a", "1to3")    # add elements 1-3
+# 单元组(一次调用完成 创建 + 添加单元)
+engine.element.group.create("主梁单元", "c")            # 创建空组
+engine.element.group.create("主梁单元", "a", "1to3")    # 添加单元 1-3
 
-# Boundary groups
-engine.boundary.group.create("AbutmentBoundaries", "c")
-engine.boundary.group.create("AbutmentBoundaries", "a", "1to2")
+# 边界组
+engine.boundary.group.create("桥台边界", "c")
+engine.boundary.group.create("桥台边界", "a", "1to2")
 
-# Various boundary types
-engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)           # General support
-engine.boundary.create_master_slave(no=1, node=1, dx=1, dy=1, dz=1, rx=0, ry=1, rz=1, coincident=1)  # Master-slave
-engine.boundary.create_rigid(no=1, node_i=1)                                               # Rigid link
-engine.boundary.create_elstcspt(no=1, coor="", x=0, dx=1e9, y=0, dy=1e9, z=0, dz=1e9)     # Elastic support
+# 各类边界条件
+engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)           # 一般支撑
+engine.boundary.create_master_slave(no=1, node=1, dx=1, dy=1, dz=1, rx=0, ry=1, rz=1, coincident=1)  # 主从约束
+engine.boundary.create_rigid(no=1, node_i=1)                                               # 刚性连接
+engine.boundary.create_elstcspt(no=1, coor="", x=0, dx=1e9, y=0, dy=1e9, z=0, dz=1e9)     # 弹性支承
 
-# Tendons
+# 钢束
 prop = engine.tendon.prop.create_in(
     name="15-10", mat=3, code="GBT5224_2014",
     diameter=15.2, num=10, pipe=0.09,
 )
 shape = engine.tendon.shape.create_arc3d(
     name="N1", n_num=2, prop="15-10",
-    element_group="MainGirderElements", curve_name="curve1"
+    element_group="主梁单元", curve_name="curve1"
 )
 
-# Live loads
-grade = engine.live.grade.create(name="HighwayClassI", code="JTGD60_2015", type="HIGHWAY_I")
-lane = engine.live.lane.create(name="Lane1", type="VE")
-case = engine.live.case.create(name="LiveLoadCase 1", code="JTGD60_2015")
+# 活载：等级 -> 车道 -> 工况
+engine.live.grade.create_highway("公路I级", code="JTGD60_2015", live_load_type="HIGHWAY_I")
+engine.live.lane.create_ve("车道", length=19.1, wheel=1.8, orientation=1,
+                           ref=0, ref_elems="主梁单元", offset_y=0.0, offset_z=0.0)
+lc = engine.live.case.create("车道荷载包络", code="JTGD60_2015", sub_cmb_type=1)
+lc.create_sub("车道荷载工况1", "公路I级", scalar=0.75, calc_mu=True,
+              bridge_type="CUSTOM", mu_params=[6.586960], lane_names=["车道"])
 ```
 
-### Display Control
+车辆荷载不是一个独立概念：OSIS 里没有车辆实体，车辆只是活载等级的一个取值
+（`grade=LiveGradeType.VEHICLE`），与公路、人群、疲劳等级平级，创建方式也相同
+（`engine.live.grade.create_vehicle(...)`）。
+
+### 显示控制
 
 ```python
-# Show/hide boundaries, loads and tendons
-engine.display.disp_ctrl("bc", "all", "all", 1)          # Show all boundaries
-engine.display.disp_ctrl("lg", "nforce", "all", 0)       # Hide all concentrated forces
-engine.display.disp_ctrl("td", "all", ["T1", "T2"], 1)   # Show specific tendons
+# 边界 / 荷载 / 钢束显隐
+engine.display.disp_ctrl("bc", "all", "all", 1)          # 显示所有边界
+engine.display.disp_ctrl("lg", "nforce", "all", 0)       # 隐藏所有集中力
+engine.display.disp_ctrl("td", "all", ["T1", "T2"], 1)   # 显示指定钢束
 
-# View orientation
+# 视图方向
 engine.display.set_view("top")          # standard / top / right / front
 
-# Display switch
-engine.display.set_plsm(1)              # 0 = off, 1 = on
+# 显示开关
+engine.display.set_plsm(1)              # 0 = 关，1 = 开
 ```
 
-### Property & Thickness Management
+### 属性与厚度管理
 
 ```python
-# Coordinate systems (三点定义)
+# 坐标系（三点定义）
 engine.prop.coord.create_three_point(
     no=1, p1x=0, p1y=0, p1z=0,
     p2x=1, p2y=0, p2z=0,
     p3x=0, p3y=1, p3z=0,
 )
 
-# Creep and shrinkage(no, name, code, fcuk, avg_humidity,
-#                     component_approximate_size, type_coeff, birth_by_shrinking, fly_ash_ratio)
+# 收缩徐变（no, name, code, fcuk, avg_humidity,
+#          component_approximate_size, type_coeff, birth_by_shrinking, fly_ash_ratio）
 engine.prop.creep_shrink.create(no=1, name="Creep1", avg_humidity=70.0,
                                 type_coeff=5.0, birth_by_shrinking=3)
 
-# Damping (Rayleigh 自定义系数)
+# 阻尼（Rayleigh 自定义系数）
 engine.prop.damping.create_rayleigh_custom(name="Damping1", alpha=0.05, beta=0.005)
 
-# P-U curve (no, name, curve_type, num, *values)
-#   curve_type: 0 = force, 1 = moment
+# P-U 曲线（no, name, curve_type, num, *values）
+#   curve_type: 0=力，1=力矩
 engine.prop.pu_curve.create(1, "PU1", 1, 3, 0, 0.01, 1000, 0.02, 1500)
 
-# Element thickness assignment (thickness, op, *elems)
+# 构件厚度分配（thickness, op, *elems）
 engine.prop.assign_component_thickness(0.3, "a", 1)
 
-# Shell thickness (no, in_plane, out_plane)
+# 壳厚度（no, in_plane, out_plane）
 engine.thickness.create(no=1, in_plane=0.3, out_plane=0.3)
 ```
 
-### Geometry Queries
-
-The `GeometryManager` supports querying geometric entities:
+### 几何查询
 
 ```python
-# Get all splines
+# 获取所有样条曲线
 splines = engine.geometry.all()
 
-# Get a specific spline
+# 获取指定样条曲线
 spline = engine.geometry.get("curve1")
 
-# Filter by type (General / Natural / Arc3D / Arc2D)
-arcs = [s for s in engine.geometry.all() if s.spline_type.name == "Arc3D"]
+# 按类型筛选
+arcs = [s for s in engine.geometry.all() if s.spline_type is SplineType.ARC3D]
 ```
 
-### Data Class Objects
+### 枚举
 
-Create and query operations return data class objects (dataclass) instead of raw dictionaries:
+所有类型编码集中在 `pyosis.core.enums`。每个成员的**名字就是 OSIS 命令流里的写法**，
+成员可以直接当字符串用；值是接口 JSON 里的整数编码：
+
+```python
+from pyosis.core.enums import SectionType
+
+SectionType.Rectangle.value      # 5              — OSIS 下发的编码
+str(SectionType.Rectangle)       # "Rectangle"    — 命令流写法
+SectionType.name_of(5)           # "Rectangle"
+SectionType.of(404)              # SectionType.Unassigned — 未知编码回退
+```
+
+可用：`ElementType`、`BoundaryType`、`MaterialType`、`MaterialCode`、`SectionType`、
+`LoadCaseType`、`SplineType`、`TensionType`、`LiveGradeType`。
+数据类上带类型的字段另有 `type_name` / `code_name` / `grade_name` 属性。
+
+### 数据类对象
+
+创建和查询操作返回数据类对象（dataclass），而非原始字典：
 
 ```python
 elem = engine.element.get(1)
-print(elem.no)          # ID
-print(elem.node_vec)    # Node list
-print(elem.mat)         # Material ID
+print(elem.no)          # 编号
+print(elem.node_vec)    # 节点列表
+print(elem.mat)         # 材料编号
 
-# Objects support operations (operations下沉 to object)
-lc = engine.load.get("Self-weight")
+# 对象支持操作（操作下沉）
+lc = engine.load.get("自重")
 lc.create_gravity()
 lc.create_nforce(1, fx=1000)
 ```
 
-### Enums
+### 显式编号
 
-All type codes live in `pyosis.core.enums`. Each member's **name is the OSIS command-stream spelling**, so a member converts straight to a string; its value is the integer code the JSON carries:
+部分 `create_*` 函数支持通过 `no` 参数显式指定编号，不指定时自动分配：
 
 ```python
-from pyosis.core.enums import ElementType, SectionType
+# 自动分配编号
+sec = engine.section.create_circle(name="截面1", d=0.5)
 
-SectionType.Rectangle.value      # 5      — code as sent by OSIS
-str(SectionType.Rectangle)       # "Rectangle"
-SectionType.name_of(5)           # "Rectangle"
-SectionType.of(404)              # SectionType.Unassigned — unknown code falls back
+# 显式指定编号
+sec = engine.section.create_circle(name="截面1", d=0.5, no=100)
 ```
 
-Available: `ElementType`, `BoundaryType`, `MaterialType`, `MaterialCode`, `SectionType`, `LoadCaseType`, `SplineType`, `TensionType`, `LiveGradeType`. Data-class fields that carry a type expose a `type_name` / `code_name` / `grade_name` property for convenience.
+## 结果导出
 
-The `Xxx_TYPE_NAMES` dicts from pyosis 0.x are gone; use `XxxType.name_of(code)` instead.
-
-> **Migration note (0.8.0):** member names were normalized to the OSIS spelling, so `Enum.name` changed for some values — `SectionType.CUSTOM.name` is now `"CustomShape"`, `ElementType.UNASSIGNED.name` is now `"Unassigned"`. Code that compared against the old names, or indexed the old `*_TYPE_NAMES` dicts, needs updating. The old all-caps aliases (`SectionType.CUSTOM`, `ElementType.UNASSIGNED`, …) still resolve to the same values.
-
-> **Migration note (0.8.1):** vehicles are no longer a separate concept. OSIS has no vehicle entity — a vehicle is just one value of the live-load grade (`LiveGradeType.VEHICLE`), alongside highway/crowd/fatigue grades. Removed: `engine.live.vehicle`, `VehicleManager`, `vehicle_manager`, `LiveGrade.is_vehicle`, `LiveGrade.live_type_for_custom`, `LiveTypeForCustom`. Use `engine.live.grade` with `LiveGrade.grade_name` instead. `SplineType` member names also moved to the OSIS spelling (`GENERAL`/`NATURAL`/`ARC3D`/`ARC2D`), so `SplineType.General.name` is now `"GENERAL"`; the old spellings remain as aliases.
-
-### Explicit Numbering
-
-Some `create_*` functions support explicit numbering via the `no` parameter. If not specified, the number is automatically assigned:
+求解完成后，可通过 `engine.result` 导出各类分析结果，所有导出方法均返回 pandas DataFrame：
 
 ```python
-# Auto-assigned number
-sec = engine.section.create_circle(name="Section1", d=0.5)
+# 导出荷载工况结果（单元内力）
+df = engine.result.loadcase("自重", "LCEF")
 
-# Explicit number
-sec = engine.section.create_circle(name="Section1", d=0.5, no=100)
-```
+# 导出包络结果（单元内力）
+df = engine.result.env("基本组合包络", "EnvEF")
 
-## Result Export
-
-After solving, you can export various analysis results using `engine.result`. All export methods return pandas DataFrames:
-
-```python
-# Export load case results (element forces)
-df = engine.result.loadcase("Self-weight", "LCEF")
-
-# Export envelope results (element forces)
-df = engine.result.env("BasicCombinationEnvelope", "EnvEF")
-
-# Export design check results
+# 导出规范验算结果
 df = engine.result.check(
     "混凝土", "正截面抗弯验算", "基本组合"
 )
 
-# Batch export all check results from Check folder
+# 批量导出 Check 文件夹下所有验算结果
 results = engine.result.check_all()
 for name, df in results.items():
-    print(f"{name}: {len(df)} rows")
+    print(f"{name}: {len(df)} 行")
 ```
 
-Supported result types:
-- **Load case**: `LCEF` (element force), `LCED` (element displacement), `LCND` (node displacement), `LCBF` (boundary reaction), `LCTL` (tendon loss), `LCS` (element stress)
-- **Envelope**: `EnvBF` (boundary reaction), `EnvEF` (element force), `EnvES` (element strain), `EnvS` (element stress), `EnvND` (node displacement)
+支持的结果类型：
 
-Requires `pandas` to be installed: `python -m install pandas`
+- **荷载工况**：`LCEF`（单元内力）、`LCED`（单元位移）、`LCND`（节点位移）、`LCBF`（边界反力）、`LCTL`（钢束损失）、`LCS`（单元应力）
+- **包络**：`EnvBF`（边界反力）、`EnvEF`（单元内力）、`EnvES`（单元应变）、`EnvS`（单元应力）、`EnvND`（节点位移）
 
-## Complete Example
+需要安装 pandas：
+
+```bash
+pip install pandas
+```
+
+## 完整示例
 
 ```python
 from pyosis.core.engine import OSISEngine
@@ -344,7 +350,7 @@ from pyosis.core.engine import OSISEngine
 engine = OSISEngine()
 engine.clear()
 
-# Control parameters
+# 控制参数
 engine.control.set_gravity_acceleration(9.8066)
 engine.control.set_calc_tendon(True)
 engine.control.set_calc_concurrent_force(True)
@@ -356,56 +362,56 @@ engine.control.set_mod_loc_coor(False)
 engine.control.set_inc_tendon(True)
 engine.control.set_nonlinear(geom=False, link=False)
 
-# Sections
-engine.section.create_circle(no=1, name="CircleSection1", d=0.219, tw=0.012)
-engine.section.create_circle(no=2, name="CircleSection2", d=0.180, tw=0.008)
+# 截面
+engine.section.create_circle(no=1, name="圆形截面1", d=0.219, tw=0.012)
+engine.section.create_circle(no=2, name="圆形截面2", d=0.180, tw=0.008)
 
-# Materials
+# 材料
 engine.material.create_steel(
-    no=1, name="Steel1", code="JTGD64_2015", grade="Q345", dmp=0.05
+    no=2, name="钢材1", code="JTGD64_2015", grade="Q345", dmp=0.05,
 )
 
-# Nodes
+# 节点
 engine.node.create(no=1, x=0, y=5, z=0)
 engine.node.create(no=2, x=15, y=5, z=0)
 engine.node.create(no=3, x=7.5, y=0, z=0)
 engine.node.create(no=4, x=20, y=0, z=0)
 
-# Elements
+# 单元
 engine.element.create_beam3d(no=1, node1=1, node2=3, mat=1, sec1=1, sec2=1)
 engine.element.create_beam3d(no=2, node1=2, node2=3, mat=1, sec1=2, sec2=2)
 
-# Boundaries
+# 边界
 engine.boundary.create_general(no=1)
 engine.boundary.get(1).assign("a", [1, 2])
 
-# Loads
+# 荷载
 lc = engine.load.create(
-    "CustomLoadCase1",
+    "自定义工况1",
     load_case_type="USER",
-    prompt="Two forces applied at nodes 3 and 4"
+    prompt="施加于节点3和4的两个力"
 )
 lc.create_nforce(3, fx=0, fy=-1000000, fz=0)
 lc.create_nforce(4, fx=200000, fy=0, fz=0)
 
-# Solve
+# 求解
 engine.solve()
 ```
 
-## End-to-End Demo (Solver-Only Mode)
+## 端到端示例（求解器模式）
 
-See [`tests/pyosis_demo.py`](tests/pyosis_demo.py) for a runnable end-to-end example that:
+见 [`tests/pyosis_demo.py`](tests/pyosis_demo.py)：一个自包含的可运行示例，流程为
 
-- Starts the solver directly via `OSISSolver` (no GUI required)
-- Builds the 25m 简支小箱梁 example model (10 prep modules)
-- Runs `engine.solve()`
-- Exports LCND / LCEF / EnvND / EnvEF results to CSV
+- 通过 `OSISSolver` 直接启动求解器（无需 GUI）
+- 建模 25m 简支小箱梁示例（10 个 prep 模块）
+- 执行 `engine.solve()`
+- 导出 LCND / LCEF / EnvND / EnvEF 结果到 CSV
 
-The demo reuses the prep modules from `tests/output/output_py/25m简支小箱梁中梁-solveronly/`, so it serves both as a smoke test and a copy-paste template.
+输出写在仓库根目录的 `temp/demo_output/`（`temp/` 不进版本库）。
 
-## Batch Execution
+## 批量执行（batch）
 
-For non-interactive workflows (large models, customer scripts that took tens of minutes per command), wrap your script in `with batch():` to merge **all** OSIS commands into a **single** `OSIS_Run` HTTP request when the block exits:
+大型模型逐条发命令时网络往返是主要开销。把建模代码包进 `with batch():`，退出时块内**所有** OSIS 命令合并为**一次** `OSIS_Run` HTTP 请求发出：
 
 ```python
 from pyosis import batch
@@ -421,90 +427,85 @@ with batch():
         engine.element.create_beam3d(no=i + 1, node1=i + 1, node2=i + 2, ...)
 ```
 
-Server-side `OSIS_Run` calls `SplitOsisCommands` once and then a single `Execution(&v)`, so the network round-trip cost is paid exactly once instead of once per command. Intermediate reads (`get`, `all`) auto-flush the buffer first, so cached objects stay correct.
+要点：
 
-Notes:
+- 支持嵌套 `with batch():`，仅最外层退出时统一冲刷；
+- 块内的查询（`get`、`all`）会先自动冲刷缓冲再发起读取，保证读到正确结果；
+- 块内若抛异常，自 `__enter__` 起入队的命令全部丢弃，原异常再抛出；
+- 块内可手动调用 `flush()` 提前冲刷；
+- `next_no()`（自动编号）在 batch 内直接抛错（它要回查服务器），请显式传入 `no=...`，或退出 batch 后再做自动编号。
 
-- Nested `with batch():` is supported — the inner exit does not flush; only the outermost exit does.
-- If the block raises, the buffered commands added since `__enter__` are discarded.
-- `flush()` can be called inside the block to force an early flush.
-- `next_no()` (auto-numbering) raises inside `batch()` because it would need to query the server mid-batch; pass `no=...` explicitly, or run auto-numbering outside the batch.
+`25m简支小箱梁中梁` 实测：未启用 batch 约 3000 次往返，启用后 3 次（clear + clc + 最终冲刷）。
 
-Benchmark on the `25m简支小箱梁中梁` project (`.out` of ~3000 commands): before `batch()` ~3000 round-trips; with `batch()` 3 round-trips (clear + clc + one final flush), **~1000x compression**.
+## .out → pyosis 转换器
 
-## .out → pyosis Converter
-
-pyosis ships a converter that turns an OSIS command stream (`.out`) into a clean, runnable pyosis project. This is the easiest way to migrate a legacy APDL/SML script.
+pyosis 自带把 OSIS 命令流（`.out`）一键转换为可运行 pyosis 项目的工具：
 
 ```bash
 python src/pyosis/transfer/out_to_python.py path/to/model.out path/to/output_project
 ```
 
-Generated layout:
+生成的项目结构：
 
 ```
 output_project/
 └── prep/
-    ├── main.py          # Entry point (batch mode, runs all 10 modules)
-    ├── _1_control.py    # Global control parameters
-    ├── _2_property.py   # Geometry / coordinate / damping / creep properties
-    ├── _3_material.py   # Materials
-    ├── _4_section.py    # Sections (incl. mesh)
-    ├── _5_node.py       # Nodes
-    ├── _6_element.py    # Elements
-    ├── _7_boundary.py   # Boundaries
-    ├── _8_loadcase.py   # Load cases
-    ├── _9_analysis.py   # Analysis settings (settlement / live / dynamic / stability)
-    └── _10_stage.py     # Construction stages
+    ├── main.py           # 入口（batch 模式跑完所有 10 个模块）
+    ├── _1_control.py     # 全局控制参数
+    ├── _2_property.py    # 几何/坐标系/阻尼/收缩徐变等属性
+    ├── _3_material.py    # 材料
+    ├── _4_section.py     # 截面（含网格划分）
+    ├── _5_node.py        # 节点
+    ├── _6_element.py     # 单元
+    ├── _7_boundary.py    # 边界条件
+    ├── _8_loadcase.py    # 荷载工况
+    ├── _9_analysis.py    # 分析设置（沉降/活载/动力/稳定）
+    └── _10_stage.py      # 施工阶段
 ```
 
-The generated `main.py` wraps the entire modelling flow in `with batch():`, so the whole project is sent to OSIS in one HTTP request — matching the OSIS server's native batching path.
-
-Run it:
+运行：
 
 ```bash
 cd output_project
-python prep/main.py            # build the model
-python prep/main.py --solve    # build + solve
+python prep/main.py            # 仅建模
+python prep/main.py --solve    # 建模 + 求解
 ```
 
-Notes on the converter:
+转换器特性：
 
-- Both long-form command names (`Node`, `Element`, `Section`, `Material`, `LoadCase`, `Boundary`, `Stage`) and OSIS 5.1 short-form aliases (`N`, `Ele`, `Sec`/`SecOff`/`SecMesh`, `Mat`, `LC`, `Bd`, `Stg`) are recognized and normalized.
-- `SectionMesh` is emitted with the new `Index, PartID, MeshMethod, MeshSize` layout (Section 7.3.6.2) — `PartID = 1` for concrete sections, `2` for templated composite sections.
-- `Spline3D` is dispatched to `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d` based on the type field.
-- Commands that are not yet modeled are passed through verbatim via `engine.run(...)` so the model still runs; rewrite them into pyosis calls manually if needed.
+- 同时识别长名（`Node`/`Element`/`Section`/`Material`/`LoadCase`/`Boundary`/`Stage`）和 OSIS 5.1 缩写名（`N`/`Ele`/`Sec`/`SecOff`/`SecMesh`/`Mat`/`LC`/`Bd`/`Stg`），自动归一化；
+- `SectionMesh` 按手册 7.3.6.2 的新格式 `Index, PartID, MeshMethod, MeshSize` 生成（混凝土截面 `PartID=1`，模板组合截面 `PartID=2`）；
+- `Spline3D` 按类型字段分发到 `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d`；
+- 暂未建模的命令用 `engine.run(...)` 原样透传给 OSIS，保证模型可执行；需要拆成 pyosis 调用时可人工改写。
 
-## Chained Method Calls
+## 链式调用
 
-The dataclass returned by `get()` supports method chaining without server round-trips:
+`get()` 返回的数据类对象支持零服务器往返的链式调用：
 
 ```python
 with batch():
     lc = engine.load.create("Self-weight", load_case_type="D")
     lc.create_gravity()
     lc.create_nforce(node=1, fx=0, fy=-1000, fz=0)
-    # ↑ all three commands are queued; the OSIS_Run request only fires at exit
+    # ↑ 三条命令全部入队，OSIS_Run 请求只在块退出时发出一次
 ```
 
-Accessing identity attributes (`lc.no`, `lc.name`) does not touch the server. Accessing data fields (`lc.type`, `lc.elements`) materializes the object (one-time flush + query), then caches it.
+身份属性（`lc.no`、`lc.name`）不触发服务器交互；数据字段（`lc.type`、`lc.elements`）首次访问会物化（一次冲刷+查询），后续直接读缓存。
 
-> OSIS 5.1 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
+## 端到端示例（GUI 模式）
 
-## End-to-End Demo (GUI Mode)
-
-The single-file demo [`tests/demo_gui.py`](tests/demo_gui.py) is a merged version of the project generated from `tests/output/xiaoxiangliang.out`. Run it against an open OSIS 5.1+ GUI:
+单文件 demo [`tests/demo_gui.py`](tests/demo_gui.py) 由 `temp/xiaoxiangliang.out` 转换后的项目合并而来，在已打开的 OSIS 5.1+ GUI 上直接运行：
 
 ```bash
-python tests/demo_gui.py            # build the model
-python tests/demo_gui.py --solve    # build + solve
+python tests/demo_gui.py            # 仅建模
+python tests/demo_gui.py --solve    # 建模 + 求解
 ```
 
-The file contains the engine setup, all 10 `build_*` functions (control / property / material / section / node / element / boundary / loadcase / analysis / stage), and a `build_model()` driver that wraps everything in `with batch():` — so ~250 commands hit OSIS in a single `OSIS_Run` request.
+文件内含 engine 初始化、全部 10 个 `build_*` 函数（control/property/material/section/node/element/boundary/loadcase/analysis/stage）以及驱动函数 `build_model()`，整体包在 `with batch():` 内，约 250 条命令一次性通过 `OSIS_Run` 送到 OSIS。
 
-To regenerate both the single-file demo and the multi-module project:
+重新生成单文件 demo 与多模块项目：
 
 ```bash
-python tests/_merge_demo_gui.py                                    # -> tests/demo_gui.py
-python src/pyosis/transfer/out_to_python.py tests/output/xiaoxiangliang.out tests/output/output_py/xiaoxiangliang
+python temp/_merge_demo_gui.py                                                        # 生成 tests/demo_gui.py
+python src/pyosis/transfer/out_to_python.py temp/xiaoxiangliang.out temp/output_py/xiaoxiangliang
 ```
