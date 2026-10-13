@@ -21,14 +21,17 @@ class OSISSolver:
     """OSIS solver 实例的配置 + 启动入口。
 
     Args:
-        osis_install_path: OSIS 安装根目录,根目录下需有 PySolver.dll。
+        osis_install_path: OSIS 安装根目录,根目录下需有 osisSdk.dll(及其依赖 PySolver.dll)。
         port: HTTP server 端口;<=0 由系统随机分配(bind :0),实际端口
             回写 self.port;默认 18080。指定端口被占会失败。
         host: 监听地址,默认 127.0.0.1。
 
     Raises:
-        FileNotFoundError: PySolver.dll 不在指定位置。
-        RuntimeError: DLL 加载失败、缺少导出、端口被占,或 server 启动超时。
+        FileNotFoundError: osisSdk.dll 不在指定位置。
+        RuntimeError: DLL 加载失败、osis_init/osis_start_http 失败、端口被占,或 server 启动超时。
+
+    许可: osis_init 需要 osis.lic(HMAC 签名),搜索顺序为环境变量
+    ``OSIS_LICENSE_FILE`` → ``%ProgramData%\\OSIS\\osis.lic`` → 安装目录下 osis.lic。
     """
 
     def __init__(
@@ -65,20 +68,23 @@ class OSISSolver:
         return self._install_path
 
     def start(self) -> "OSISSolver":
-        """ctypes 加载 PySolver.dll 并启动 HTTP server。幂等。__init__ 已自动调用。
+        """ctypes 加载 osisSdk.dll 并启动 HTTP server。幂等。__init__ 已自动调用。
+
+        入口是 osisSdk 的 C API：osis_init 建工程组 + 许可校验，
+        osis_start_http 起 HTTP server 并返回实际端口。
 
         Raises:
-            FileNotFoundError: <install>/PySolver.dll 不存在。
-            RuntimeError: DLL 加载/导出/start 失败,或 server 在 15s 内未响应。
+            FileNotFoundError: <install>/osisSdk.dll 不存在。
+            RuntimeError: DLL 加载 / osis_init / osis_start_http 失败,或 server 在 15s 内未响应。
         """
         if self._started:
             return self
 
-        path = os.path.join(self._install_path, "PySolver.dll")
+        path = os.path.join(self._install_path, "osisSdk.dll")
         if not os.path.isfile(path):
             raise FileNotFoundError(
                 f"OSISSolver: 找不到 {path}。"
-                f"请确认 PySolver.dll 已编译并放到 {self._install_path}\\ 下。"
+                f"请确认 osisSdk.dll（及其依赖 PySolver.dll）已编译并放到 {self._install_path}\\ 下。"
             )
 
         self._add_dll_search_dir(os.path.dirname(path))
@@ -99,27 +105,41 @@ class OSISSolver:
         except OSError as e:
             raise RuntimeError(f"OSISSolver: 加载 {path} 失败: {e}")
 
-        if not hasattr(lib, "PySolver_AutoBootstrap"):
-            raise RuntimeError(
-                f"OSISSolver: {path} 缺少 PySolver_AutoBootstrap 导出。"
-                f"请重新编译 PySolver.cpp(已加 ctypes 入口)。"
-            )
+        # osis_init(runtime_dir)：建工程组 + 许可校验 + 注册 SDK 自己的 HTTP 路由。
+        # runtime_dir = 含 config/ 的安装根目录（与 osisSdk 语义一致）。
+        init = lib.osis_init
+        init.restype = ctypes.c_int
+        init.argtypes = [ctypes.c_char_p]
+        if init(self._install_path.encode("utf-8")) != 0:
+            raise RuntimeError(f"OSISSolver: osis_init 失败: {self._last_error(lib)}")
 
-        fn = lib.PySolver_AutoBootstrap
-        fn.restype = ctypes.c_int
-        fn.argtypes = [ctypes.c_char_p, ctypes.c_int]
-        actual_port = fn(self._host.encode("utf-8"), self._port)
+        start = lib.osis_start_http
+        start.restype = ctypes.c_int
+        start.argtypes = [ctypes.c_char_p, ctypes.c_int]
+        actual_port = start(self._host.encode("utf-8"), self._port)
         if actual_port < 0:
-            raise RuntimeError("OSISSolver: PySolver_AutoBootstrap 启动失败")
+            raise RuntimeError(f"OSISSolver: osis_start_http 失败: {self._last_error(lib)}")
 
         self._lib = lib
         self._started = True
-        # port<=0(随机分配)时 AutoBootstrap 返回系统分配的实际端口,回写,
+        # port<=0(随机分配)时 osis_start_http 返回系统分配的实际端口,回写,
         # self.url / engine 连接才指向正确地址
         if actual_port > 0:
             self._port = actual_port
         self._wait_ready()
         return self
+
+    @staticmethod
+    def _last_error(lib) -> str:
+        """读 osisSdk 的 osis_last_error(buf, n) 取最近一次错误文本。"""
+        fn = getattr(lib, "osis_last_error", None)
+        if fn is None:
+            return "(osis_last_error 不可用)"
+        buf = ctypes.create_string_buffer(1024)
+        fn.restype = ctypes.c_int
+        fn.argtypes = [ctypes.c_char_p, ctypes.c_int]
+        fn(buf, len(buf))
+        return buf.value.decode("utf-8", "replace")
 
     def stop(self) -> None:
         """best-effort 停止。
@@ -133,7 +153,7 @@ class OSISSolver:
     def _wait_ready(self, timeout: float = 15.0) -> None:
         """轮询 POST /health 直到 server 响应。
 
-        PySolver 的所有路由都用 POST(GET 永远 404);/health 是专用存活探测,
+        服务端所有路由都用 POST(GET 永远 404);/health 是专用存活探测,
         不依赖工程状态,固定 200 + {"success":true}。
         走 trust_env=False 的独立 session——目标是本机 loopback,不应被
         HTTP_PROXY 等系统代理劫走。
