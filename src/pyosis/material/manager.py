@@ -69,7 +69,7 @@ class Material:
         return cls(
             no=as_no(d.get("no")),
             name=as_name(d.get("name")),
-            material_type=MaterialType(raw_type) if raw_type in [t.value for t in MaterialType] else MaterialType.UNASSIGNED ,
+            material_type=MaterialType.of(raw_type),
             code=d.get("code"),
             grade=d.get("grade"),
             e=d.get("e"),

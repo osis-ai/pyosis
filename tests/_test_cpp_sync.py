@@ -130,15 +130,19 @@ def t5():
     return f"{len(prop)} 字段, area={prop['area']:.6g}, type_name={s.type_name}"
 
 
-# ── 6. stage 改名 + 车辆 ───────────────────────
+# ── 6. stage 改名 ──────────────────────────────
 def t6():
     stages = engine.stage.all()
     return f"GetAllStageInfo OK, {len(stages)} 个阶段: {[s.name for s in stages]}"
 
 
-def t6v():
-    names = engine.live.vehicle.names()
-    return f"vehicle_manager.names()={names}, count={engine.live.vehicle.count()}"
+def t6g():
+    # 车辆等级和公路等级一样只是 grade 的一个取值,建完必须能读回——
+    # 这条同时给"等级表含 VEHICLE 时查询崩溃"当回归哨兵。
+    engine.live.grade.create_highway("公路I级", live_load_type="HIGHWAY_I")
+    engine.live.grade.create_vehicle("车辆荷载")
+    got = sorted((g.name, g.grade_name) for g in engine.live.grade.all())
+    return f"live.grade.all()={got}"
 
 
 # ── 7. 工程目录 ────────────────────────────────
@@ -176,7 +180,7 @@ check("3. 单元补字段 compThk/secVec/isTaper", t3)
 check("9. ploted → plotted", t9)
 check("5. 截面 prop 13 字段 / 无 propFactor", t5)
 check("6. /GetAllStageInfo", t6)
-check("6b. vehicle_manager 过滤", t6v)
+check("6b. live.grade 活载等级", t6g)
 check("7. /GetProjectDirectory data.path", t7)
 check("8. 整数编码 → 名字", t8)
 check("8b. 约束 7 位 → dict", t8b)

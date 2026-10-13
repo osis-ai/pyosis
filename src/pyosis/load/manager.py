@@ -962,7 +962,7 @@ class TendonProp:
         """从接口 dict 构造 TendonProp 对象（内部使用）"""
         return cls(
             name=d.get("name"),
-            tension_type=TensionType(d.get("tensionType")),
+            tension_type=TensionType.of(d.get("tensionType")),
             tendon_mat_no=d.get("tendonMatNO"),
             area=d.get("area"),
             code=d.get("code"),

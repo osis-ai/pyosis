@@ -19,8 +19,10 @@ from .enums import (
     OsisEnum,
     ElementType, BoundaryType, MaterialType, MaterialCode,
     SectionType, LoadCaseType, SplineType, TensionType,
+    LiveGradeType,
     element_type_name, boundary_type_name, material_type_name,
     material_code_name, section_type_name, loadcase_type_name,
+    spline_type_name, live_grade_name,
     DOF_NAMES, constraints_to_dict,
 )
 from .normalize import as_no, as_name

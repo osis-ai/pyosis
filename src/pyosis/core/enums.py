@@ -26,6 +26,7 @@ class OsisEnum(IntEnum):
 
     - ``str(e)`` / ``e.name`` → OSIS 命令流写法（成员名）
     - ``name_of(code)``       → 编码转名字；未知编码或 Unassigned 返回 ""
+    - ``of(code)``            → 编码转成员；未知编码退回 Unassigned
     """
 
     def __str__(self) -> str:
@@ -34,11 +35,16 @@ class OsisEnum(IntEnum):
     @classmethod
     def name_of(cls, code, default: str = "") -> str:
         """编码 → OSIS 命令流写法；未知编码 / Unassigned 返回 default。"""
-        try:
-            member = cls(int(code))
-        except (ValueError, TypeError):
-            return default
+        member = cls.of(code)
         return default if member.name == "Unassigned" else member.name
+
+    @classmethod
+    def of(cls, code):
+        """编码 → 成员；未知编码 / None → Unassigned（所有子类都定义了它）。"""
+        try:
+            return cls(int(code))
+        except (ValueError, TypeError):
+            return cls.Unassigned
 
 
 # ══════════════════════════════════════════════
@@ -219,10 +225,7 @@ class SectionType(OsisEnum):
 
 
 class LoadCaseType(OsisEnum):
-    """荷载工况类型（PrepEnum::LoadCase）
-
-    32=温度、40=施工阶段荷载、52=温度梯度。
-    """
+    """荷载工况类型（PrepEnum::LoadCase）"""
     Unassigned = 0
     USER = 1      # 用户自定义荷载
     D = 2         # 恒荷载
@@ -240,7 +243,7 @@ class LoadCaseType(OsisEnum):
     LP = 14       # 超载
     IL = 15       # 汽车冲击力
     ILP = 16      # 超载冲击力
-    CF = 17       # 离心力
+    CF = 17       # 汽车离心力
     BRK = 18      # 汽车制动力
     BK = 19       # 活荷载引起的纵向内力
     PL = 20       # 人群荷载
@@ -270,40 +273,79 @@ class LoadCaseType(OsisEnum):
     LR = 44       # 屋面活荷载
     S = 45        # 雪荷载
     R = 46        # 雨荷载
-    W1 = 47       # 风荷载
-    W2 = 48       # 风荷载
-    WF1 = 49      # 波浪力
-    WF2 = 50      # 波浪力
-    FL = 51
-    TG = 52
-    CFS = 53
-    CFV = 54
-    IF = 55
-    CRL = 56
-    CFD = 57
+    W1 = 47       # 活载风
+    W2 = 48       # 极限风
+    WF1 = 49      # W1 引起的浪
+    WF2 = 50      # W2 引起的浪
+    FL = 51       # 疲劳荷载
+    TG = 52       # 梯度温度
+    CFS = 53      # 船舶的撞击作用
+    CFV = 54      # 汽车撞击作用
+    IF = 55       # 汽车冲击力
+    CRL = 56      # 人群荷载
+    CFD = 57      # 漂流物的撞击作用
 
     UNASSIGNED = 0  # 兼容旧拼写
 
 
-class SplineType(IntEnum):
-    """样条曲线类型（钢束线型定义，本地分类用，非 PrepEnum 打印名）"""
-    Unassigned = 0  # 未分配
-    General = 1     # 一般边界
-    Natural = 2     # 自然边界
-    Arc3D = 3       # 3D圆弧
-    Arc2D = 4       # 2D圆弧
+class SplineType(OsisEnum):
+    """样条曲线类型（PropEnum::Spline）
+    0 = 未分配；名字即 spline3d 命令的类型写法。
+    """
+    Unassigned = 0
+    GENERAL = 1     # 一般边界
+    NATURAL = 2     # 自然边界
+    ARC3D = 3       # 3D 圆弧
+    ARC2D = 4       # 2D 圆弧
 
     UNASSIGNED = 0  # 兼容旧拼写
+    General = 1     # 兼容旧命名
+    Natural = 2     # 兼容旧命名
+    Arc3D = 3       # 兼容旧命名
+    Arc2D = 4       # 兼容旧命名
 
 
-class TensionType(IntEnum):
-    """钢束张拉方式（钢束特性，本地分类用，非 PrepEnum 打印名）"""
+class TensionType(OsisEnum):
+    """钢束张拉方式（LoadEnum::TensionType）
+
+    不是命令流写法——C++ 用它区分先张/后张的类继承，print name 为空，
+    名字只在 Python 侧做分类。
+    """
     Unassigned = 0
     Pre = 1             # 先张法
     In = 2              # 后张法（体内）
     Ex = 3              # 后张法（体外）
 
     UNASSIGNED = 0      # 兼容旧拼写
+
+
+class LiveGradeType(OsisEnum):
+    """活载等级（LoadEnum::LiveGrade）"""
+    Unassigned = 0
+    HIGHWAY_I = 1        # 公路-I 级（车道荷载）
+    HIGHWAY_II = 2       # 公路-II 级（车道荷载）
+    VEHICLE = 3          # 车辆荷载
+    CROWD = 4            # 人群荷载
+    FATIGUE_I = 5        # 疲劳荷载 I
+    FATIGUE_II = 6       # 疲劳荷载 II
+    FATIGUE_III = 7      # 疲劳荷载 III
+    UF = 8
+    V = 9
+    VG = 10
+    NHWCD = 11
+    NHWRQ = 12
+    OHWRQ = 13
+    CCD_A = 14           # 城-车道 A
+    CCD_B = 15           # 城-车道 B
+    CCL_A = 16           # 城-车辆 A
+    CCL_B = 17           # 城-车辆 B
+    CT160 = 18
+    CT220 = 19
+    CT300 = 20
+    CT420 = 21
+    CRQ = 22             # 城-人群
+
+    UNASSIGNED = 0       # 兼容旧拼写
 
 
 # ══════════════════════════════════════════════
@@ -316,6 +358,8 @@ material_type_name = MaterialType.name_of
 material_code_name = MaterialCode.name_of
 section_type_name = SectionType.name_of
 loadcase_type_name = LoadCaseType.name_of
+spline_type_name = SplineType.name_of
+live_grade_name = LiveGradeType.name_of
 
 
 # ══════════════════════════════════════════════
@@ -343,7 +387,9 @@ __all__ = [
     "OsisEnum",
     "ElementType", "BoundaryType", "MaterialType", "MaterialCode",
     "SectionType", "LoadCaseType", "SplineType", "TensionType",
+    "LiveGradeType",
     "element_type_name", "boundary_type_name", "material_type_name",
     "material_code_name", "section_type_name", "loadcase_type_name",
+    "spline_type_name", "live_grade_name",
     "DOF_NAMES", "constraints_to_dict",
 ]

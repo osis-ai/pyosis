@@ -9,7 +9,7 @@ boundary/loadcase/analysis/stage)的代码全部内嵌在一个文件里,无需�
     2) 准备 OSIS 求解器安装目录(如 D:\\OSIS_Solver\\Rbin64,带 osisSdk.dll)
     3) python pyosis_demo.py
 
-运行结束后在 ./demo_output/ 下生成:
+运行结束后在 <仓库根>/temp/demo_output/ 下生成:
     - proj/test.sis           工程文件
     - proj/test/Result/       求解器生成的二进制 .lcr/.env
     - proj/test/Temperary/    求解器生成的 .txt + 导出的 UTF-8-BOM CSV
@@ -27,7 +27,8 @@ from pyosis.core.solver import OSISSolver
 # OSIS 安装目录(含 osisSdk.dll)。正反斜杠都行,Windows LoadLibrary 都接受。
 OSIS_INSTALL = "D:/OSIS_Solver/Rbin64"
 
-WORK_DIR = Path("./demo_output")
+# 输出统一写到仓库根下的 temp/(gitignore,不进版本库),不污染 tests/
+WORK_DIR = Path(__file__).resolve().parents[1] / "temp" / "demo_output"
 if WORK_DIR.exists():
     shutil.rmtree(WORK_DIR)
 WORK_DIR.mkdir(parents=True, exist_ok=True)
@@ -403,5 +404,5 @@ def main() -> None:
 if __name__ == "__main__":
     main()
     print(f"\n== 工程 {PROJ_PATH} ==", flush=True)
-    print("== CSV 结果 ./demo_output/proj/test/Temperary/*.csv (UTF-8-BOM,Excel/记事本直开) ==", flush=True)
+    print("== CSV 结果 temp/demo_output/proj/test/Temperary/*.csv (UTF-8-BOM,Excel/记事本直开) ==", flush=True)
     print("ALL OK", flush=True)

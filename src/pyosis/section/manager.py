@@ -94,6 +94,7 @@ class Rebar:
     has_web_vertical_rebar: bool  # 是否有腹板竖筋
     longitudinal_rebars: list[dict]  # 纵筋
     longitudinal_rebars_count: int  # 纵筋数量
+    section_no: int | None = None  # 所属截面编号
     @staticmethod
     def empty() -> Rebar:
         """无钢筋信息时的占位对象（内部使用）"""
@@ -106,8 +107,12 @@ class Rebar:
             longitudinal_rebars_count=0,
         )
     @classmethod
-    def _from_dict(cls, d: dict) -> Rebar:
-        """从接口 dict 构造 Rebar 对象（内部使用）"""
+    def _from_dict(cls, d: dict, section_no: int | None = None) -> Rebar:
+        """从接口 dict 构造 Rebar 对象（内部使用）
+
+        section_no: 所属截面编号。从截面接口取值时由调用方给出；
+        all_longitudinal_rebar() 走轻量接口，取 JSON 自带的 "no"。
+        """
         lr = d.get("longitudinalRebars")
         cnt = d.get("longitudinalRebarsCount")
         return cls(
@@ -117,6 +122,7 @@ class Rebar:
             has_web_vertical_rebar=bool(d.get("hasWebVerticalRebar")),
             longitudinal_rebars=list(lr) if isinstance(lr, list) else [],
             longitudinal_rebars_count=int(cnt) if cnt is not None else 0,
+            section_no=section_no if section_no is not None else as_no(d.get("no")),
         )
 
 # Section 基类
@@ -164,15 +170,16 @@ class Section:
         sp = d.get("stressPoints")
         ct = d.get("contour")
         rel = d.get("relatedElement")
+        sec_no = as_no(d.get("no"))
         raw_rebar = d.get("rebar")
         if isinstance(raw_rebar, dict):
-            rebar_obj = Rebar._from_dict(raw_rebar)
+            rebar_obj = Rebar._from_dict(raw_rebar, sec_no)
         else:
             rebar_obj = Rebar.empty()
         return cls(
             no=as_no(d.get("no")),
             name=as_name(d.get("name")),
-            section_type=SectionType(raw_type) if raw_type in [t.value for t in SectionType] else SectionType.UNASSIGNED,
+            section_type=SectionType.of(raw_type),
             prop=d.get("prop"),
             offset_type_y=d.get("offsetTypeY"),
             offset_value_y=d.get("offsetValueY"),
@@ -1095,8 +1102,9 @@ class SectionManager(BasicManager):
     def all_longitudinal_rebar(self) -> list[Rebar]:
         """获取所有截面的纵向钢筋信息（走 GetAllLongitudinalRebarInfo 端点）
 
-        按截面内部映射顺序返回,与 all() 相比数据更轻量——
-        只有钢筋标志位与纵筋明细,不含截面几何/属性。
+        数据更轻量——只有钢筋标志位与纵筋明细,不含截面几何/属性。
+        每一项的 section_no 指出所属截面;服务端尚未在响应里带截面编号时
+        该字段为 None,只能按返回顺序对应截面。
 
         Returns:
             list[Rebar]: 各截面的钢筋信息列表

@@ -104,7 +104,7 @@ class Spline:
                     ])
             return result
 
-        spline_type = SplineType(d.get("splineType"))
+        spline_type = SplineType.of(d.get("splineType"))
         points_raw = d.get("points")
         points = _extract_points(points_raw, spline_type) if points_raw else None
 

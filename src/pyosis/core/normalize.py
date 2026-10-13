@@ -14,20 +14,23 @@ _SENTINEL = -1
 
 
 def as_no(value):
-    """编号归一：None / -1 / "-1" → None，其余原样返回。"""
+    """编号归一：None / -1 / -1.0 / "-1" / "-1.0" → None，其余原样返回。"""
     if value is None:
         return None
+    if isinstance(value, bool):     # bool 是 int 子类，先排掉
+        return value
     if isinstance(value, str):
         s = value.strip()
-        if s in ("", "-1"):
+        if not s:
             return None
         try:
             value = int(s)
         except ValueError:
-            return value
-    if isinstance(value, bool):     # bool 是 int 子类，先排掉
-        return value
-    if isinstance(value, int) and value == _SENTINEL:
+            try:
+                value = float(s)
+            except ValueError:
+                return value        # 非数值字符串：原样返回
+    if isinstance(value, (int, float)) and value == _SENTINEL:
         return None
     return value
 

@@ -129,7 +129,7 @@ class NodeManager(BasicManager):
         return {
             d["id"]: (d.get("x", 0.0), d.get("y", 0.0), d.get("z", 0.0))
             for d in resp.get("data") or []
-            if isinstance(d, dict) and "id" in d
+            if isinstance(d, dict) and d.get("id") is not None
         }
     
     # ── 增删改 ────────────────────────────────

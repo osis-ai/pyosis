@@ -107,7 +107,7 @@ class Element:
         raw_type = int(d.get("type"))
         return cls(
             no=d.get("no"),
-            element_type=ElementType(raw_type) if raw_type in [t.value for t in ElementType] else ElementType.UNASSIGNED,
+            element_type=ElementType.of(raw_type),
             mat=d.get("mat"),
             node_vec=d.get("nodeVec"),
             node_i=d.get("nodeI"),

@@ -88,7 +88,7 @@ class Boundary:
             return cls(
                 no=as_no(d.get("no")),
                 name=as_name(d.get("name")),
-                boundary_type=BoundaryType(raw_type) if raw_type in [t.value for t in BoundaryType] else BoundaryType.GENERAL,
+                boundary_type=BoundaryType.of(raw_type),
                 entity_vec=list(d.get("entityVec") or []),
                 is_occupied=d.get("isOccupied"),
                 is_selected=d.get("isSelected"),

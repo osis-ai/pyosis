@@ -275,6 +275,27 @@ lc.create_gravity()
 lc.create_nforce(1, fx=1000)
 ```
 
+### Enums
+
+All type codes live in `pyosis.core.enums`. Each member's **name is the OSIS command-stream spelling**, so a member converts straight to a string; its value is the integer code the JSON carries:
+
+```python
+from pyosis.core.enums import ElementType, SectionType
+
+SectionType.Rectangle.value      # 5      — code as sent by OSIS
+str(SectionType.Rectangle)       # "Rectangle"
+SectionType.name_of(5)           # "Rectangle"
+SectionType.of(404)              # SectionType.Unassigned — unknown code falls back
+```
+
+Available: `ElementType`, `BoundaryType`, `MaterialType`, `MaterialCode`, `SectionType`, `LoadCaseType`, `SplineType`, `TensionType`, `LiveGradeType`. Data-class fields that carry a type expose a `type_name` / `code_name` / `grade_name` property for convenience.
+
+The `Xxx_TYPE_NAMES` dicts from pyosis 0.x are gone; use `XxxType.name_of(code)` instead.
+
+> **Migration note (0.8.0):** member names were normalized to the OSIS spelling, so `Enum.name` changed for some values — `SectionType.CUSTOM.name` is now `"CustomShape"`, `ElementType.UNASSIGNED.name` is now `"Unassigned"`. Code that compared against the old names, or indexed the old `*_TYPE_NAMES` dicts, needs updating. The old all-caps aliases (`SectionType.CUSTOM`, `ElementType.UNASSIGNED`, …) still resolve to the same values.
+
+> **Migration note (0.8.1):** vehicles are no longer a separate concept. OSIS has no vehicle entity — a vehicle is just one value of the live-load grade (`LiveGradeType.VEHICLE`), alongside highway/crowd/fatigue grades. Removed: `engine.live.vehicle`, `VehicleManager`, `vehicle_manager`, `LiveGrade.is_vehicle`, `LiveGrade.live_type_for_custom`, `LiveTypeForCustom`. Use `engine.live.grade` with `LiveGrade.grade_name` instead. `SplineType` member names also moved to the OSIS spelling (`GENERAL`/`NATURAL`/`ARC3D`/`ARC2D`), so `SplineType.General.name` is now `"GENERAL"`; the old spellings remain as aliases.
+
 ### Explicit Numbering
 
 Some `create_*` functions support explicit numbering via the `no` parameter. If not specified, the number is automatically assigned:
