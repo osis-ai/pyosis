@@ -31,6 +31,7 @@ from .check import osis_check_result
 from .headless import (
     node_displacement_df,
     element_force_df,
+    element_stress_df,
     support_reaction_df,
 )
 
@@ -262,6 +263,32 @@ class ResultManager:
         """
         self._ensure_pandas()
         return support_reaction_df(name)
+
+    def element_stress(
+        self,
+        name: str | list[str] | None = None,
+        by_part: bool = False,
+    ) -> pd.DataFrame:
+        """查询求解后单元应力
+
+        走 /GetAllElementStress、/GetElementStressByNames 端点，
+        优先从结果文件读，文件失败回落内存。
+
+        Args:
+            name: 工况名（str 或 list[str]）；None 时返回全部工况
+            by_part: False（默认）展平全截面 points；True 展平按截面分块的
+                parts 并额外带 part 列
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, [part,] ele, node, position,
+            point, sxFx, sxMy, sxMz, sxComp, syFy, szFz, tp, cp）
+
+        Raises:
+            ImportError: 未安装 pandas 时抛出
+            RuntimeError: 查询失败时抛出异常
+        """
+        self._ensure_pandas()
+        return element_stress_df(name, by_part=by_part)
 
     # ═══════════════════════════════════════════
     # 验算结果全量导出

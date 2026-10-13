@@ -1,6 +1,6 @@
 """SDK 元信息与服务端实例查询
 
-对应 PySolver 端点 /health、/sdk/version、/sdk/commands、GET /instance。
+对应 HTTP 端点 /health、/sdk/version、/sdk/commands、GET /instance。
 这些端点同时支持 GET/POST（/instance 仅 GET），不依赖工程状态。
 
 用法:

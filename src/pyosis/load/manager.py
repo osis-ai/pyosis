@@ -14,12 +14,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Literal, Any
-from enum import Enum
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
 from ..core.batch import batch_state
 from ..core.basic_manager import BasicManager
+from ..core.enums import loadcase_type_name, TensionType
+from ..core.normalize import as_no, as_name
 from .loadcase import (
     osis_loadcase,
     osis_loadcase_del,
@@ -155,7 +156,7 @@ class LoadCase:
         cforce: 索力荷载列表
     """
     name: str                                          # 荷载工况名称
-    load_case_type: str                                # 荷载工况类型
+    load_case_type: int                                # 荷载工况类型编码（PrepEnum::LoadCase，如 32=温度、40=CS、52=TG）
     scalar: float                                      # 系数
     prompt: str                                        # 说明
     related_stages: list[int] = field(default_factory=list)  # 关联的施工阶段编号列表
@@ -174,15 +175,20 @@ class LoadCase:
     prestressed: list[dict] = field(default_factory=list)    # 预应力
     cforce: list[dict] = field(default_factory=list)   # 索力
 
+    @property
+    def type_name(self) -> str:
+        """荷载工况类型名（OSIS 命令流写法，如 "CS" / "T" / "TG"）"""
+        return loadcase_type_name(self.load_case_type)
+
     @classmethod
     def _from_dict(cls, d: dict) -> LoadCase:
         """从接口 dict 构造 LoadCase 对象（内部使用）"""
         return cls(
-            name=d.get("name"),
+            name=as_name(d.get("name")),
             load_case_type=d.get("type"),
             scalar=d.get("scalar"),
             prompt=d.get("prompt"),
-            related_stages=d.get("relatedStages"),
+            related_stages=d.get("relatedStages") or [],
             gravity=d.get("gravity"),
             nforce=d.get("nforce"),
             point_force=d.get("pointForce"),
@@ -932,13 +938,6 @@ class LoadCase:
 # Tendon 数据类
 # ──────────────────────────────────────────────
 
-class TensionType(Enum):
-    Unassigned = 0
-    Pre = 1             # 先张法
-    In = 2              # 后张法（体内）
-    Ex = 3              # 后张法（体外）
-
-
 @dataclass(frozen=False)
 class TendonProp:
     """钢束特性对象
@@ -963,7 +962,7 @@ class TendonProp:
         """从接口 dict 构造 TendonProp 对象（内部使用）"""
         return cls(
             name=d.get("name"),
-            tension_type=d.get("tensionType"),
+            tension_type=TensionType(d.get("tensionType")),
             tendon_mat_no=d.get("tendonMatNO"),
             area=d.get("area"),
             code=d.get("code"),
@@ -1011,6 +1010,13 @@ class TendonShape:
     length: float                      # 钢束长度
     related_loads: list[str] = field(default_factory=list)  # 关联的荷载工况名称列表
     master_tendon_shape: str = ""      # 主钢束形状名称
+    glb_points: list[dict] | None = None  # 整体坐标控制点 [{x,y,z}]，绘制用；几何造型失败为 None
+    loc_points: list[dict] | None = None  # 局部定义坐标控制点 [{x,y,z}]
+
+    @property
+    def points(self) -> list[dict]:
+        """可直接用于三维绘制的控制点：优先整体坐标，缺失时回落局部坐标，都没有则空表。"""
+        return self.glb_points or self.loc_points or []
 
     @classmethod
     def _from_dict(cls, d: dict) -> TendonShape:
@@ -1025,6 +1031,9 @@ class TendonShape:
             length=d.get("length"),
             related_loads=d.get("relatedLoads") or [],
             master_tendon_shape=d.get("masterTendonShape") or "",
+            # glbPoints 可能为 null（几何造型失败），保持 None 以区分“无坐标”与“空坐标”
+            glb_points=d.get("glbPoints"),
+            loc_points=d.get("locPoints"),
         )
 
     def layout(

@@ -9,23 +9,26 @@
 支持的边界类型：
 - GENERAL（一般边界，type=1）
 - MSTSLV（主从约束，type=2）
-- RELEASE（释放梁端约束，type=4）
-- ELSTCSPT（弹性支承，type=5）
-- GENERALELSTCSPT（一般弹性支承，type=6）
+- RELEASE（释放梁端约束，type=3）
+- ELSTCSPT（节点弹性支承，type=4）
+- GENERALELSTCSPT（一般弹性支承，type=5）
 
-注：截面特性调整（SECF）为独立功能，不属于边界类型
+其余类型（SECF=7 / GLINK=8 / UNISPT=9 / UNILNK=10 / LELNK=11 /
+SOILSPRING=12 / SURFSPT=13）暂无专用数据类，_from_dict 落到基类 Boundary，
+type_name 仍可正确取名。真实取值以 PrepEnum::Boundary 为准（见 core/enums.py）。
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Literal
-from enum import IntEnum
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
 from ..core.basic_manager import BasicManager
 from ..core.batch import batch_state
+from ..core.enums import BoundaryType, boundary_type_name, constraints_to_dict
+from ..core.normalize import as_no, as_name
 from .interface import (
     osis_boundary_general,
     osis_boundary_elstcspt,
@@ -38,21 +41,6 @@ from .interface import (
     osis_boundary_del,
     osis_assign_boundary,
 )
-
-
-# ──────────────────────────────────────────────
-# 枚举类型
-# ──────────────────────────────────────────────
-
-class BoundaryType(IntEnum):
-    """边界类型枚举"""
-    UNASSIGNED = 0
-    GENERAL = 1				    # 一般支撑
-    MSTSLV = 2				    # 主从约束
-    RELEASE = 3				    # 释放梁端约束
-    ELSTCSPT = 4				# 节点弹性支承
-    GENERALELSTCSPT = 5		    # 一般弹性支承
-    RIGID = 6				    # 刚性连接
 
 
 # ──────────────────────────────────────────────
@@ -72,13 +60,18 @@ class Boundary:
     entity_vec: list[int] = field(default_factory=list)
     is_occupied: bool = False
     is_selected: bool = False
-    is_ploted: bool = False
+    is_plotted: bool = False
+
+    @property
+    def type_name(self) -> str:
+        """边界类型名（与 OSIS 命令流一致，如 "GENERAL" / "ELSTCSPT"）"""
+        return boundary_type_name(self.boundary_type.value)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Boundary:
         """从接口 dict 构造 Boundary 对象（内部使用）"""
         raw_type = int(d.get("type"))
-        
+
         # 根据类型创建具体子类
         if raw_type == BoundaryType.GENERAL:
             return GeneralBoundary._from_dict(d)
@@ -93,13 +86,13 @@ class Boundary:
         else:
             # 未知类型返回基类
             return cls(
-                no=d.get("no"),
-                name=d.get("name"),
+                no=as_no(d.get("no")),
+                name=as_name(d.get("name")),
                 boundary_type=BoundaryType(raw_type) if raw_type in [t.value for t in BoundaryType] else BoundaryType.GENERAL,
-                entity_vec=list(d.get("entityVec")),
+                entity_vec=list(d.get("entityVec") or []),
                 is_occupied=d.get("isOccupied"),
                 is_selected=d.get("isSelected"),
-                is_ploted=d.get("isPloted"),
+                is_plotted=d.get("isPlotted"),
             )
     
     def set_section_factor(
@@ -169,19 +162,27 @@ class GeneralBoundary(Boundary):
     def _from_dict(cls, d: dict) -> GeneralBoundary:
         """从接口 dict 构造 GeneralBoundary 对象"""
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             boundary_type=BoundaryType.GENERAL,
-            entity_vec=list(d.get("entityVec")),
+            entity_vec=list(d.get("entityVec") or []),
             is_occupied=d.get("isOccupied"),
             is_selected=d.get("isSelected"),
-            is_ploted=d.get("isPloted"),
-            constraints=list(d.get("constraints")),
+            is_plotted=d.get("isPlotted"),
+            constraints=list(d.get("constraints") or []),
             coor_no=d.get("coorNO"),
         )
 
     def __repr__(self) -> str:
         return f"GeneralBoundary(no={self.no}, constraints={self.constraints})"
+
+    @property
+    def constraints_dict(self) -> dict[str, bool]:
+        """约束状态字典 {DX, DY, DZ, RX, RY, RZ, RW}，True = 约束。
+
+        C++ 侧透传的是固定顺序的 7 位整数列表，这里转成可读字典。
+        """
+        return constraints_to_dict(self.constraints)
 
     @property
     def ux(self) -> int:
@@ -227,16 +228,21 @@ class MstSlvBoundary(Boundary):
     def _from_dict(cls, d: dict) -> MstSlvBoundary:
         """从接口 dict 构造 MstSlvBoundary 对象"""
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             boundary_type=BoundaryType.MSTSLV,
-            entity_vec=list(d.get("entityVec")),
+            entity_vec=list(d.get("entityVec") or []),
             is_occupied=d.get("isOccupied"),
             is_selected=d.get("isSelected"),
-            is_ploted=d.get("isPloted"),
-            constraints=list(d.get("constraints")),
+            is_plotted=d.get("isPlotted"),
+            constraints=list(d.get("constraints") or []),
             master_no=d.get("masterNO"),
         )
+
+    @property
+    def constraints_dict(self) -> dict[str, bool]:
+        """约束状态字典 {DX, DY, DZ, RX, RY, RZ}（主从约束无 RW）"""
+        return constraints_to_dict(self.constraints)
 
     def __repr__(self) -> str:
         return f"MstSlvBoundary(no={self.no}, master_no={self.master_no})"
@@ -245,7 +251,7 @@ class MstSlvBoundary(Boundary):
 @dataclass(frozen=True)
 class ReleaseBoundary(Boundary):
     """释放梁端约束
-    
+
     I端(7) + J端(7) = 14个约束状态/值
     state: 0 = 释放，1 = 约束
     value: 0-1 表示释放后残余约束能力的百分比
@@ -259,18 +265,28 @@ class ReleaseBoundary(Boundary):
     def _from_dict(cls, d: dict) -> ReleaseBoundary:
         """从接口 dict 构造 ReleaseBoundary 对象"""
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             boundary_type=BoundaryType.RELEASE,
-            entity_vec=list(d.get("entityVec")),
+            entity_vec=list(d.get("entityVec") or []),
             is_occupied=d.get("isOccupied"),
             is_selected=d.get("isSelected"),
-            is_ploted=d.get("isPloted"),
-            i_state=list(d.get("endIState")),
-            i_values=list(d.get("endI")),
-            j_state=list(d.get("endJState")),
-            j_values=list(d.get("endJ")),
+            is_plotted=d.get("isPlotted"),
+            i_state=list(d.get("endIState") or []),
+            i_values=list(d.get("endI") or []),
+            j_state=list(d.get("endJState") or []),
+            j_values=list(d.get("endJ") or []),
         )
+
+    @property
+    def i_state_dict(self) -> dict[str, bool]:
+        """I 端约束状态字典 {DX, DY, DZ, RX, RY, RZ, RW}"""
+        return constraints_to_dict(self.i_state)
+
+    @property
+    def j_state_dict(self) -> dict[str, bool]:
+        """J 端约束状态字典 {DX, DY, DZ, RX, RY, RZ, RW}"""
+        return constraints_to_dict(self.j_state)
 
     def __repr__(self) -> str:
         return f"ReleaseBoundary(no={self.no})"
@@ -293,17 +309,17 @@ class ElstcSptBoundary(Boundary):
     def _from_dict(cls, d: dict) -> ElstcSptBoundary:
         """从接口 dict 构造 ElstcSptBoundary 对象"""
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             boundary_type=BoundaryType.ELSTCSPT,
-            entity_vec=list(d.get("entityVec")),
+            entity_vec=list(d.get("entityVec") or []),
             is_occupied=d.get("isOccupied"),
             is_selected=d.get("isSelected"),
-            is_ploted=d.get("isPloted"),
+            is_plotted=d.get("isPlotted"),
             # constraints=list(d.get("constraints")),
             coor_no=d.get("coorNO"),
-            k_values=list(d.get("k")),
-            elastic_k=list(d.get("elasticK")),
+            k_values=list(d.get("k") or []),
+            elastic_k=list(d.get("elasticK") or []),
         )
 
     def __repr__(self) -> str:
@@ -329,13 +345,13 @@ class GeneralElstcSptBoundary(Boundary):
     def _from_dict(cls, d: dict) -> GeneralElstcSptBoundary:
         """从接口 dict 构造 GeneralElstcSptBoundary 对象"""
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             boundary_type=BoundaryType.GENERALELSTCSPT,
-            entity_vec=list(d.get("entityVec")),
+            entity_vec=list(d.get("entityVec") or []),
             is_occupied=d.get("isOccupied"),
             is_selected=d.get("isSelected"),
-            is_ploted=d.get("isPloted"),
+            is_plotted=d.get("isPlotted"),
             coor_no=d.get("coorNO"),
             flag_m=d.get("flagM"),
             flag_c=d.get("flagC"),

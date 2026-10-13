@@ -1,4 +1,4 @@
-"""端到端验证:直接加载 D:/OSIS 5/bin64 的 PySolver.dll,测试 v0.7.6 新增封装。
+"""端到端验证:直接加载 D:/OSIS 5/bin64 的 osisSdk.dll,测试 v0.7.6 新增封装。
 
 覆盖:
 - OSISSolver port=0 随机分配 + 实际端口回写(solver.py 修复)

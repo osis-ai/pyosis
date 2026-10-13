@@ -61,12 +61,12 @@ class Node:
             z=d.get("z"),
             precision=d.get("precision"),
             hash_value=d.get("hashValue"),
-            related_elements=d.get("relatedElements"),
-            related_boundaries=d.get("relatedBoundaries"),
-            related_loads=d.get("relatedLoads"),
-            related_setl_grps=d.get("relatedSetlGrps"),
+            related_elements=d.get("relatedElement") or [],
+            related_boundaries=d.get("relatedBoundary") or [],
+            related_loads=d.get("relatedLoad") or [],
+            related_setl_grps=d.get("relatedSetlGrp") or [],
             selected=d.get("selected"),
-            plotted=d.get("ploted"),
+            plotted=d.get("plotted"),
             free=d.get("free"),
         )
     

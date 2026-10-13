@@ -24,7 +24,7 @@ pip install osis-python -i https://pypi.org/simple
 
 - OSIS >= 5.1 (short-form command names like `N`/`Ele`/`Sec` are accepted by both the converter and runtime)
 - Python >= 3.8
-- **Solver-only mode** additionally requires the solver distribution that ships `PySolver.dll` (e.g. `D:\OSIS_Solver\Rbin64`).
+- **Solver-only mode** additionally requires the solver distribution that ships `osisSdk.dll` (e.g. `D:\OSIS_Solver\Rbin64`).
 
 > OSIS 5.1 HTTP server bug workaround: the `/OSIS_Run` command-stream splitter does not strip `//` line comments, so a comment line and the command that follows it are merged into one bad command. The pyosis `.out` converter already strips comments before sending; if you ever build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
 
@@ -118,7 +118,7 @@ By default, `OSISEngine()` connects to an already-running OSIS GUI process. If y
 from pyosis.core.solver import OSISSolver
 from pyosis.core.engine import OSISEngine
 
-# Load <install>/PySolver.dll and start the HTTP server (default port 18080)
+# Load <install>/osisSdk.dll and start the HTTP server (default port 18080)
 solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver\Rbin64")
 engine = OSISEngine.from_solver(solver)
 
@@ -131,7 +131,8 @@ engine.solve()
 
 Notes on solver-only mode:
 
-- `osis_install_path` must be the directory containing `PySolver.dll` (and its dependency DLLs).
+- `osis_install_path` must be the directory containing `osisSdk.dll` (and its dependency DLLs).
+- `osis_init` validates a license file (`osis.lic`, HMAC-signed) before anything runs. Search order: the `OSIS_LICENSE_FILE` environment variable, then `%ProgramData%\OSIS\osis.lic`, then `osis.lic` in the install directory. Contact the OSIS vendor to obtain one.
 - The solver needs a project to exist before model commands run: call `engine.project.create()` / `open()` first.
 - Crash minidumps are written to `<install>\Error\dmp\` (created on startup).
 

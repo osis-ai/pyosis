@@ -6,18 +6,20 @@
 - 内部维护单元列表，通过 get 等方法查询，不暴露 HTTP 接口细节
 - 按单元类型整型 ``type`` 解析为不同子类（与 boundary.manager 一致）
 
-GetAllElementInfo 中 ``type``：1=BEAM3D，2=TRUSS，3=SPRING，4=CABLE，5=SHELL
+GetAllElementInfo 中 ``type``：1=BEAM3D，2=TRUSS，3=SPRING，4=CABLE，5=SHELL，6=SOLID
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any, Literal
-from enum import Enum
+
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
 from ..core.basic_manager import BasicManager
 from ..core.batch import batch_state
+from ..core.enums import ElementType, element_type_name
+from ..core.normalize import as_no
 from .interface import (
     osis_element_beam3d,
     osis_element_truss,
@@ -33,16 +35,6 @@ from .interface import (
 )
 
 
-class ElementType(Enum):
-    UNASSIGNED = 0
-    BEAM3D = 1
-    TRUSS = 2
-    SPRING = 3
-    CABLE = 4
-    SHELL = 5
-
-
-
 # ──────────────────────────────────────────────
 # 数据类
 # ──────────────────────────────────────────────
@@ -53,6 +45,15 @@ class Element:
     """单元基类
 
     由 ElementManager 内部创建，用户不应直接实例化。
+
+    字段按单元类型分组（C++ 侧按类型扩展输出）：
+        BEAM3D : is_taper / sec_vec / trans_vec / strain / beta_flag / beta /
+                 key_pt / warp / comp_thk
+        TRUSS  : is_taper / sec_vec / strain
+        CABLE  : sec / cable_method / cable_para
+        SHELL  : is_thin / thickness / node_sum
+        SPRING : is_linear / beta / dof_prop
+    不属于该单元类型的字段为 None。
     """
 
     no: int
@@ -73,9 +74,36 @@ class Element:
     selected: bool = False
     plotted: bool = False
 
+    # ── 按单元类型扩展（非该类型时 None）───────
+    is_taper: bool | None = None            # 梁/桁架：是否锥形
+    trans_vec: list[int] | None = None      # 梁：转换编号
+    strain: float | None = None             # 梁/桁架：应变
+    beta_flag: int | None = None            # 梁：轴向转角定义方式标志
+    beta: float | None = None               # 梁/弹簧：角度
+    key_pt: int | None = None               # 梁：关键点
+    warp: int | None = None                 # 梁：扭曲
+    comp_thk: float | None = None           # 梁：构件理论厚度（C++ 侧 -1 = 未分配 → None）
+    sec: int | None = None                  # 索：截面编号
+    cable_method: int | None = None         # 索：定义方法
+    cable_para: float | None = None         # 索：方法参数
+    is_thin: bool | None = None             # 壳：是否薄壳
+    thickness: float | None = None          # 壳：厚度
+    node_sum: int | None = None             # 壳：节点数
+    is_linear: bool | None = None           # 弹簧：是否线性
+    dof_prop: dict[str, Any] | None = None  # 弹簧：各自由度刚度 {UX: .., DOF_ALL: ..}
+
+    @property
+    def type_name(self) -> str:
+        """单元类型名（OSIS 命令流写法，如 "BEAM3D"）"""
+        return element_type_name(self.element_type.value)
+
     @classmethod
     def _from_dict(cls, d: dict) -> Element:
-        """从接口 dict 构造 Material 对象（内部使用）"""
+        """从接口 dict 构造 Element 对象（内部使用）
+
+        brief 模式下 sectionDetails / sectionDetail 会被 C++ 省略，
+        需要截面详情时另调 section_manager.get()。
+        """
         raw_type = int(d.get("type"))
         return cls(
             no=d.get("no"),
@@ -86,14 +114,31 @@ class Element:
             node_j=d.get("nodeJ"),
             center=d.get("centerCoorPoint"),
             length=d.get("length"),
-            sec_vec=d.get("secVec"),
+            sec_vec=d.get("secVec") or [],
             characters=d.get("characters"),
             loc_coor=d.get("locCoor"),
-            related_boundaries=d.get("relatedBoundary"),
-            related_loads=d.get("relatedLoad"),
-            related_taper_eles=d.get("relatedTaperEles"),
+            related_boundaries=d.get("relatedBoundary") or [],
+            related_loads=d.get("relatedLoad") or [],
+            related_taper_eles=d.get("relatedTaperEles") or [],
             selected=d.get("selected"),
-            plotted=d.get("ploted")
+            plotted=d.get("plotted"),
+            # ── 按类型扩展字段（缺失即 None）──
+            is_taper=d.get("isTaper"),
+            trans_vec=d.get("transVec"),
+            strain=d.get("strain"),
+            beta_flag=d.get("betaFlag"),
+            beta=d.get("beta"),
+            key_pt=d.get("keyPt"),
+            warp=d.get("warp"),
+            comp_thk=as_no(d.get("compThk")),   # -1 = 未分配 → None
+            sec=d.get("sec"),
+            cable_method=d.get("cableMethod"),
+            cable_para=d.get("cablePara"),
+            is_thin=d.get("isThin"),
+            thickness=d.get("thickness"),
+            node_sum=d.get("nodeSum"),
+            is_linear=d.get("isLinear"),
+            dof_prop=d.get("dofProp"),
         )
 
     def __repr__(self) -> str:
@@ -589,8 +634,13 @@ class ElementManager(BasicManager):
     # ── 数据加载 ──────────────────────────────
 
     def _load(self) -> list[Element]:
-        '''从服务端加载所有单元信息'''
-        resp = osis_client("GetAllElementInfo", {})
+        '''从服务端加载所有单元信息
+
+        传 {"brief": True}：单元内嵌的 sectionDetails（梁/桁架）与 sectionDetail（索）
+        占响应体积的大头（实测约 77%），列表场景用不上；需要截面详情时另行调
+        section_manager.get(sec_no)。
+        '''
+        resp = osis_client("GetAllElementInfo", {"brief": True})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         elements = [

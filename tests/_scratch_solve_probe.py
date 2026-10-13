@@ -4,7 +4,7 @@
     python tests/_scratch_solve_probe.py
 
 流程:
-    1) OSISSolver 用 ctypes 加载 Rbin64/PySolver.dll 并起 HTTP server(18080)
+    1) OSISSolver 用 ctypes 加载 Rbin64/osisSdk.dll 并起 HTTP server(18080)
     2) OSISEngine 接上 solver, /create 建工程
     3) 依次执行 _1_control.._10_stage 十个 prep 模块(走 manager API,不 engine.run)
     4) engine.solve() 求解

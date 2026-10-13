@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal, Any
-from enum import Enum
 
 from . import osis_section_numerical
 from ..core import get_references, raise_if_occupied
@@ -82,57 +81,9 @@ from .rib import (
     osis_rib_layout_del,
     osis_clear_section_rib,
 )
+from ..core.enums import SectionType, section_type_name
+from ..core.normalize import as_no, as_name
 
-
-class SectionType(Enum):
-    UNASSIGNED = 0  # 未分配
-    LSHAPE = 1  # L形与倒L形
-    TSHAPE = 2  # T形与倒T形
-    ISHAPE = 3  # 工字形
-    CIRCLE = 4  # 圆形与圆管形
-    RECTANGLE = 5  # 实腹与空腹矩形（可倒圆/斜角）
-    ROUNDEDEND = 6  # 实腹与空腹圆端形
-    HOLLOWSLAB = 7  # 空心板梁
-    SMALLBOX = 8  # 小箱梁
-    TGIRDER = 9  # T梁
-    CONVENTIONALBOX = 10  # 常规箱梁
-    STREAMEDBOX = 11  # 扁平箱梁
-    DOUBLESIDEBOX = 12  # 双边箱梁
-    RIBBEDSLAB = 13  # 肋板式
-    CUSTOM = 14  # 常规自定义截面
-
-    STEELBEAMI = 21  # 工字钢梁截面
-    STEELBEAMBOX = 22  # 箱型钢梁截面
-    STEELBOXTHREECELL = 23  # 单箱单/三室钢梁截面
-    STEELBOXITF = 24  # 单箱单室斜顶板钢梁界面
-    STEELCANTIBOX = 25  # 悬臂单箱单/双室钢梁界面
-    STEELCANTIBOXIBF = 26  # 悬臂单箱单/双室斜底板钢梁截面
-    STEELCUSTOM = 27  # 钢梁自定义截面，采用几何点线形式输入
-    STEELCUSTOMPLATE = 28  # 钢梁自定义截面，采用参数板形式输入
-
-    COMPOSITESTEELI = 41  # 钢-工字型组合截面
-    COMPOSITESTEELTROUGH = 42  # 钢-槽型组合截面
-    COMPOSITESTEELBOX = 43  # 钢-箱型组合截面
-
-    COMPOSITECUSTOM = 61  # 自定义组合截面
-
-    NUMERICAL = 71  # 数值截面
-
-    BUDOUBLEANGLE = 81  # 双角钢截面
-    BUDOUBLEC = 82  # 双槽钢截面
-    BUDOUBLEH = 83  # 双H型钢截面
-    BUDOUBLECWEB1 = 84  # 双槽钢+腹板截面1
-    BUDOUBLECWEB2 = 85  # 双槽钢+腹板截面2
-    BUHWITHPLATES = 86  # H型钢+双板截面
-
-    STEELL = 100  # 型钢-L型
-    STEELC = 101  # 型钢-槽型
-    STEELI = 102  # 型钢-工字型
-    STEELBOX = 103  # 型钢-箱型
-    STEELT = 104  # 型钢-T型
-    STEELCC = 105  # 型钢-双C型
-    STEELCIRCULARHOLLOW = 106  # 型钢-圆管
-    STEELZ = 107  # 型钢-Z型
 
 @dataclass(frozen=False)
 class Rebar:
@@ -183,8 +134,9 @@ class Section:
     no: int  # 截面编号
     name: str  # 截面名称
     section_type: SectionType  # 截面类型
-    prop: dict  # 截面属性
-    prop_factor: dict  # 截面因子
+    prop: dict  # 截面特性，13 个字段（SI: m / m² / m⁴）：
+    #   area, sy, sz, ixx, iyy, izz, iww, centY, centZ, dy, dz, periO, periI
+    #   退化截面（几何未生成）全 0。注：无 propFactor——折减系数在求解侧，不随接口返回。
     offset_type_y: int  # 偏移类型 Y
     offset_value_y: float  # 偏移值 Y
     offset_type_z: int  # 偏移类型 Z
@@ -199,6 +151,12 @@ class Section:
     has_steel_section: bool  # 是否有钢截面
     related_elements: list[int]  # 相关单元
     rebar: Rebar  # 钢筋
+
+    @property
+    def type_name(self) -> str:
+        """截面类型名（与 OSIS 命令流一致，如 "Rectangle" / "SteelBoxThreeCell"）"""
+        return section_type_name(self.section_type.value)
+
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
         """从接口 dict 构造 Section 对象（内部使用）"""
@@ -212,11 +170,10 @@ class Section:
         else:
             rebar_obj = Rebar.empty()
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             section_type=SectionType(raw_type) if raw_type in [t.value for t in SectionType] else SectionType.UNASSIGNED,
             prop=d.get("prop"),
-            prop_factor=d.get("propFactor"),
             offset_type_y=d.get("offsetTypeY"),
             offset_value_y=d.get("offsetValueY"),
             offset_type_z=d.get("offsetTypeZ"),

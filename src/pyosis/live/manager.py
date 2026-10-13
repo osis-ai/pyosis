@@ -43,6 +43,26 @@ from .lane import (
     osis_lane_del,
     osis_lane_mod,
 )
+from ..core.normalize import as_no, as_name
+
+
+# ──────────────────────────────────────────────
+# 活载等级 / 自定义活载类型编码（PrepEnum::LoadEnum）
+# ──────────────────────────────────────────────
+
+LIVE_GRADE_UNASSIGNED = 0
+LIVE_GRADE_HIGHWAY_I = 1
+LIVE_GRADE_HIGHWAY_II = 2
+LIVE_GRADE_VEHICLE = 3
+LIVE_GRADE_CROWD = 4
+LIVE_GRADE_FATIGUE_I = 5
+LIVE_GRADE_FATIGUE_II = 6
+LIVE_GRADE_FATIGUE_III = 7
+
+LIVE_TYPE_CUSTOM_UNASSIGNED = 0
+LIVE_TYPE_CUSTOM_VEHICLE = 1
+LIVE_TYPE_CUSTOM_TRAIN = 2
+LIVE_TYPE_CUSTOM_CROWD = 3
 
 
 # ──────────────────────────────────────────────
@@ -60,10 +80,11 @@ class LiveGrade:
     no: int                              # 编号
     name: str                            # 名称
     code: int                            # 规范代码
-    grade: int                           # 等级代码（如 HIGHWAY_I=1, HIGHWAY_II=2）
+    grade: int                           # 等级代码（如 HIGHWAY_I=1, HIGHWAY_II=2, VEHICLE=3）
     crowd_bridge_type: int               # 人群荷载桥型
     crowd_width: float                   # 人群横向宽度（m）
     fatigue_ii_veichle_center_dis: float # 疲劳II模型车辆中心间距（m）
+    live_type_for_custom: int = 0        # 自定义活载类型（0 未定义 / 1 车辆 / 2 列车 / 3 人群）
     related_live_anal: list[str] = field(default_factory=list)  # 关联的活载分析名称列表
     related_stages: list[int] = field(default_factory=list)     # 关联的施工阶段编号列表
     custom_layout: list[list[float]] = field(default_factory=list)  # 自定义布载矩阵
@@ -73,25 +94,36 @@ class LiveGrade:
     code_data_fatigueII_6x2: list[list[float]] = field(default_factory=list)  # 疲劳II模型 6x2 矩阵
     code_data_fatigueIII_4x2: list[list[float]] = field(default_factory=list)  # 疲劳III模型 4x2 矩阵
 
+    @property
+    def is_vehicle(self) -> bool:
+        """是否代表“车辆”（OSIS 里没有独立车辆实体，车辆 = 活载等级）。
+
+        判据与 C++ 侧一致：grade == VEHICLE(3)，或自定义活载类型为车辆/列车。
+        """
+        return self.grade == LIVE_GRADE_VEHICLE or self.live_type_for_custom in (
+            LIVE_TYPE_CUSTOM_VEHICLE, LIVE_TYPE_CUSTOM_TRAIN,
+        )
+
     @classmethod
     def _from_dict(cls, d: dict) -> LiveGrade:
         """从接口 dict 构造 LiveGrade 对象（内部使用）"""
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             code=d.get("code"),
             grade=d.get("grade"),
             crowd_bridge_type=d.get("crowdBridgeType"),
             crowd_width=d.get("crowdWidth"),
             fatigue_ii_veichle_center_dis=d.get("fatigueIIVeichleCenterDis"),
-            related_live_anal=d.get("relatedLiveAnal"),
-            related_stages=d.get("relatedStages"),
-            custom_layout=d.get("customLayout"),
-            code_data_qk_pk5_pk50=d.get("codeData_qk_pk5_pk50"),
-            code_data_vehicle_5x2=d.get("codeData_vehicle_5x2"),
-            code_data_crowd_w50_w150=d.get("codeData_crowd_w50_w150"),
-            code_data_fatigueII_6x2=d.get("codeData_fatigueII_6x2"),
-            code_data_fatigueIII_4x2=d.get("codeData_fatigueIII_4x2"),
+            live_type_for_custom=d.get("liveTypeForCustom") or 0,
+            related_live_anal=d.get("relatedLiveAnal") or [],
+            related_stages=d.get("relatedStages") or [],
+            custom_layout=d.get("customLayout") or [],
+            code_data_qk_pk5_pk50=d.get("codeData_qk_pk5_pk50") or {},
+            code_data_vehicle_5x2=d.get("codeData_vehicle_5x2") or [],
+            code_data_crowd_w50_w150=d.get("codeData_crowd_w50_w150") or {},
+            code_data_fatigueII_6x2=d.get("codeData_fatigueII_6x2") or [],
+            code_data_fatigueIII_4x2=d.get("codeData_fatigueIII_4x2") or [],
         )
 
     def __repr__(self) -> str:
@@ -1251,6 +1283,7 @@ class LiveManager:
     - ``grade``: 活载等级管理器（LiveGradeManager）
     - ``lane``: 车道管理器（LaneManager）
     - ``case``: 活载工况管理器（LiveCaseManager）
+    - ``vehicle``: 车辆管理器（VehicleManager，活载等级中属于车辆的视图）
 
         用法示例::
 
@@ -1271,6 +1304,12 @@ class LiveManager:
         self._grade_manager = LiveGradeManager()
         self._lane_manager = LaneManager()
         self._case_manager = LiveCaseManager()
+        self._vehicle_manager = VehicleManager()
+
+    @property
+    def vehicle(self) -> "VehicleManager":
+        """车辆管理器（车辆 = 活载等级中属于车辆/列车的子集）"""
+        return self._vehicle_manager
 
     @property
     def grade(self) -> LiveGradeManager:
@@ -1340,6 +1379,10 @@ class LiveManager:
 
     def __repr__(self) -> str:
         return f"LiveManager()"
+
+
+# vehicle.py 反向依赖本模块的 LiveGrade 与编码常量，在单例创建前导入可避免循环导入
+from .vehicle import VehicleManager  # noqa: E402
 
 
 # ──────────────────────────────────────────────

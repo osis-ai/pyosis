@@ -6,7 +6,7 @@ boundary/loadcase/analysis/stage)的代码全部内嵌在一个文件里,无需�
 
 用法:
     1) 安装 pyosis: pip install osis-python
-    2) 准备 OSIS 求解器安装目录(如 D:\\OSIS_Solver\\Rbin64,带 PySolver.dll)
+    2) 准备 OSIS 求解器安装目录(如 D:\\OSIS_Solver\\Rbin64,带 osisSdk.dll)
     3) python pyosis_demo.py
 
 运行结束后在 ./demo_output/ 下生成:
@@ -24,7 +24,7 @@ from pyosis.core.engine import OSISEngine
 from pyosis.core.solver import OSISSolver
 
 # ===== 1. 启动 solver + 建工程 =====
-# OSIS 安装目录(含 PySolver.dll)。正反斜杠都行,Windows LoadLibrary 都接受。
+# OSIS 安装目录(含 osisSdk.dll)。正反斜杠都行,Windows LoadLibrary 都接受。
 OSIS_INSTALL = "D:/OSIS_Solver/Rbin64"
 
 WORK_DIR = Path("./demo_output")

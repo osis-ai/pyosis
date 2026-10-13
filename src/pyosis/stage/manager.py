@@ -225,7 +225,7 @@ class StageManager(BasicManager):
 
     def _load(self) -> list[Stage]:
         """从服务端加载所有施工阶段信息（无缓存）"""
-        resp = osis_client("GetStageInfo", {})
+        resp = osis_client("GetAllStageInfo", {})
         if not resp['success']:
             raise RuntimeError(f"{resp['error']}")
         stages = [

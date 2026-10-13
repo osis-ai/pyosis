@@ -15,12 +15,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
 from typing import Literal, Any
 
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
 from ..core.basic_manager import BasicManager
+from ..core.enums import SplineType
 from .interface import (
     osis_spline3d_general,
     osis_spline3d_natural,
@@ -28,16 +28,6 @@ from .interface import (
     osis_spline3d_arc3d,
     osis_spline3d_del,
 )
-
-
-# 与服务端 splineType 字段对应
-class SplineType(Enum):
-    """样条曲线类型"""
-    Unassigned = 0  # 未分配
-    General = 1     # 一般边界
-    Natural = 2     # 自然边界
-    Arc3D = 3       # 3D圆弧
-    Arc2D = 4       # 2D圆弧
 
 
 # ──────────────────────────────────────────────

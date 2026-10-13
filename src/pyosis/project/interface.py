@@ -5,9 +5,13 @@ from ..core.client import osis_client
 from ..core import REGISTRY
 
 def get_project_directory() -> 'str | None':
+    """获取当前工程目录。
+
+    接口返回已统一为 {"success": .., "data": {"path": ".."}}（顶层 path 已移除）。
+    """
     response = osis_client("GetProjectDirectory", {})
     if response["success"]:
-        return response["path"]
+        return (response.get("data") or {}).get("path")
     raise Exception(response["error"])
 
 @REGISTRY.register("/Open")

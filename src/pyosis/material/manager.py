@@ -12,8 +12,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Literal, Any
-from enum import Enum
 from ..core.client import osis_client
+from ..core.enums import MaterialType, material_type_name, material_code_name
+from ..core.normalize import as_no, as_name
 from .interface import (
     osis_material_conc,
     osis_material_steel,
@@ -30,14 +31,6 @@ from ..core.basic_manager import BasicManager
 # 数据类
 # ──────────────────────────────────────────────
 
-class MaterialType(Enum):
-    UNASSIGNED = 0      # 未定义
-    CONC = 1            # 混凝土
-    STEEL = 2           # 钢材
-    Prestressed = 3     # 预应力
-    Rebar = 4           # 钢筋
-    Custom = 5          # 自定义
-
 @dataclass(frozen=True)
 class Material:
     """材料对象
@@ -48,8 +41,8 @@ class Material:
     no: int
     name: str
     material_type: MaterialType # "CONC", "STEEL", "PRESTRESSED", "REBAR", "CUSTOM"
-    code: str                   # 规范名
-    grade: str                  # 材料等级
+    code: int                   # 规范编码（PrepEnum::Code，值非连续；取名用 code_name）
+    grade: int                  # 材料等级编码（PrepEnum::Conc/Steel/Prestressed/Rebar）
     e: float                    # 弹性模量(Pa)
     g: float                    # 剪切模量(Pa)
     mu: float                   # 泊松比
@@ -59,13 +52,23 @@ class Material:
     damping: float              # 阻尼比
     creep_shrink_no: int        # 收缩徐变编号
 
+    @property
+    def type_name(self) -> str:
+        """材料类型名（OSIS 命令流写法，如 "CONC" / "PRESTRESSED"）"""
+        return material_type_name(self.material_type.value)
+
+    @property
+    def code_name(self) -> str:
+        """材料规范名（如 "JTG3362_2018" / "GBT5224_2014"）；未知编码返回 ""。"""
+        return material_code_name(self.code)
+
     @classmethod
     def _from_dict(cls, d: dict) -> Material:
         """从接口 dict 构造 Material 对象（内部使用）"""
         raw_type = int(d.get("materialType"))
         return cls(
-            no=d.get("no"),
-            name=d.get("name"),
+            no=as_no(d.get("no")),
+            name=as_name(d.get("name")),
             material_type=MaterialType(raw_type) if raw_type in [t.value for t in MaterialType] else MaterialType.UNASSIGNED ,
             code=d.get("code"),
             grade=d.get("grade"),
