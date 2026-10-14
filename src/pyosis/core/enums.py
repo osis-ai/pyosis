@@ -348,6 +348,83 @@ class LiveGradeType(OsisEnum):
     UNASSIGNED = 0       # 兼容旧拼写
 
 
+class LiveTypeForCustom(OsisEnum):
+    """自定义活载类型（LoadEnum::LiveTypeForCustom）
+
+    只在活载等级 grade 取自定义类取值时有效；C++ 侧 0 的拼写是 UNASSIGNEND。
+    """
+    Unassigned = 0
+    VEHICLE = 1          # 车辆
+    TRAIN = 2            # 列车
+    CROWD = 3            # 人群
+
+
+class AnalysisType(OsisEnum):
+    """分析特性类型（PrepEnum::Analysis）
+
+    分析类实体（活载等级、车道、活载工况等）都挂在 AnalysisBaseInfo 下，
+    analysisType 标识它属于哪张列表。
+    """
+    Unassigned = 0
+    Load = 1
+    Buckling = 2
+    SetlGrp = 3          # 沉降组
+    Settlement = 4       # 沉降分析
+    Damping = 5          # 阻尼特性
+    SeisRspSpec = 6      # 反应谱函数
+    Spectrum = 7         # 反应谱分析
+    LiveGrade = 8        # 活载等级
+    Lane = 9             # 车道
+    Live = 10            # 活载工况
+    Modal = 11
+    LoadToMass = 12      # 荷载转质量
+    Seastate = 13
+    Transient = 14       # 时程分析
+    LaneSurface = 15     # 车道面
+
+
+class PropertyType(OsisEnum):
+    """特性列表类型（PrepEnum::Property）
+
+    属性类实体（收缩徐变、坐标系、P-U 曲线等）都挂在 PropertyBaseInfo 下，
+    propertyType 标识它属于哪张列表。与 AnalysisType 是两个不同的枚举。
+    """
+    Unassigned = 0
+    PUCurve = 1               # 力-位移曲线
+    CreepShrink = 2           # 收缩徐变
+    TheoreticalThickness = 3  # 单元理论厚度
+    Spline = 4                # 样条曲线
+    CoorSys = 5               # 坐标系
+    ShellThickness = 6        # 壳厚度
+    StrengthPrg = 7           # 强度进展特性
+
+
+class SectionOffsetY(OsisEnum):
+    """截面 Y 向偏心类型（SecEnum::SectionOffsetY）
+
+    命令流 SecOff 只认 Left / Middle / Right，Manual 只能读出来——
+    回写时 C++ 的解析分支里没有它。
+    """
+    Unassigned = -1
+    Left = 0
+    Middle = 1
+    Right = 2
+    Manual = 3           # 手动指定偏心值
+
+
+class SectionOffsetZ(OsisEnum):
+    """截面 Z 向偏心类型（SecEnum::SectionOffsetZ）
+
+    命令流 SecOff 只认 Top / Center / Bottom，Manual 只能读出来——
+    回写时 C++ 的解析分支里没有它。
+    """
+    Unassigned = -1
+    Top = 0
+    Center = 1
+    Bottom = 2
+    Manual = 3           # 手动指定偏心值
+
+
 # ══════════════════════════════════════════════
 # 便捷函数（等价于 XxxType.name_of）
 # ══════════════════════════════════════════════
@@ -360,6 +437,11 @@ section_type_name = SectionType.name_of
 loadcase_type_name = LoadCaseType.name_of
 spline_type_name = SplineType.name_of
 live_grade_name = LiveGradeType.name_of
+live_type_for_custom_name = LiveTypeForCustom.name_of
+analysis_type_name = AnalysisType.name_of
+property_type_name = PropertyType.name_of
+section_offset_y_name = SectionOffsetY.name_of
+section_offset_z_name = SectionOffsetZ.name_of
 
 
 # ══════════════════════════════════════════════
@@ -387,9 +469,12 @@ __all__ = [
     "OsisEnum",
     "ElementType", "BoundaryType", "MaterialType", "MaterialCode",
     "SectionType", "LoadCaseType", "SplineType", "TensionType",
-    "LiveGradeType",
+    "LiveGradeType", "LiveTypeForCustom", "AnalysisType", "PropertyType",
+    "SectionOffsetY", "SectionOffsetZ",
     "element_type_name", "boundary_type_name", "material_type_name",
     "material_code_name", "section_type_name", "loadcase_type_name",
-    "spline_type_name", "live_grade_name",
+    "spline_type_name", "live_grade_name", "live_type_for_custom_name",
+    "analysis_type_name", "property_type_name",
+    "section_offset_y_name", "section_offset_z_name",
     "DOF_NAMES", "constraints_to_dict",
 ]

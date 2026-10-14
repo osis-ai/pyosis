@@ -282,8 +282,11 @@ SectionType.of(404)              # SectionType.Unassigned — unknown code falls
 ```
 
 Available: `ElementType`, `BoundaryType`, `MaterialType`, `MaterialCode`, `SectionType`,
-`LoadCaseType`, `SplineType`, `TensionType`, `LiveGradeType`.
-Data-class fields that carry a type expose a `type_name` / `code_name` / `grade_name` property.
+`LoadCaseType`, `SplineType`, `TensionType`, `LiveGradeType`, `LiveTypeForCustom`,
+`AnalysisType`, `PropertyType`, `SectionOffsetY`, `SectionOffsetZ`.
+Data-class fields that carry a type expose a `type_name` / `code_name` / `grade_name` /
+`custom_type_name` / `category_name` property; a section's `offset_type_y` / `offset_type_z`
+come back as enums, so `str(...)` feeds straight into `set_offset()`.
 
 ### Data Class Objects
 

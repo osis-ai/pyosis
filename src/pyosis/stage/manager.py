@@ -4,7 +4,6 @@
 - 隐藏 HTTP 接口细节，提供原生 Python 风格 API
 - 返回数据类对象而非 HTTP 元组
 - 无状态设计，每次从服务端加载（与 element/boundary manager 一致）
-- 单元组、边界组、荷载工况、分析工况列表仅保留名称
 """
 
 from __future__ import annotations
@@ -14,6 +13,7 @@ from typing import Literal
 
 from ..core.client import osis_client
 from ..core.basic_manager import BasicManager
+from ..core.enums import analysis_type_name
 from .overall import (
     osis_stage,
     osis_stage_del,
@@ -34,11 +34,145 @@ from .define import (
 
 
 @dataclass(frozen=True)
+class StageElementGroup:
+    """阶段里的单元组
+
+    激活和钝化各一份，用 activated 区分。
+    """
+    name: str
+    activated: bool                    # True=激活, False=钝化
+    birth: int | float | None = None   # 龄期
+    part: int | None = None            # 组合结构分部：0=全部, 1=钢材, 2=混凝土
+
+    @classmethod
+    def _from_dict(cls, d: dict, activated: bool) -> "StageElementGroup":
+        return cls(
+            name=d.get("name"),
+            activated=activated,
+            birth=d.get("birth"),
+            part=d.get("part"),
+        )
+
+
+@dataclass(frozen=True)
+class StageBoundaryGroup:
+    """阶段里的边界组
+
+    激活和钝化各一份，用 activated 区分。
+    """
+    name: str
+    activated: bool                    # True=激活, False=钝化
+    position: str | None = None        # "beforeDeformation" / "afterDeformation"
+
+    @classmethod
+    def _from_dict(cls, d: dict, activated: bool) -> "StageBoundaryGroup":
+        return cls(
+            name=d.get("name"),
+            activated=activated,
+            position=d.get("position"),
+        )
+
+
+@dataclass(frozen=True)
+class StageLoadCase:
+    """阶段里的荷载工况"""
+    name: str                          # 荷载工况名 lcName
+    activated: bool                    # 是否激活
+    ref_lc_name: str | None = None     # 上一阶段的参考工况 preRefLcName
+    time: float | None = None
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> "StageLoadCase":
+        return cls(
+            name=d.get("lcName"),
+            activated=bool(d.get("isActivated")),
+            ref_lc_name=d.get("preRefLcName"),
+            time=d.get("time"),
+        )
+
+
+@dataclass(frozen=True)
+class StageAnalysisCase:
+    """阶段里的分析工况"""
+    name: str                          # 分析工况名 analName
+    category: int                      # 分析类型（AnalysisType）
+    activated: bool = True
+
+    @property
+    def category_name(self) -> str:
+        """分析类型名（如 "Modal" / "Live"）；未知编码返回 ""。"""
+        return analysis_type_name(self.category)
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> "StageAnalysisCase":
+        return cls(
+            name=d.get("analName"),
+            category=d.get("category"),
+            activated=bool(d.get("isActivated", True)),
+        )
+
+
+@dataclass(frozen=True)
+class StageEffectCase:
+    """阶段作用工况汇总里的一条"""
+    name: str
+    status: str                        # "active" / "inactive"
+    category: str                      # "loadCase" / "analysisCase" / "modal"
+    time: float | None = None
+    ref_lc_name: str | None = None
+    analysis_category: int | None = None   # category == "analysisCase" 时的分析类型
+
+    @property
+    def activated(self) -> bool:
+        return self.status == "active"
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> "StageEffectCase":
+        return cls(
+            name=d.get("name"),
+            status=d.get("status"),
+            category=d.get("category"),
+            time=d.get("time"),
+            ref_lc_name=d.get("preRefLcName"),
+            analysis_category=d.get("analysisCategory"),
+        )
+
+
+@dataclass(frozen=True)
+class StageEffectCases:
+    """阶段的作用工况汇总（接口 effectCases）
+
+    load_cases / analysis_cases 与 Stage 上同名的两个字段是同一批数据的另一种视图，
+    激活状态用 status 字符串表达；模态开关只在这里出现。
+    """
+    load_cases: list[StageEffectCase] = field(default_factory=list)
+    analysis_cases: list[StageEffectCase] = field(default_factory=list)
+    calc_vibration_mode: bool = False
+    modal: StageEffectCase | None = None
+
+    @classmethod
+    def _from_dict(cls, d: dict) -> "StageEffectCases":
+        def _cases(key: str) -> list[StageEffectCase]:
+            return [
+                StageEffectCase._from_dict(x)
+                for x in d.get(key) or []
+                if isinstance(x, dict)
+            ]
+
+        modal = d.get("modal")
+        return cls(
+            load_cases=_cases("loadCases"),
+            analysis_cases=_cases("analysisCases"),
+            calc_vibration_mode=bool(d.get("calcVibrationMode")),
+            modal=StageEffectCase._from_dict(modal) if isinstance(modal, dict) else None,
+        )
+
+
+@dataclass(frozen=True)
 class Stage:
     """施工阶段对象
 
     由 StageManager 内部创建，用户不应直接实例化。
-    单元组、边界组、荷载工况、分析工况列表仅保留名称。
     """
 
     no: int
@@ -46,48 +180,54 @@ class Stage:
     duration: float
     accumulation: float
     pre_stage_no: int
-    element_groups: list[str] = field(default_factory=list)
-    boundary_groups: list[str] = field(default_factory=list)
-    load_cases: list[str] = field(default_factory=list)
-    analysis_cases: list[str] = field(default_factory=list)
+    element_groups: list[StageElementGroup] = field(default_factory=list)
+    boundary_groups: list[StageBoundaryGroup] = field(default_factory=list)
+    load_cases: list[StageLoadCase] = field(default_factory=list)
+    analysis_cases: list[StageAnalysisCase] = field(default_factory=list)
+    effect_cases: StageEffectCases | None = None
 
     @classmethod
     def _from_dict(cls, d: dict) -> Stage:
-        load_cases = [
-            lc.get("lcName")
-            for lc in d.get("loadCases") or []
-            if isinstance(lc, dict) and lc.get("lcName")
-        ]
-        analysis_cases = [
-            a.get("analName")
-            for a in d.get("analysisCases") or []
-            if isinstance(a, dict) and a.get("analName")
-        ]
         return cls(
             no=d.get("no"),
             name=d.get("name"),
             duration=d.get("duration"),
             accumulation=d.get("accumulation"),
             pre_stage_no=d.get("preStageNo"),
-            element_groups=cls._group_names(d.get("elementGroups")),
-            boundary_groups=cls._group_names(d.get("boundaryGroups")),
-            load_cases=load_cases,
-            analysis_cases=analysis_cases,
+            element_groups=cls._group_list(
+                d.get("elementGroups"), StageElementGroup
+            ),
+            boundary_groups=cls._group_list(
+                d.get("boundaryGroups"), StageBoundaryGroup
+            ),
+            load_cases=[
+                StageLoadCase._from_dict(x)
+                for x in d.get("loadCases") or []
+                if isinstance(x, dict)
+            ],
+            analysis_cases=[
+                StageAnalysisCase._from_dict(x)
+                for x in d.get("analysisCases") or []
+                if isinstance(x, dict)
+            ],
+            effect_cases=(
+                StageEffectCases._from_dict(d["effectCases"])
+                if isinstance(d.get("effectCases"), dict)
+                else None
+            ),
         )
 
     @staticmethod
-    def _group_names(groups_data) -> list[str]:
-        """从 elementGroups / boundaryGroups 嵌套结构提取组名"""
+    def _group_list(groups_data, group_cls) -> list:
+        """从 elementGroups / boundaryGroups 嵌套结构展开成带 activated 的列表"""
         if not isinstance(groups_data, dict):
             return []
-        names: list[str] = []
-        for key in ("active", "inactive"):
+        groups: list = []
+        for key, activated in (("active", True), ("inactive", False)):
             for item in groups_data.get(key) or []:
                 if isinstance(item, dict):
-                    name = item.get("name")
-                    if name:
-                        names.append(name)
-        return names
+                    groups.append(group_cls._from_dict(item, activated))
+        return groups
 
     def define_element(
         self,
@@ -174,7 +314,7 @@ class Stage:
         self,
         op: Literal[1, 0],
         type: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"],
-        lc_name: str,
+        lc_name: str | None = None,
     ) -> None:
         """激活分析工况,分析工况默认在每个施工阶段的静力工况之后，不同分析工况无先后顺序
 
@@ -188,7 +328,7 @@ class Stage:
                 RSPEC = 反应谱
                 LIVE = 活载分析
                 BUCKLE = 屈曲分析
-            lc_name: 荷载工况名称（部分分析类型需要）
+            lc_name: 荷载工况名称。MODAL 不需要，留 None 时命令流里不带该参数
 
         Raises:
             RuntimeError: 操作失败时抛出异常

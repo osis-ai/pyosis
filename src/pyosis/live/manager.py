@@ -44,7 +44,12 @@ from .lane import (
     osis_lane_mod,
 )
 from ..core.normalize import as_no, as_name
-from ..core.enums import LiveGradeType, live_grade_name
+from ..core.enums import (
+    LiveGradeType,
+    AnalysisType,
+    live_grade_name,
+    live_type_for_custom_name,
+)
 
 
 # ──────────────────────────────────────────────
@@ -76,6 +81,7 @@ class LiveGrade:
     """
     no: int                              # 编号
     name: str                            # 名称
+    analysis_type: AnalysisType          # 分析特性类型，等级恒为 LiveGrade
     code: int                            # 规范代码
     grade: int                           # 等级代码（如 HIGHWAY_I=1, HIGHWAY_II=2, VEHICLE=3），取名用 grade_name
     crowd_bridge_type: int               # 人群荷载桥型
@@ -84,6 +90,7 @@ class LiveGrade:
     related_live_anal: list[str] = field(default_factory=list)  # 关联的活载分析名称列表
     related_stages: list[int] = field(default_factory=list)     # 关联的施工阶段编号列表
     custom_layout: list[list[float]] = field(default_factory=list)  # 自定义布载矩阵
+    live_type_for_custom: int = 0        # 自定义活载类型（LiveTypeForCustom），非自定义等级为 0
     code_data_qk_pk5_pk50: dict = field(default_factory=dict)       # 公路荷载规范数据 {qk, pk_5, pk_50}
     code_data_vehicle_5x2: list[list[float]] = field(default_factory=list)  # 车辆荷载 5x2 矩阵
     code_data_crowd_w50_w150: dict = field(default_factory=dict)    # 人群荷载规范数据 {w_50, w_150}
@@ -95,12 +102,18 @@ class LiveGrade:
         """活载等级名（OSIS 写法，如 "HIGHWAY_I" / "VEHICLE"）；未知编码返回 ""。"""
         return live_grade_name(self.grade)
 
+    @property
+    def custom_type_name(self) -> str:
+        """自定义活载类型名（如 "VEHICLE" / "TRAIN"）；未分配返回 ""。"""
+        return live_type_for_custom_name(self.live_type_for_custom)
+
     @classmethod
     def _from_dict(cls, d: dict) -> LiveGrade:
         """从接口 dict 构造 LiveGrade 对象（内部使用）"""
         return cls(
             no=as_no(d.get("no")),
             name=as_name(d.get("name")),
+            analysis_type=AnalysisType.of(d.get("analysisType")),
             code=d.get("code"),
             grade=d.get("grade"),
             crowd_bridge_type=d.get("crowdBridgeType"),
@@ -109,6 +122,7 @@ class LiveGrade:
             related_live_anal=d.get("relatedLiveAnal") or [],
             related_stages=d.get("relatedStages") or [],
             custom_layout=d.get("customLayout") or [],
+            live_type_for_custom=d.get("liveTypeForCustom") or 0,
             code_data_qk_pk5_pk50=d.get("codeData_qk_pk5_pk50") or {},
             code_data_vehicle_5x2=d.get("codeData_vehicle_5x2") or [],
             code_data_crowd_w50_w150=d.get("codeData_crowd_w50_w150") or {},
@@ -129,6 +143,7 @@ class Lane:
     """
     no: int                              # 编号
     name: str                            # 名称
+    analysis_type: AnalysisType          # 分析特性类型，车道恒为 Lane
     length: float                        # 桥梁跨度（m）
     wheel_width: float                   # 轮距（m）
     veh_ori: int                         # 车辆移动方向：-1=向后, 0=往返, 1=向前
@@ -144,8 +159,9 @@ class Lane:
     def _from_dict(cls, d: dict) -> Lane:
         """从接口 dict 构造 Lane 对象（内部使用）"""
         return cls(
-            no=d.get("no"),
+            no=as_no(d.get("no")),
             name=d.get("name"),
+            analysis_type=AnalysisType.of(d.get("analysisType")),
             length=d.get("length"),
             wheel_width=d.get("wheelWidth"),
             veh_ori=d.get("vehOri"),
@@ -220,6 +236,7 @@ class LiveCase:
     """
     no: int                              # 编号
     name: str                            # 名称
+    analysis_type: AnalysisType          # 分析特性类型，活载工况恒为 Live
     code: int                            # 规范代码
     cmb_type: bool                       # 组合类型：True=包络, False=相加
     max_lanes_allowed: int               # 允许的最大车道数
@@ -231,8 +248,9 @@ class LiveCase:
     def _from_dict(cls, d: dict) -> LiveCase:
         """从接口 dict 构造 LiveCase 对象（内部使用）"""
         return cls(
-            no=d.get("no"),
+            no=as_no(d.get("no")),
             name=d.get("name"),
+            analysis_type=AnalysisType.of(d.get("analysisType")),
             code=d.get("code"),
             cmb_type=d.get("cmbType"),
             max_lanes_allowed=d.get("maxLanesAllowed"),
@@ -243,8 +261,9 @@ class LiveCase:
 
     def _sync_from_dict(self, d: dict) -> None:
         """用 dict 同步当前对象属性（内部使用）"""
-        self.no = d.get("no")
+        self.no = as_no(d.get("no"))
         self.name = d.get("name")
+        self.analysis_type = AnalysisType.of(d.get("analysisType"))
         self.code = d.get("code")
         self.cmb_type = d.get("cmbType")
         self.max_lanes_allowed = d.get("maxLanesAllowed")

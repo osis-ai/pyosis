@@ -40,6 +40,7 @@ from .component_thickness import osis_assign_component_thickness
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
 from ..core.basic_manager import BasicManager
+from ..core.enums import PropertyType
 
 @dataclass(frozen=False)
 class Point3D:
@@ -64,7 +65,7 @@ class Coordinate:
     no: int
     name: str
     coor_sys_type: str
-    property_type: int
+    property_type: PropertyType
     p1: Point3D
     p2: Optional[Point3D] = None
     p3: Optional[Point3D] = None
@@ -78,7 +79,7 @@ class Coordinate:
             no=d.get("no"),
             name=d.get("name", ""),
             coor_sys_type=d.get("coorSysType", ""),
-            property_type=d.get("propertyType", 0),
+            property_type=PropertyType.of(d.get("propertyType")),
             p1=Point3D._from_dict(d.get("p1")) or Point3D(0.0, 0.0, 0.0),
             p2=Point3D._from_dict(d.get("p2")),
             p3=Point3D._from_dict(d.get("p3")),
@@ -303,6 +304,7 @@ class CreepShrink:
     fly_ash_ratio: float      # 粉煤灰添加量(%)
     name: str
     no: int
+    property_type: PropertyType   # 特性列表类型，收缩徐变恒为 CreepShrink
     related_material: list[int]
     shrink_birth: int         # 同 birth_by_shrinking 的旧名，读到的是同一个值
     type_coeff: float
@@ -326,6 +328,7 @@ class CreepShrink:
             fly_ash_ratio=d.get("flyAshRatio"),
             name=d.get("name"),
             no=d.get("no"),
+            property_type=PropertyType.of(d.get("propertyType")),
             related_material=list(d.get("relatedMaterial") or []),
             shrink_birth=birth,
             type_coeff = d.get("typeCoeff"),
@@ -745,7 +748,7 @@ class PuCurve:
     """荷载-位移曲线对象"""
     no: int
     name: str
-    property_type: int
+    property_type: PropertyType
     curve_type: int          # 0=力, 1=力矩
     num: int
     displacement: list[float]
@@ -756,7 +759,7 @@ class PuCurve:
         return cls(
             no=d.get("no"),
             name=d.get("name", ""),
-            property_type=d.get("propertyType", 0),
+            property_type=PropertyType.of(d.get("propertyType")),
             curve_type=d.get("curveType", 0),
             num=d.get("num", 0),
             displacement=list(d.get("displacement", [])),

@@ -8,7 +8,7 @@ from ..core import REGISTRY
 
 #SectionOffset,1,Middle,0.0000,Center,0.0000; SectionMesh,1,0,0.1000; 
 @REGISTRY.register('SectionOffset')
-def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Right", "Manual"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom", "Manual"]="Center", dOffsetValueZ: float=0.0):
+def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Right"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom"]="Center", dOffsetValueZ: float=0.0):
     """设置截面偏移。
 
     Args:
@@ -17,16 +17,14 @@ def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Rig
             * Left: 左对齐
             * Middle: 居中对齐
             * Right: 右对齐
-            * Manual: 手动指定偏移值
         dOffsetValueY (float): Y方向偏移值（单位：m）。
-            仅当offsetTypeY为"Manual"时生效。
+            偏移类型为 Manual 时生效。
         offsetTypeZ (str): Z方向偏移类型，可选值：
             * Top: 顶部对齐
             * Center: 居中对齐
             * Bottom: 底部对齐
-            * Manual: 手动指定偏移值
         dOffsetValueZ (float): Z方向偏移值（单位：m）。
-            仅当offsetTypeZ为"Manual"时生效。
+            偏移类型为 Manual 时生效。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
@@ -38,9 +36,9 @@ def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Rig
         >>> result = section_offset(1, "Left", 0.0, "Bottom", 0.0)
         >>> print(result)
         (True, "")
-        
-        >>> # 设置截面Y方向手动偏移0.1m，Z方向居中对齐
-        >>> result = section_offset(1, "Manual", 0.1, "Center", 0.0)
+
+        >>> # 设置截面Y方向右对齐，Z方向居中对齐
+        >>> result = section_offset(1, "Right", 0.0, "Center", 0.0)
         >>> print(result)
         (True, "")
 
@@ -68,24 +66,17 @@ def osis_section_mesh(nSec: int=1, nPartID: int=1, nMeshMethod: Literal[0, 1]=0,
     pass
 
 @REGISTRY.register('SectionMat')
-def osis_section_mat(
-    index: int,
-    e_ratio: float,
-    dens_ratio: float,
-    pr_steel: float,
-    pr_concrete: float,
-):
+def osis_section_mat(index: int=1, *mat_nos: int):
     """
-    定义组合截面材料系数（仅用于组合截面）
+    定义组合截面的分部材料（仅用于组合截面）
 
-    对应 C++: SectionMat, nSec, ERatio, DensRatio, PRSteel, PRConcrete
+    对应 C++: SectionMat, nSec, 材料号...
 
     Args:
         index: 组合截面编号
-        e_ratio: 钢/混凝土弹性模量比 Es/Ec（>0）
-        dens_ratio: 钢/混凝土密度比（>0）
-        pr_steel: 钢材泊松比（>=0 且 <1）
-        pr_concrete: 混凝土泊松比（>=0 且 <1）
+        mat_nos: 各分部的材料编号。模板组合截面给 2 个，顺序为钢材、混凝土；
+            自定义组合截面按分部顺序给 N 个。
+            弹性模量比、密度比、泊松比由 OSIS 依据材料自动算出。
 
     Returns:
         tuple (bool, str): 是否成功、失败原因

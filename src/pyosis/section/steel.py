@@ -224,31 +224,16 @@ def osis_section_steel_custom(Index: int, Name: str, Type: Literal["STEELCUSTOM"
     pass
 
 @REGISTRY.register("Section")
-def osis_section_steel_custom_plate(Index: int, Name: str, Type: Literal["STEELCUSTOMPLATE"], 
-                                    PlatePositions: List[Literal[
-                                        "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
-                                        "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
-                                        "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
-                                        "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
-                                        "SideWeb", "SideWebL", "SideWebR",
-                                        "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
-                                        "PlateWithoutRib"
-                                    ]]):
+def osis_section_steel_custom_plate(Index: int, Name: str, Type: Literal["STEELCUSTOMPLATE"],
+                                    IsSymmetric: Literal[0, 1] = 0):
     """定义或修改自定义钢梁截面（通过参数板输入）。
 
     Args:
         Index (int): 编号。
         Name (str): 截面名。
         Type (str): 截面类型，固定为 STEELCUSTOMPLATE。
-        PlatePositions (List[str]): 指定该截面拥有的板件列表，可选择：
-            * 顶板：TopFlange、TopFlange1~TopFlange5
-            * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5
-            * 底板：BottomFlange、BottomFlange1~BottomFlange5
-            * 斜底板：BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined5
-            * 边腹板：SideWeb、SideWebL、SideWebR
-            * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
-            * 无加劲肋的板件：PlateWithoutRib
-            注意：带有加劲肋的板件位置不可重复。
+        IsSymmetric (int): 截面是否关于 y 轴对称，1=对称，0=不对称。
+            板件用 SteelPlate 命令（Section.add_steel_plate）逐一添加。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
@@ -258,48 +243,22 @@ def osis_section_steel_custom_plate(Index: int, Name: str, Type: Literal["STEELC
     pass
 
 @REGISTRY.register("SteelPlate")
-def osis_steel_plate(Index: int, GirderType: Literal["STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL"], 
-                     PlatePostion: Literal[
-                         "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
-                         "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
-                         "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
-                         "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
-                         "SideWeb", "SideWebL", "SideWebR",
-                         "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
-                         "PlateWithoutRib"
-                     ], 
-                     StartX: float, StartY: float, EndX: float, EndY: float, Thickness: float, 
-                     IsSymmetric: Literal[0, 1], RibStartPosition: Literal[0, 1], RibStartDistance: float, 
-                     RibLocation: Literal["Left", "Right", "Both"]):
+def osis_steel_plate(Index: int, PlateID: int, PlateType: Literal["Top", "Bottom", "Web"],
+                     StartX: float, StartY: float, EndX: float, EndY: float, Thickness: float):
     """定义或修改自定义钢梁截面的板件。
 
     Args:
         Index (int): 截面编号。
-        GirderType (str): 钢梁类型。
-            * STEELISIDE = 组合梁的边工字钢梁
-            * STEELIMIDDLE = 组合梁的中工字钢梁
-            * STEELBOX = 组合梁的钢箱梁
-            * STEELTROUGH = 组合梁的槽型钢梁
-            * STEEL = 一般钢梁截面
-        PlatePostion (str): 板件所在位置。
-            * 顶板：TopFlange、TopFlange1~TopFlange5
-            * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5
-            * 底板：BottomFlange、BottomFlange1~BottomFlange5
-            * 斜底板：BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined5
-            * 边腹板：SideWeb、SideWebL、SideWebR
-            * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
-            * 无加劲肋的板件：PlateWithoutRib
+        PlateID (int): 板件编号，大于 0，同一截面内唯一；已存在的编号表示修改。
+        PlateType (str): 板件类型。
+            * Top = 顶板
+            * Bottom = 底板
+            * Web = 腹板
         StartX (float): 板件起始点x坐标。
         StartY (float): 板件起始点y坐标。
         EndX (float): 板件终点x坐标。
         EndY (float): 板件终点y坐标。
-        Thickness (float): 板件厚度。
-        IsSymmetric (int): 板件是否关于y轴对称，1=对称，0=不对称。
-        RibStartPosition (int): 加劲肋起始位置，1=从起点开始布置，0=从终点开始布置。
-        RibStartDistance (float): 加劲肋起始位置与板件端点的距离。
-        RibLocation (str): 加劲肋布置位置。
-            * 对于非中腹板的一般板件，以起点到终点的线段为基准，在线段左侧则为Left，反之为Right，不可选择Both
-            * 对于中腹板，指加劲肋在腹板两侧布置的绝对位置，与起止点无关。
+        Thickness (float): 板件厚度，大于 0。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

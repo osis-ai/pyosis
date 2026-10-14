@@ -237,7 +237,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
                               web_rib_pos1="BOTH",
                               middle_same_with_side=1,
                               )
-    comp_sec.set_material()
+    comp_sec.set_material(steel_no, conc_no)
     trough_sec = section.create(30,"槽型钢组合截面","COMPOSITESTEELTROUGH",
         bt=2.0, bc=0.5,
         tt1=0.2, tt2=0.22, tt3=0.25,
@@ -297,7 +297,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     #   2.06e11, 0.3, 78.5,
     #   "CompPoint2", "CompLine2", "CompWidth2",
     # )
-    # comp_custom.set_material(steel_no, conc_no)
+    # comp_custom.set_material(conc_no, steel_no)   # 按分部顺序：1=混凝土, 2=钢
     # 创建箱型钢截面2
     sb_sec2 = section.create(33,"箱型钢截面2","STEELBEAMBOX", 2.0, 2.0, 0.5, 2.0, 0.5, 0.2, 0.2, 2.0, 1)
     _expect_attr(sb_sec2, "name", "箱型钢截面2")
@@ -2454,13 +2454,12 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     csc_section10 = section.create(494,"相贯节点区域","STEELCUSTOM", "PointMatrix10", "LineMatrix10")
     _expect_attr(csc_section10, "name", "相贯节点区域")
     # 创建自定义钢梁截面
-    cscp_section = section.create(50,"自定义钢梁截面","STEELCUSTOMPLATE", ["TopFlange"])
+    cscp_section = section.create(50,"自定义钢梁截面","STEELCUSTOMPLATE", 0)
     _expect_attr(cscp_section, "name", "自定义钢梁截面")
 
     cscp_section.add_steel_plate(
-        "STEEL", "TopFlange",
+        1, "Top",
         0.0, 0.0, 1.0, 1.0, 0.02,
-        1, 1, 0.0, "Both"
     )
 
     # 创建小箱梁截面

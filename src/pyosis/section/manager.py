@@ -81,7 +81,12 @@ from .rib import (
     osis_rib_layout_del,
     osis_clear_section_rib,
 )
-from ..core.enums import SectionType, section_type_name
+from ..core.enums import (
+    SectionType,
+    SectionOffsetY,
+    SectionOffsetZ,
+    section_type_name,
+)
 from ..core.normalize import as_no, as_name
 
 
@@ -143,9 +148,9 @@ class Section:
     prop: dict  # 截面特性，13 个字段（SI: m / m² / m⁴）：
     #   area, sy, sz, ixx, iyy, izz, iww, centY, centZ, dy, dz, periO, periI
     #   退化截面（几何未生成）全 0。注：无 propFactor——折减系数在求解侧，不随接口返回。
-    offset_type_y: int  # 偏移类型 Y
+    offset_type_y: SectionOffsetY  # 偏移类型 Y
     offset_value_y: float  # 偏移值 Y
-    offset_type_z: int  # 偏移类型 Z
+    offset_type_z: SectionOffsetZ  # 偏移类型 Z
     offset_value_z: float  # 偏移值 Z
     stress_points: list[dict]  # 应力点
     boundary: dict  # 边界
@@ -181,9 +186,9 @@ class Section:
             name=as_name(d.get("name")),
             section_type=SectionType.of(raw_type),
             prop=d.get("prop"),
-            offset_type_y=d.get("offsetTypeY"),
+            offset_type_y=SectionOffsetY.of(d.get("offsetTypeY")),
             offset_value_y=d.get("offsetValueY"),
-            offset_type_z=d.get("offsetTypeZ"),
+            offset_type_z=SectionOffsetZ.of(d.get("offsetTypeZ")),
             offset_value_z=d.get("offsetValueZ"),
             stress_points=list(sp) if isinstance(sp, list) else [],
             boundary=d.get("boundary"),
@@ -204,32 +209,33 @@ class Section:
 
     def set_offset(
             self,
-            offset_type_y: Literal["Left", "Middle", "Right", "Manual"] = "Middle",
+            offset_type_y: SectionOffsetY | Literal["Left", "Middle", "Right"] = SectionOffsetY.Middle,
             offset_value_y: float = 0.0,
-            offset_type_z: Literal["Top", "Center", "Bottom", "Manual"] = "Center",
+            offset_type_z: SectionOffsetZ | Literal["Top", "Center", "Bottom"] = SectionOffsetZ.Center,
             offset_value_z: float = 0.0,
     ) -> None:
         '''设置截面偏移。
 
         Args:
-            offset_type_y (str): Y方向偏移类型
+            offset_type_y (SectionOffsetY | str): Y方向偏移类型
                 * Left: 左对齐
                 * Middle: 居中对齐
                 * Right: 右对齐
-                * Manual: 手动指定偏移值
-            offset_value_y (float): Y方向偏移值（单位：m）。仅当 offset_type_y 为 "Manual" 时生效
-            offset_type_z (str): Z方向偏移类型
+            offset_value_y (float): Y方向偏移值（单位：m）。偏移类型为 Manual 时生效
+            offset_type_z (SectionOffsetZ | str): Z方向偏移类型
                 * Top: 顶部对齐
                 * Center: 居中对齐
                 * Bottom: 底部对齐
-                * Manual: 手动指定偏移值
-            offset_value_z (float): Z方向偏移值（单位：m）。仅当 offset_type_z 为 "Manual" 时生效
+            offset_value_z (float): Z方向偏移值（单位：m）。偏移类型为 Manual 时生效
+
+        Note:
+            Manual 偏心只在接口里读得到，SecOff 命令流没有对应写法，传进来会被拒绝。
 
         Raises:
             RuntimeError: 设置失败时抛出
         '''
         ok, err = osis_section_offset(
-            self.no, offset_type_y, offset_value_y, offset_type_z, offset_value_z
+            self.no, str(offset_type_y), offset_value_y, str(offset_type_z), offset_value_z
         )
         if not ok:
             raise RuntimeError(f"设置截面 {self.no} 偏移失败: {err}")
@@ -363,33 +369,28 @@ class Section:
 
     # ── 组合截面材料 ──────────────────────────
 
-    def set_material(
-            self,
-            e_ratio: float = 5.97101,
-            dens_ratio: float = 3.14,
-            pr_steel: float = 0.31,
-            pr_concrete: float = 0.2,
-    ) -> None:
-        """设置组合截面材料系数（仅用于组合截面）
+    def set_material(self, *mat_nos: int) -> None:
+        """设置组合截面的分部材料（仅用于组合截面）
 
-        对应命令: SectionMat, nSec, ERatio, DensRatio, PRSteel, PRConcrete
+        对应命令: SectionMat, nSec, 材料号...
+
+        弹性模量比、密度比、泊松比由 OSIS 依据材料自动计算。
 
         Args:
-            e_ratio: 钢/混凝土弹性模量比 Es/Ec（>0）
-            dens_ratio: 钢/混凝土密度比（>0）
-            pr_steel: 钢材泊松比（>=0 且 <1）
-            pr_concrete: 混凝土泊松比（>=0 且 <1）
-        """
-        if e_ratio <= 0 or dens_ratio <= 0:
-            raise ValueError("e_ratio 与 dens_ratio 必须大于 0")
-        if not (0 <= pr_steel < 1) or not (0 <= pr_concrete < 1):
-            raise ValueError("泊松比必须 >= 0 且 < 1")
+            mat_nos: 各分部的材料编号
+                * 模板组合截面（如 COMPOSITESTEELI）给 2 个，顺序为钢材、混凝土
+                * 自定义组合截面按分部顺序给 N 个
 
-        ok, err = osis_section_mat(
-            self.no, e_ratio, dens_ratio, pr_steel, pr_concrete
-        )
+        Raises:
+            ValueError: 一个材料编号都没给时
+            RuntimeError: 设置失败时抛出
+        """
+        if not mat_nos:
+            raise ValueError("至少需要一个材料编号")
+
+        ok, err = osis_section_mat(self.no, *mat_nos)
         if not ok:
-            raise RuntimeError(f"设置截面 {self.no} 材料系数失败: {err}")
+            raise RuntimeError(f"设置截面 {self.no} 材料失败: {err}")
 
     # ── 应力点 ────────────────────────────────
 
@@ -992,62 +993,40 @@ class Section:
 
     def add_steel_plate(
             self,
-            girder_type: Literal["STEELISIDE", "STEELIMIDDLE", "STEELBOX", "STEELTROUGH", "STEEL"],
-            plate_position: Literal[
-                "TopFlange", "TopFlange1", "TopFlange2", "TopFlange3", "TopFlange4", "TopFlange5",
-                "TopFlangeInclined", "TopFlangeInclined1", "TopFlangeInclined2", "TopFlangeInclined3", "TopFlangeInclined4", "TopFlangeInclined5",
-                "BottomFlange", "BottomFlange1", "BottomFlange2", "BottomFlange3", "BottomFlange4", "BottomFlange5",
-                "BottomFlangeInclined", "BottomFlangeInclined1", "BottomFlangeInclined2", "BottomFlangeInclined3", "BottomFlangeInclined4", "BottomFlangeInclined5",
-                "SideWeb", "SideWebL", "SideWebR",
-                "MiddleWeb", "MiddleWeb1", "MiddleWeb2", "MiddleWeb3", "MiddleWeb4", "MiddleWeb5",
-                "PlateWithoutRib",
-            ],
+            plate_id: int,
+            plate_type: Literal["Top", "Bottom", "Web"],
             start_x: float,
             start_y: float,
             end_x: float,
             end_y: float,
             thickness: float,
-            is_symmetric: Literal[0, 1] = 1,
-            rib_start_position: Literal[0, 1] = 1,
-            rib_start_distance: float = 0.0,
-            rib_location: Literal["Left", "Right", "Both"] = "Both",
     ) -> None:
         """定义或修改自定义钢梁截面的板件。
 
         Args:
-            girder_type (str): 钢梁类型。
-                * STEELISIDE = 组合梁的边工字钢梁
-                * STEELIMIDDLE = 组合梁的中工字钢梁
-                * STEELBOX = 组合梁的钢箱梁
-                * STEELTROUGH = 组合梁的槽型钢梁
-                * STEEL = 一般钢梁截面
-            plate_position (str): 板件所在位置。
-                * 顶板：TopFlange、TopFlange1~TopFlange5
-                * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5
-                * 底板：BottomFlange、BottomFlange1~BottomFlange5
-                * 斜底板：BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined5
-                * 边腹板：SideWeb、SideWebL、SideWebR
-                * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb5
-                * 无加劲肋的板件：PlateWithoutRib
+            plate_id (int): 板件编号，大于 0，同一截面内唯一；已存在的编号表示修改
+            plate_type (str): 板件类型
+                * Top = 顶板
+                * Bottom = 底板
+                * Web = 腹板
             start_x (float): 板件起始点x坐标。
             start_y (float): 板件起始点y坐标。
             end_x (float): 板件终点x坐标。
             end_y (float): 板件终点y坐标。
-            thickness (float): 板件厚度。
-            is_symmetric (int): 板件是否关于y轴对称，1=对称，0=不对称。
-            rib_start_position (int): 加劲肋起始位置，1=从起点开始布置，0=从终点开始布置。
-            rib_start_distance (float): 加劲肋起始位置与板件端点的距离。
-            rib_location (str): 加劲肋布置位置。
-                * 对于非中腹板的一般板件，以起点到终点的线段为基准，在线段左侧则为Left，反之为Right，不可选择Both
-                * 对于中腹板，指加劲肋在腹板两侧布置的绝对位置，与起止点无关。
+            thickness (float): 板件厚度，大于 0。
+
+        Raises:
+            RuntimeError: 添加失败时抛出
+
+        Note:
+            加劲肋不在这里定义，用 add_rib_layout。
         """
         ok, err = osis_steel_plate(
-            self.no, girder_type, plate_position,
+            self.no, plate_id, plate_type,
             start_x, start_y, end_x, end_y, thickness,
-            is_symmetric, rib_start_position, rib_start_distance, rib_location,
         )
         if not ok:
-            raise RuntimeError(f"添加截面 {self.no} 板件 {plate_position} 失败: {err}")
+            raise RuntimeError(f"添加截面 {self.no} 板件 {plate_id} 失败: {err}")
 
     def renumber(self, new_no: int) -> None:
         '''修改截面编号
@@ -2250,34 +2229,25 @@ class SectionManager(BasicManager):
         self,
         no: int | None,
         name: str,
-        plate_positions: list[str] | None = None,
+        symmetric: Literal[0, 1] = 0,
     ) -> Section:
         """创建自定义钢梁截面（通过参数板输入）(STEELCUSTOMPLATE)。
 
         Args:
             no: 截面编号，不填则自动分配
             name: 截面名称
-            plate_positions: 板件位置列表，目前可选择
-                * 顶板（TopFlange、TopFlange1~TopFlange5）、
-                * 斜顶板（TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined5）
-                * 底板（BottomFlange、BottomFlange1~BottomFlange5）、
-                * 斜底板（BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined5）
-                * 边腹板（SideWeb、SideWebL、SideWebR）、
-                * 中腹板（MiddleWeb、MiddleWeb1~MiddleWeb5）
-                * 无加劲肋的板件（PlateWithoutRib）
-                * 注意带有加劲肋的板件位置不可重复，否则无法正确计算
+            symmetric: 截面是否关于 y 轴对称，1=对称，0=不对称
+
         Notes:
-            在定义完自定义钢梁截面包含哪些板件后需逐一定义各板件参数
+            板件在截面建好后用 add_steel_plate 逐一添加。
             >>> from pyosis import OSISEngine
             >>> engine = OSISEngine()
-            >>> sec = engine.section.create_steel_custom_plate("自定义钢梁截面",plate_positions=["TopFlange"])
-            >>> sec.add_steel_plate("STEEL", "TopFlange",0.0, 0.0, 1.0, 1.0, 0.02)
+            >>> sec = engine.section.create_steel_custom_plate("自定义钢梁截面")
+            >>> sec.add_steel_plate(1, "Top", 0.0, 0.0, 1.0, 0.0, 0.02)
         """
         if no is None:
             no = self._next_no()
-        if plate_positions is None:
-            plate_positions = []
-        ok, err = osis_section_steel_custom_plate(no, name, "STEELCUSTOMPLATE", plate_positions)
+        ok, err = osis_section_steel_custom_plate(no, name, "STEELCUSTOMPLATE", symmetric)
         if not ok:
             raise RuntimeError(f"创建自定义钢梁参数板截面 {no} 失败: {err}")
         return self.get(no)

@@ -62,13 +62,13 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     got1 = stage.get(1)
     if got1 is None or got1.name != "CS1_主梁预制、张拉预应力":
         raise ValueError("get(1) 失败")
-    if settle_analysis_names[0] not in got1.analysis_cases:
+    if not any(a.name == settle_analysis_names[0] for a in got1.analysis_cases):
         raise ValueError(
             f"stg1 应含沉降分析 {settle_analysis_names[0]!r}, 实际 {got1.analysis_cases!r}"
         )
-    if eg_main_beam not in got1.element_groups:
+    if not any(g.name == eg_main_beam and g.activated for g in got1.element_groups):
         raise ValueError(
-            f"element_groups 应含 {eg_main_beam!r}, 实际 {got1.element_groups!r}"
+            f"element_groups 应含激活的 {eg_main_beam!r}, 实际 {got1.element_groups!r}"
         )
     
     # all
@@ -100,15 +100,15 @@ def build_stages(engine: OSISEngine, element_group_names: list[str], boundary_gr
     got5 = stage.get(5)
     if got5 is None or got5.name != "CS5_运营阶段":
         raise ValueError("get(5) 失败")
-    if la_lane not in got5.analysis_cases:
+    if not any(a.name == la_lane for a in got5.analysis_cases):
         raise ValueError(
             f"stg5 应含活载分析 {la_lane!r}, 实际 {got5.analysis_cases!r}"
         )
-    if rspec_name not in got5.analysis_cases:
+    if not any(a.name == rspec_name for a in got5.analysis_cases):
         raise ValueError(
             f"stg5 应含反应谱分析 {rspec_name!r}, 实际 {got5.analysis_cases!r}"
         )
-    if buckl_name not in got5.analysis_cases:
+    if not any(a.name == buckl_name for a in got5.analysis_cases):
         raise ValueError(
             f"stg5 应含屈曲分析 {buckl_name!r}, 实际 {got5.analysis_cases!r}"
         )

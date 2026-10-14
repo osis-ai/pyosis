@@ -51,6 +51,21 @@ class Material:
     density: float              # 质量密度(kg / m ^ 3)
     damping: float              # 阻尼比
     creep_shrink_no: int        # 收缩徐变编号
+    # ── 强度值（按材料类型给，其余类型为 None）──
+    fck: float | None = None        # 混凝土：抗压强度标准值
+    fcd: float | None = None        # 混凝土：抗压强度设计值
+    ftk: float | None = None        # 混凝土：抗拉强度标准值
+    ftd: float | None = None        # 混凝土：抗拉强度设计值
+    fy: float | None = None         # 钢材：屈服强度
+    fd: float | None = None         # 钢材：抗拉抗压强度设计值
+    fvd: float | None = None        # 钢材：抗剪强度设计值
+    steel_fcd: float | None = None  # 钢材：端面承压强度设计值
+    fpk: float | None = None        # 预应力：抗拉强度标准值
+    fpd: float | None = None        # 预应力：抗拉强度设计值
+    fppd: float | None = None       # 预应力：抗压强度设计值
+    fsk: float | None = None        # 钢筋：抗拉强度标准值
+    fsd: float | None = None        # 钢筋：抗拉强度设计值
+    fssd: float | None = None       # 钢筋：抗压强度设计值
 
     @property
     def type_name(self) -> str:
@@ -79,9 +94,21 @@ class Material:
             unit_weight=d.get("unitWeight"),
             density=d.get("density"),
             damping=d.get("damping"),
-
-            # 临时使用
             creep_shrink_no=d.get("creepShrinkNo"),
+            fck=d.get("fck"),
+            fcd=d.get("fcd"),
+            ftk=d.get("ftk"),
+            ftd=d.get("ftd"),
+            fy=d.get("fy"),
+            fd=d.get("fd"),
+            fvd=d.get("fvd"),
+            steel_fcd=d.get("steelFcd"),
+            fpk=d.get("fpk"),
+            fpd=d.get("fpd"),
+            fppd=d.get("fppd"),
+            fsk=d.get("fsk"),
+            fsd=d.get("fsd"),
+            fssd=d.get("fssd"),
         )
 
     def __repr__(self) -> str:

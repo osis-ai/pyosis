@@ -67,7 +67,7 @@ class Element:
     sec_vec: list[int] = field(default_factory=list)
     characters: list[int] = field(default_factory=list)
     loc_coor: dict[str, Any] | None = None
-    weight: dict[str, Any] | None = None
+    weight: dict[str, Any] | None = None    # 重量，键见 C++ element_weight_to_json
     related_boundaries: list[int] = field(default_factory=list)
     related_loads: list[str] = field(default_factory=list)
     related_taper_eles: list[str] = field(default_factory=list)
@@ -117,6 +117,7 @@ class Element:
             sec_vec=d.get("secVec") or [],
             characters=d.get("characters"),
             loc_coor=d.get("locCoor"),
+            weight=d.get("weight"),
             related_boundaries=d.get("relatedBoundary") or [],
             related_loads=d.get("relatedLoad") or [],
             related_taper_eles=d.get("relatedTaperEles") or [],
