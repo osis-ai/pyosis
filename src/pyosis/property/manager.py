@@ -498,7 +498,12 @@ class CreepShrinkManager(BasicManager):
 
 @dataclass(frozen=False)
 class Damping:
-    """阻尼模型对象"""
+    """阻尼模型对象
+
+    kind 决定哪些字段有值：
+        modal     → ksi
+        rayleigh  → alpha/beta，method=False 时另有 ksii/ksij/wi/wj
+    """
     analysisType: int
     dampingType: int
     kind: str
@@ -507,6 +512,14 @@ class Damping:
     no: int
     relatedAnalysis: list[str]
     relatedStages: list[str]
+    method: bool | None = None      # Rayleigh: True=直接给 alpha/beta，False=按频率与阻尼比给
+    alpha: float | None = None      # Rayleigh 系数 alpha
+    beta: float | None = None       # Rayleigh 系数 beta
+    ksii: float | None = None       # Rayleigh（method=False）：起始阻尼比
+    ksij: float | None = None       # Rayleigh（method=False）：终止阻尼比
+    wi: float | None = None         # Rayleigh（method=False）：起始频率
+    wj: float | None = None         # Rayleigh（method=False）：终止频率
+
     @classmethod
     def _from_dict(cls, d: dict) -> Damping:
         return cls(
@@ -515,7 +528,15 @@ class Damping:
             kind=d.get("kind"), ksi=d.get("ksi"),
             name=d.get("name"), no=d.get("no"),
             relatedAnalysis=d.get("relatedAnalysis"),
-            relatedStages=d.get("relatedStages"))
+            relatedStages=d.get("relatedStages"),
+            method=d.get("method"),
+            alpha=d.get("alpha"),
+            beta=d.get("beta"),
+            ksii=d.get("ksii"),
+            ksij=d.get("ksij"),
+            wi=d.get("wi"),
+            wj=d.get("wj"),
+        )
 
 class DampingManager(BasicManager):
     '''阻尼管理器'''
@@ -754,6 +775,7 @@ class PuCurve:
     displacement: list[float]
     force: list[float]
     related_element: list[int]
+    related_boundary: list[int] = field(default_factory=list)  # C++ 侧尚未下发，先按接口契约留位
     @classmethod
     def _from_dict(cls, d: dict) -> "PuCurve":
         return cls(
@@ -765,6 +787,7 @@ class PuCurve:
             displacement=list(d.get("displacement", [])),
             force=list(d.get("force", [])),
             related_element=list(d.get("relatedElement", [])),
+            related_boundary=list(d.get("relatedBoundary") or []),
         )
     def __repr__(self) -> str:
         return f"PuCurve(no={self.no}, name={self.name!r}, type={self.curve_type})"
@@ -791,14 +814,20 @@ class PuCurveManager(BasicManager):
                 * 0 = 力
                 * 1 = 力矩
             num (int): 曲线点数
-            values (float): 前 num 个为位移值，后 num 个为力（矩）值，共 2*num 个
+            values (float): 按点交错排列，共 2*num 个：第1点的位移、力（矩），
+                第2点的位移、力（矩）……即 ``create(1, "PU1", 0, 2, 0.0, 0.0, 0.02, 1000.0)``
+                表示两点 ``(位移 0.0, 力 0.0)`` 与 ``(位移 0.02, 力 1000.0)``
 
         Raises:
+            ValueError: 值的个数不等于 2*num 时
             RuntimeError: 创建失败时抛出
         '''
-        displacement = [float(x) for x in values[:num]]
-        force = [float(x) for x in values[num:2 * num]]
-        ok, err = osis_pu_curve(no, name, curve_type, num, displacement, force)
+        if len(values) != 2 * num:
+            raise ValueError(
+                f"荷载-位移曲线 {no} 需要 2*num={2 * num} 个值（位移、力按点交错），"
+                f"实际给了 {len(values)} 个"
+            )
+        ok, err = osis_pu_curve(no, name, curve_type, num, [float(x) for x in values])
         if not ok:
             raise RuntimeError(f"创建荷载-位移曲线 {no} 失败: {err}")
 

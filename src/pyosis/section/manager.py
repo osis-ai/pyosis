@@ -85,7 +85,9 @@ from ..core.enums import (
     SectionType,
     SectionOffsetY,
     SectionOffsetZ,
+    FillingType,
     section_type_name,
+    filling_type_name,
 )
 from ..core.normalize import as_no, as_name
 
@@ -162,11 +164,21 @@ class Section:
     has_steel_section: bool  # 是否有钢截面
     related_elements: list[int]  # 相关单元
     rebar: Rebar  # 钢筋
+    # ── 仅圆形截面（PrepEnum::Section::Circle）有值 ──
+    filling_type: FillingType | None = None  # 填充类型：Solid=实心, Hollow=空心管
+    outer_diameter: float | None = None      # 外径
+    inner_diameter: float | None = None      # 内径（非空心时为 0）
+    wall_thickness: float | None = None      # 壁厚（非空心时为 0）
 
     @property
     def type_name(self) -> str:
         """截面类型名（与 OSIS 命令流一致，如 "Rectangle" / "SteelBoxThreeCell"）"""
         return section_type_name(self.section_type.value)
+
+    @property
+    def filling_type_name(self) -> str:
+        """圆截面填充类型名（如 "Solid" / "Hollow"）；未知编码或非圆截面返回 ""。"""
+        return filling_type_name(self.filling_type)
 
     @classmethod
     def _from_dict(cls, d: dict) -> Section:
@@ -200,6 +212,10 @@ class Section:
             has_steel_section=d.get("hasSteelSection"),
             related_elements=list(rel) if isinstance(rel, list) else [],
             rebar=rebar_obj,
+            filling_type=FillingType.of(d.get("fillingType")) if "fillingType" in d else None,
+            outer_diameter=d.get("outerDiameter"),
+            inner_diameter=d.get("innerDiameter"),
+            wall_thickness=d.get("wallThickness"),
         )
 
     def __repr__(self) -> str:
@@ -209,9 +225,9 @@ class Section:
 
     def set_offset(
             self,
-            offset_type_y: SectionOffsetY | Literal["Left", "Middle", "Right"] = SectionOffsetY.Middle,
+            offset_type_y: SectionOffsetY | Literal["Left", "Middle", "Right", "Manual"] = SectionOffsetY.Middle,
             offset_value_y: float = 0.0,
-            offset_type_z: SectionOffsetZ | Literal["Top", "Center", "Bottom"] = SectionOffsetZ.Center,
+            offset_type_z: SectionOffsetZ | Literal["Top", "Center", "Bottom", "Manual"] = SectionOffsetZ.Center,
             offset_value_z: float = 0.0,
     ) -> None:
         '''设置截面偏移。
@@ -221,15 +237,14 @@ class Section:
                 * Left: 左对齐
                 * Middle: 居中对齐
                 * Right: 右对齐
+                * Manual: 手动指定偏移值
             offset_value_y (float): Y方向偏移值（单位：m）。偏移类型为 Manual 时生效
             offset_type_z (SectionOffsetZ | str): Z方向偏移类型
                 * Top: 顶部对齐
                 * Center: 居中对齐
                 * Bottom: 底部对齐
+                * Manual: 手动指定偏移值
             offset_value_z (float): Z方向偏移值（单位：m）。偏移类型为 Manual 时生效
-
-        Note:
-            Manual 偏心只在接口里读得到，SecOff 命令流没有对应写法，传进来会被拒绝。
 
         Raises:
             RuntimeError: 设置失败时抛出

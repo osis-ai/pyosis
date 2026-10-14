@@ -399,12 +399,15 @@ class PropertyType(OsisEnum):
     StrengthPrg = 7           # 强度进展特性
 
 
-class SectionOffsetY(OsisEnum):
-    """截面 Y 向偏心类型（SecEnum::SectionOffsetY）
+class FillingType(OsisEnum):
+    """圆形截面的填充类型（SecEnum::FillingType）"""
+    Unassigned = 0
+    Solid = 1            # 实心
+    Hollow = 2           # 空心（管状）
 
-    命令流 SecOff 只认 Left / Middle / Right，Manual 只能读出来——
-    回写时 C++ 的解析分支里没有它。
-    """
+
+class SectionOffsetY(OsisEnum):
+    """截面 Y 向偏心类型（SecEnum::SectionOffsetY）"""
     Unassigned = -1
     Left = 0
     Middle = 1
@@ -413,11 +416,7 @@ class SectionOffsetY(OsisEnum):
 
 
 class SectionOffsetZ(OsisEnum):
-    """截面 Z 向偏心类型（SecEnum::SectionOffsetZ）
-
-    命令流 SecOff 只认 Top / Center / Bottom，Manual 只能读出来——
-    回写时 C++ 的解析分支里没有它。
-    """
+    """截面 Z 向偏心类型（SecEnum::SectionOffsetZ）"""
     Unassigned = -1
     Top = 0
     Center = 1
@@ -440,6 +439,7 @@ live_grade_name = LiveGradeType.name_of
 live_type_for_custom_name = LiveTypeForCustom.name_of
 analysis_type_name = AnalysisType.name_of
 property_type_name = PropertyType.name_of
+filling_type_name = FillingType.name_of
 section_offset_y_name = SectionOffsetY.name_of
 section_offset_z_name = SectionOffsetZ.name_of
 
@@ -470,11 +470,11 @@ __all__ = [
     "ElementType", "BoundaryType", "MaterialType", "MaterialCode",
     "SectionType", "LoadCaseType", "SplineType", "TensionType",
     "LiveGradeType", "LiveTypeForCustom", "AnalysisType", "PropertyType",
-    "SectionOffsetY", "SectionOffsetZ",
+    "FillingType", "SectionOffsetY", "SectionOffsetZ",
     "element_type_name", "boundary_type_name", "material_type_name",
     "material_code_name", "section_type_name", "loadcase_type_name",
     "spline_type_name", "live_grade_name", "live_type_for_custom_name",
-    "analysis_type_name", "property_type_name",
+    "analysis_type_name", "property_type_name", "filling_type_name",
     "section_offset_y_name", "section_offset_z_name",
     "DOF_NAMES", "constraints_to_dict",
 ]

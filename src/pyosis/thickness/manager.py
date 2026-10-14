@@ -2,13 +2,14 @@
 
 用法:
     >>> from pyosis.thickness import thickness_manager
-    >>> thickness_manager.create(1, 0.3, 0.3)
+    >>> thickness_manager.create(1, 0, 0.3, 0.3)
     >>> thickness_manager.delete(1)
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 from .interface import (
     osis_shell_thickness,
@@ -25,6 +26,12 @@ class Thickness:
     in_plane: float
     out_plane: float
     related_elements: list[int] = field(default_factory=list)
+    # 以下字段 C++ 侧目前还没往 JSON 里放，先按接口契约留好位置
+    is_uniform: bool | None = None
+    has_offset: bool | None = None
+    is_relative: bool | None = None
+    thk_ratio: float | None = None
+    offset_distance: float | None = None
     @classmethod
     def _from_dict(cls, d: dict) -> "Thickness":
         return cls(
@@ -32,6 +39,11 @@ class Thickness:
             in_plane=d.get("inPlane", 0.0),
             out_plane=d.get("outPlane", 0.0),
             related_elements=list(d.get("relatedElement") or []),
+            is_uniform=d.get("isUniform"),
+            has_offset=d.get("hasOffset"),
+            is_relative=d.get("isRelative"),
+            thk_ratio=d.get("thkRatio"),
+            offset_distance=d.get("offsetDistance"),
         )
 
 class ThicknessManager:
@@ -92,20 +104,35 @@ class ThicknessManager:
     def create(
         self,
         no: int,
+        is_uniform: Literal[0, 1],
         in_plane: float,
         out_plane: float,
+        has_offset: Literal[0, 1] = 0,
+        is_relative: Literal[0, 1] = 0,
+        thk_ratio: float = 1.0,
+        offset_distance: float = 0.0,
     ) -> None:
         '''创建或修改板或壳的厚度特性
 
+        参数顺序与命令流 ShellThk 一致。
+
         Args:
             no (int): 厚度特性编号
-            in_plane (float): 面内厚度
-            out_plane (float): 面外厚度
+            is_uniform (int): 面内面外厚度是否相同，1=相同，0=不同
+            in_plane (float): 面内厚度，大于 0
+            out_plane (float): 面外厚度，大于 0。仅 is_uniform=0 时有效
+            has_offset (int): 是否有偏移
+            is_relative (int): 偏移是否按相对值给定
+            thk_ratio (float): 厚度比
+            offset_distance (float): 偏移距离
 
         Raises:
             RuntimeError: 创建失败时抛出异常
         '''
-        ok, err = osis_shell_thickness(no, in_plane, out_plane)
+        ok, err = osis_shell_thickness(
+            no, is_uniform, in_plane, out_plane,
+            has_offset, is_relative, thk_ratio, offset_distance,
+        )
         if not ok:
             raise RuntimeError(f"创建厚度特性 {no} 失败: {err}")
 

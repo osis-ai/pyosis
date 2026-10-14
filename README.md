@@ -241,13 +241,14 @@ engine.prop.damping.create_rayleigh_custom(name="Damping1", alpha=0.05, beta=0.0
 
 # P-U 曲线（no, name, curve_type, num, *values）
 #   curve_type: 0=力，1=力矩
-engine.prop.pu_curve.create(1, "PU1", 1, 3, 0, 0.01, 1000, 0.02, 1500)
+#   values 按点交错共 2*num 个：(位移, 力) (位移, 力) …
+engine.prop.pu_curve.create(1, "PU1", 1, 2, 0.0, 0.0, 0.02, 1500.0)
 
 # 构件厚度分配（thickness, op, *elems）
 engine.prop.assign_component_thickness(0.3, "a", 1)
 
-# 壳厚度（no, in_plane, out_plane）
-engine.thickness.create(no=1, in_plane=0.3, out_plane=0.3)
+# 壳厚度（no, is_uniform, in_plane, out_plane, ...）
+engine.thickness.create(no=1, is_uniform=0, in_plane=0.3, out_plane=0.3)
 ```
 
 ### 几何查询
@@ -279,7 +280,7 @@ SectionType.of(404)              # SectionType.Unassigned — 未知编码回退
 
 可用：`ElementType`、`BoundaryType`、`MaterialType`、`MaterialCode`、`SectionType`、
 `LoadCaseType`、`SplineType`、`TensionType`、`LiveGradeType`、`LiveTypeForCustom`、
-`AnalysisType`、`PropertyType`、`SectionOffsetY`、`SectionOffsetZ`。
+`AnalysisType`、`PropertyType`、`FillingType`、`SectionOffsetY`、`SectionOffsetZ`。
 数据类上带类型的字段另有 `type_name` / `code_name` / `grade_name` / `custom_type_name` /
 `category_name` 属性；截面偏心的 `offset_type_y` / `offset_type_z` 读回来就是枚举，
 `str()` 一下即可原样传给 `set_offset()`。

@@ -7,19 +7,20 @@ pyosis.property.pu_curve 的 Docstring
 from ..core import REGISTRY
 
 @REGISTRY.register("PUCurve")
-def osis_pu_curve(nIndex: int, strName: str, eType: int, nNum: int, displacement: list[float], force: list[float]):
+def osis_pu_curve(nIndex: int, strName: str, eType: int, nNum: int, curve: list[float]):
     '''
     创建或修改荷载-位移曲线，荷载与位移需要唯一对应
-    
+
+    命令流里位移与力（矩）按点交错排列，共 2*nNum 个数。
+
     Args:
         nIndex (int): 位移-力（矩）曲线编号
         strName (str): 曲线名称
-        eType (str): 
+        eType (str):
             * 0 = 力
             * 1 = 力矩
         nNum (int): 曲线点数
-        displacement (list): 第i个点的位移值
-        force (list): 第i个点的力（矩）值
+        curve (list): 位移与力（矩）交错排列，共 2*nNum 个：第1点为位移、力，第2点为位移、力……
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

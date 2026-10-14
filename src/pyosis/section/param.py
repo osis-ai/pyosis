@@ -8,7 +8,7 @@ from ..core import REGISTRY
 
 #SectionOffset,1,Middle,0.0000,Center,0.0000; SectionMesh,1,0,0.1000; 
 @REGISTRY.register('SectionOffset')
-def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Right"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom"]="Center", dOffsetValueZ: float=0.0):
+def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Right", "Manual"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom", "Manual"]="Center", dOffsetValueZ: float=0.0):
     """设置截面偏移。
 
     Args:

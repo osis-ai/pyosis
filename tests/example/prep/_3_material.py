@@ -87,10 +87,14 @@ def build_materials(engine: OSISEngine) -> list[int]:
     no_list = [new_mat5.no]
     for no in no_list:
         material.delete(no)
-    # 创建荷载-位移曲线
-    engine.prop.pu_curve.create(99, "P-U曲线-测试", 0, 3, 0.0, 0.01, 0.02, 0.0, 100.0, 150.0)
+    # 创建荷载-位移曲线（位移、力按点交错，共 2*num 个）
+    engine.prop.pu_curve.create(99, "P-U曲线-测试", 0, 3, 0.0, 0.0, 0.01, 100.0, 0.02, 150.0)
     got = engine.prop.pu_curve.get(99)
     _expect_attr(got, "no", 99)
+    if got.displacement != [0.0, 0.01, 0.02] or got.force != [0.0, 100.0, 150.0]:
+        raise ValueError(
+            f"荷载-位移曲线配对错误: disp={got.displacement}, force={got.force}"
+        )
     all_pu = engine.prop.pu_curve.all()
     if len(all_pu) < 1:
         raise ValueError("pu_curve.all() 为空")

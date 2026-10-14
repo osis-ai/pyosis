@@ -244,13 +244,14 @@ engine.prop.damping.create_rayleigh_custom(name="Damping1", alpha=0.05, beta=0.0
 
 # P-U curve (no, name, curve_type, num, *values)
 #   curve_type: 0 = force, 1 = moment
-engine.prop.pu_curve.create(1, "PU1", 1, 3, 0, 0.01, 1000, 0.02, 1500)
+#   values interleave by point, 2*num of them: (disp, force) (disp, force) ...
+engine.prop.pu_curve.create(1, "PU1", 1, 2, 0.0, 0.0, 0.02, 1500.0)
 
 # Element thickness assignment (thickness, op, *elems)
 engine.prop.assign_component_thickness(0.3, "a", 1)
 
-# Shell thickness (no, in_plane, out_plane)
-engine.thickness.create(no=1, in_plane=0.3, out_plane=0.3)
+# Shell thickness (no, is_uniform, in_plane, out_plane, ...)
+engine.thickness.create(no=1, is_uniform=0, in_plane=0.3, out_plane=0.3)
 ```
 
 ### Geometry Queries
@@ -283,7 +284,7 @@ SectionType.of(404)              # SectionType.Unassigned — unknown code falls
 
 Available: `ElementType`, `BoundaryType`, `MaterialType`, `MaterialCode`, `SectionType`,
 `LoadCaseType`, `SplineType`, `TensionType`, `LiveGradeType`, `LiveTypeForCustom`,
-`AnalysisType`, `PropertyType`, `SectionOffsetY`, `SectionOffsetZ`.
+`AnalysisType`, `PropertyType`, `FillingType`, `SectionOffsetY`, `SectionOffsetZ`.
 Data-class fields that carry a type expose a `type_name` / `code_name` / `grade_name` /
 `custom_type_name` / `category_name` property; a section's `offset_type_y` / `offset_type_z`
 come back as enums, so `str(...)` feeds straight into `set_offset()`.

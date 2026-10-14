@@ -79,7 +79,7 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     y_off = 0.5
     shell_thk_no = 1
     thk = engine.thickness
-    thk.create(shell_thk_no, 0.30, 0.30)
+    thk.create(shell_thk_no, 0, 0.30, 0.30)
     got_thk = thk.get(shell_thk_no)
     if got_thk is None:
         raise ValueError(f"thickness.get({shell_thk_no}) 返回 None")
@@ -102,7 +102,7 @@ def build_elements(engine: OSISEngine, mat_nos: list[int], sec_nos: list[int], n
     if batch[1] is not None:
         raise ValueError("thickness.get([..., 999]) 第二项应为 None")
     # 临时编号：测 renumber / delete / get
-    thk.create(99, 0.25, 0.25)
+    thk.create(99, 0, 0.25, 0.25)
     got99 = thk.get(99)
     if got99 is None or got99.in_plane != 0.25:
         raise ValueError("create(99) 后 get(99) 失败")
