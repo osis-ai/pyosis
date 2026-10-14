@@ -8,7 +8,7 @@ from ..core import REGISTRY
 
 #SectionOffset,1,Middle,0.0000,Center,0.0000; SectionMesh,1,0,0.1000; 
 @REGISTRY.register('SectionOffset')
-def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Right", "Manual"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom", "Manual"]="Center", dOffsetValueZ: float=0.0):
+def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Right"]="Middle", dOffsetValueY: float=0.0, offsetTypeZ: Literal["Top", "Center", "Bottom"]="Center", dOffsetValueZ: float=0.0):
     """设置截面偏移。
 
     Args:
@@ -18,13 +18,14 @@ def osis_section_offset(nSec: int=1, offsetTypeY: Literal["Left", "Middle", "Rig
             * Middle: 居中对齐
             * Right: 右对齐
         dOffsetValueY (float): Y方向偏移值（单位：m）。
-            偏移类型为 Manual 时生效。
         offsetTypeZ (str): Z方向偏移类型，可选值：
             * Top: 顶部对齐
             * Center: 居中对齐
             * Bottom: 底部对齐
         dOffsetValueZ (float): Z方向偏移值（单位：m）。
-            偏移类型为 Manual 时生效。
+
+    Note:
+        "Manual" 自 4.9.5 起被系统淘汰，命令流拒收，故不在上列可选值内。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

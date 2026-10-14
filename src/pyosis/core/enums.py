@@ -412,7 +412,7 @@ class SectionOffsetY(OsisEnum):
     Left = 0
     Middle = 1
     Right = 2
-    Manual = 3           # 手动指定偏心值
+    Manual = 3           # 4.9.5 起系统淘汰：命令流拒收、读文件归一化为 Middle、界面只提供前三项
 
 
 class SectionOffsetZ(OsisEnum):
@@ -421,7 +421,7 @@ class SectionOffsetZ(OsisEnum):
     Top = 0
     Center = 1
     Bottom = 2
-    Manual = 3           # 手动指定偏心值
+    Manual = 3           # 4.9.5 起系统淘汰：命令流拒收、读文件归一化为 Center、界面只提供前三项
 
 
 # ══════════════════════════════════════════════

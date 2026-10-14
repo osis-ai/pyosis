@@ -66,6 +66,8 @@ class Material:
     fsk: float | None = None        # 钢筋：抗拉强度标准值
     fsd: float | None = None        # 钢筋：抗拉强度设计值
     fssd: float | None = None       # 钢筋：抗压强度设计值
+    strength_prog: str = ""         # 引用的强度进展特性名。Mat 命令没有这一项（只有界面
+                                    # 对话框能设），命令行建的材料恒为 ""
 
     @property
     def type_name(self) -> str:
@@ -109,6 +111,7 @@ class Material:
             fsk=d.get("fsk"),
             fsd=d.get("fsd"),
             fssd=d.get("fssd"),
+            strength_prog=d.get("strengthPrg") or "",
         )
 
     def __repr__(self) -> str:

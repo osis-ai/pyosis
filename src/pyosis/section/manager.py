@@ -225,9 +225,9 @@ class Section:
 
     def set_offset(
             self,
-            offset_type_y: SectionOffsetY | Literal["Left", "Middle", "Right", "Manual"] = SectionOffsetY.Middle,
+            offset_type_y: SectionOffsetY | Literal["Left", "Middle", "Right"] = SectionOffsetY.Middle,
             offset_value_y: float = 0.0,
-            offset_type_z: SectionOffsetZ | Literal["Top", "Center", "Bottom", "Manual"] = SectionOffsetZ.Center,
+            offset_type_z: SectionOffsetZ | Literal["Top", "Center", "Bottom"] = SectionOffsetZ.Center,
             offset_value_z: float = 0.0,
     ) -> None:
         '''设置截面偏移。
@@ -237,14 +237,16 @@ class Section:
                 * Left: 左对齐
                 * Middle: 居中对齐
                 * Right: 右对齐
-                * Manual: 手动指定偏移值
-            offset_value_y (float): Y方向偏移值（单位：m）。偏移类型为 Manual 时生效
+            offset_value_y (float): Y方向偏移值（单位：m）
             offset_type_z (SectionOffsetZ | str): Z方向偏移类型
                 * Top: 顶部对齐
                 * Center: 居中对齐
                 * Bottom: 底部对齐
-                * Manual: 手动指定偏移值
-            offset_value_z (float): Z方向偏移值（单位：m）。偏移类型为 Manual 时生效
+            offset_value_z (float): Z方向偏移值（单位：m）
+
+        Note:
+            SectionOffsetY.Manual / SectionOffsetZ.Manual 自 4.9.5 起已被系统淘汰，
+            命令流拒收（"第2个参数输入有误"），故不在上列可选值内。
 
         Raises:
             RuntimeError: 设置失败时抛出

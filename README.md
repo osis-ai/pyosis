@@ -283,7 +283,8 @@ SectionType.of(404)              # SectionType.Unassigned — 未知编码回退
 `AnalysisType`、`PropertyType`、`FillingType`、`SectionOffsetY`、`SectionOffsetZ`。
 数据类上带类型的字段另有 `type_name` / `code_name` / `grade_name` / `custom_type_name` /
 `category_name` 属性；截面偏心的 `offset_type_y` / `offset_type_z` 读回来就是枚举，
-`str()` 一下即可原样传给 `set_offset()`。
+`str()` 一下即可原样传给 `set_offset()`（`Manual` 自 4.9.5 起被系统淘汰——命令流拒收、
+读文件归一化成 `Middle`/`Center`，故不在 `set_offset` 的可选值内）。
 
 ### 数据类对象
 

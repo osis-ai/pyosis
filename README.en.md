@@ -287,7 +287,9 @@ Available: `ElementType`, `BoundaryType`, `MaterialType`, `MaterialCode`, `Secti
 `AnalysisType`, `PropertyType`, `FillingType`, `SectionOffsetY`, `SectionOffsetZ`.
 Data-class fields that carry a type expose a `type_name` / `code_name` / `grade_name` /
 `custom_type_name` / `category_name` property; a section's `offset_type_y` / `offset_type_z`
-come back as enums, so `str(...)` feeds straight into `set_offset()`.
+come back as enums, so `str(...)` feeds straight into `set_offset()` (the `Manual` value was
+retired by the system in 4.9.5 — the command stream rejects it and reading a file normalizes it
+to `Middle`/`Center`, so it is not among `set_offset`'s accepted values).
 
 ### Data Class Objects
 
