@@ -42,14 +42,14 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
         tuple (bool, str): 是否成功，失败原因
 
     """
-    is_ok, err, file_path = txt_file_path(strLCName, eType, _CMD)
+    is_ok, err, file_path = txt_file_path(strLCName, eType, _CMD, min_lines=1)
     if not is_ok:
         return False, err, None
 
     df = pd.read_csv(
         file_path,
         sep=r"\s+",          # 用正则匹配任意空白（空格/制表符）
-        header=0,            # 表头在第3行（索引从0开始，这里跳过前两行标题）
+        header=0,            # 表头在第1行
         skiprows=[],         # 若还有多余空行可在这里加行号
         encoding="utf-8",    # OSIS /output 生成的 .txt 是 UTF-8 编码
         on_bad_lines="skip"  # 跳过格式异常行

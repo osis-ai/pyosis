@@ -1,15 +1,10 @@
-from pathlib import Path
 from typing import Literal, Any
 
 from .result import txt_file_path
-from ..project import interface
-from ..core import command
-import json
 import pandas as pd
 
 # /output,D:\\temp\\Temp1\\Check\\频遇组合包络.txt,echk,混凝土_PC腹板斜截面抗裂验算_频遇组合包络
 _CMD = "/output,{out_file_path}.txt,echk,{check_file_name}"
-_CHECK_TXT_PATH = "Temperary"
 
 def osis_check_result(
     eSheetType: Literal["一般", "混凝土", "施工阶段荷载包络"],
@@ -84,29 +79,17 @@ def osis_check_result(
     # else:
     #     return isok, error, None
     # 1 获取项目目录
-    project_path = interface.get_project_directory()
-    if not project_path:
-        return False, "获取文件夹失败", None
-
-    project_path = Path(project_path)
     check_name = eSheetType + "_" + eCheckItem + "_" + strCheckName
 
-    # 2 工况文件路径
-    check_file_path = project_path / _CHECK_TXT_PATH / check_name
-
-    # 3 生成命令
-    str_cmd = _CMD.format(out_file_path=check_file_path, check_file_name=check_name)
-
-    # 4 执行命令
-    is_ok, error = command.osis_run(str_cmd, mode="exec")
+    # 2 生成命令并执行
+    #    验算 txt 表头在第 3 行（header=2），少于 3 行就解析不出表
+    is_ok, error, file_path = txt_file_path(check_name, "echk", _CMD, min_lines=3)
     if not is_ok:
         return False, error, None
 
-    # 5 读取结果
-    txt_path = project_path / _CHECK_TXT_PATH / check_name
-    txt_path = txt_path.with_suffix(".txt")
+    # 3 读取结果
     df = pd.read_csv(
-        txt_path,
+        file_path,
         sep=r"\s+",          # 用正则匹配任意空白（空格/制表符）
         header=2,            # 表头在第3行（索引从0开始，这里跳过前两行标题）
         skiprows=[],         # 若还有多余空行可在这里加行号
