@@ -1,3 +1,4 @@
+import io
 from typing import Literal
 
 from .result import txt_file_path
@@ -5,26 +6,28 @@ import pandas as pd
 
 # 将工况结果转换为txt的命令
 _CMD = "/output,{out_file_path}.txt,{e_type},{check_file_name}"
-_LOAD_CASE_TXT_PATH = "Temperary"
 
-# def osis_elem_force(strLCName: str, eDataItem: Literal['EF'], eElementType: Literal["BEAM3D", "TRUSS", "SPRING", "CABLE", "SHELL"]):
-#     '''
-#     提取内力结果
-#
-#     Args:
-#         strLCName (str): 工况名称
-#         eDataItem (str): 数据类型，不区分大小写。EF = 内力
-#         eElementType (str): 单元类型，不区分大小写。BEAM3D = 梁柱单元，TRUSS = 桁架单元，SPRING = 弹簧单元，CABLE = 拉索单元，SHELL = 壳单元
-#
-#     Returns:
-#         tuple (bool, str):
-#             - bool: 操作是否成功
-#             - str: 失败原因（如果操作失败）
-#     '''
-#     e = OSISEngine.GetInstance()
-#     eDataItem = eDataItem.upper()
-#     eElementType = eElementType.upper()
-#     return e.OSIS_ElemForce(strLCName, eDataItem, eElementType)
+
+def _is_number(text: str) -> bool:
+    try:
+        float(text)
+        return True
+    except ValueError:
+        return False
+
+
+def _find_header_row(lines: list[str]) -> int | None:
+    """结果 txt 的表头所在行（0 起），找不到返回 None。
+
+    抬头行数按结果类型不同：LCND/LCEF 没有抬头（表头就在第 0 行）、
+    LCBF 抬头 2 行、LCS 抬头 3 行。抬头行都是单字段的标题或空行，
+    表头则是第一个不止一个字段的行，据此识别。
+    """
+    for i, line in enumerate(lines):
+        if len(line.split()) > 1:
+            return i
+    return None
+
 
 def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCBF','LCTL','LCS']) -> tuple[bool, str, pd.DataFrame]:       # todo: 该函数日后需要修改成从OSIS的HDF5里导出
     """
@@ -46,13 +49,26 @@ def osis_loadcase_result(strLCName:str, eType: Literal['LCEF','LCED','LCND','LCB
     if not is_ok:
         return False, err, None
 
+    with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+        lines = f.read().splitlines()
+
+    header_row = _find_header_row(lines)
+    if header_row is None:
+        return False, f"结果文件 {file_path} 里找不到表头行（每行都不足 2 个字段）", None
+
+    # 从表头那行起喂给 pandas：抬头行数按类型变，交给它自己按行号跳过容易数错
     df = pd.read_csv(
-        file_path,
+        io.StringIO("\n".join(lines[header_row:])),
         sep=r"\s+",          # 用正则匹配任意空白（空格/制表符）
-        header=0,            # 表头在第1行
+        header=0,            # 上面已切到表头，这里就是第 0 行
         skiprows=[],         # 若还有多余空行可在这里加行号
         encoding="utf-8",    # OSIS /output 生成的 .txt 是 UTF-8 编码
         on_bad_lines="skip"  # 跳过格式异常行
     )
+
+    # 表头认成数据行时，列名会全是数字（真表头里没有纯数字列名）
+    if len(df.columns) and all(_is_number(str(c)) for c in df.columns):
+        return False, (f"结果文件 {file_path} 的表头识别有误：第 {header_row} 行不像表头"
+                       f"（列名全是数字），请检查 /output 的输出格式"), None
 
     return True, "", df
