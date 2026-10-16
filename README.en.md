@@ -24,61 +24,80 @@ pip install osis-python -i https://pypi.org/simple
 
 - OSIS >= 5.1 (short-form command names like `N`/`Ele`/`Sec` are accepted by both the converter and runtime)
 - Python >= 3.8
-- **Solver-only mode** additionally requires the solver distribution that ships `osisSdk.dll` (e.g. `D:\OSIS_Solver\Rbin64`).
+- pandas (result export)
+- **Solver-only mode** additionally requires the solver distribution that ships `osisSdk.dll` (e.g. `D:\OSIS_Solver\Rbin64`)
 
 > `osis_init` needs a license file (`osis.lic`, HMAC-signed) before anything runs. Search order: the `OSIS_LICENSE_FILE` environment variable, then `%ProgramData%\OSIS\osis.lic`, then `osis.lic` in the install directory. Obtain one from your OSIS vendor.
 
-> The `/OSIS_Run` command-stream splitter does not strip `//` line comments — a comment line is merged with the command that follows it into one bad command. The pyosis `.out` converter strips comments before sending; if you build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
-
 ## Quick Start
 
-### 1. Using OSISEngine (Recommended)
-
-`OSISEngine` is the core facade class of pyosis, integrating all module managers and providing a unified project-level entry point:
+`OSISEngine` is the core facade class of pyosis, integrating all module managers and providing a unified project-level entry point. This snippet builds a model, solves it, and reads a result in one go:
 
 ```python
 from pyosis.core.engine import OSISEngine
 
-engine = OSISEngine()
-
-# Clear project
+engine = OSISEngine()      # connects to an already-running OSIS GUI process
 engine.clear()
 
-# Set global parameters
 engine.control.set_gravity_acceleration(9.8066)
 engine.control.set_calc_tendon(True)
 engine.control.set_calc_creep(True)
 
-# Create sections
+# Sections / materials
 sec = engine.section.create_circle(no=1, name="CircleSection", d=0.5)
-
-# Create materials
 mat = engine.material.create_conc(no=1, name="C30Concrete", code="JTG3362_2018", grade="C30")
 
-# Create nodes
+# Nodes / elements
 n1 = engine.node.create(no=1, x=0, y=0, z=0)
 n2 = engine.node.create(no=2, x=15, y=0, z=0)
-
-# Create elements
 elem = engine.element.create_beam3d(
     no=1, node1=n1.no, node2=n2.no, mat=mat.no, sec1=sec.no, sec2=sec.no
 )
 
-# Create boundaries
+# Boundaries
 bd = engine.boundary.create_general(no=1, x=1, y=1, z=1, rx=1, ry=1, rz=1, rw=1)
 bd.assign("a", [n1.no])
 
-# Create load case and add loads
+# Load case
 lc = engine.load.create("Self-weight", load_case_type="D")
 lc.create_gravity()
 
 # Solve
 engine.solve()
+
+# Read a result
+df = engine.result.node_displacement("Self-weight")
 ```
 
-### 2. Engine Convenience Methods
+### Solver-Only Mode (No GUI)
 
-`OSISEngine` provides project-level convenience methods:
+To drive the solver **without opening the GUI** (headless batch runs, CI, server-side automation), `OSISSolver` loads the solver DLL via ctypes and launches its HTTP server:
+
+```python
+from pyosis.core.solver import OSISSolver
+from pyosis.core.engine import OSISEngine
+
+# Load <install>/osisSdk.dll and start the HTTP server (default port 18080)
+solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver\Rbin64")
+engine = OSISEngine.from_solver(solver)
+
+# Create a project (type 101 = bridge analysis), then build the model as usual
+engine.project.create(101, r"D:\work\my_bridge\my_bridge.sis")
+engine.control.set_gravity_acceleration(9.8066)
+# ... build sections / materials / nodes / elements ...
+engine.solve()
+```
+
+Notes:
+
+- `osis_install_path` must be the directory containing `osisSdk.dll` (and its dependency DLLs).
+- With `port=0` the OS assigns a free port, written back to `solver.port`.
+- The solver needs a project to exist before model commands run: call `engine.project.create()` / `open()` first.
+- Crash minidumps are written to `<install>\Error\dmp\`.
+
+### Other Entry Points
+
+`OSISEngine` also carries a set of project-level convenience methods:
 
 ```python
 # Project management
@@ -100,9 +119,7 @@ engine.output_result_for_calc_book()
 engine.matrix("matrix_1", [[1, 2],[3, 4]])
 ```
 
-### 3. Using Managers Directly
-
-Without the Engine convenience methods, you can import individual managers directly:
+You can also bypass the Engine convenience methods and import individual managers directly:
 
 ```python
 from pyosis.material import material_manager
@@ -112,33 +129,7 @@ mat = material_manager.create_conc(no=1, name="C30", code="JTG3362_2018", grade=
 node = node_manager.create(no=None, x=0, y=0, z=0)
 ```
 
-### 4. Using OSISSolver — Start the Solver Directly (Solver-Only Mode)
-
-`OSISEngine()` connects to an already-running OSIS GUI process. To drive the solver **without opening the GUI** (headless batch runs, CI, server-side automation), `OSISSolver` loads the solver DLL via ctypes and launches its HTTP server:
-
-```python
-from pyosis.core.solver import OSISSolver
-from pyosis.core.engine import OSISEngine
-
-# Load <install>/osisSdk.dll and start the HTTP server (default port 18080)
-solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver\Rbin64")
-engine = OSISEngine.from_solver(solver)
-
-# Create a project (type 101 = bridge analysis), then build the model as usual
-engine.project.create(101, r"D:\work\my_bridge\my_bridge.sis")
-engine.control.set_gravity_acceleration(9.8066)
-# ... build sections / materials / nodes / elements ...
-engine.solve()
-```
-
-Notes on solver-only mode:
-
-- `osis_install_path` must be the directory containing `osisSdk.dll` (and its dependency DLLs).
-- With `port=0` the OS assigns a free port, written back to `solver.port`.
-- The solver needs a project to exist before model commands run: call `engine.project.create()` / `open()` first.
-- Crash minidumps are written to `<install>\Error\dmp\`.
-
-## Core Architecture
+## Core Concepts
 
 ### Manager System
 
@@ -161,11 +152,44 @@ pyosis adopts a Manager pattern to organize code. Each module corresponds to a M
 | SettlementManager | `engine.settlement` | Settlement analysis |
 | StabilityManager | `engine.stability` | Stability analysis |
 | DynamicManager | `engine.dynamic` | Dynamic analysis |
-| PostManager | `engine.post` | Post-processing (load combinations, design checks) |
-| ResultManager | `engine.result` | Result export (load case / envelope / check results) |
 | ControlManager | `engine.control` | Global control parameters |
 | ProjectManager | `engine.project` | Project operations |
 | DisplayManager | `engine.display` | Display control (show/hide boundaries, loads, tendons; view orientation; display switches) |
+| ResultManager | `engine.result` | Result export (load case / envelope / check results) |
+| PostManager | `engine.post` | Post-processing (load combinations, design checks) |
+
+### Data Class Objects
+
+Create and query operations return data class objects (dataclass) instead of raw dictionaries:
+
+```python
+elem = engine.element.get(1)
+print(elem.no)          # ID
+print(elem.node_vec)    # Node list
+print(elem.mat)         # Material ID
+
+# Objects support operations (operations sink down to the object)
+lc = engine.load.get("Self-weight")
+lc.create_gravity()
+lc.create_nforce(1, fx=1000)
+```
+
+### Enums
+
+All type codes live in `pyosis.core.enums`. Each member's **name is the OSIS command-stream
+spelling**, so a member converts straight to a string; its value is the integer code the
+interface JSON carries:
+
+```python
+from pyosis.core.enums import SectionType
+
+SectionType.Rectangle.value      # 5              — code as sent by OSIS
+str(SectionType.Rectangle)       # "Rectangle"    — command-stream spelling
+SectionType.name_of(5)           # "Rectangle"
+SectionType.of(404)              # SectionType.Unassigned — unknown code falls back
+```
+
+## Modelling
 
 ### Sub-Managers
 
@@ -205,26 +229,7 @@ lc.create_sub("LaneLoadCase1", "HighwayClassI", scalar=0.75, calc_mu=True,
               bridge_type="CUSTOM", mu_params=[6.586960], lane_names=["Lane1"])
 ```
 
-A vehicle load is not a separate concept: OSIS has no vehicle entity — a vehicle is just one
-value of the live-load grade (`grade=LiveGradeType.VEHICLE`), peer to the highway, crowd and
-fatigue grades, and is created the same way (`engine.live.grade.create_vehicle(...)`).
-
-### Display Control
-
-```python
-# Show/hide boundaries, loads and tendons
-engine.display.disp_ctrl("bc", "all", "all", 1)          # Show all boundaries
-engine.display.disp_ctrl("lg", "nforce", "all", 0)       # Hide all concentrated forces
-engine.display.disp_ctrl("td", "all", ["T1", "T2"], 1)   # Show specific tendons
-
-# View orientation
-engine.display.set_view("top")          # standard / top / right / front
-
-# Display switch
-engine.display.set_plsm(1)              # 0 = off, 1 = on
-```
-
-### Property & Thickness Management
+### Properties & Thickness
 
 ```python
 # Coordinate systems (three-point definition)
@@ -267,73 +272,75 @@ spline = engine.geometry.get("curve1")
 arcs = [s for s in engine.geometry.all() if s.spline_type is SplineType.ARC3D]
 ```
 
-### Enums
-
-All type codes live in `pyosis.core.enums`. Each member's **name is the OSIS command-stream
-spelling**, so a member converts straight to a string; its value is the integer code the
-interface JSON carries:
+### Display Control
 
 ```python
-from pyosis.core.enums import SectionType
+# Show/hide boundaries, loads and tendons
+engine.display.disp_ctrl("bc", "all", "all", 1)          # Show all boundaries
+engine.display.disp_ctrl("lg", "nforce", "all", 0)       # Hide all concentrated forces
+engine.display.disp_ctrl("td", "all", ["T1", "T2"], 1)   # Show specific tendons
 
-SectionType.Rectangle.value      # 5              — code as sent by OSIS
-str(SectionType.Rectangle)       # "Rectangle"    — command-stream spelling
-SectionType.name_of(5)           # "Rectangle"
-SectionType.of(404)              # SectionType.Unassigned — unknown code falls back
-```
+# View orientation
+engine.display.set_view("top")          # standard / top / right / front
 
-Available: `ElementType`, `BoundaryType`, `MaterialType`, `MaterialCode`, `SectionType`,
-`LoadCaseType`, `SplineType`, `TensionType`, `LiveGradeType`, `LiveTypeForCustom`,
-`AnalysisType`, `PropertyType`, `FillingType`, `SectionOffsetY`, `SectionOffsetZ`.
-Data-class fields that carry a type expose a `type_name` / `code_name` / `grade_name` /
-`custom_type_name` / `category_name` property; a section's `offset_type_y` / `offset_type_z`
-come back as enums, so `str(...)` feeds straight into `set_offset()` (the `Manual` value was
-retired by the system in 4.9.5 — the command stream rejects it and reading a file normalizes it
-to `Middle`/`Center`, so it is not among `set_offset`'s accepted values).
-
-### Data Class Objects
-
-Create and query operations return data class objects (dataclass) instead of raw dictionaries:
-
-```python
-elem = engine.element.get(1)
-print(elem.no)          # ID
-print(elem.node_vec)    # Node list
-print(elem.mat)         # Material ID
-
-# Objects support operations (operations sink down to the object)
-lc = engine.load.get("Self-weight")
-lc.create_gravity()
-lc.create_nforce(1, fx=1000)
-```
-
-### Explicit Numbering
-
-Some `create_*` functions support explicit numbering via the `no` parameter. If not specified, the number is automatically assigned:
-
-```python
-# Auto-assigned number
-sec = engine.section.create_circle(name="Section1", d=0.5)
-
-# Explicit number
-sec = engine.section.create_circle(name="Section1", d=0.5, no=100)
+# Display switch
+engine.display.set_plsm(1)              # 0 = off, 1 = on
 ```
 
 ## Result Export
 
-After solving, export analysis results through `engine.result`. All export methods return pandas DataFrames:
+After solving, query analysis results through `engine.result`. All methods return pandas DataFrames.
+
+Results go through PySolver's HTTP routes (`/GetAll*`, `/Get*ByNames`); GUI and headless modes read the same data, so no mode distinction is needed:
 
 ```python
-# Export load case results (element forces)
-df = engine.result.loadcase("Self-weight", "LCEF")
+# Node displacement (omit name to get every load case)
+df = engine.result.node_displacement("Self-weight")
 
-# Export envelope results (element forces)
-df = engine.result.env("BasicCombinationEnvelope", "EnvEF")
+# Element forces
+df = engine.result.element_force("Self-weight")
 
-# Export design check results
-df = engine.result.check(
-    "混凝土", "正截面抗弯验算", "基本组合"
-)
+# Element stresses (by_part=True splits by section, adding a part column)
+df = engine.result.element_stress("Self-weight", by_part=True)
+
+# Support reactions
+df = engine.result.support_reaction("Self-weight")
+
+# Tendon (prestress) losses
+df = engine.result.tendon_loss("Self-weight")
+
+# Modal results (eigenvalues / periods / frequencies). Modal hangs off construction
+# stages, not load cases; the result name looks like _自振模态_<stage> and the first
+# column is `name`, not `loadCase`
+df = engine.result.modal()
+
+# Envelopes: kind is displacement / force / stress / reaction
+df = engine.result.envelope("BasicCombinationEnvelope", kind="force")
+```
+
+`name` accepts a single load case name or a list of names. When a name resolves to nothing you get an empty table plus a `UserWarning` — a misspelled name and a name that simply has no such result are indistinguishable. Pass `strict=True` to raise instead:
+
+```python
+df = engine.result.element_force("no-such-case", strict=True)   # raises RuntimeError
+```
+
+Envelope rows are keyed by (node, component) and each row carries the envelope vector built from every component's own extreme — rows for different components at the same node hold identical values, and the component column is a label. `kind="reaction"` additionally carries `extreme` (Min/Max) and `sys` (boundary coordinate system number) columns.
+
+### Where column names come from
+
+The server does **not** translate column names: it passes through the software result table's headers (Chinese) and the values as-is. The mapping into English keys such as `ux`/`sxFx` lives on the pyosis side, in `src/pyosis/result/routes.py`.
+
+So when the solver team renames a header, you edit one line of Python and reinstall. Two ways it can mismatch:
+
+- An unrecognized column → `UserWarning` naming it, that column is skipped, the rest is fine
+- A required column gone unrecognized → `RuntimeError`, printing every header the server actually sent; add one line to `_COLUMNS` to match
+
+### Design Check Results
+
+Design check results have no HTTP route yet and still go through the `/output` command stream:
+
+```python
+df = engine.result.check("混凝土", "正截面抗弯验算", "基本组合")
 
 # Batch export all check results from Check folder
 results = engine.result.check_all()
@@ -341,87 +348,27 @@ for name, df in results.items():
     print(f"{name}: {len(df)} rows")
 ```
 
-Supported result types:
+### Migrating from 0.8.1
 
-- **Load case**: `LCEF` (element force), `LCED` (element displacement), `LCND` (node displacement), `LCBF` (boundary reaction), `LCTL` (tendon loss), `LCS` (element stress)
-- **Envelope**: `EnvBF` (boundary reaction), `EnvEF` (element force), `EnvES` (element strain), `EnvS` (element stress), `EnvND` (node displacement)
+`loadcase()` / `env()` have been **removed** — no compatibility aliases remain. Replace them type by type:
 
-Requires pandas:
+| Old | New |
+|---|---|
+| `loadcase(name, "LCND")` | `node_displacement(name)` |
+| `loadcase(name, "LCEF")` | `element_force(name)` |
+| `loadcase(name, "LCS")` | `element_stress(name)` |
+| `loadcase(name, "LCBF")` | `support_reaction(name)` |
+| `loadcase(name, "LCTL")` | `tendon_loss(name)` |
+| `env(name, "EnvND")` | `envelope(name, "displacement")` |
+| `env(name, "EnvEF")` | `envelope(name, "force")` |
+| `env(name, "EnvS")` | `envelope(name, "stress")` |
+| `env(name, "EnvBF")` | `envelope(name, "reaction")` |
 
-```bash
-pip install pandas
-```
+`loadcase`'s `LCED` (element displacement) and `env`'s `EnvES` (element strain) have no corresponding route and were dropped along with them. **Column names change too**: the old interfaces returned txt headers such as `Fx(N)`, the new ones return the route's English keys such as `fx`.
 
-## Complete Example
+## Batch Execution & Performance
 
-```python
-from pyosis.core.engine import OSISEngine
-
-engine = OSISEngine()
-engine.clear()
-
-# Control parameters
-engine.control.set_gravity_acceleration(9.8066)
-engine.control.set_calc_tendon(True)
-engine.control.set_calc_concurrent_force(True)
-engine.control.set_calc_shrink(True)
-engine.control.set_calc_creep(True)
-engine.control.set_calc_shear(True)
-engine.control.set_calc_relaxation(True)
-engine.control.set_mod_loc_coor(False)
-engine.control.set_inc_tendon(True)
-engine.control.set_nonlinear(geom=False, link=False)
-
-# Sections
-engine.section.create_circle(no=1, name="CircleSection1", d=0.219, tw=0.012)
-engine.section.create_circle(no=2, name="CircleSection2", d=0.180, tw=0.008)
-
-# Materials
-engine.material.create_steel(
-    no=1, name="Steel1", code="JTGD64_2015", grade="Q345", dmp=0.05
-)
-
-# Nodes
-engine.node.create(no=1, x=0, y=5, z=0)
-engine.node.create(no=2, x=15, y=5, z=0)
-engine.node.create(no=3, x=7.5, y=0, z=0)
-engine.node.create(no=4, x=20, y=0, z=0)
-
-# Elements
-engine.element.create_beam3d(no=1, node1=1, node2=3, mat=1, sec1=1, sec2=1)
-engine.element.create_beam3d(no=2, node1=2, node2=3, mat=1, sec1=2, sec2=2)
-
-# Boundaries
-engine.boundary.create_general(no=1)
-engine.boundary.get(1).assign("a", [1, 2])
-
-# Loads
-lc = engine.load.create(
-    "CustomLoadCase1",
-    load_case_type="USER",
-    prompt="Two forces applied at nodes 3 and 4"
-)
-lc.create_nforce(3, fx=0, fy=-1000000, fz=0)
-lc.create_nforce(4, fx=200000, fy=0, fz=0)
-
-# Solve
-engine.solve()
-```
-
-## End-to-End Demo (Solver-Only Mode)
-
-See [`tests/pyosis_demo.py`](tests/pyosis_demo.py) for a self-contained runnable example that:
-
-- Starts the solver directly via `OSISSolver` (no GUI required)
-- Builds the 25m 简支小箱梁 example model (10 prep modules)
-- Runs `engine.solve()`
-- Exports LCND / LCEF / EnvND / EnvEF results to CSV
-
-Output goes to `temp/demo_output/` at the repository root (`temp/` is not tracked by git).
-
-## Batch Execution
-
-Per-command network round-trips dominate the cost of building large models. Wrap the modelling code in `with batch():` to merge **all** OSIS commands into a **single** `OSIS_Run` HTTP request when the block exits:
+The main cost of building large models is OSIS initializing its command execution function for every single command. Wrap the modelling code in `with batch():` to merge **all** OSIS commands into a **single** `OSIS_Run` HTTP request when the block exits:
 
 ```python
 from pyosis import batch
@@ -447,6 +394,20 @@ Notes:
 
 Benchmark on the `25m简支小箱梁中梁` project: without `batch()` ~3000 round-trips; with `batch()` 3 (clear + clc + one final flush).
 
+### Chained Method Calls
+
+The dataclass returned by `get()` supports method chaining without server round-trips:
+
+```python
+with batch():
+    lc = engine.load.create("Self-weight", load_case_type="D")
+    lc.create_gravity()
+    lc.create_nforce(node=1, fx=0, fy=-1000, fz=0)
+    # ↑ all three commands are queued; the OSIS_Run request only fires at exit
+```
+
+Accessing identity attributes (`lc.no`, `lc.name`) does not touch the server. Accessing data fields (`lc.type`, `lc.elements`) materializes the object (one-time flush + query), then caches it.
+
 ## .out → pyosis Converter
 
 pyosis ships a converter that turns an OSIS command stream (`.out`) into a runnable pyosis project:
@@ -454,6 +415,8 @@ pyosis ships a converter that turns an OSIS command stream (`.out`) into a runna
 ```bash
 python src/pyosis/transfer/out_to_python.py path/to/model.out path/to/output_project
 ```
+
+> The `/OSIS_Run` command-stream splitter does not strip `//` line comments — a comment line is merged with the command that follows it into one bad command. The converter strips comments before sending; if you build a raw `.out` payload yourself, pre-process the file or use `osis_run()` through the generated `main.py`.
 
 Generated layout:
 
@@ -488,23 +451,74 @@ Notes on the converter:
 - `Spline3D` is dispatched to `engine.geometry.create_general` / `create_natural` / `create_arc2d` / `create_arc3d` based on the type field.
 - Commands that are not yet modeled are passed through verbatim via `engine.run(...)` so the model still runs; rewrite them into pyosis calls manually if needed.
 
-## Chained Method Calls
-
-The dataclass returned by `get()` supports method chaining without server round-trips:
+## Complete Modelling Example
 
 ```python
-with batch():
-    lc = engine.load.create("Self-weight", load_case_type="D")
-    lc.create_gravity()
-    lc.create_nforce(node=1, fx=0, fy=-1000, fz=0)
-    # ↑ all three commands are queued; the OSIS_Run request only fires at exit
+from pyosis.core.engine import OSISEngine
+
+engine = OSISEngine()
+engine.clear()
+
+# Control parameters
+engine.control.set_gravity_acceleration(9.8066)
+engine.control.set_calc_tendon(True)
+engine.control.set_calc_concurrent_force(True)
+engine.control.set_calc_shrink(True)
+engine.control.set_calc_creep(True)
+engine.control.set_calc_shear(True)
+engine.control.set_calc_relaxation(True)
+engine.control.set_mod_loc_coor(False)
+engine.control.set_inc_tendon(True)
+engine.control.set_nonlinear(geom=False, link=False)
+
+# Sections
+engine.section.create_circle(no=1, name="CircleSection1", d=0.219, tw=0.012)
+engine.section.create_circle(no=2, name="CircleSection2", d=0.180, tw=0.008)
+
+# Materials
+engine.material.create_steel(
+    no=2, name="Steel1", code="JTGD64_2015", grade="Q345", dmp=0.05
+)
+
+# Nodes
+engine.node.create(no=1, x=0, y=5, z=0)
+engine.node.create(no=2, x=15, y=5, z=0)
+engine.node.create(no=3, x=7.5, y=0, z=0)
+engine.node.create(no=4, x=20, y=0, z=0)
+
+# Elements
+engine.element.create_beam3d(no=1, node1=1, node2=3, mat=1, sec1=1, sec2=1)
+engine.element.create_beam3d(no=2, node1=2, node2=3, mat=1, sec1=2, sec2=2)
+
+# Boundaries
+engine.boundary.create_general(no=1)
+engine.boundary.get(1).assign("a", [1, 2])
+
+# Loads
+lc = engine.load.create(
+    "CustomLoadCase1",
+    load_case_type="USER",
+    prompt="Two forces applied at nodes 3 and 4"
+)
+lc.create_nforce(3, fx=0, fy=-1000000, fz=0)
+lc.create_nforce(4, fx=200000, fy=0, fz=0)
+
+# Solve
+engine.solve()
 ```
 
-Accessing identity attributes (`lc.no`, `lc.name`) does not touch the server. Accessing data fields (`lc.type`, `lc.elements`) materializes the object (one-time flush + query), then caches it.
+## End-to-End Demos
 
-## End-to-End Demo (GUI Mode)
+**Solver-only mode**: see [`tests/pyosis_demo.py`](tests/pyosis_demo.py) for a self-contained runnable example that:
 
-The single-file demo [`tests/demo_gui.py`](tests/demo_gui.py) is a merged version of the project generated from `temp/xiaoxiangliang.out`. Run it against an open OSIS 5.1+ GUI:
+- Starts the solver directly via `OSISSolver` (no GUI required)
+- Builds the 25m 简支小箱梁 example model (10 prep modules)
+- Runs `engine.solve()`
+- Exports node displacement / element force / support reaction / tendon loss / modal / all four envelope families to CSV
+
+Output goes to `temp/demo_output/` at the repository root (`temp/` is not tracked by git).
+
+**GUI mode**: the single-file demo [`tests/demo_gui.py`](tests/demo_gui.py) is a merged version of the project generated from `temp/xiaoxiangliang.out`. Run it against an open OSIS 5.1+ GUI:
 
 ```bash
 python tests/demo_gui.py            # build the model

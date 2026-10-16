@@ -1,14 +1,16 @@
-from .loadcase import *
-from .check import *
-from .env import *
+"""结果读取
+
+唯一的取数路径是 PySolver 的 HTTP 路由（见 routes.py）:有头与无头模式服务的是
+同一份路由表，因此结果与界面模式无关。公开入口是 ResultManager。
+
+    >>> from pyosis.core.engine import OSISEngine
+    >>> engine.result.node_displacement("自重")
+    >>> engine.result.element_force(["自重", "二期"])
+
+尚未有 HTTP 路由的只剩规范验算（check()/check_all()），它仍走 /output 命令流，
+隔离在 check.py 里，路由就绪后连同该模块一并删除。
+"""
+
 from .manager import ResultManager, result_manager
-from .headless import (
-    get_node_displacement,
-    get_element_force,
-    get_element_stress,
-    get_support_reaction,
-    node_displacement_df,
-    element_force_df,
-    element_stress_df,
-    support_reaction_df,
-)
+
+__all__ = ["ResultManager", "result_manager"]

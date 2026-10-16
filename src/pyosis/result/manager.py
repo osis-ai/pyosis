@@ -1,39 +1,19 @@
-"""结果管理器 - 统一管理程序运行结果的导出
+"""结果管理器
 
-设计理念：
-- 隐藏底层命令接口细节，提供原生 Python 风格 API
-- 导出结果为 pandas DataFrame，便于后续分析处理
-- 无状态设计，每次调用实时从 OSIS 服务端提取结果
+结果只有一条取数路径:PySolver 的 HTTP 路由（见 routes.py），有头/无头模式共用。
+每个物理结果类型对应一个语义方法,返回 pandas DataFrame。
 
-用法:
-    >>> from pyosis.result import result_manager
-    >>> # 导出荷载工况结果
-    >>> df = result_manager.loadcase("自重", "LCEF")
-    >>> # 导出包络结果
-    >>> df = result_manager.env("基本组合包络", "EnvEF")
-    >>> # 导出验算结果
-    >>> df = result_manager.check("混凝土", "正截面抗弯验算", "基本组合")
+规范验算尚无路由,是唯一还走 /output 命令流的部分（见 check.py）。
 """
-
 from __future__ import annotations
 
 from typing import Literal
 
-try:
-    import pandas as pd
-    _HAS_PANDAS = True
-except ImportError:
-    _HAS_PANDAS = False
+import pandas as pd
 
-from .loadcase import osis_loadcase_result
-from .env import osis_env_result
+from . import routes
+# 隔离区:验算待 HTTP 路由补齐后连同 check.py 一并删除
 from .check import osis_check_result
-from .headless import (
-    node_displacement_df,
-    element_force_df,
-    element_stress_df,
-    support_reaction_df,
-)
 
 
 class ResultManager:
@@ -43,86 +23,188 @@ class ResultManager:
     所有方法返回 pandas DataFrame，便于后续数据分析和可视化。
     """
 
-    def _ensure_pandas(self) -> None:
-        """确保 pandas 已安装"""
-        if not _HAS_PANDAS:
-            raise ImportError(
-                "结果导出功能依赖 pandas，请先安装：pip install pandas"
-            )
-
     # ═══════════════════════════════════════════
-    # 荷载工况结果
+    # 结果查询（HTTP 路由，唯一数据源）
     # ═══════════════════════════════════════════
 
-    def loadcase(
+    def node_displacement(
         self,
-        name: str,
-        result_type: Literal[
-            "LCEF", "LCED", "LCND", "LCBF", "LCTL", "LCS"
-        ],
+        name: str | list[str] | None = None,
+        strict: bool = False,
     ) -> pd.DataFrame:
-        """导出荷载工况结果
+        """查询求解后节点位移
+
+        走 /GetAllNodeDisplacement、/GetNodeDisplacementByNames 端点，
+        优先从结果文件读，文件失败回落内存。
 
         Args:
-            name: 荷载工况名称
-            result_type: 结果类型
-                * LCEF — 单元内力
-                * LCED — 单元位移
-                * LCND — 节点位移
-                * LCBF — 边界反力
-                * LCTL — 钢束损失
-                * LCS  — 单元应力
+            name: 工况名（str 或 list[str]）；None 时返回全部工况。
+                包络/并发名需服务端支持后才能解析，目前传入只会得到空表。
+            strict: 显式指定 name 却一行都没查到时报错（默认只告警）。
+                名字写错与「包络名但服务端尚未支持」目前无法区分，都会是空结果。
 
         Returns:
-            结果 DataFrame
+            结果 DataFrame（列: loadCase, source, no, ux, uy, uz, rx, ry, rz, rw）
 
         Raises:
-            ImportError: 未安装 pandas 时抛出
-            RuntimeError: 导出失败时抛出异常
+            RuntimeError: 查询失败，或 strict=True 时名字查不到
         """
-        self._ensure_pandas()
-        ok, err, df = osis_loadcase_result(name, result_type)
-        if not ok:
-            raise RuntimeError(f"导出工况结果 {name} ({result_type}) 失败: {err}")
-        return df
+        return routes.node_displacement_df(name, strict)
 
-    # ═══════════════════════════════════════════
-    # 包络 / 并发结果
-    # ═══════════════════════════════════════════
-
-    def env(
+    def element_force(
         self,
-        name: str,
-        result_type: Literal[
-            "EnvBF", "EnvEF", "EnvES", "EnvS", "EnvND"
-        ],
+        name: str | list[str] | None = None,
+        strict: bool = False,
     ) -> pd.DataFrame:
-        """导出包络 / 并发结果
+        """查询求解后单元内力
+
+        走 /GetAllElementForce、/GetElementForceByNames 端点，
+        优先从结果文件读，文件失败回落内存。
 
         Args:
-            name: 包络 / 并发工况名称
-            result_type: 结果类型
-                * EnvBF — 边界反力
-                * EnvEF — 单元内力
-                * EnvES — 单元应变
-                * EnvS  — 单元应力
-                * EnvND — 节点位移
+            name: 工况名（str 或 list[str]）；None 时返回全部工况。
+                包络/并发名需服务端支持后才能解析，目前传入只会得到空表。
+            strict: 显式指定 name 却一行都没查到时报错（默认只告警）
 
         Returns:
-            结果 DataFrame
+            结果 DataFrame（列: loadCase, source, ele, node, fx, fy, fz, mx, my, mz, mw）
 
         Raises:
-            ImportError: 未安装 pandas 时抛出
-            RuntimeError: 导出失败时抛出异常
+            RuntimeError: 查询失败，或 strict=True 时名字查不到
         """
-        self._ensure_pandas()
-        ok, err, df = osis_env_result(name, result_type)
-        if not ok:
-            raise RuntimeError(f"导出包络结果 {name} ({result_type}) 失败: {err}")
-        return df
+        return routes.element_force_df(name, strict)
+
+    def element_stress(
+        self,
+        name: str | list[str] | None = None,
+        by_part: bool = False,
+        strict: bool = False,
+    ) -> pd.DataFrame:
+        """查询求解后单元应力
+
+        走 /GetAllElementStress、/GetElementStressByNames 端点，
+        优先从结果文件读，文件失败回落内存。
+
+        Args:
+            name: 工况名（str 或 list[str]）；None 时返回全部工况。
+                包络/并发名需服务端支持后才能解析，目前传入只会得到空表。
+            by_part: False（默认）展平全截面 points；True 展平按截面分块的
+                parts 并额外带 part 列
+            strict: 显式指定 name 却一行都没查到时报错（默认只告警）
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, [part,] ele, node, position,
+            point, sxFx, sxMy, sxMz, sxComp, syFy, szFz, tp, cp）
+
+        Raises:
+            RuntimeError: 查询失败，或 strict=True 时名字查不到
+        """
+        return routes.element_stress_df(name, by_part=by_part, strict=strict)
+
+    def support_reaction(
+        self,
+        name: str | list[str] | None = None,
+        strict: bool = False,
+    ) -> pd.DataFrame:
+        """查询求解后支座反力
+
+        走 /GetAllSupportReaction、/GetSupportReactionByNames 端点，
+        优先从结果文件读，文件失败回落内存。
+
+        Args:
+            name: 工况名（str 或 list[str]）；None 时返回全部工况。
+                包络/并发名需服务端支持后才能解析，目前传入只会得到空表。
+            strict: 显式指定 name 却一行都没查到时报错（默认只告警）
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, no, sys, fx, fy, fz, mx, my, mz, mw）
+
+        Raises:
+            RuntimeError: 查询失败，或 strict=True 时名字查不到
+        """
+        return routes.support_reaction_df(name, strict)
+
+    def tendon_loss(
+        self,
+        name: str | list[str] | None = None,
+        strict: bool = False,
+    ) -> pd.DataFrame:
+        """查询求解后钢束（预应力）损失
+
+        走 /GetAllTendonLoss、/GetTendonLossByNames 端点，
+        优先从结果文件读，文件失败回落内存。
+
+        Args:
+            name: 工况名（str 或 list[str]）；None 时返回全部工况
+            strict: 显式指定 name 却一行都没查到时报错（默认只告警）
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, tendon, tendonName, ele,
+            position, coord, effP, lostFriction, lostAnchorage, lostThermal,
+            lostElastic, lostRelax, lostCreepShrink, lostTotal）
+
+        Raises:
+            RuntimeError: 查询失败，或 strict=True 时名字查不到
+        """
+        return routes.tendon_loss_df(name, strict)
+
+    def modal(
+        self,
+        name: str | list[str] | None = None,
+        strict: bool = False,
+    ) -> pd.DataFrame:
+        """查询模态结果（特征值、周期、频率）
+
+        走 /GetAllModal、/GetModalByNames 端点。模态挂在施工阶段上,不按荷载
+        工况组织,结果名形如 ``_自振模态_<阶段名>``,由服务端从 Result/*.modal
+        枚举,没有单独的列表接口。
+
+        Args:
+            name: 模态结果名（str 或 list[str]）；None 时返回全部
+            strict: 显式指定 name 却一行都没查到时报错（默认只告警）
+
+        Returns:
+            结果 DataFrame（列: name, kind, mode, period, freq, omega, eigenvalue）
+            首列是模态结果名 ``name``,不是 ``loadCase``。
+
+        Raises:
+            RuntimeError: 查询失败，或 strict=True 时名字查不到
+        """
+        return routes.modal_df(name, strict)
+
+    def envelope(
+        self,
+        name: str | list[str] | None = None,
+        kind: Literal["displacement", "force", "stress", "reaction"] = "force",
+        strict: bool = False,
+    ) -> pd.DataFrame:
+        """查询包络结果
+
+        走 /GetAllEnvelope*、/GetEnvelope*ByNames 端点。
+
+        行按 (节点, 分量) 分,值给的是各分量自身极值拼成的包络向量 —— 同一节点的
+        各分量行数值相同,分量列是标签。
+
+        Args:
+            name: 包络名（str 或 list[str]）；None 时返回全部包络
+            kind: 结果类型
+                * displacement — 节点位移
+                * force        — 单元内力
+                * stress       — 单元应力
+                * reaction     — 边界反力（额外带 extreme/no/sys 列）
+            strict: 显式指定 name 却一行都没查到时报错（默认只告警）
+
+        Returns:
+            结果 DataFrame（列: loadCase, source, component, ...）
+
+        Raises:
+            RuntimeError: 查询失败，或 strict=True 时名字查不到
+            ValueError: kind 不是上面四种
+        """
+        return routes.envelope_df(name, kind, strict)
 
     # ═══════════════════════════════════════════
-    # 规范验算结果
+    # 规范验算结果（隔离区:尚无路由）
     # ═══════════════════════════════════════════
 
     def check(
@@ -192,107 +274,14 @@ class ResultManager:
             结果 DataFrame
 
         Raises:
-            ImportError: 未安装 pandas 时抛出
             RuntimeError: 导出失败时抛出异常
         """
-        self._ensure_pandas()
         ok, err, df = osis_check_result(sheet_type, check_item, check_name)
         if not ok:
             raise RuntimeError(
                 f"导出验算结果 {sheet_type}/{check_item}/{check_name} 失败: {err}"
             )
         return df
-
-    # ═══════════════════════════════════════════
-    # 求解后无头查询（直接读求解器结果，不经 GUI 导出）
-    # ═══════════════════════════════════════════
-
-    def node_displacement(self, name: str | list[str] | None = None) -> pd.DataFrame:
-        """查询求解后节点位移
-
-        走 /GetAllNodeDisplacement、/GetNodeDisplacementByNames 端点，
-        优先从结果文件读，文件失败回落内存。
-
-        Args:
-            name: 工况名（str 或 list[str]）；None 时返回全部工况
-
-        Returns:
-            结果 DataFrame（列: loadCase, source, no, ux, uy, uz, rx, ry, rz, rw）
-
-        Raises:
-            ImportError: 未安装 pandas 时抛出
-            RuntimeError: 查询失败时抛出异常
-        """
-        self._ensure_pandas()
-        return node_displacement_df(name)
-
-    def element_force(self, name: str | list[str] | None = None) -> pd.DataFrame:
-        """查询求解后单元内力
-
-        走 /GetAllElementForce、/GetElementForceByNames 端点，
-        优先从结果文件读，文件失败回落内存。
-
-        Args:
-            name: 工况名（str 或 list[str]）；None 时返回全部工况
-
-        Returns:
-            结果 DataFrame（列: loadCase, source, ele, node, fx, fy, fz, mx, my, mz, mw）
-
-        Raises:
-            ImportError: 未安装 pandas 时抛出
-            RuntimeError: 查询失败时抛出异常
-        """
-        self._ensure_pandas()
-        return element_force_df(name)
-
-    def support_reaction(self, name: str | list[str] | None = None) -> pd.DataFrame:
-        """查询求解后支座反力
-
-        走 /GetAllSupportReaction、/GetSupportReactionByNames 端点，
-        优先从结果文件读，文件失败回落内存。
-
-        Args:
-            name: 工况名（str 或 list[str]）；None 时返回全部工况
-
-        Returns:
-            结果 DataFrame（列: loadCase, source, no, sys, fx, fy, fz, mx, my, mz, mw）
-
-        Raises:
-            ImportError: 未安装 pandas 时抛出
-            RuntimeError: 查询失败时抛出异常
-        """
-        self._ensure_pandas()
-        return support_reaction_df(name)
-
-    def element_stress(
-        self,
-        name: str | list[str] | None = None,
-        by_part: bool = False,
-    ) -> pd.DataFrame:
-        """查询求解后单元应力
-
-        走 /GetAllElementStress、/GetElementStressByNames 端点，
-        优先从结果文件读，文件失败回落内存。
-
-        Args:
-            name: 工况名（str 或 list[str]）；None 时返回全部工况
-            by_part: False（默认）展平全截面 points；True 展平按截面分块的
-                parts 并额外带 part 列
-
-        Returns:
-            结果 DataFrame（列: loadCase, source, [part,] ele, node, position,
-            point, sxFx, sxMy, sxMz, sxComp, syFy, szFz, tp, cp）
-
-        Raises:
-            ImportError: 未安装 pandas 时抛出
-            RuntimeError: 查询失败时抛出异常
-        """
-        self._ensure_pandas()
-        return element_stress_df(name, by_part=by_part)
-
-    # ═══════════════════════════════════════════
-    # 验算结果全量导出
-    # ═══════════════════════════════════════════
 
     def check_all(
         self,
@@ -310,7 +299,6 @@ class ResultManager:
             字典，键为 lcc 文件名，值为对应的验算结果 DataFrame
 
         Raises:
-            ImportError: 未安装 pandas 时抛出
             RuntimeError: 获取项目目录失败时抛出异常
 
         Example:
@@ -318,8 +306,6 @@ class ResultManager:
             >>> for name, df in results.items():
             ...     print(f"{name}: {len(df)} rows")
         """
-        self._ensure_pandas()
-
         from pathlib import Path
 
         if project_dir is None:

@@ -400,30 +400,35 @@ def main() -> None:
     print("== solve done ==", flush=True)
 
     # ===== 13. 导出结果到 CSV =====
-    # 求解器在 PROJ_DIR/test/Result/ 下生成 .lcr/.env(二进制),/output 命令
-    # 会在 PROJ_DIR/test/Temperary/ 下生成可读的 .txt。这里把 .txt 读成 DataFrame
+    # 结果统一走 PySolver 的 HTTP 路由(engine.result 的语义方法),不再用 /output
+    # 命令流。工况列表也由接口给出——Result/ 下的 .lcr 不都是工况,还有施工阶段和
+    # 分块的中间结果,那些名字按工况查是查不到的。
     # 导出成 UTF-8-BOM 的 CSV,Excel/记事本打开中文不乱码。
-    result_dir = PROJ_DIR / "test" / "Result"
     temperary_dir = PROJ_DIR / "test" / "Temperary"
-    if not result_dir.is_dir():
-        print(f"\n(无 {result_dir})", flush=True)
-        return
+    temperary_dir.mkdir(parents=True, exist_ok=True)
 
     print(f"\n== 导出 CSV 到 {temperary_dir} ==", flush=True)
     exported = 0
-    for fname in sorted(result_dir.iterdir()):
-        base = fname.stem
-        ext = fname.suffix.lower()
-        types = (("LCND", "LCEF"), ("EnvND", "EnvEF"))[ext == ".env"]
-        for rt in types:
-            try:
-                r = engine.result.loadcase(base, rt) if ext == ".lcr" else engine.result.env(base, rt)
-                csv_path = temperary_dir / f"{base}_{rt}.csv"
-                r.to_csv(csv_path, index=False, encoding="utf-8-sig")
-                exported += 1
-                print(f"  {base}/{rt}: shape={r.shape}, -> {csv_path.name}", flush=True)
-            except Exception as e:
-                print(f"  {base}/{rt}: <err: {str(e)[:80]}>", flush=True)
+    for label, df in (
+        ("node_displacement", engine.result.node_displacement()),
+        ("element_force", engine.result.element_force()),
+        ("support_reaction", engine.result.support_reaction()),
+        ("tendon_loss", engine.result.tendon_loss()),
+        ("modal", engine.result.modal()),
+        ("envelope_displacement", engine.result.envelope(kind="displacement")),
+        ("envelope_force", engine.result.envelope(kind="force")),
+        ("envelope_stress", engine.result.envelope(kind="stress")),
+        ("envelope_reaction", engine.result.envelope(kind="reaction")),
+    ):
+        if df.empty:
+            print(f"  {label}: 无结果", flush=True)
+            continue
+        # 模态挂在阶段上,首列是 name 而不是 loadCase
+        for lc, sub in df.groupby("name" if label == "modal" else "loadCase"):
+            csv_path = temperary_dir / f"{lc}_{label}.csv"
+            sub.to_csv(csv_path, index=False, encoding="utf-8-sig")
+            exported += 1
+            print(f"  {lc}/{label}: shape={sub.shape}, -> {csv_path.name}", flush=True)
 
     print(f"\n  共导出 {exported} 个 CSV 到 {temperary_dir}", flush=True)
 
