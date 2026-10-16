@@ -203,7 +203,8 @@ ROUTES = {
     "PUCurveMod": "engine.prop.pu_curve.renumber",
 
     # ─── GEOMETRY ───
-    "Spline3D": "engine.geometry.create",
+    # 坐标序列要以 list 传(create 转发给 create_* 的 coordinates 形参),不能展平
+    "Spline3D": ("list", "engine.geometry.create", 3),
     "Spline3DDel": "engine.geometry.delete",
 
     # ─── THICKNESS ───

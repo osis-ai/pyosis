@@ -93,6 +93,15 @@ def _render_route(cmd: ParsedCommand, ctx: dict | None) -> str:
         args = _join_args(fields, resolve_callable(engine, route) if engine else None)
         return f"{route}({args})"
 
+    if isinstance(route, tuple) and route[0] == "list":
+        # 前 n_head 个字段按位置传,其余合并成一个 list 字面量
+        # (如 Spline3D 的坐标序列,接口收的是 list 而不是展平的多个实参)
+        _, target, n_head = route[:3]
+        head, tail = list(fields[:n_head]), list(fields[n_head:])
+        head_args = _join_args(head, resolve_callable(engine, target) if engine else None)
+        tail_lit = "[" + ", ".join(_format_value(v) for v in tail) + "]"
+        return f"{target}({head_args}, {tail_lit})" if head_args else f"{target}({tail_lit})"
+
     if isinstance(route, tuple) and route[0] == "chain":
         _, get_path, method_name, skip = route[:4]
         rest_prefix = route[4] if len(route) > 4 else 0
