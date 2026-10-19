@@ -144,12 +144,12 @@ def osis_clc():
     """
     pass
 
-def osis_solve(timeout: float | None = None):
+def osis_solve(timeout: float | None = 3600):
     """
     求解工程
 
     Args:
-        timeout: HTTP 超时秒数，默认 600（10 分钟）
+        timeout: HTTP 超时秒数，默认 3600（60 分钟）
 
     Returns:
         tuple (bool, str): 是否成功，失败原因

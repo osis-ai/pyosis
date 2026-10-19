@@ -283,11 +283,11 @@ class OSISEngine:
         if not ok:
             raise RuntimeError(f"执行失败: {err}")
 
-    def solve(self, timeout: float | None = None) -> None:
+    def solve(self, timeout: float | None = 3600) -> None:
         """求解工程
 
         Args:
-            timeout: HTTP 超时秒数，默认 600（10 分钟）
+            timeout: HTTP 超时秒数，默认 3600（60 分钟）
         """
         ok, err = osis_solve(timeout=timeout)
         if not ok:
