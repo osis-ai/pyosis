@@ -74,9 +74,13 @@ def osis_combine_post(combine: Literal["Combine"], strCombineName: str, strAddCo
     pass
 
 
-@REGISTRY.register('CombineSolve')
+@REGISTRY.register('CombineSolve', timeout=3600)
 def osis_combine_solve():
     """计算组合和包络。
+
+    Note:
+        组合与包络数量多、模型大时耗时较长，HTTP 超时缺省给到 3600（60 分钟）；
+        可用 set_timeout() 全局调整，或调用时传 timeout= 单独指定
 
     Returns:
         tuple (bool, str):

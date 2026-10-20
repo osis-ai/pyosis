@@ -32,11 +32,14 @@ def osis_run(
         mode: 运行模式，此参数为了同时执行多条命令提高效率
             * 使用 stash 仅会将命令流存到OSIS中，不会执行
             * 收到 exec 信号才会执行暂存包括当前的所有命令流。
-        timeout: HTTP 超时秒数，默认由 osis_client 决定
+        timeout: HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+            未设置时用 osis_client 的 DEFAULT_TIMEOUT
 
     Returns:
         tuple (bool, str): 是否成功，失败原因
     """
+    if timeout is None:
+        timeout = REGISTRY.timeout
     response = osis_client(
         "OSIS_Run",
         {"strCmd": strCmd, "mode": mode},
@@ -123,49 +126,71 @@ class OSISFunctionRegistry:
         ...     pass
         >>> test_func("name", True, 1.0, None)  # 组装成 test,name,1,1.0;   # 参数值为None会被忽略
         >>> test_func("name", True, "", 1)      # 组装成 test,name,1,,1;    # 需要空参数忽略参数类型填一个空字符串： ""
-        >>> 
+        >>>
+        >>> # timeout 是命令流的保留参数，不写进命令流。任何命令都可以在调用时传，
+        >>> # 覆盖本次 HTTP 超时：
+        >>> osis_combine_solve(timeout=7200)    # 只发 CombineSolve;
+        >>> # 耗时命令在注册时给出自己的缺省值（普通命令用 osis_client 的 300）：
+        >>> @REGISTRY.register("CombineSolve", timeout=3600)
+        ... def osis_combine_solve():
+        ...     '''计算组合和包络'''
+        ...     pass
 
-    
+
     """
-    
+
     def __init__(self):
         self.commands = {}      # func_name -> info
         self.run_mode = "exec"     # 命令处理模式，默认执行
-    
-    def register(self, cmd_name=None):
+        self.timeout = None     # set_timeout 设的全局超时，None 时用各命令注册的缺省值
+
+    def register(self, cmd_name=None, timeout: float | None = None):
         """
         注册函数装饰器
-        
+
         Args:
             cmd_name: 命令名，不提供则使用函数名
+            timeout: 该命令的 HTTP 超时秒数缺省值，None 时用 osis_client 的
+                DEFAULT_TIMEOUT。耗时命令（求解、导出等）应显式给出
         """
         def decorator(func):
             name = cmd_name or func.__name__
-            
+            register_timeout = timeout
+
             # 保存函数信息
             self.commands[func.__name__] = {
                 'func': func,
                 'name': func.__name__,
                 'cmd_name': name,
                 'doc': func.__doc__ or '',
-                'module': func.__module__
+                'module': func.__module__,
+                'timeout': timeout
             }
-            
+
             # 创建包装函数
             @functools.wraps(func)
             def wrapper(*args, **kwargs):   # 函数执行时，都会走这个路径
+                # timeout 是命令流的保留参数，不进命令流
+                call_timeout = kwargs.pop("timeout", None)
                 # 包装参数
                 cmd, _bound_args = self._process_arguments(func, cmd_name, *args, **kwargs)
+                timeout = self._resolve_timeout(call_timeout, register_timeout)
                 # batch 模式：进缓冲，退出上下文时统一发送
                 if batch_state.active:
                     batch_state.buffer.append(cmd)
                     return (True, "queued")
                 # 发送到软件
-                return self._execute_command(cmd)
+                return self._execute_command(cmd, timeout=timeout)
 
             return wrapper
 
         return decorator
+
+    def _resolve_timeout(self, call_timeout: float | None, register_timeout: float | None):
+        """确定本次 HTTP 超时：调用时传入 > set_timeout 全局设置 > 注册时声明的缺省值"""
+        if call_timeout is not None:
+            return call_timeout
+        return self.timeout if self.timeout is not None else register_timeout
 
     def _process_arguments(self, func, cmd_name, *args, **kwargs):
         """处理参数并生成命令字符串，同时返回绑定参数（供 batch 影子登记）"""
@@ -209,10 +234,10 @@ class OSISFunctionRegistry:
         cmd = f"{cmd_name},{','.join(param_values)};" if len(param_values) != 0 else f"{cmd_name};"
         return cmd, dict(bound.arguments)
     
-    def _execute_command(self, cmd) -> Tuple[bool, str, Any]:
+    def _execute_command(self, cmd, timeout: float | None = None) -> Tuple[bool, str, Any]:
         """执行命令（发送到软件）"""
         # _log(cmd)
-        result = osis_run(cmd, "exec")
+        result = osis_run(cmd, "exec", timeout=timeout)
         isok, error, *rest = result
         return result
     
@@ -233,16 +258,42 @@ class OSISFunctionRegistry:
         '''设置命令运行模式，默认是暂存，可以提高性能'''
         self.run_mode = mode
 
+    def set_timeout(self, timeout: float | None = None):
+        '''设置所有命令流的默认 HTTP 超时秒数
+
+        Args:
+            timeout: 超时秒数；None 恢复为各命令注册时声明的缺省值
+
+        Note:
+            优先级：调用时传入的 timeout > 本设置 > 注册时声明的缺省值。
+            batch 冲刷同样受本设置影响（未设置时用 600）
+        '''
+        self.timeout = timeout
+        batch_state.timeout = timeout
+
 # 全局函数注册表实例
 REGISTRY = OSISFunctionRegistry()       # 作用为提供python函数和命令流的映射关系，保证参数个数与顺序正常，python函数一定要注册一下
 
 def set_run_mode(mode: Literal["stash", "exec"]="exec"):
     '''
     设置全局命令运行模式，默认是暂存，可以提高性能
-    
+
     Args:
         mode: 运行模式，此参数为了同时执行多条命令提高效率
             * 使用 stash 仅会将命令流存到OSIS中，不会执行
             * 收到 exec 信号才会执行暂存包括当前的所有命令流。
     '''
     REGISTRY.set_run_mode(mode)
+
+def set_timeout(timeout: float | None = None):
+    '''
+    设置所有命令流的默认 HTTP 超时秒数
+
+    Args:
+        timeout: 超时秒数；None 恢复为各命令注册时声明的缺省值
+
+    Note:
+        优先级：调用时传入的 timeout > 本设置 > 注册时声明的缺省值。
+        batch 冲刷同样受本设置影响（未设置时用 600）
+    '''
+    REGISTRY.set_timeout(timeout)

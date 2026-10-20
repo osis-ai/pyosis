@@ -317,9 +317,13 @@ def osis_check_add(
     pass
 
 
-@REGISTRY.register('CheckSolve')
+@REGISTRY.register('CheckSolve', timeout=3600)
 def osis_check_solve():
     """计算验算作用。
+
+    Note:
+        验算项多、模型大时耗时较长，HTTP 超时缺省给到 3600（60 分钟）；
+        可用 set_timeout() 全局调整，或调用时传 timeout= 单独指定
 
     Returns:
         tuple (bool, str):

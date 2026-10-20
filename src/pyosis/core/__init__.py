@@ -8,7 +8,7 @@ OSISEngine中的函数，将会分发到各个模块，被再次封装，意图�
 - 将函数命名格式转换成python的常用格式，便于人与AI的理解
 """
 
-from .command import REGISTRY, osis_run, set_run_mode
+from .command import REGISTRY, osis_run, set_run_mode, set_timeout
 from .client import set_osis_port, set_osis_url
 from .batch import batch, flush, batch_state, BatchError
 from .basic_manager import BasicManager, LazyRef

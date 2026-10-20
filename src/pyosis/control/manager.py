@@ -85,11 +85,13 @@ class ControlManager:
         if not ok:
             raise RuntimeError(f"设置重力加速度失败: {err}")
 
-    def export_apdl(self, path: str | None = None) -> None:
+    def export_apdl(self, path: str | None = None, *, timeout: float | None = None) -> None:
         '''导出当前前处理状态到 APDL .out 文件
 
         Args:
             path (str | None): 输出文件完整路径，可缺省；不传则使用程序当前路径
+            timeout (float): HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+                未设置时用 APDL 命令的缺省值 3600
 
         Returns:
             None
@@ -97,7 +99,7 @@ class ControlManager:
         Raises:
             RuntimeError: 导出失败时抛出异常
         '''
-        ok, err = osis_apdl(path)
+        ok, err = osis_apdl(path, timeout=timeout)
         if not ok:
             raise RuntimeError(f"导出 APDL 文件失败: {err}")
         

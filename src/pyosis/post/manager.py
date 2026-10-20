@@ -130,13 +130,17 @@ class PostManager:
         if not ok:
             raise RuntimeError(f"往组合 {combine_name} 添加 {add_name} 失败: {err}")
 
-    def solve_combines(self) -> None:
+    def solve_combines(self, *, timeout: float | None = None) -> None:
         """计算组合和包络
+
+        Args:
+            timeout: HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+                未设置时用 CombineSolve 命令的缺省值 3600
 
         Raises:
             RuntimeError: 计算失败时抛出异常
         """
-        ok, err = osis_combine_solve()
+        ok, err = osis_combine_solve(timeout=timeout)
         if not ok:
             raise RuntimeError(f"计算荷载组合失败: {err}")
 
@@ -461,13 +465,17 @@ class PostManager:
         if not ok:
             raise RuntimeError(f"添加验算作用 {item} ({combine_name}) 失败: {err}")
 
-    def solve_checks(self) -> None:
+    def solve_checks(self, *, timeout: float | None = None) -> None:
         """计算验算作用
+
+        Args:
+            timeout: HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+                未设置时用 CheckSolve 命令的缺省值 3600
 
         Raises:
             RuntimeError: 计算失败时抛出异常
         """
-        ok, err = osis_check_solve()
+        ok, err = osis_check_solve(timeout=timeout)
         if not ok:
             raise RuntimeError(f"计算验算失败: {err}")
 

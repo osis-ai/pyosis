@@ -53,6 +53,7 @@ class _BatchState:
         self.buffer: list[str] = []       # 已入队的命令流（每条自带分号终止符）
         self.depth: int = 0               # batch 嵌套深度，>0 表示激活
         self.flushing: bool = False       # 冲刷进行中（防止拦截器递归冲刷）
+        self.timeout: float | None = None   # set_timeout 的全局超时，冲刷时的兜底
 
     @property
     def active(self) -> bool:
@@ -79,7 +80,8 @@ def flush(
     Args:
         isolate (bool): 冲刷失败时是否二分定位失败命令（仅供调试，
             无重试无退避；二分重放假设失败命令本身无副作用残留）
-        timeout (float): HTTP 超时秒数，默认 600（大批量 Execution 耗时较长）
+        timeout (float): HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+            未设置时用 600（大批量 Execution 耗时较长）
         max_size (int): 单次请求最大命令条数，默认不限（一次全发）。
             超大模型可设 5000 之类的安全阀，将分多次请求发送
 
@@ -91,6 +93,8 @@ def flush(
     '''
     if batch_state.flushing or not batch_state.buffer:
         return 0
+    if timeout is None:
+        timeout = batch_state.timeout if batch_state.timeout is not None else 600
     cmds = batch_state.buffer[:]
     batch_state.buffer.clear()
     batch_state.flushing = True
@@ -142,7 +146,7 @@ def _send(cmds: list[str], isolate: bool = False, timeout: float | None = None) 
 # ──────────────────────────────────────────────
 
 @contextmanager
-def batch() -> Iterator[None]:
+def batch(timeout: float | None = None) -> Iterator[None]:
     '''batch 模式上下文：内部所有命令只进缓冲，退出时一次性发送
 
     >>> with pyosis.batch():
@@ -150,6 +154,11 @@ def batch() -> Iterator[None]:
     ...     engine.node.create(None, 1, 0, 0)
     ...     element_manager.create_beam3d(None, 1, 2, 1, 1, 1)
     ... # 退出时 3 条命令拼成一条流，一次 HTTP 请求
+
+    Args:
+        timeout (float): 退出时冲刷的 HTTP 超时秒数；不传则用 set_timeout() 的
+            全局设置，未设置时用 600。缓冲内的命令在退出前不会执行，命令自带
+            的 timeout 无从生效，耗时命令请在此处指定
 
     规则:
         * 正常退出：自动 flush()，缓冲内全部命令一次执行
@@ -170,4 +179,4 @@ def batch() -> Iterator[None]:
     else:
         batch_state.depth -= 1
         if batch_state.depth == 0:
-            flush()
+            flush(timeout=timeout)

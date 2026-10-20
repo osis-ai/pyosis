@@ -269,25 +269,27 @@ class OSISEngine:
     # 通用操作（直接暴露 general 和 core 的函数）
     # ──────────────────────────────────────────
 
-    def run(self, cmd: str = "") -> None:
+    def run(self, cmd: str = "", *, timeout: float | None = None) -> None:
         """执行 OSIS 命令流
 
         Args:
             cmd: 命令流字符串
-            mode: 运行模式，"stash" 暂存 / "exec" 执行
+            timeout: HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+                未设置时用客户端缺省
 
         Returns:
             (success, error) 元组
         """
-        ok, err = osis_run(cmd)
+        ok, err = osis_run(cmd, timeout=timeout)
         if not ok:
             raise RuntimeError(f"执行失败: {err}")
 
-    def solve(self, timeout: float | None = 3600) -> None:
+    def solve(self, timeout: float | None = None) -> None:
         """求解工程
 
         Args:
-            timeout: HTTP 超时秒数，默认 3600（60 分钟）
+            timeout: HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+                未设置时用 Solve 命令的缺省值 3600
         """
         ok, err = osis_solve(timeout=timeout)
         if not ok:
@@ -387,13 +389,15 @@ class OSISEngine:
     # ──────────────────────────────────────────
     # 便捷方法（委托给 control manager）
     # ──────────────────────────────────────────
-    def export_apdl(self, path: str | None = None) -> None:
+    def export_apdl(self, path: str | None = None, *, timeout: float | None = None) -> None:
         """导出前处理状态为 .out 文件
-        
+
         Args:
             path: 路径，可缺省。格式：C:\\Temp\\OSIS.out
+            timeout: HTTP 超时秒数；不传则用 set_timeout() 的全局设置，
+                未设置时用 APDL 命令的缺省值 3600
         """
-        self.control.export_apdl(path)
+        self.control.export_apdl(path, timeout=timeout)
 
     def import_apdl(self, path: str) -> None:
         """读取 .out / .sml 文件

@@ -27,7 +27,6 @@ session.mount("https://", adapter)  # 如果你后续用HTTPS
 DEFAULT_PORT = 18080
 DEFAULT_URL = "http://localhost"
 DEFAULT_TIMEOUT = 300
-DEFAULT_SOLVE_TIMEOUT = 600
 
 def set_osis_url(url):
     '''
