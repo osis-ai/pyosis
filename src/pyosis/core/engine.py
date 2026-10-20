@@ -135,7 +135,7 @@ class OSISEngine:
         """从已启动的 OSISSolver 创建 engine,自动取 url/port。
 
         用法:
-            with OSISSolver(osis_install_path=r"D:\\OSIS_Solver") as solver:
+            with OSISSolver(osis_install_path=r"D:\\OSIS_SDK\\runtime") as solver:
                 engine = OSISEngine.from_solver(solver)
                 engine.run("K,1,0,0,0")
         """

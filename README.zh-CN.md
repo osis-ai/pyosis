@@ -24,7 +24,7 @@ pip install osis-python -i https://pypi.org/simple
 
 - OSIS >= 5.0（包含所需的 Python 运行环境）
 - Python >= 3.8
-- **仅求解器模式（solver-only）** 额外显式提供 OSIS 求解器的安装目录（例如 `D:\OSIS_Solver`）。
+- **仅求解器模式（solver-only）** 把 `osis_install_path` 指到 SDK zip 的 `runtime/`（含 `osis-headless.exe` 与 `config/`）。
 
 ## 快速开始
 
@@ -113,7 +113,7 @@ from pyosis.core.solver import OSISSolver
 from pyosis.core.engine import OSISEngine
 
 # 加载 <安装目录> 
-solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver")
+solver = OSISSolver(osis_install_path=r"D:\OSIS_SDK\runtime")
 engine = OSISEngine.from_solver(solver)
 
 # 建工程（类型 101 = 通用桥梁分析），之后照常建模

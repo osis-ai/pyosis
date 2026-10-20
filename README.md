@@ -24,7 +24,7 @@ pip install osis-python -i https://pypi.org/simple
 
 - OSIS >= 5.0 (includes the required Python runtime environment)
 - Python >= 3.8
-- **Solver-only mode** additionally requires the solver distribution that ships `PySolver.dll` (e.g. `D:\OSIS_Solver\Rbin64`).
+- **Solver-only mode** points `osis_install_path` at the SDK zip `runtime/` (contains `osis-headless.exe` and `config/`).
 
 ## Quick Start
 
@@ -110,14 +110,14 @@ node = node_manager.create(no=None, x=0, y=0, z=0)
 
 ### 4. Using OSISSolver — Start the Solver Directly (Solver-Only Mode)
 
-By default, `OSISEngine()` connects to an already-running OSIS GUI process. If you want to drive the solver **without opening the GUI** (e.g. for headless batch runs, CI, or server-side automation), use `OSISSolver` to load the solver DLL directly via ctypes and launch its HTTP server:
+By default, `OSISEngine()` connects to an already-running OSIS GUI process. If you want to drive the solver **without opening the GUI** (e.g. for headless batch runs, CI, or server-side automation), use `OSISSolver` to spawn `osis-headless.exe` as a child process and wait for its `PORT=` line:
 
 ```python
 from pyosis.core.solver import OSISSolver
 from pyosis.core.engine import OSISEngine
 
-# Load <install>/PySolver.dll and start the HTTP server (default port 18080)
-solver = OSISSolver(osis_install_path=r"D:\OSIS_Solver\Rbin64")
+# Spawn <runtime>/osis-headless.exe and wait for PORT= (default 18080)
+solver = OSISSolver(osis_install_path=r"D:\OSIS_SDK\runtime")
 engine = OSISEngine.from_solver(solver)
 
 # Create a project (type 101 = bridge analysis), then build the model as usual
@@ -125,13 +125,15 @@ engine.project.create(101, r"D:\work\my_bridge\my_bridge.sis")
 engine.control.set_gravity_acceleration(9.8066)
 # ... build sections / materials / nodes / elements ...
 engine.solve()
+solver.stop()
 ```
 
 Notes on solver-only mode:
 
-- `osis_install_path` must be the directory containing `PySolver.dll` (and its dependency DLLs).
+- `osis_install_path` is the SDK zip `runtime/` directory (contains `osis-headless.exe` and `config/`).
+- Do not ctypes-load `PySolver_AutoBootstrap`. The customer pack does not expose that entry.
 - The solver needs a project to exist before model commands run: call `engine.project.create()` / `open()` first.
-- Crash minidumps are written to `<install>\Error\dmp\` (created on startup).
+- Crash minidumps are written to `<runtime>\Error\dmp\` (created on startup).
 
 ## Core Architecture
 

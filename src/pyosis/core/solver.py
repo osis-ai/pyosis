@@ -5,15 +5,18 @@
     from pyosis.core.solver import OSISSolver
     from pyosis.core.engine import OSISEngine
 
-    solver = OSISSolver(osis_install_path=r"D:\\OSIS_Solver")
+    solver = OSISSolver(osis_install_path=r"D:\\OSIS_SDK\\runtime")
     engine = OSISEngine.from_solver(solver)
     engine.run("Acel,9.8")
+
+无头宿主是 ``osis-headless.exe``（子进程），不是 ``ctypes`` 加载
+``PySolver_AutoBootstrap``。客户包不暴露后者。
 """
 
 from __future__ import annotations
 
-import ctypes
 import os
+import subprocess
 import time
 
 
@@ -21,13 +24,14 @@ class OSISSolver:
     """OSIS solver 实例的配置 + 启动入口。
 
     Args:
-        osis_install_path: OSIS 安装根目录,根目录下需有 PySolver.dll。
-        port: HTTP server 端口;<0 用 PySolver 默认 18080。端口被占会失败。
+        osis_install_path: 含 ``osis-headless.exe`` 与 ``config/`` 的运行时根
+            （SDK zip 里的 ``runtime/``）。
+        port: HTTP server 端口;<0 用默认 18080。被占用时宿主失败并退出。
         host: 监听地址,默认 127.0.0.1。
 
     Raises:
-        FileNotFoundError: PySolver.dll 不在指定位置。
-        RuntimeError: DLL 加载失败、缺少导出、端口被占,或 server 启动超时。
+        FileNotFoundError: osis-headless.exe 不在指定位置。
+        RuntimeError: 进程启动失败,或在超时内没打出 ``PORT=``。
     """
 
     def __init__(
@@ -37,9 +41,9 @@ class OSISSolver:
         host: str = "127.0.0.1",
     ) -> None:
         self._install_path = osis_install_path
-        self._port = port
+        self._port = port if port > 0 else 18080
         self._host = host
-        self._lib: ctypes.CDLL | None = None
+        self._proc: subprocess.Popen | None = None
         self._started = False
         self.start()
 
@@ -64,93 +68,89 @@ class OSISSolver:
         return self._install_path
 
     def start(self) -> "OSISSolver":
-        """ctypes 加载 PySolver.dll 并启动 HTTP server。幂等。__init__ 已自动调用。
+        """拉起 ``osis-headless.exe --runtime <dir>``。幂等。__init__ 已自动调用。
 
         Raises:
-            FileNotFoundError: <install>/PySolver.dll 不存在。
-            RuntimeError: DLL 加载/导出/start 失败,或 server 在 15s 内未响应。
+            FileNotFoundError: <install>/osis-headless.exe 不存在。
+            RuntimeError: 进程退出,或 30s 内 stdout 没有 ``PORT=<n>``。
         """
         if self._started:
             return self
 
-        path = os.path.join(self._install_path, "PySolver.dll")
-        if not os.path.isfile(path):
+        exe = os.path.join(self._install_path, "osis-headless.exe")
+        if not os.path.isfile(exe):
             raise FileNotFoundError(
-                f"OSISSolver: 找不到 {path}。"
-                f"请确认 PySolver.dll 已编译并放到 {self._install_path}\\ 下。"
+                f"OSISSolver: 找不到 {exe}。"
+                f"请把 osis_install_path 指到 SDK 的 runtime/（含 osis-headless.exe 与 config/）。"
             )
 
-        self._add_dll_search_dir(os.path.dirname(path))
-
+        env = os.environ.copy()
+        # 许可文件可由调用方事先设好；这里不注入 OSIS_INTERNAL_LICENSE。
+        cmd = [
+            exe,
+            "--runtime",
+            self._install_path,
+            "--host",
+            self._host,
+            "--port",
+            str(self._port),
+        ]
         try:
-            lib = ctypes.CDLL(path)
-        except OSError as e:
-            raise RuntimeError(f"OSISSolver: 加载 {path} 失败: {e}")
-
-        if not hasattr(lib, "PySolver_AutoBootstrap"):
-            raise RuntimeError(
-                f"OSISSolver: {path} 缺少 PySolver_AutoBootstrap 导出。"
-                f"请重新编译 PySolver.cpp(已加 ctypes 入口)。"
+            proc = subprocess.Popen(
+                cmd,
+                cwd=self._install_path,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                env=env,
             )
+        except OSError as e:
+            raise RuntimeError(f"OSISSolver: 启动 {exe} 失败: {e}") from e
 
-        fn = lib.PySolver_AutoBootstrap
-        fn.restype = ctypes.c_int
-        fn.argtypes = [ctypes.c_char_p, ctypes.c_int]
-        actual_port = fn(self._host.encode("utf-8"), self._port)
-        if actual_port < 0:
-            raise RuntimeError("OSISSolver: PySolver_AutoBootstrap 启动失败")
-
-        self._lib = lib
+        self._proc = proc
+        self._port = self._wait_port(proc)
         self._started = True
-        self._wait_ready()
         return self
 
     def stop(self) -> None:
-        """best-effort 停止。
-
-        Windows 上 ctypes 加载的 DLL 无法干净 unload,server 实际随 Python
-        进程退出才停。本方法只清掉内部状态。
-        """
+        """结束宿主进程。进程退出后 HTTP 不再监听。"""
+        proc = self._proc
         self._started = False
-        self._lib = None
+        self._proc = None
+        if proc is None or proc.poll() is not None:
+            return
+        proc.terminate()
+        try:
+            proc.wait(timeout=8)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait(timeout=4)
 
-    def _wait_ready(self, timeout: float = 15.0) -> None:
-        """轮询 POST /health 直到 server 响应。
-
-        PySolver 的所有路由都用 POST(GET 永远 404);/health 是专用存活探测,
-        不依赖工程状态,固定 200 + {"success":true}。
-        走 trust_env=False 的独立 session——目标是本机 loopback,不应被
-        HTTP_PROXY 等系统代理劫走。
-        """
-        import requests
+    def _wait_port(self, proc: subprocess.Popen, timeout: float = 30.0) -> int:
+        """读 stdout 直到 ``PORT=<n>``。宿主在许可失败时会立刻退出。"""
         deadline = time.time() + timeout
-        last_err: Exception | None = None
-        session = requests.Session()
-        session.trust_env = False
+        buf = ""
         while time.time() < deadline:
-            try:
-                r = session.post(f"{self.url}/health", json={}, timeout=1.0)
-                if r.ok:
-                    return
-            except Exception as e:
-                last_err = e
-            time.sleep(0.2)
-        raise RuntimeError(
-            f"OSISSolver: server 在 {timeout}s 内未就绪于 {self.url}"
-            + (f" (last error: {last_err})" if last_err else "")
-        )
-
-    @staticmethod
-    def _add_dll_search_dir(directory: str) -> None:
-        """把 directory 加进 DLL 搜索路径(Windows + Linux 兼容)。"""
-        if hasattr(os, "add_dll_directory"):
-            try:
-                os.add_dll_directory(directory)
-            except OSError:
-                pass
-        cur = os.environ.get("PATH", "")
-        if directory not in cur.split(os.pathsep):
-            os.environ["PATH"] = directory + os.pathsep + cur
+            if proc.poll() is not None:
+                err = ""
+                if proc.stderr is not None:
+                    try:
+                        err = proc.stderr.read() or ""
+                    except Exception:
+                        err = ""
+                raise RuntimeError(
+                    f"OSISSolver: osis-headless 退出 {proc.returncode}\n{buf}{err}"
+                )
+            line = proc.stdout.readline() if proc.stdout else ""
+            if not line:
+                time.sleep(0.05)
+                continue
+            buf += line
+            if line.startswith("PORT="):
+                return int(line.strip().split("=", 1)[1])
+        self.stop()
+        raise RuntimeError(f"OSISSolver: {timeout}s 内未收到 PORT=\n{buf}")
 
     def __enter__(self) -> "OSISSolver":
         return self
