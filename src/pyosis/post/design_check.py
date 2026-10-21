@@ -284,6 +284,7 @@ def osis_cd_check(strPara: Literal["All", "None"] | str):
         eRowType (str): 固定为 CdCheck
         strPara (str): All / all — 全部打开；None / none — 全部关闭；
             亦可为 JSON 字符串，例如 '[{"UltM":1,"Shear":1}]'，其中 0 表示关闭该项、1 表示打开。
+            键名取验算项代号，取值与含义同 osis_check_add。
             因命令组装对 dict 仅输出取值，字典形式请使用 json.dumps 等转为字符串后传入。
 
     Returns:
@@ -298,21 +299,35 @@ def osis_cd_check(strPara: Literal["All", "None"] | str):
 def osis_check_add(
     eItem: Literal[
         "UltM", "UltN", "Shear", "CrackS", "CrackL", "CrackWeb", "CrackWidth",
-        "SSNC", "SSPC", "CSNC", "CSNT",
+        "SSNC", "SSPC", "CSNC", "CSNT", "CSNCR",
     ],
     strCombineName: str,
 ):
     """添加验算作用。
 
     Args:
-        eItem (str): 验算项代号，如 UltM、UltN、Shear、CrackS、CrackL、CrackWeb、CrackWidth、
-            SSNC、SSPC、CSNC、CSNT（与荷载组合类型匹配关系见规范说明）
+        eItem (str): 验算项代号：
+            * UltM — 正截面抗弯验算
+            * UltN — 正截面抗拉/压验算
+            * Shear — 斜截面抗剪验算
+            * CrackS — PC 正截面短期抗裂验算
+            * CrackL — PC 正截面长期抗裂验算
+            * CrackWeb — PC 腹板斜截面抗裂验算
+            * CrackWidth — 裂缝宽度验算
+            * SSNC — PC 使用阶段正截面压应力验算
+            * SSPC — PC 使用阶段斜截面主压应力验算
+            * CSNC — PC 施工阶段正截面压应力验算
+            * CSNT — PC 施工阶段正截面拉应力验算
+            * CSNCR — RC 施工阶段正截面压应力验算
         strCombineName (str): 荷载组合名称（可为工况或包络）
 
     Returns:
         tuple (bool, str):
             - bool: 操作是否成功
             - str: 失败原因（如果操作失败）
+
+    Note:
+        验算项代号仅 JTG 3362-2018 规范下可用，其他规范软件侧报"暂不支持该规范验算"
     """
     pass
 
@@ -338,7 +353,7 @@ def osis_check_del(
     strItem: (
         Literal[
             "UltM", "UltN", "Shear", "CrackS", "CrackL", "CrackWeb", "CrackWidth",
-            "SSNC", "SSPC", "CSNC", "CSNT",
+            "SSNC", "SSPC", "CSNC", "CSNT", "CSNCR",
         ]
         | Literal["All", "all"]
         | str

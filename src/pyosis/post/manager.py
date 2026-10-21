@@ -437,7 +437,7 @@ class PostManager:
         self,
         item: Literal[
             "UltM", "UltN", "Shear", "CrackS", "CrackL", "CrackWeb", "CrackWidth",
-            "SSNC", "SSPC", "CSNC", "CSNT",
+            "SSNC", "SSPC", "CSNC", "CSNT", "CSNCR",
         ],
         combine_name: str,
     ) -> None:
@@ -445,21 +445,25 @@ class PostManager:
 
         Args:
             item: 验算项代号
-                * UltM — 抗弯承载力
-                * UltN — 轴压承载力
-                * Shear — 抗剪承载力
-                * CrackS — 短期裂缝
-                * CrackL — 长期裂缝
-                * CrackWeb — 腹板裂缝
-                * CrackWidth — 裂缝宽度
-                * SSNC — 施工阶段正截面
-                * SSPC — 施工阶段斜截面
-                * CSNC — 使用阶段正截面
-                * CSNT — 使用阶段斜截面
+                * UltM — 正截面抗弯验算
+                * UltN — 正截面抗拉/压验算
+                * Shear — 斜截面抗剪验算
+                * CrackS — PC 正截面短期抗裂验算
+                * CrackL — PC 正截面长期抗裂验算
+                * CrackWeb — PC 腹板斜截面抗裂验算
+                * CrackWidth — 裂缝宽度验算
+                * SSNC — PC 使用阶段正截面压应力验算
+                * SSPC — PC 使用阶段斜截面主压应力验算
+                * CSNC — PC 施工阶段正截面压应力验算
+                * CSNT — PC 施工阶段正截面拉应力验算
+                * CSNCR — RC 施工阶段正截面压应力验算
             combine_name: 荷载组合名称（可为工况或包络）
 
         Raises:
             RuntimeError: 添加失败时抛出异常
+
+        Note:
+            验算项代号仅 JTG 3362-2018 规范下可用，其他规范软件侧报"暂不支持该规范验算"
         """
         ok, err = osis_check_add(item, combine_name)
         if not ok:
@@ -483,7 +487,7 @@ class PostManager:
         self,
         item: Literal[
             "UltM", "UltN", "Shear", "CrackS", "CrackL", "CrackWeb", "CrackWidth",
-            "SSNC", "SSPC", "CSNC", "CSNT",
+            "SSNC", "SSPC", "CSNC", "CSNT", "CSNCR",
         ]
         | Literal["All", "all"]
         | str = "All",
