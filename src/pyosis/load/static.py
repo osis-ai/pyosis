@@ -128,7 +128,11 @@ def osis_load_concentrated(eType: Literal['PTF', 'PTM'], strLCName: str, nEntity
     pass
 
 @REGISTRY.register("Load")
-def osis_load_surface_load(eType: str, strLc: str, strEntity: str, strPlanei:str, strDir:str, strGlobalI:Literal["0","1","2"], strP1i:str, strP2i:str,strP3i:str,strP4i:str) -> tuple[bool, str]:
+def osis_load_surface_load(eType: str = "ESRFC", strLc: str = "自定义工况1", strEntity: str = "1",
+                           strPlanei: str = "1", strDir: str = "X",
+                           strGlobalI: Literal["0", "1", "2"] = "0",
+                           strP1i: str = "0", strP2i: str = "0", strP3i: str = "0",
+                           strP4i: str = None) -> tuple[bool, str]:
     """
     创建或修改单元面荷载，不考虑边中节点荷载插值
 
@@ -145,7 +149,39 @@ def osis_load_surface_load(eType: str, strLc: str, strEntity: str, strPlanei:str
         strP1i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
         strP2i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
         strP3i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
-        strP4i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+        strP4i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2。可缺省，缺省为 None 时命令流省略该列
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因
+    """
+    pass
+
+@REGISTRY.register("Load")
+def osis_load_fluid_pressure(eType: Literal["FP"] = "FP", strLc: str = "自定义工况1", strEntity: str = "1",
+                              strPlanei: str = "1", strDir: str = "X",
+                              strGlobalI: Literal["0", "1", "2"] = "0",
+                              strP1i: str = "0", strP2i: str = "0", strP3i: str = "0",
+                              strP4i: str = None) -> tuple[bool, str]:
+    """
+    创建或修改流体压力荷载
+
+    字段顺序与面荷载一致，只有荷载类型不同。
+
+    Args:
+        eType (str): 荷载类型，Type = FP
+        strLc (str): 荷载工况名称
+        strEntity (str): 单元编号
+        strPlanei (str): 面位置，板壳单元默认输入1，实体单元输入1,2,3,4,5,6
+        strDir (str):方向，X,Y,Z
+        strGlobalI (str):
+            * 0 = 局部
+            * 1 = 整体
+            * 2 = 整体 + 投影
+        strP1i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+        strP2i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+        strP3i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2
+        strP4i (str): 对应Plane_i的角节点荷载值，量纲为M L^-1 T^-2。可缺省，缺省为 None 时命令流省略该列
     Returns:
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功
@@ -330,7 +366,7 @@ def osis_load_gtemp(eType: str="GTEMP", strLCName: str="自定义工况1", nEnti
     pass
 
 @REGISTRY.register("Load")
-def osis_load_pst(eType: str="PST", strLCName: str="自定义工况1", strEntity: str="钢束1", eTensionType: Literal["BOTH", "BEG", "END"]="BOTH", eTensionForceType: Literal["ST", "IF"]="ST", dBeg: float=100, dEnd: float=100):
+def osis_load_pst(eType: str="PST", strLCName: str="自定义工况1", strEntity: str="钢束1", eTensionType: Literal["BOTH", "BEG", "END"]="BOTH", eTensionForceType: Literal["ST", "IF"]="ST", dBeg: float=100, dEnd: float=100, n_grout_after: int=0):
     '''
     创建或修改预应力荷载
 
@@ -347,6 +383,7 @@ def osis_load_pst(eType: str="PST", strLCName: str="自定义工况1", strEntity
             * IF = 内力
         dBeg (float): 起点应力或内力。eTensionType 为 END 填 None
         dEnd (float): 终点应力或内力。eTensionType 为 BEG 填 None
+        n_grout_after (int): 延后灌浆阶段数，整数且 ≥ 0，可缺省，缺省为 0，非 0 表示在后几个阶段灌浆
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''
@@ -543,6 +580,19 @@ def osis_load_mod(eType: Literal["NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "U
         strLCName (str): 荷载工况名称
         oldEntity (int|str): 旧编号
         newEntity (int|str): 新编号
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("PlanarLoadDel")
+def osis_planar_load_del(str_name: str):
+    '''
+    删除平面荷载
+
+    Args:
+        str_name (str): 荷载名称
 
     Returns:
         tuple (bool, str): 是否成功，失败原因

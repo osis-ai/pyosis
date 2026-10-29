@@ -130,6 +130,29 @@ class PostManager:
         if not ok:
             raise RuntimeError(f"往组合 {combine_name} 添加 {add_name} 失败: {err}")
 
+    def add_combine_entry(
+        self,
+        kind: str,
+        combine_name: str,
+        add_name: str,
+        factor: float = 1.0,
+    ) -> None:
+        """Post 命令流直通（post,combine,组合名,工况/包络,系数）
+
+        Args:
+            kind: 子命令，当前仅支持 combine
+            combine_name: 荷载组合名称
+            add_name: 要加入的工况或包络名称
+            factor: 系数，默认 1.0
+
+        Raises:
+            ValueError: 子命令不是 combine
+            RuntimeError: 添加失败时抛出异常
+        """
+        if str(kind).strip().lower() != "combine":
+            raise ValueError(f"未知的 Post 子命令: {kind!r}，当前仅支持 combine")
+        self.add_to_combine(combine_name, add_name, factor)
+
     def solve_combines(self, *, timeout: float | None = None) -> None:
         """计算组合和包络
 

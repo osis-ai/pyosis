@@ -12,9 +12,13 @@
 - RELEASE（释放梁端约束，type=3）
 - ELSTCSPT（节点弹性支承，type=4）
 - GENERALELSTCSPT（一般弹性支承，type=5）
+- RIGID（刚性连接，type=6）
+- SECF（截面特性修改，type=7）
+- UNISPT（单向弹性支承，type=9）
+- LELNK（线弹性连接，type=11）
+- SOILSPRING（土弹簧，type=12）
 
-其余类型（SECF=7 / GLINK=8 / UNISPT=9 / UNILNK=10 / LELNK=11 /
-SOILSPRING=12 / SURFSPT=13）暂无专用数据类，_from_dict 落到基类 Boundary，
+其余类型（GLINK=8 / UNILNK=10 / SURFSPT=13）暂无专用数据类，_from_dict 落到基类 Boundary，
 type_name 仍可正确取名。真实取值以 PrepEnum::Boundary 为准（见 core/enums.py）。
 """
 
@@ -37,6 +41,9 @@ from .interface import (
     osis_boundary_general_elstcspt,
     osis_boundary_rigid,
     osis_boundary_section_factor,
+    osis_boundary_unispt,
+    osis_boundary_lelnk,
+    osis_boundary_soilspring,
     osis_boundary_group,
     osis_boundary_del,
     osis_assign_boundary,
@@ -706,7 +713,8 @@ class BoundaryManager(BasicManager):
         Args:
             no: 边界编号，None 则自动分配
             type: 边界类型，"GENERAL" / "MSTSLV" / "RELEASE" /
-                  "ELSTCSPT" / "GES" / "RIGID"
+                  "ELSTCSPT" / "GES" / "RIGID" / "SECF" / "UNISPT" /
+                  "LELNK" / "SOILSPRING"
             *args: 按位置传给对应 create_* 的参数
             **kwargs: 按关键字传给对应 create_* 的参数
 
@@ -726,6 +734,10 @@ class BoundaryManager(BasicManager):
             "ELSTCSPT": self.create_elstcspt,
             "GES": self.create_general_elstcspt,
             "RIGID": self.create_rigid,
+            "SECF": self.create_section_factor,
+            "UNISPT": self.create_unispt,
+            "LELNK": self.create_lelnk,
+            "SOILSPRING": self.create_soilspring,
         }
         type_key = type.upper()
         if type_key not in _creator:
@@ -785,7 +797,7 @@ class BoundaryManager(BasicManager):
         rx: bool = 1,
         ry: bool = 1,
         rz: bool = 1,
-        coincident: int | None = 1,
+        coincident: int | None = 0,
     ) -> MstSlvBoundary:
         '''创建主从约束
 
@@ -801,7 +813,7 @@ class BoundaryManager(BasicManager):
             rx: RX 方向耦合标志，0 = 释放，1 = 约束
             ry: RY 方向耦合标志，0 = 释放，1 = 约束
             rz: RZ 方向耦合标志，0 = 释放，1 = 约束
-            coincident: 0 = 仅同位移约束；1 = 完全主从约束（含转动耦合），默认 1
+            coincident: 0 = 同 Midas（缺省 0，可缺省），1 = 仅同位移约束
 
         Returns:
             MstSlvBoundary 对象
@@ -1022,6 +1034,239 @@ class BoundaryManager(BasicManager):
         ok, err = osis_boundary_rigid(no, "RIGID", node_i)
         if not ok:
             raise RuntimeError(f"创建刚性连接 {no} 失败: {err}")
+        return self.get(no)  # type: ignore[return-value]
+
+    def create_section_factor(
+        self,
+        no: int | None,
+        area: float,
+        sy: float,
+        sz: float,
+        ixx: float,
+        iyy: float,
+        izz: float,
+        iww: float,
+        weight: float,
+    ) -> Boundary:
+        '''修改截面特性
+
+        设置边界所属截面的各项调整系数。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            area: 面积调整系数
+            sy: Y 向剪切常数调整系数
+            sz: Z 向剪切常数调整系数
+            ixx: X 轴抗扭惯性矩调整系数
+            iyy: Y 轴抗弯惯性矩调整系数
+            izz: Z 轴抗弯惯性矩调整系数
+            iww: 翘曲惯性矩调整系数
+            weight: 自重调整系数
+
+        Returns:
+            Boundary 对象
+        '''
+        if no is None:
+            no = self._next_no()
+        ok, err = osis_boundary_section_factor(
+            no, "SECF", area, sy, sz, ixx, iyy, izz, iww, weight
+        )
+        if not ok:
+            raise RuntimeError(f"修改边界 {no} 的截面特性失败: {err}")
+        return self.get(no)  # type: ignore[return-value]
+
+    def create_unispt(
+        self,
+        no: int | None,
+        sub_type: Literal["T", "N", "ML"],
+        val: float | int,
+        e_dir: Literal["X", "Y", "Z", "VECTOR"],
+        ori: int | None = None,
+        vec_x: float | None = None,
+        vec_y: float | None = None,
+        vec_z: float | None = None,
+    ) -> Boundary:
+        '''创建单向弹性支承
+
+        节点在指定方向上只承受拉力或只承受压力，支承刚度为单向的。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            sub_type: T = 仅受拉，N = 仅受压，ML = 多折线
+            val: sub_type 为 T / N 时是刚度值，为 ML 时是 PUCurve 定义的曲线编号
+            e_dir: X / Y / Z 表示沿坐标轴方向，VECTOR 表示方向由向量分量给出
+            ori: 方位，0 = 负方向，1 = 正方向；只在 X / Y / Z 分支使用
+            vec_x: 向量 x 分量；只在 VECTOR 分支使用
+            vec_y: 向量 y 分量；只在 VECTOR 分支使用
+            vec_z: 向量 z 分量；只在 VECTOR 分支使用
+
+        Returns:
+            Boundary 对象
+
+        Notes:
+            不适用动力分析。
+        '''
+        if no is None:
+            no = self._next_no()
+        if str(e_dir).upper() == "VECTOR":
+            ori = None
+        else:
+            vec_x = vec_y = vec_z = None
+        ok, err = osis_boundary_unispt(
+            no, "UNISPT", sub_type, val, e_dir, ori, vec_x, vec_y, vec_z
+        )
+        if not ok:
+            raise RuntimeError(f"创建单向弹性支承 {no} 失败: {err}")
+        return self.get(no)  # type: ignore[return-value]
+
+    def create_lelnk(
+        self,
+        no: int | None,
+        b_dx: bool,
+        k_dx: float,
+        b_dy: bool,
+        k_dy: float,
+        b_dz: bool,
+        k_dz: float,
+        b_rx: bool,
+        k_rx: float,
+        b_ry: bool,
+        k_ry: float,
+        b_rz: bool,
+        k_rz: float,
+        b_shear: bool,
+        s_dy: float | str | None,
+        s_dz: float | str | None,
+        beta: float,
+        node_i: int,
+        node_j: int,
+    ) -> Boundary:
+        '''创建线弹性连接
+
+        在两个节点之间建立线弹性连接，6 个自由度各由一个弹性标志和对应刚度控制，
+        可选在连接上考虑剪切弹簧位置。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            b_dx: Dx 自由度，0 = 固定，1 = 弹性
+            k_dx: Dx 自由度线弹性刚度
+            b_dy: Dy 自由度，0 = 固定，1 = 弹性
+            k_dy: Dy 自由度线弹性刚度
+            b_dz: Dz 自由度，0 = 固定，1 = 弹性
+            k_dz: Dz 自由度线弹性刚度
+            b_rx: Rx 自由度，0 = 固定，1 = 弹性
+            k_rx: Rx 自由度线弹性刚度
+            b_ry: Ry 自由度，0 = 固定，1 = 弹性
+            k_ry: Ry 自由度线弹性刚度
+            b_rz: Rz 自由度，0 = 固定，1 = 弹性
+            k_rz: Rz 自由度线弹性刚度
+            b_shear: 0 = 不考虑剪切弹簧位置，1 = 考虑
+            s_dy: y 向剪切弹簧距结束点 I 的距离比；b_shear = 0 时忽略
+            s_dz: z 向剪切弹簧距结束点 I 的距离比；b_shear = 0 时忽略
+            beta: 轴向转角（beta 角）
+            node_i: 节点 I
+            node_j: 节点 J
+
+        Returns:
+            Boundary 对象
+
+        Notes:
+            b_dx、b_dy、b_dz、b_rx、b_ry、b_rz 暂不支持固定，取 1。
+        '''
+        if no is None:
+            no = self._next_no()
+        # s_dy、s_dz 在 beta 之前，缺省时补空占位，避免后面的字段错位
+        if s_dy is None:
+            s_dy = ""
+        if s_dz is None:
+            s_dz = ""
+        ok, err = osis_boundary_lelnk(
+            no, "LELNK",
+            b_dx, k_dx, b_dy, k_dy, b_dz, k_dz,
+            b_rx, k_rx, b_ry, k_ry, b_rz, k_rz,
+            b_shear, s_dy, s_dz, beta, node_i, node_j,
+        )
+        if not ok:
+            raise RuntimeError(f"创建线弹性连接 {no} 失败: {err}")
+        return self.get(no)  # type: ignore[return-value]
+
+    def create_soilspring(
+        self,
+        no: int | None,
+        coor: int | str = "",
+        curve_type: int = 1,
+        *,
+        soil_type: Literal["SAND", "CLAY"],
+        ground_lv: float,
+        d: float,
+        gamma: float,
+        phi: float | str | None = None,
+        k: float | str | None = None,
+        su: float | str | None = None,
+        e50: float | str | None = None,
+        j: float | str | None = None,
+    ) -> Boundary:
+        '''创建土弹簧
+
+        土弹簧边界分配到地面标高以下的桩节点后，程序按各节点埋深自动生成土弹簧，
+        土抗力曲线按 API 规范由土体参数自动生成。
+
+        Args:
+            no: 边界编号，None 时自动分配
+            coor: 局部坐标系编号，"" 代表缺省（全局坐标系）
+            curve_type: 土反力曲线类型，1 = API 规范，0 = MIDAS（预留，暂不支持）
+            soil_type: SAND = 砂土，CLAY = 黏土
+            ground_lv: 地面标高，埋深 z = ground_lv - 节点标高，仅 z > 0 的节点生成土弹簧
+            d: 桩直径，必须大于零
+            gamma: 土的有效重度，必须大于零
+            phi: 内摩擦角（度），仅砂土必填；黏土自动补空占位
+            k: 初始土模量，仅砂土，可缺省；黏土自动补空占位
+            su: 不排水抗剪强度，仅黏土必填；砂土留空
+            e50: 参考应变，仅黏土必填；砂土留空
+            j: 经验系数，仅黏土，可缺省（缺省取 0.5）；砂土留空
+
+        Returns:
+            Boundary 对象
+
+        Raises:
+            ValueError: 参数不满足该土类要求时抛出
+        '''
+        if no is None:
+            no = self._next_no()
+        if int(curve_type) != 1:
+            raise ValueError(f"土反力曲线类型 {curve_type} 暂不支持，仅支持 1 = API 规范")
+        if d <= 0:
+            raise ValueError(f"桩直径必须大于零: {d}")
+        if gamma <= 0:
+            raise ValueError(f"土的有效重度必须大于零: {gamma}")
+
+        soil = str(soil_type).upper()
+        if soil == "CLAY":
+            # 黏土保留 phi、k 两个空字段，后面的 su、e50、j 才不会错位
+            if phi is None:
+                phi = ""
+            if k is None:
+                k = ""
+            if su is None or e50 is None:
+                raise ValueError("黏土必须给出不排水抗剪强度 su 和参考应变 e50")
+            if float(su) <= 0:
+                raise ValueError(f"不排水抗剪强度必须大于零: {su}")
+            if float(e50) <= 0:
+                raise ValueError(f"参考应变必须大于零: {e50}")
+        elif soil == "SAND":
+            if phi is None:
+                raise ValueError("砂土必须给出内摩擦角 phi")
+            if su is not None or e50 is not None or j is not None:
+                raise ValueError("砂土的 su、e50、j 必须留空")
+        else:
+            raise ValueError(f"未知土类: {soil_type!r}，支持: SAND, CLAY")
+
+        ok, err = osis_boundary_soilspring(
+            no, "SOILSPRING", coor or "", curve_type, soil,
+            ground_lv, d, gamma, phi, k, su, e50, j,
+        )
+        if not ok:
+            raise RuntimeError(f"创建土弹簧 {no} 失败: {err}")
         return self.get(no)  # type: ignore[return-value]
 
     def delete(self, no: int) -> None:

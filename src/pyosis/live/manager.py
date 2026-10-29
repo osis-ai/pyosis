@@ -65,6 +65,17 @@ LIVE_GRADE_FATIGUE_I = int(LiveGradeType.FATIGUE_I)
 LIVE_GRADE_FATIGUE_II = int(LiveGradeType.FATIGUE_II)
 LIVE_GRADE_FATIGUE_III = int(LiveGradeType.FATIGUE_III)
 
+# 桥型输入别名 → 引擎实际接受的拼写（StrToBridgeType 只认 CUSTOM / CABLE_STAYED_AUX）
+_BRIDGE_TYPE_ALIASES = {
+    "CABLE_STAYED_AUS": "CABLE_STAYED_AUX",
+    "BRIDGE_TYPE_CUSTOM": "CUSTOM",
+}
+
+
+def _norm_bridge_type(value) -> str:
+    t = str(value or "").strip().upper()
+    return _BRIDGE_TYPE_ALIASES.get(t, t)
+
 
 # ──────────────────────────────────────────────
 # 数据类
@@ -313,20 +324,20 @@ class LiveCase:
                 "CONTINUOUS": 6,
                 "ARCH": 5,
                 "CABLE_STAYED": 2,
-                "CABLE_STAYED_AUS": 2,
+                "CABLE_STAYED_AUX": 2,
                 "SUSPENSION": 5,
                 "CUSTOM": 1,
             }
             grade_name, scalar, mu_flag = args[0], float(args[1]), int(args[2])
             rest = args[4:]
             if mu_flag == 1:
-                bridge_type = (args[3] or "SIMPLE").strip().upper()
+                bridge_type = _norm_bridge_type(args[3]) or "SIMPLE"
                 mu_count = _MU_PARAM_COUNT.get(bridge_type, 1)
                 mu_params: list[float] = [float(x) for x in rest[:mu_count]]
                 lane_names: list[str] = list(rest[mu_count:])
             else:
                 mu_params, lane_names = [], list(rest)
-            bridge_type = args[3] if mu_flag == 1 else None
+                bridge_type = None
             if op == "a":
                 return self.create_sub(
                     sub_name, grade_name, scalar, bool(mu_flag), bridge_type,
@@ -348,7 +359,7 @@ class LiveCase:
         grade_name: str,
         scalar: int | float = 1,
         calc_mu: bool = 1,
-        bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "CUSTOM",
+        bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUX", "SUSPENSION", "CUSTOM", "BRIDGE_TYPE_CUSTOM"] = "CUSTOM",
         mu_params: list[float] | None = None,
         lane_names: list[str] | None = None,
     ) -> LiveCase:
@@ -364,9 +375,10 @@ class LiveCase:
                 - CONTINUOUS: 连续梁桥
                 - ARCH: 拱桥
                 - CABLE_STAYED: 斜拉桥（无辅助墩）
-                - CABLE_STAYED_AUS: 斜拉桥（有辅助墩）
+                - CABLE_STAYED_AUX: 斜拉桥（有辅助墩）
                 - SUSPENSION: 悬索桥
-                - CUSTOM: 自定义，直接输入基频
+                - CUSTOM: 自定义，直接输入基频（文档写作 BRIDGE_TYPE_CUSTOM，亦可传）
+                旧拼写 CABLE_STAYED_AUS 入口自动归一化
             mu_params: 冲击系数计算参数列表（根据桥型不同参数不同）
                 * SIMPLE	            = 桥长、弹模、惯性矩、质量
                 * CONTINUOUS	        = 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
@@ -383,6 +395,7 @@ class LiveCase:
         Raises:
             RuntimeError: 添加失败时抛出异常
         """
+        bridge_type = _norm_bridge_type(bridge_type)
         if calc_mu:
             ok, err = osis_live_analysis_inc(
                 self.name, "a", sub_name, grade_name,
@@ -404,7 +417,7 @@ class LiveCase:
         grade_name: str,
         scalar: float = 1.0,
         calc_mu: bool = 1,
-        bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUS", "SUSPENSION", "CUSTOM"] = "SIMPLE",
+        bridge_type: Literal["SIMPLE", "CONTINUOUS", "ARCH", "CABLE_STAYED", "CABLE_STAYED_AUX", "SUSPENSION", "CUSTOM", "BRIDGE_TYPE_CUSTOM"] = "SIMPLE",
         mu_params: list[float] | None = None,
         lane_names: list[str] | None = None,
     ) -> LiveCase:
@@ -417,14 +430,8 @@ class LiveCase:
             grade_name: 活载等级名称
             scalar: 缩放系数，默认 1.0
             calc_mu: 是否计算冲击系数，默认 1
-            bridge_type: 桥型（用于计算冲击系数）
-                - SIMPLE: 简支梁桥
-                - CONTINUOUS: 连续梁桥
-                - ARCH: 拱桥
-                - CABLE_STAYED: 斜拉桥（无辅助墩）
-                - CABLE_STAYED_AUS: 斜拉桥（有辅助墩）
-                - SUSPENSION: 悬索桥
-                - CUSTOM: 自定义，直接输入基频
+            bridge_type: 桥型（用于计算冲击系数），拼写同 create_sub，
+                旧拼写 CABLE_STAYED_AUS 与文档写法 BRIDGE_TYPE_CUSTOM 入口自动归一化
             mu_params: 冲击系数计算参数列表（根据桥型不同参数不同）
                 * SIMPLE	            = 桥长、弹模、惯性矩、质量
                 * CONTINUOUS	        = 基频计算常数a、基频计算常数b、桥长、弹模、惯性矩、质量
@@ -441,6 +448,7 @@ class LiveCase:
         Raises:
             RuntimeError: 修改失败时抛出异常
         """
+        bridge_type = _norm_bridge_type(bridge_type)
         if calc_mu:
             ok, err = osis_live_analysis_inc(
                 self.name, "m", sub_name, grade_name,

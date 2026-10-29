@@ -50,6 +50,38 @@ from .steel import (
     osis_section_steel_custom_plate,
     osis_steel_plate,
 )
+from .shaped_steel import (
+    osis_section_shaped_steel_l,
+    osis_section_shaped_steel_l_catalog,
+    osis_section_shaped_steel_c,
+    osis_section_shaped_steel_c_catalog,
+    osis_section_shaped_steel_i,
+    osis_section_shaped_steel_i_catalog,
+    osis_section_shaped_steel_t,
+    osis_section_shaped_steel_t_catalog,
+    osis_section_shaped_steel_box,
+    osis_section_shaped_steel_box_catalog,
+    osis_section_shaped_steel_cc,
+    osis_section_shaped_steel_cc_catalog,
+    osis_section_shaped_steel_circular_hollow,
+    osis_section_shaped_steel_circular_hollow_catalog,
+    osis_section_shaped_steel_z,
+    osis_section_shaped_steel_z_catalog,
+    osis_section_shaped_steel_bu_double_angle_1,
+    osis_section_shaped_steel_bu_double_angle_1_catalog,
+    osis_section_shaped_steel_bu_double_angle_2,
+    osis_section_shaped_steel_bu_double_angle_2_catalog,
+    osis_section_shaped_steel_bu_double_c,
+    osis_section_shaped_steel_bu_double_c_catalog,
+    osis_section_shaped_steel_bu_double_h,
+    osis_section_shaped_steel_bu_double_h_catalog,
+    osis_section_shaped_steel_bu_double_cweb_1,
+    osis_section_shaped_steel_bu_double_cweb_1_catalog,
+    osis_section_shaped_steel_bu_double_cweb_2,
+    osis_section_shaped_steel_bu_double_cweb_2_catalog,
+    osis_section_shaped_steel_bu_h_with_plates,
+    osis_section_shaped_steel_bu_h_with_plates_catalog,
+)
 from .param import (
     osis_section_offset,
     osis_section_mesh,
@@ -57,6 +89,8 @@ from .param import (
     osis_section_del,
     osis_section_mod,
     osis_stress_point,
+    osis_sec_prop_mod,
+    osis_section_prop_factor,
     osis_export_section_pic,
 )
 from .rebar import (
@@ -90,6 +124,21 @@ from ..core.enums import (
     filling_type_name,
 )
 from ..core.normalize import as_no, as_name
+
+
+def _require(names: tuple[str, ...], **values: Any) -> None:
+    """检查当前分支所需的参数是否齐全。
+
+    Args:
+        names (tuple): 必填参数名。
+        **values: 参数名与取值。
+
+    Raises:
+        ValueError: 有参数缺失时抛出
+    """
+    missing = [n for n in names if values.get(n) is None]
+    if missing:
+        raise ValueError(f"缺少参数: {', '.join(missing)}")
 
 
 @dataclass(frozen=False)
@@ -1004,7 +1053,7 @@ class Section:
         Raises:
             RuntimeError: 清除失败时抛出
         '''
-        ok, err = osis_clear_section_rib(self.no, self.name)
+        ok, err = osis_clear_section_rib(self.no)
         if not ok:
             raise RuntimeError(f"清除截面 {self.no} 加劲肋失败: {err}")
 
@@ -1166,6 +1215,21 @@ class SectionManager(BasicManager):
             "COMPOSITESTEELBOX": self.create_composite_steel_box,
             "COMPOSITECUSTOM": self.create_composite_custom,
             "NUMERICAL": self.create_numerical,
+            "STEELL": self.create_shaped_steel_l,
+            "STEELC": self.create_shaped_steel_c,
+            "STEELI": self.create_shaped_steel_i,
+            "STEELT": self.create_shaped_steel_t,
+            "STEELBOX": self.create_shaped_steel_box,
+            "STEELCC": self.create_shaped_steel_cc,
+            "STEELCIRCULARHOLLOW": self.create_shaped_steel_circular_hollow,
+            "STEELZ": self.create_shaped_steel_z,
+            "BUDOUBLEANGLE1": self.create_shaped_steel_bu_double_angle_1,
+            "BUDOUBLEANGLE2": self.create_shaped_steel_bu_double_angle_2,
+            "BUDOUBLEC": self.create_shaped_steel_bu_double_c,
+            "BUDOUBLEH": self.create_shaped_steel_bu_double_h,
+            "BUDOUBLECWEB1": self.create_shaped_steel_bu_double_cweb_1,
+            "BUDOUBLECWEB2": self.create_shaped_steel_bu_double_cweb_2,
+            "BUHWITHPLATES": self.create_shaped_steel_bu_h_with_plates,
         }
         # 历史/导出别名
         _aliases = {
@@ -2561,6 +2625,756 @@ class SectionManager(BasicManager):
         if not ok:
             raise RuntimeError(f"创建数值截面 {no} 失败: {err}")
         return self.get(no)
+
+    # ── 型钢截面 ────────────────────────────────
+
+    def create_shaped_steel_l(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        tf: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢角钢截面(SteelL)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高度
+            b: 截面宽度
+            tw: 腹板厚度
+            tf: 上翼厚度
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_l_catalog(
+                no, name, "SteelL", Code=code, Designation=designation)
+        else:
+            _require(("h", "b", "tw", "tf"), h=h, b=b, tw=tw, tf=tf)
+            ok, err = osis_section_shaped_steel_l(
+                no, name, "SteelL", H=h, B=b, tw=tw, tf=tf)
+        if not ok:
+            raise RuntimeError(f"创建型钢角钢截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_c(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        tw: float | None = None,
+        b1: float | None = None,
+        tf1: float | None = None,
+        b2: float | None = None,
+        tf2: float | None = None,
+        r1: float | None = None,
+        r2: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢槽钢截面(SteelC)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高度
+            tw: 腹板厚度
+            b1: 上翼宽度
+            tf1: 上翼厚度
+            b2: 下翼宽度
+            tf2: 下翼厚度
+            r1: 上翼圆倒角半径
+            r2: 下翼圆倒角半径
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_c_catalog(
+                no, name, "SteelC", Code=code, Designation=designation)
+        else:
+            _require(("h", "tw", "b1", "tf1", "b2", "tf2", "r1", "r2"),
+                     h=h, tw=tw, b1=b1, tf1=tf1, b2=b2, tf2=tf2, r1=r1, r2=r2)
+            ok, err = osis_section_shaped_steel_c(
+                no, name, "SteelC", H=h, tw=tw, B1=b1, tf1=tf1, B2=b2, tf2=tf2, r1=r1, r2=r2)
+        if not ok:
+            raise RuntimeError(f"创建型钢槽钢截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_i(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        tw: float | None = None,
+        b1: float | None = None,
+        tf1: float | None = None,
+        b2: float | None = None,
+        tf2: float | None = None,
+        r1: float | None = None,
+        r2: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢工字型截面(SteelI)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高度
+            tw: 腹板厚度
+            b1: 上翼宽度
+            tf1: 上翼厚度
+            b2: 下翼宽度
+            tf2: 下翼厚度
+            r1: 上翼圆倒角半径
+            r2: 下翼圆倒角半径
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_i_catalog(
+                no, name, "SteelI", Code=code, Designation=designation)
+        else:
+            _require(("h", "tw", "b1", "tf1", "b2", "tf2", "r1", "r2"),
+                     h=h, tw=tw, b1=b1, tf1=tf1, b2=b2, tf2=tf2, r1=r1, r2=r2)
+            ok, err = osis_section_shaped_steel_i(
+                no, name, "SteelI", H=h, tw=tw, B1=b1, tf1=tf1, B2=b2, tf2=tf2, r1=r1, r2=r2)
+        if not ok:
+            raise RuntimeError(f"创建型钢工字型截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_t(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        tf: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢 T 型截面(SteelT)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高度
+            b: 翼缘宽度
+            tw: 腹板厚度
+            tf: 翼缘厚度
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_t_catalog(
+                no, name, "SteelT", Code=code, Designation=designation)
+        else:
+            _require(("h", "b", "tw", "tf"), h=h, b=b, tw=tw, tf=tf)
+            ok, err = osis_section_shaped_steel_t(
+                no, name, "SteelT", H=h, B=b, tw=tw, tf=tf)
+        if not ok:
+            raise RuntimeError(f"创建型钢 T 型截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_box(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        tf1: float | None = None,
+        c: float | None = None,
+        tf2: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢箱型截面(SteelBox)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高度
+            b: 翼缘宽度
+            tw: 腹板厚度
+            tf1: 上翼缘厚度
+            c: 腹板间距
+            tf2: 下翼缘厚度
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_box_catalog(
+                no, name, "SteelBox", Code=code, Designation=designation)
+        else:
+            _require(("h", "b", "tw", "tf1", "c", "tf2"),
+                     h=h, b=b, tw=tw, tf1=tf1, c=c, tf2=tf2)
+            ok, err = osis_section_shaped_steel_box(
+                no, name, "SteelBox", H=h, B=b, tw=tw, tf1=tf1, C=c, tf2=tf2)
+        if not ok:
+            raise RuntimeError(f"创建型钢箱型截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_cc(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        r: float | None = None,
+        d: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢冷轧槽钢截面(SteelCC)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高度
+            b: 翼缘宽度
+            tw: 腹板厚度
+            r: 半径
+            d: 卷边高度
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_cc_catalog(
+                no, name, "SteelCC", Code=code, Designation=designation)
+        else:
+            _require(("h", "b", "tw", "r", "d"), h=h, b=b, tw=tw, r=r, d=d)
+            ok, err = osis_section_shaped_steel_cc(
+                no, name, "SteelCC", H=h, B=b, tw=tw, r=r, d=d)
+        if not ok:
+            raise RuntimeError(f"创建型钢冷轧槽钢截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_circular_hollow(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        d: float | None = None,
+        tw: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢管型截面(SteelCircularHollow)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            d: 直径
+            tw: 壁厚
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_circular_hollow_catalog(
+                no, name, "SteelCircularHollow", Code=code, Designation=designation)
+        else:
+            _require(("d", "tw"), d=d, tw=tw)
+            ok, err = osis_section_shaped_steel_circular_hollow(
+                no, name, "SteelCircularHollow", D=d, Tw=tw)
+        if not ok:
+            raise RuntimeError(f"创建型钢管型截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_z(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        r: float | None = None,
+        d: float | None = None,
+        th: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建型钢 Z 型截面(SteelZ)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高度
+            b: 顶部宽度
+            tw: 厚度
+            r: 内径
+            d: 伸出段长度
+            th: 伸出段角度
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_z_catalog(
+                no, name, "SteelZ", Code=code, Designation=designation)
+        else:
+            _require(("h", "b", "tw", "r", "d", "th"), h=h, b=b, tw=tw, r=r, d=d, th=th)
+            ok, err = osis_section_shaped_steel_z(
+                no, name, "SteelZ", H=h, B=b, Tw=tw, R=r, D=d, Th=th)
+        if not ok:
+            raise RuntimeError(f"创建型钢 Z 型截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_bu_double_angle_1(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tf1: float | None = None,
+        tf2: float | None = None,
+        c: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建双角钢截面(BUDoubleAngle1)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高
+            b: 截面宽
+            tf1: 肢 1 厚度
+            tf2: 肢 2 厚度
+            c: 间隙
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_bu_double_angle_1_catalog(
+                no, name, "BUDoubleAngle1", Code=code, Designation=designation)
+        else:
+            _require(("h", "b", "tf1", "tf2", "c"), h=h, b=b, tf1=tf1, tf2=tf2, c=c)
+            ok, err = osis_section_shaped_steel_bu_double_angle_1(
+                no, name, "BUDoubleAngle1", H=h, B=b, Tf1=tf1, Tf2=tf2, C=c)
+        if not ok:
+            raise RuntimeError(f"创建双角钢截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_bu_double_angle_2(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tf1: float | None = None,
+        tf2: float | None = None,
+        c: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建交叉角钢截面(BUDoubleAngle2)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高
+            b: 截面宽
+            tf1: 肢 1 厚度
+            tf2: 肢 2 厚度
+            c: 间隙
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation", "c"), code=code, designation=designation, c=c)
+            ok, err = osis_section_shaped_steel_bu_double_angle_2_catalog(
+                no, name, "BUDoubleAngle2", Code=code, Designation=designation, C=c)
+        else:
+            _require(("h", "b", "tf1", "tf2", "c"), h=h, b=b, tf1=tf1, tf2=tf2, c=c)
+            ok, err = osis_section_shaped_steel_bu_double_angle_2(
+                no, name, "BUDoubleAngle2", H=h, B=b, Tf1=tf1, Tf2=tf2, C=c)
+        if not ok:
+            raise RuntimeError(f"创建交叉角钢截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_bu_double_c(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        tf: float | None = None,
+        c: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建双槽钢截面(BUDoubleC)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高
+            b: 截面宽
+            tw: 腹板厚度
+            tf: 翼缘厚度
+            c: 间隙
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation"), code=code, designation=designation)
+            ok, err = osis_section_shaped_steel_bu_double_c_catalog(
+                no, name, "BUDoubleC", Code=code, Designation=designation)
+        else:
+            _require(("h", "b", "tw", "tf", "c"), h=h, b=b, tw=tw, tf=tf, c=c)
+            ok, err = osis_section_shaped_steel_bu_double_c(
+                no, name, "BUDoubleC", H=h, B=b, Tw=tw, Tf=tf, C=c)
+        if not ok:
+            raise RuntimeError(f"创建双槽钢截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_bu_double_h(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h1: float | None = None,
+        b1: float | None = None,
+        tw1: float | None = None,
+        tf1: float | None = None,
+        h2: float | None = None,
+        b2: float | None = None,
+        tw2: float | None = None,
+        tf2: float | None = None,
+        code1: str | None = None,
+        designation1: str | None = None,
+        code2: str | None = None,
+        designation2: str | None = None,
+    ) -> Section:
+        """创建双 H 型钢截面(BUDoubleH)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h1: 截面 1 高
+            b1: 截面 1 宽
+            tw1: 腹板 1 厚度
+            tf1: 翼缘 1 厚度
+            h2: 截面 2 高
+            b2: 截面 2 宽
+            tw2: 腹板 2 厚度
+            tf2: 翼缘 2 厚度
+            code1: 规范 1 名称，use_catalog=1 时使用
+            designation1: 型钢型号 1，use_catalog=1 时使用
+            code2: 规范 2 名称，use_catalog=1 时使用
+            designation2: 型钢型号 2，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code1", "designation1", "code2", "designation2"),
+                     code1=code1, designation1=designation1,
+                     code2=code2, designation2=designation2)
+            ok, err = osis_section_shaped_steel_bu_double_h_catalog(
+                no, name, "BUDoubleH", Code1=code1, Designation1=designation1,
+                Code2=code2, Designation2=designation2)
+        else:
+            _require(("h1", "b1", "tw1", "tf1", "h2", "b2", "tw2", "tf2"),
+                     h1=h1, b1=b1, tw1=tw1, tf1=tf1, h2=h2, b2=b2, tw2=tw2, tf2=tf2)
+            ok, err = osis_section_shaped_steel_bu_double_h(
+                no, name, "BUDoubleH", H1=h1, B1=b1, Tw1=tw1, Tf1=tf1,
+                H2=h2, B2=b2, Tw2=tw2, Tf2=tf2)
+        if not ok:
+            raise RuntimeError(f"创建双 H 型钢截面 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_bu_double_cweb_1(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        tf: float | None = None,
+        bs: float | None = None,
+        ts: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建双槽钢+腹板截面1(BUDoubleCWeb1)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高
+            b: 截面宽
+            tw: 腹板厚
+            tf: 翼缘厚
+            bs: 连接板宽
+            ts: 连接板厚
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation", "bs", "ts"),
+                     code=code, designation=designation, bs=bs, ts=ts)
+            ok, err = osis_section_shaped_steel_bu_double_cweb_1_catalog(
+                no, name, "BUDoubleCWeb1", Code=code, Designation=designation, Bs=bs, Ts=ts)
+        else:
+            _require(("h", "b", "tw", "tf", "bs", "ts"),
+                     h=h, b=b, tw=tw, tf=tf, bs=bs, ts=ts)
+            ok, err = osis_section_shaped_steel_bu_double_cweb_1(
+                no, name, "BUDoubleCWeb1", H=h, B=b, Tw=tw, Tf=tf, Bs=bs, Ts=ts)
+        if not ok:
+            raise RuntimeError(f"创建双槽钢+腹板截面1 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_bu_double_cweb_2(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        tf: float | None = None,
+        bs: float | None = None,
+        ts: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建双槽钢+腹板截面2(BUDoubleCWeb2)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高
+            b: 截面宽
+            tw: 腹板厚
+            tf: 翼缘厚
+            bs: 连接板宽
+            ts: 连接板厚
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation", "bs", "ts"),
+                     code=code, designation=designation, bs=bs, ts=ts)
+            ok, err = osis_section_shaped_steel_bu_double_cweb_2_catalog(
+                no, name, "BUDoubleCWeb2", Code=code, Designation=designation, Bs=bs, Ts=ts)
+        else:
+            _require(("h", "b", "tw", "tf", "bs", "ts"),
+                     h=h, b=b, tw=tw, tf=tf, bs=bs, ts=ts)
+            ok, err = osis_section_shaped_steel_bu_double_cweb_2(
+                no, name, "BUDoubleCWeb2", H=h, B=b, Tw=tw, Tf=tf, Bs=bs, Ts=ts)
+        if not ok:
+            raise RuntimeError(f"创建双槽钢+腹板截面2 {no} 失败: {err}")
+        return self.get(no)
+
+    def create_shaped_steel_bu_h_with_plates(
+        self,
+        no: int | None,
+        name: str,
+        use_catalog: Literal[0, 1] = 0,
+        *,
+        h: float | None = None,
+        b: float | None = None,
+        tw: float | None = None,
+        tf: float | None = None,
+        c: float | None = None,
+        ts: float | None = None,
+        code: str | None = None,
+        designation: str | None = None,
+    ) -> Section:
+        """创建 H 型钢+双板截面(BUHWithPlates)。
+
+        Args:
+            no: 截面编号，不填则自动分配
+            name: 截面名称
+            use_catalog: 0=手动输入参数，1=从型钢库选型
+            h: 截面高
+            b: 截面宽
+            tw: 腹板厚
+            tf: 翼缘厚
+            c: 板中心距
+            ts: 板厚
+            code: 规范名称（GB_YB / GB_YB05 / GB50018_02），use_catalog=1 时使用
+            designation: 型钢型号，use_catalog=1 时使用
+        """
+        if no is None:
+            no = self._next_no()
+        if use_catalog:
+            _require(("code", "designation", "c", "ts"),
+                     code=code, designation=designation, c=c, ts=ts)
+            ok, err = osis_section_shaped_steel_bu_h_with_plates_catalog(
+                no, name, "BUHWithPlates", Code=code, Designation=designation, C=c, Ts=ts)
+        else:
+            _require(("h", "b", "tw", "tf", "c", "ts"),
+                     h=h, b=b, tw=tw, tf=tf, c=c, ts=ts)
+            ok, err = osis_section_shaped_steel_bu_h_with_plates(
+                no, name, "BUHWithPlates", H=h, B=b, Tw=tw, Tf=tf, C=c, Ts=ts)
+        if not ok:
+            raise RuntimeError(f"创建 H 型钢+双板截面 {no} 失败: {err}")
+        return self.get(no)
+
+    # ── 截面特性 ────────────────────────────────
+
+    def set_prop_mod(
+        self,
+        sec_index: int,
+        type: Literal["Part", "Comp"],
+        part_id: int,
+        area: float,
+        sy: float,
+        sz: float,
+        ixx: float,
+        iyy: float,
+        izz: float,
+        iww: float,
+        cent_y: float,
+        cent_z: float,
+        dy: float,
+        dz: float,
+        peri_o: float,
+        peri_i: float,
+    ) -> None:
+        """修改截面特性。
+
+        Args:
+            sec_index (int): 截面编号。
+            type (str): Part=分部截面特性，Comp=组合截面特性。
+            part_id (int): type=Part 时为对应分部的特性；type=Comp 时为从 Part1 到当前 part_id 的组合截面特性。
+            area (float): 截面面积。
+            sy (float): 局部坐标系 y 轴方向的剪切常数。
+            sz (float): 局部坐标系 z 轴方向的剪切常数。
+            ixx (float): 绕局部坐标系 x 轴的惯性矩。
+            iyy (float): 绕局部坐标系 y 轴的惯性矩。
+            izz (float): 绕局部坐标系 z 轴的惯性矩。
+            iww (float): 翅曲惯性矩。
+            cent_y (float): 质心在局部坐标系 y 轴方向的坐标值。
+            cent_z (float): 质心在局部坐标系 z 轴方向的坐标值。
+            dy (float): 沿局部坐标系 y 轴方向的截面偏心。
+            dz (float): 沿局部坐标系 z 轴方向的截面偏心。
+            peri_o (float): 截面外轮廓周长。
+            peri_i (float): 截面内轮廓周长。
+
+        Raises:
+            RuntimeError: 修改失败时抛出
+        """
+        ok, err = osis_sec_prop_mod(
+            sec_index, type, part_id, area, sy, sz, ixx, iyy, izz, iww,
+            cent_y, cent_z, dy, dz, peri_o, peri_i,
+        )
+        if not ok:
+            raise RuntimeError(f"修改截面 {sec_index} 特性失败: {err}")
+
+    def set_prop_factor(
+        self,
+        n_sec: int,
+        area_factor: float,
+        sy_factor: float,
+        sz_factor: float,
+        ixx_factor: float,
+        iyy_factor: float,
+        izz_factor: float,
+    ) -> None:
+        """设置截面特性调整系数。
+
+        Args:
+            n_sec (int): 截面编号。
+            area_factor (float): 面积调整系数。
+            sy_factor (float): Y 向剪切常数调整系数。
+            sz_factor (float): Z 向剪切常数调整系数。
+            ixx_factor (float): X 轴抗扭惯性矩调整系数。
+            iyy_factor (float): Y 轴抗弯惯性矩调整系数。
+            izz_factor (float): Z 轴抗弯惯性矩调整系数。
+
+        Raises:
+            RuntimeError: 设置失败时抛出
+        """
+        ok, err = osis_section_prop_factor(
+            n_sec, area_factor, sy_factor, sz_factor,
+            ixx_factor, iyy_factor, izz_factor,
+        )
+        if not ok:
+            raise RuntimeError(f"设置截面 {n_sec} 特性调整系数失败: {err}")
 
     def delete(self, no: int) -> None:
         '''删除截面

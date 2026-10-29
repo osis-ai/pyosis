@@ -29,6 +29,7 @@ from ..node.manager import NodeManager, node_manager
 from ..element.manager import ElementManager, element_manager
 from ..boundary.manager import BoundaryManager, boundary_manager
 from ..load.manager import LoadCaseManager, TendonManager, loadcase_manager, tendon_manager
+from ..load.environmental import EnvironmentalManager, environmental_manager
 from ..stage.manager import StageManager, stage_manager
 from ..live.manager import LiveManager, live_manager
 from ..control.manager import ControlManager, control_manager
@@ -108,6 +109,7 @@ class OSISEngine:
         self._boundary = boundary_manager
         self._load = loadcase_manager
         self._tendon = tendon_manager
+        self._environmental = environmental_manager
         self._live = live_manager
         self._settlement = settlement_manager
         self._stability = stability_manager
@@ -206,6 +208,11 @@ class OSISEngine:
     def load(self) -> LoadCaseManager:
         """荷载工况管理器"""
         return self._load
+
+    @property
+    def environmental(self) -> EnvironmentalManager:
+        """环境荷载管理器（水动力系数表、海况分析）"""
+        return self._environmental
 
     @property
     def tendon(self) -> TendonManager:

@@ -51,6 +51,7 @@ from .static import (
     osis_load_concentrated,
     osis_load_surface_load,
     osis_load_surface_load_vector,
+    osis_load_fluid_pressure,
     osis_load_displacement,
     osis_load_initial,
     osis_load_utemp,
@@ -62,6 +63,7 @@ from .static import (
     osis_planar_load_line,
     osis_planar_load_area,
     osis_planar_load_copy,
+    osis_planar_load_del,
     osis_load_del,
     osis_load_mod,
 )
@@ -262,6 +264,8 @@ class LoadCase:
             CFORCE       -> create_cable_force
             CONCENTRATED -> create_concentrated_force
             SURFACE      -> create_surface_load
+            ESRFC        -> create_surface_load
+            FP           -> create_surface_load
             SURFACE_VEC  -> create_surface_load_vector
             PLANE        -> create_plane_load
             PTF/PTM      -> create_concentrated_force (is_moment)
@@ -292,6 +296,8 @@ class LoadCase:
             # "PTF":          self.create_concentrated_force,
             # "PTM":          self.create_concentrated_force,
             "SURFACE":      self.create_surface_load,
+            "ESRFC":        self.create_surface_load,
+            "FP":           self.create_surface_load,
             "SURFACE_VEC":  self.create_surface_load_vector,
             "PLANE":        self.create_plane_load,
         }
@@ -303,6 +309,8 @@ class LoadCase:
             return self.create_concentrated_force(elem,e_coord,is_moment=(type_key == "PTM"),forces=forces)
         if type_key not in _creator:
             raise ValueError(f"未知荷载类型: {type!r}，支持: {', '.join(_creator)}")
+        if type_key in ("ESRFC", "FP"):
+            kwargs.setdefault("e_type", type_key)
         return _creator[type_key](*args, **kwargs)
 
     def create_gravity(
@@ -650,6 +658,7 @@ class LoadCase:
             tension_force_type: Literal["ST", "IF"] = "ST",
             beg: float = 100,
             end: float = 100,
+            n_grout_after: int = 0,
     ) -> LoadCase:
         '''添加预应力荷载
 
@@ -664,6 +673,7 @@ class LoadCase:
                 * IF = 内力
             beg (float): 起点应力或内力。tension_type 为 END 时填 None
             end (float): 终点应力或内力。tension_type 为 BEG 时填 None
+            n_grout_after (int): 延后灌浆阶段数，整数且 ≥ 0，缺省为 0，非 0 表示在后几个阶段灌浆
 
         Returns:
             更新后的 LoadCase 对象
@@ -671,7 +681,7 @@ class LoadCase:
         Raises:
             RuntimeError: 添加失败时抛出异常
         '''
-        ok, err = osis_load_pst("PST", self.name,entity, tension_type, tension_force_type, beg, end)
+        ok, err = osis_load_pst("PST", self.name, entity, tension_type, tension_force_type, beg, end, n_grout_after)
         if not ok:
             raise RuntimeError(f"添加预应力荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
@@ -711,7 +721,8 @@ class LoadCase:
             p1: str = "0",
             p2: str = "0",
             p3: str = "0",
-            p4: str = "0",
+            p4: str = None,
+            e_type: Literal["ESRFC", "FP"] = "ESRFC",
     ) -> LoadCase:
         '''添加单元面荷载，不考虑边中节点荷载插值
 
@@ -726,7 +737,10 @@ class LoadCase:
             p1 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
             p2 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
             p3 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
-            p4 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2
+            p4 (str): 对应 plane 的角节点荷载值，量纲为 M L^-1 T^-2，可缺省，填 None 时命令流省略该列
+            e_type (str): 荷载类型
+                * ESRFC = 单元面荷载
+                * FP = 流体压力荷载
 
         Returns:
             更新后的 LoadCase 对象
@@ -734,10 +748,16 @@ class LoadCase:
         Raises:
             RuntimeError: 添加失败时抛出异常
         '''
-        ok, err = osis_load_surface_load(
-            "ESRFC", self.name, entity, plane, direction,
-            coord_type, p1, p2, p3, p4
-        )
+        if e_type.strip().upper() == "FP":
+            ok, err = osis_load_fluid_pressure(
+                "FP", self.name, entity, plane, direction,
+                coord_type, p1, p2, p3, p4
+            )
+        else:
+            ok, err = osis_load_surface_load(
+                e_type, self.name, entity, plane, direction,
+                coord_type, p1, p2, p3, p4
+            )
         if not ok:
             raise RuntimeError(f"添加单元面荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
@@ -2172,6 +2192,60 @@ class LoadCaseManager(BasicManager):
         if not ok:
             raise RuntimeError(f"复制平面荷载 {name} 失败: {err}")
         return name
+
+    def planar_load_del(self, name: str) -> None:
+        '''删除平面荷载
+
+        Args:
+            name (str): 荷载名称
+
+        Raises:
+            RuntimeError: 删除失败时抛出异常
+        '''
+        ok, err = osis_planar_load_del(name)
+        if not ok:
+            raise RuntimeError(f"删除平面荷载 {name} 失败: {err}")
+
+    def planar_load(self, name: str, description: str, type: str, *rest) -> str:
+        '''PlanarLoad 命令流直通分发：按 Type 转发到 point/line/area
+
+        Args:
+            name (str): 荷载名称
+            description (str): 荷载说明
+            type (str): 荷载类型，Point / Line / Area
+            *rest: 平铺的分支字段，字段序同命令流
+
+        Returns:
+            荷载名称字符串
+
+        Raises:
+            ValueError: 未知荷载类型
+            RuntimeError: 创建失败时抛出异常
+        '''
+        kind = str(type).strip().capitalize()
+        if kind == "Point":
+            return self.planar_load_point(name, description, list(rest))
+        if kind == "Line":
+            return self.planar_load_line(name, description, *rest)
+        if kind == "Area":
+            return self.planar_load_area(name, description, rest[0] if rest else 1, list(rest[2:]))
+        raise ValueError(f"未知平面荷载类型: {type!r}，支持 Point / Line / Area")
+
+    def planar_load_copy_flat(self, name: str, direction: Literal["X", "Y"], *counts_and_distances) -> str:
+        '''PlanarLoadCopy 命令流直通：平铺的次数/距离字段转发到 planar_load_copy
+
+        Args:
+            name (str): 荷载名称
+            direction (str): 复制方向，X / Y
+            *counts_and_distances: 平铺的复制次数、复制距离字段
+
+        Returns:
+            荷载名称字符串
+
+        Raises:
+            RuntimeError: 复制失败时抛出异常
+        '''
+        return self.planar_load_copy(name, direction, list(counts_and_distances))
 
     # ── 查询 ──────────────────────────────────
 

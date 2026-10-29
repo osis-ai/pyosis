@@ -101,7 +101,7 @@ def osis_element_spring(nEle: int=1, eElementType: str="SPRING", nNode1: int=1, 
     pass
 
 @REGISTRY.register("Element")
-def osis_element_cable(nEle: int=1, eElementType: str="CABLE", nNode1: int=1, nNode2: int=2, nMat: int=1, nSec: int=1, eMethod: Literal["UL", "IF", "HF", "VF", "IS"]="UL", dPara: float="10.0"):
+def osis_element_cable(nEle: int=1, eElementType: str="CABLE", nNode1: int=1, nNode2: int=2, nMat: int=1, nSec: int=1, eMethod: Literal["UL", "IF", "HF", "VF", "IS"]="UL", dPara: float=10.0):
     '''
     创建或修改拉索单元
     
@@ -131,7 +131,7 @@ def osis_element_cable(nEle: int=1, eElementType: str="CABLE", nNode1: int=1, nN
     pass
 
 @REGISTRY.register("Element")
-def osis_element_shell(nEle: int=1, eElementType: str="CABLE", bIsThin: bool=1, nMat: int=1, nThk: int=1, nNode1: int=1, nNode2: int=2, nNode3: int=3, nNode4: int = None):
+def osis_element_shell(nEle: int=1, eElementType: str="SHELL", bIsThin: bool=1, nMat: int=1, nThk: int=1, nNode1: int=1, nNode2: int=2, nNode3: int=3, nNode4: int = None):
     '''
     创建或修改壳单元
     

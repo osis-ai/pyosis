@@ -39,7 +39,7 @@ def osis_seis_rsp_spec_import(
 
     Examples:
         >>> data = [(0.1, 0.5), (0.2, 0.8), (0.5, 1.2), (1.0, 0.9)]
-        >>> result = osis_seis_rsp_spec_import("RS1", "A", 9.806, 4, data)
+        >>> result = osis_seis_rsp_spec_import("RS1", "A", 9.806, 0, 4, data)
         >>> print(result)
         (True, "")
     """
@@ -119,8 +119,8 @@ def osis_seis_rsp_spec_mod(old_name: str, new_name: str):
     """修改地震反应谱名称。
 
     Args:
-        old_name (int): 旧名称
-        new_name (int): 新名称
+        old_name (str): 旧名称
+        new_name (str): 新名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

@@ -35,6 +35,7 @@ from .control import (
 from .io import osis_apdl
 from .nonlinear import (
     osis_nl,
+    osis_cnv_config,
     osis_ln_srch,
     osis_auto_ts,
     osis_NSUBST,
@@ -285,16 +286,14 @@ class ControlManager:
 
     # ── 非线性分析 ──────────────────────────────
 
-    def set_nonlinear(
-        self,
-        geom: Literal[0,1] = 0,
-        link: Literal[0,1] = 0,
-    ) -> None:
+    def set_nonlinear(self, geom: Literal[0,1] = 0, link: Literal[0,1] | None = None) -> None:
         '''设置非线性分析控制开关
+
+        非线性连接单元由软件在转换时强制考虑，link 参数已废弃、不再下发。
 
         Args:
             geom (int): 是否打开几何非线性（大位移大转角），1=开，0=关
-            link (int): 是否考虑非线性连接单元，1=考虑，0=不考虑
+            link (int): 已废弃，仅为兼容旧调用保留
 
         Returns:
             None
@@ -302,15 +301,38 @@ class ControlManager:
         Raises:
             RuntimeError: 设置失败时抛出异常
         '''
-        ok, err = osis_nl(1 if geom else 0, 1 if link else 0)
+        ok, err = osis_nl(1 if geom else 0)
         if not ok:
             raise RuntimeError(f"设置非线性控制失败: {err}")
 
-    def set_line_search(self, enabled: Literal[0,1] = 1) -> None:
+    def set_convergence_tolerance(
+        self,
+        criteria: str = "F",
+        norm: str = "L2",
+        val: float = 1e-4,
+    ) -> None:
+        '''设置非线性收敛准则
+
+        Args:
+            criteria (str): 收敛准则，F = 力收敛
+            norm (str): 范数，L2 = 二范数
+            val (float): 收敛阈值
+
+        Returns:
+            None
+
+        Raises:
+            RuntimeError: 设置失败时抛出异常
+        '''
+        ok, err = osis_cnv_config(criteria, norm, val)
+        if not ok:
+            raise RuntimeError(f"设置收敛准则失败: {err}")
+
+    def set_line_search(self, enabled: Literal[0,1] = 0) -> None:
         '''设置求解阶段的线性搜索开关
 
         Args:
-            enabled (int): 1=开，0=关
+            enabled (int): 0=非线性搜索（软件默认），1=线性搜索
 
         Returns:
             None
@@ -322,11 +344,11 @@ class ControlManager:
         if not ok:
             raise RuntimeError(f"设置线性搜索失败: {err}")
 
-    def set_auto_time_step(self, enabled: Literal[0,1] = 1) -> None:
+    def set_auto_time_step(self, enabled: Literal[0,1] = 0) -> None:
         '''设置是否启用自动计算时间荷载步
 
         Args:
-            enabled (int): 1=开，0=关
+            enabled (int): 0=不自动计算（软件默认），1=自动计算
 
         Returns:
             None

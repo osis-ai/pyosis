@@ -163,12 +163,12 @@ class ThicknessManager:
         if not ok:
             raise RuntimeError(f"删除厚度特性 {no} 失败: {err}")
 
-    def renumber(self, old: str, new: str) -> None:
+    def renumber(self, old: int, new: int) -> None:
         '''修改厚度特性编号
 
         Args:
-            old (str): 旧编号
-            new (str): 新编号
+            old (int): 旧编号
+            new (int): 新编号
 
         Raises:
             RuntimeError: 修改失败时抛出异常

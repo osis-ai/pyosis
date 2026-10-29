@@ -43,11 +43,11 @@ def osis_buckl_anal_del(strName: str):
 
 
 @REGISTRY.register("BucklAnalMod")
-def osis_buckl_anal_mod(ole_name: str, new_name: str):
+def osis_buckl_anal_mod(old_name: str, new_name: str):
     """修改屈曲工况名称。
 
     Args:
-        ole_name (str): 旧名称
+        old_name (str): 旧名称
         new_name (str): 新名称
 
     Returns:

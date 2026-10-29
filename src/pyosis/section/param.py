@@ -140,6 +140,87 @@ def osis_stress_point(nSec, nPartID, nPoint, dCoordX, dCoordY):
     '''
     pass
 
+@REGISTRY.register("SecPropMod")
+def osis_sec_prop_mod(
+    sec_index: int,
+    type: Literal["Part", "Comp"],
+    part_id: int,
+    area: float,
+    sy: float,
+    sz: float,
+    ixx: float,
+    iyy: float,
+    izz: float,
+    iww: float,
+    cent_y: float,
+    cent_z: float,
+    dy: float,
+    dz: float,
+    peri_o: float,
+    peri_i: float,
+):
+    """修改截面特性。
+
+    Args:
+        sec_index (int): 截面编号。
+        type (str): 特性所属范围：
+            * Part: 分部截面特性
+            * Comp: 组合截面特性
+        part_id (int): type=Part 时为对应分部的特性；type=Comp 时为从 Part1 到当前 part_id 的组合截面特性。
+            仅有一个截面分部时，Part 与 Comp 均可使用。
+        area (float): 截面面积。
+        sy (float): 局部坐标系 y 轴方向的剪切常数。
+        sz (float): 局部坐标系 z 轴方向的剪切常数。
+        ixx (float): 绕局部坐标系 x 轴的惯性矩。
+        iyy (float): 绕局部坐标系 y 轴的惯性矩。
+        izz (float): 绕局部坐标系 z 轴的惯性矩。
+        iww (float): 翅曲惯性矩。
+        cent_y (float): 质心在局部坐标系 y 轴方向的坐标值。
+        cent_z (float): 质心在局部坐标系 z 轴方向的坐标值。
+        dy (float): 沿局部坐标系 y 轴方向的截面偏心。
+        dz (float): 沿局部坐标系 z 轴方向的截面偏心。
+        peri_o (float): 截面外轮廓周长。
+        peri_i (float): 截面内轮廓周长。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
+@REGISTRY.register("SectionPropFactor")
+def osis_section_prop_factor(
+    n_sec: int,
+    area_factor: float,
+    sy_factor: float,
+    sz_factor: float,
+    ixx_factor: float,
+    iyy_factor: float,
+    izz_factor: float,
+):
+    """设置截面特性调整系数。
+
+    文档 v5.0 收录，当前引擎尚未注册该命令，调用会被引擎拒为未知命令。
+
+    Args:
+        n_sec (int): 截面编号。
+        area_factor (float): 面积调整系数。
+        sy_factor (float): Y 向剪切常数调整系数。
+        sz_factor (float): Z 向剪切常数调整系数。
+        ixx_factor (float): X 轴抗扭惯性矩调整系数。
+        iyy_factor (float): Y 轴抗弯惯性矩调整系数。
+        izz_factor (float): Z 轴抗弯惯性矩调整系数。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
 @REGISTRY.register("ExportSecPic")
 def osis_export_section_pic(nSec: int):
     '''

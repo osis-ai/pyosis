@@ -29,6 +29,13 @@ KWARGS_MIN = 5
 _ROUTE_ALIASES = {
     "clear": "Clear",
     "clc": "Clc",
+    # 5.0 文档/命令流里这些命令以全小写或不同大小写出现
+    "combine": "Combine",
+    "post": "Post",
+    "combinesolve": "CombineSolve",
+    "check": "Check",
+    "checksolve": "CheckSolve",
+    "cdpc": "CdPC",
 }
 _SKIP_COMMANDS = frozenset({"CalcSecProp"})
 

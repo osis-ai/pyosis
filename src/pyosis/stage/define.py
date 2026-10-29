@@ -89,7 +89,7 @@ def osis_stage_loadcase(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], s
     pass
 
 @REGISTRY.register("StgAnal")
-def osis_stage_analysis(nIndex: int, eOP: Literal[1, 0], eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"], strLCName: str):
+def osis_stage_analysis(nIndex: int, eOP: Literal[1, 0], eType: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE", "LTM", "TRANS", "SEAST"], strLCName: str = None):
     """激活分析工况,分析工况默认在每个施工阶段的静力工况之后，不同分析工况无先后顺序
 
     Args:
@@ -98,12 +98,15 @@ def osis_stage_analysis(nIndex: int, eOP: Literal[1, 0], eType: Literal["MODAL",
             * 1 = 添加
             * 0 = 移除
         eType (int): 类型
-            * MODAL
-            * SETL
-            * RSPEC
-            * LIVE
-            * BUCKLE
-        strLCName (str): 待操作的荷载工况名称
+            * MODAL = 模态
+            * SETL = 沉降
+            * RSPEC = 反应谱
+            * LIVE = 活载
+            * BUCKLE = 屈曲
+            * LTM = 荷载转质量
+            * TRANS = 瞬态
+            * SEAST = 海况
+        strLCName (str): 待操作的荷载工况名称。除 MODAL 外均为必填
         
     Returns:
         tuple (bool, str): 返回一个元组，包含：

@@ -7,13 +7,13 @@ from ..core import REGISTRY
 
 
 @REGISTRY.register("Stage")
-def osis_stage(nIndex: int, strName: str, nDuration: int):
+def osis_stage(nIndex: int, strName: str, nDuration: float):
     """创建或修改施工阶段
 
     Args:
         nIndex (int): 编号。当前版本的施工阶段编号必须连续
         strName (str): 所赋给的施工阶段名称
-        nDuration (int): 当前施工阶段持续时间
+        nDuration (float): 当前施工阶段持续时间
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：
@@ -41,16 +41,16 @@ def osis_stage_del(nIndex: int):
     pass
 
 @REGISTRY.register("StageIst")
-def osis_stage_insert(nInsertRef: int, nPos: Literal[0, 1], strName: str, nDuration: int):
+def osis_stage_insert(nInsertRef: int, nPos: Literal[0, 1], strName: str, nDuration: float):
     """插入施工阶段
 
     Args:
         nInsertRef (int): 插入的参考位置，编号
-        nPos (int): 
+        nPos (int):
             * 0 = 前插
             * 1 = 后插
         strName (str): 所插入的施工阶段名称
-        nDuration (int): 当前施工阶段持续时间
+        nDuration (float): 当前施工阶段持续时间
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

@@ -60,8 +60,8 @@ def osis_setl_grp_mod(old_name: str, new_name: str):
     """修改沉降组名称。
 
     Args:
-        old_name (int): 旧名称
-        new_name (int): 新名称
+        old_name (str): 旧名称
+        new_name (str): 新名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

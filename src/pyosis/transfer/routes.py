@@ -26,8 +26,13 @@ CMD_ALIASES = {
     "SecMesh": "SectionMesh",
     "Mat": "Material",
     "LC": "LoadCase",
+    "LCDel": "LoadCaseDel",
     "Bd": "Boundary",
+    "BdDel": "BoundaryDel",
     "Stg": "Stage",
+    "StgDel": "StageDel",
+    "StgIst": "StageIst",
+    "StgRmv": "StageRmv",
 }
 
 # 命令流字段顺序 ≠ 方法形参顺序的命令，按字段名重排后再生成调用
@@ -137,6 +142,8 @@ ROUTES = {
     "IncRebar": "engine.control.set_inc_rebar",
     "ModOpt": "engine.dynamic.modal.set_modal_opt",
     "NL": "engine.control.set_nonlinear",
+    "CnvTol": "engine.control.set_convergence_tolerance",
+    "CnvConfig": "engine.control.set_convergence_tolerance",
     "LnSrch": "engine.control.set_line_search",
     "AutoTs": "engine.control.set_auto_time_step",
     "NSUBST": "engine.control.set_substitution_steps",
@@ -153,6 +160,8 @@ ROUTES = {
     "SectionOffset": ("chain", "engine.section.get", "set_offset", 0),
     "SectionMesh": ("chain", "engine.section.get", "set_mesh", 0),
     "SectionMat": ("chain", "engine.section.get", "set_material", 0),
+    "SecPropMod": "engine.section.set_prop_mod",
+    "SectionPropFactor": "engine.section.set_prop_factor",
     "SectionPart": ("chain", "engine.section.get", "add_part", 0),
     "StressPoint": ("chain", "engine.section.get", "set_stress_point", 0),
     "RebarL": ("chain", "engine.section.get", "add_rebar_l", 0),
@@ -162,7 +171,7 @@ ROUTES = {
     "Rib": ("chain", "engine.section.get", "add_rib", 0),
     "RibMod": ("chain", "engine.section.get", "modify_rib", 0),
     "RibDel": ("chain", "engine.section.get", "delete_rib", 0),
-    "ClearSectionRib": ("chain", "engine.section.get", "delete_rib", 0),
+    "ClearSectionRib": ("chain", "engine.section.get", "clear_ribs", 0),
     "RibLayout": ("chain", "engine.section.get", "add_rib_layout", 0),
     "RibLayoutDel": ("chain", "engine.section.get", "delete_rib_layout", 0),
     "SteelPlate": ("chain", "engine.section.get", "add_steel_plate", 0),
@@ -176,7 +185,7 @@ ROUTES = {
     "Element": "engine.element.create",
     "ElementDel": "engine.element.delete",
     "ElementMod": "engine.element.renumber",
-    "EleGrp": "engine.element.group.create",        # 只有创建功能
+    "EleGrp": "engine.element.group.create",        # 完整增删改查（c/a/s/r/aa/ra/m/d）
     "TaperEle": "engine.element.taper_group.create",
     "TaperEleDel": "engine.element.taper_group.delete",
     "TaperEleMod": "engine.element.taper_group.rename",
@@ -201,6 +210,9 @@ ROUTES = {
     "PUCurve": "engine.prop.pu_curve.create",
     "PUCurveDel": "engine.prop.pu_curve.delete",
     "PUCurveMod": "engine.prop.pu_curve.renumber",
+    "StrengthPrg": "engine.prop.strength_prog.create",
+    "StrengthPrgDel": "engine.prop.strength_prog.delete",
+    "StrengthPrgMod": "engine.prop.strength_prog.rename",
 
     # ─── GEOMETRY ───
     # 坐标序列要以 list 传(create 转发给 create_* 的 coordinates 形参),不能展平
@@ -220,6 +232,9 @@ ROUTES = {
     "Load": ("chain", "engine.load.get", "create", 1, 1),  # skip=1(lcName), rest_prefix=1(type)
     "LoadDel": ("chain", "engine.load.get", "delete", 0),
     "LoadMod": ("chain", "engine.load.get", "modify", 0),
+    "PlanarLoad": "engine.load.planar_load",
+    "PlanarLoadCopy": "engine.load.planar_load_copy_flat",
+    "PlanarLoadDel": "engine.load.planar_load_del",
 
     # ─── TENDON ───
     "TdProp": "engine.tendon.prop.create",
@@ -231,6 +246,16 @@ ROUTES = {
     "LayoutTS": ("chain", "engine.tendon.shape.get", "layout", 0),
     "BottomTS": ("chain", "engine.tendon.shape.get", "bottom", 0),
     "WipeTS": ("chain", "engine.tendon.shape.get", "wipe", 0),
+
+    # ─── ENVIRONMENTAL ───
+    "HydroCoeff": "engine.environmental.coeff.hydro_coeff",
+    "HydroCoeffDel": "engine.environmental.coeff.delete",
+    "HydroCoeffMod": "engine.environmental.coeff.rename",
+    "SeastateOpt": "engine.environmental.analysis.sea_state_opt",
+    "SeastAnal": "engine.environmental.analysis.create",
+    "SeastAnalDel": "engine.environmental.analysis.delete",
+    "SeastAnalMod": "engine.environmental.analysis.rename",
+    "SeastAnalInc": "engine.environmental.analysis.inc",
 
     # ─── LIVE ───
     "LiveGrade": "engine.live.grade.create",
@@ -294,6 +319,30 @@ ROUTES = {
     "DispCtrl": "engine.display.disp_ctrl",
     "/control": "engine.display.control",
     "Plsm": "engine.display.set_plsm",
+
+    # ─── POST ───
+    "Combine": "engine.post.create_combine",
+    "Post": "engine.post.add_combine_entry",
+    "CombineSolve": "engine.post.solve_combines",
+    "CombineDel": "engine.post.delete_combines",
+    "Code": "engine.post.set_code",
+    "CdEleSel": "engine.post.select_elements",
+    "CdEleAct": "engine.post.activate_elements",
+    "CdDL": "engine.post.set_design_level",
+    "CdPC": "engine.post.set_member_type",
+    "CdPRSRatio": "engine.post.set_prs_ratio",
+    "CdCSCRatio": "engine.post.set_csc_ratio",
+    "CdE": "engine.post.set_environment",
+    "CdCrack": "engine.post.set_crack_params",
+    "CdAutoC2": "engine.post.auto_c2",
+    "CdCrackWeld": "engine.post.set_weld_skeleton",
+    "CdGeoLCo": "engine.post.set_geo_length",
+    "CdCheck": "engine.post.set_check_items",
+    "Check": "engine.post.add_check",
+    "CheckSolve": "engine.post.solve_checks",
+    "CheckDel": "engine.post.delete_checks",
+    "PrnEig": "engine.post.display_eigenvalue",
+    "PlEig": "engine.post.display_eigenvector",
 
     # ─── GENERAL ───
     "Clear": "engine.clear",

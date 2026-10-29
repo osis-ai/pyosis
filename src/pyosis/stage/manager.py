@@ -313,7 +313,7 @@ class Stage:
     def define_analysis(
         self,
         op: Literal[1, 0],
-        type: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE"],
+        type: Literal["MODAL", "SETL", "RSPEC", "LIVE", "BUCKLE", "LTM", "TRANS", "SEAST"],
         lc_name: str | None = None,
     ) -> None:
         """激活分析工况,分析工况默认在每个施工阶段的静力工况之后，不同分析工况无先后顺序
@@ -328,7 +328,10 @@ class Stage:
                 RSPEC = 反应谱
                 LIVE = 活载分析
                 BUCKLE = 屈曲分析
-            lc_name: 荷载工况名称。MODAL 不需要，留 None 时命令流里不带该参数
+                LTM = 荷载转质量
+                TRANS = 瞬态分析
+                SEAST = 海况分析
+            lc_name: 分析工况名称。除 MODAL 外均为必填
 
         Raises:
             RuntimeError: 操作失败时抛出异常

@@ -42,13 +42,13 @@ def osis_shell_thickness_del(nIndex: int) -> tuple[bool, str]:
     pass
 
 @REGISTRY.register("ShellThkMod")
-def osis_shell_thickness_mod(nOldIndex: str, nNewIndex: str) -> tuple[bool, str]:
+def osis_shell_thickness_mod(nOldIndex: int, nNewIndex: int) -> tuple[bool, str]:
     """
     修改编号
 
     Args:
-        nOldIndex (str): 旧编号
-        nNewIndex (str): 新编号
+        nOldIndex (int): 旧编号
+        nNewIndex (int): 新编号
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

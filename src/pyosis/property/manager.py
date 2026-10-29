@@ -36,6 +36,7 @@ from .pu_curve import (
     osis_pu_curve_del,
     osis_pu_curve_mod,
 )
+from .strength_prog import StrengthProgManager
 from .component_thickness import osis_assign_component_thickness
 from ..core.client import osis_client
 from ..core import get_references, raise_if_occupied
@@ -945,6 +946,7 @@ class PropertyManager:
         - creep_shrink: 收缩徐变管理器
         - damping:      阻尼管理器
         - pu_curve:     荷载-位移曲线管理器
+        - strength_prog: 强度进展特性管理器
     """
 
     def __init__(self) -> None:
@@ -952,6 +954,7 @@ class PropertyManager:
         self._creep_shrink = CreepShrinkManager()
         self._damping = DampingManager()
         self._pu_curve = PuCurveManager()
+        self._strength_prog = StrengthProgManager()
 
     @property
     def coord(self) -> CoordinateManager:
@@ -972,6 +975,11 @@ class PropertyManager:
     def pu_curve(self) -> PuCurveManager:
         """荷载-位移曲线管理器"""
         return self._pu_curve
+
+    @property
+    def strength_prog(self) -> StrengthProgManager:
+        """强度进展特性管理器"""
+        return self._strength_prog
 
     def assign_component_thickness(
         self,

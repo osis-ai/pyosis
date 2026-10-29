@@ -205,12 +205,11 @@ def osis_rib_layout_del(
 
 
 @REGISTRY.register("ClearSectionRib")
-def osis_clear_section_rib(SecNo: int,name: str):
-    """删除截面加劲肋及加劲肋布置信息
+def osis_clear_section_rib(SecNo: int):
+    """删除截面上全部加劲肋及加劲肋布置信息
 
     Args:
         SecNo (int): 截面编号。
-        name: 加劲肋名称
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

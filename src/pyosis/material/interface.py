@@ -10,9 +10,9 @@ from ..core import REGISTRY
 
 @REGISTRY.register('Material')
 def osis_material_conc(nMat: int, strName: str, eMaterialType: Literal["CONC"],
-                       eCode: Literal["JTG3362_2018", "JTGD62_2004"], 
-                       eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"], 
-                       nCrepShrk: int, dDmp: float):
+                       eCode: Literal["JTG3362_2018", "JTGD62_2004"],
+                       eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
+                       nCrepShrk: int | str = "", dDmp: float = 0.05, strStrengthPrg: str = None):
     """创建或修改混凝土材料
 
     Args:
@@ -26,6 +26,7 @@ def osis_material_conc(nMat: int, strName: str, eMaterialType: Literal["CONC"],
             * C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80
         nCrepShrk (int): 收缩徐变特性编号，可以缺省，缺省时设为 ""， 不缺省时设置为1
         dDmp (float): 材料阻尼比
+        strStrengthPrg (str): 强度进展特性名称（StrengthPrg 定义），可缺省，缺省时不带该列
 
     Returns:
         tuple (bool, str):

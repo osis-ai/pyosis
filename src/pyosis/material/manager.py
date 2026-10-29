@@ -66,8 +66,7 @@ class Material:
     fsk: float | None = None        # 钢筋：抗拉强度标准值
     fsd: float | None = None        # 钢筋：抗拉强度设计值
     fssd: float | None = None       # 钢筋：抗压强度设计值
-    strength_prog: str = ""         # 引用的强度进展特性名。Mat 命令没有这一项（只有界面
-                                    # 对话框能设），命令行建的材料恒为 ""
+    strength_prog: str = ""         # 引用的强度进展特性名（StrengthPrg 定义），v5.0 起 Mat 命令末位可带
 
     @property
     def type_name(self) -> str:
@@ -224,6 +223,7 @@ class MaterialManager(BasicManager):
         grade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
         crep_shrk: int | str = "",
         dmp: float = 0.05,
+        strength_prog: str = None,
     ) -> Material:
         """创建混凝土材料
 
@@ -238,6 +238,7 @@ class MaterialManager(BasicManager):
             no: 材料编号，不指定时自动生成（取最大编号+1）
             crep_shrk: 收缩徐变特性编号，可缺省
             dmp: 材料阻尼比
+            strength_prog: 强度进展特性名称（StrengthPrg 定义），None 时不带该列
 
         Returns:
             创建的材料对象
@@ -247,7 +248,7 @@ class MaterialManager(BasicManager):
         """
         if no is None:
             no = self._next_no()
-        ok, err = osis_material_conc(no, name, "CONC", code, grade, crep_shrk, dmp)
+        ok, err = osis_material_conc(no, name, "CONC", code, grade, crep_shrk, dmp, strength_prog)
         if not ok:
             raise RuntimeError(f"创建混凝土材料 {no} 失败: {err}")
         return self.get(no)
