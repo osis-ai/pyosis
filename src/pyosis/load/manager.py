@@ -48,6 +48,7 @@ from .static import (
     osis_load_gravity,
     osis_load_nforce,
     osis_load_line,
+    osis_load_beam_line,
     osis_load_concentrated,
     osis_load_surface_load,
     osis_load_surface_load_vector,
@@ -256,6 +257,7 @@ class LoadCase:
             GRAVITY      -> create_gravity
             NFORCE       -> create_nforce
             LINE         -> create_line_load
+            BLINE        -> create_beam_line_load
             DISPLACEMENT -> create_displacement
             INITIAL      -> create_initial_force
             UTEMP        -> create_uniform_temperature
@@ -286,6 +288,7 @@ class LoadCase:
             "GRAVITY":      self.create_gravity,
             "NFORCE":       self.create_nforce,
             "LINE":         self.create_line_load,
+            "BLINE":        self.create_beam_line_load,
             "DISPLACEMENT": self.create_displacement,
             "INITIAL":      self.create_initial_force,
             "UTEMP":        self.create_uniform_temperature,
@@ -435,6 +438,78 @@ class LoadCase:
         )
         if not ok:
             raise RuntimeError(f"添加线荷载到工况 {self.name} 失败: {err}")
+        return self.refresh()
+
+    def create_beam_line_load(
+            self,
+            entity: int,
+            coord_system: Literal[0, 1] = 1,
+            x_mode: Literal[0, 1] = 0,
+            proj: Literal[0, 1] = 0,
+            offset_x_i: float = 0.0,
+            offset_y_i: float = 0.0,
+            offset_z_i: float = 0.0,
+            fx_i: float = 0,
+            fy_i: float = 0,
+            fz_i: float = 0,
+            mx_i: float = 0,
+            my_i: float = 0,
+            mz_i: float = 0,
+            offset_x_j: float = 1.0,
+            offset_y_j: float = 0.0,
+            offset_z_j: float = 0.0,
+            fx_j: float = 0,
+            fy_j: float = 0,
+            fz_j: float = 0,
+            mx_j: float = 0,
+            my_j: float = 0,
+            mz_j: float = 0,
+    ) -> LoadCase:
+        '''添加梁单元两端线荷载
+
+        Args:
+            entity (int): 单元编号
+            coord_system (int): 坐标系
+                * 0 = 单元坐标系
+                * 1 = 整体坐标系
+            x_mode (int): X 偏移量单位
+                * 0 = 归一化无量纲，偏移量X/L 输入范围[0,1]
+                * 1 = 长度，偏移量为实际长度，不能大于单元长度
+            proj (int):
+                * 0 = 不投影
+                * 1 = 投影
+            offset_x_i (float): I端偏移量X/L，需小于J端偏移量
+            offset_y_i (float): I端Y轴偏移量
+            offset_z_i (float): I端Z轴偏移量
+            fx_i (float): I端坐标系x方向的集中力
+            fy_i (float): I端坐标系y方向的集中力
+            fz_i (float): I端坐标系z方向的集中力
+            mx_i (float): I端坐标系x方向的集中弯矩
+            my_i (float): I端坐标系y方向的集中弯矩
+            mz_i (float): I端坐标系z方向的集中弯矩
+            offset_x_j (float): J端偏移量X/L
+            offset_y_j (float): J端Y轴偏移量
+            offset_z_j (float): J端Z轴偏移量
+            fx_j (float): J端坐标系x方向的集中力
+            fy_j (float): J端坐标系y方向的集中力
+            fz_j (float): J端坐标系z方向的集中力
+            mx_j (float): J端坐标系x方向的集中弯矩
+            my_j (float): J端坐标系y方向的集中弯矩
+            mz_j (float): J端坐标系z方向的集中弯矩
+
+        Returns:
+            更新后的 LoadCase 对象
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
+        ok, err = osis_load_beam_line(
+            "BLINE", self.name, entity, coord_system, x_mode, proj,
+            offset_x_i, offset_y_i, offset_z_i, fx_i, fy_i, fz_i, mx_i, my_i, mz_i,
+            offset_x_j, offset_y_j, offset_z_j, fx_j, fy_j, fz_j, mx_j, my_j, mz_j,
+        )
+        if not ok:
+            raise RuntimeError(f"添加梁单元线荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
 
     def create_concentrated_force(

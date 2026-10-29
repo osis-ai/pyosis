@@ -105,6 +105,52 @@ def osis_load_line(eType: Literal['LINE'], strLCName: str, nEntity: int, eCoordS
     pass
 
 @REGISTRY.register("Load")
+def osis_load_beam_line(eType: Literal['BLINE'], strLCName: str, nEntity: int,
+                        eCoordSystem: Literal[0, 1], eXMode: Literal[0, 1], eProj: Literal[0, 1],
+                        dOffsetXI: float = 0, dOffsetYI: float = 0, dOffsetZI: float = 0,
+                        dFXI: float = 0, dFYI: float = 0, dFZI: float = 0, dMXI: float = 0, dMYI: float = 0, dMZI: float = 0,
+                        dOffsetXJ: float = 1, dOffsetYJ: float = 0, dOffsetZJ: float = 0,
+                        dFXJ: float = 0, dFYJ: float = 0, dFZJ: float = 0, dMXJ: float = 0, dMYJ: float = 0, dMZJ: float = 0):
+    '''
+    创建或修改变截面梁单元两端线荷载
+
+    Args:
+        eType (str): 荷载类型，不区分大小写。固定为 BLINE
+        strLCName (str): 荷载工况名称
+        nEntity (int): 单元编号
+        eCoordSystem (int):
+            * 0-单元坐标系
+            * 1-整体坐标系
+        eXMode (int): X 偏移量单位
+            * 0 = 归一化无量纲，偏移量X/L 输入范围[0,1]
+            * 1 = 长度，偏移量为实际长度，不能大于单元长度
+        eProj (int):
+            * 0 = 不投影
+            * 1 = 投影
+        dOffsetXI (float): I端偏移量X/L，输入范围[0,1]；eXMode=1 时为实际长度
+        dOffsetYI (float): I端Y轴偏移量
+        dOffsetZI (float): I端Z轴偏移量
+        dFXI (float): I端坐标系x方向的集中力
+        dFYI (float): I端坐标系y方向的集中力
+        dFZI (float): I端坐标系z方向的集中力
+        dMXI (float): I端坐标系x方向的集中弯矩
+        dMYI (float): I端坐标系y方向的集中弯矩
+        dMZI (float): I端坐标系z方向的集中弯矩
+        dOffsetXJ (float): J端偏移量X/L，需大于I端偏移量
+        dOffsetYJ (float): J端Y轴偏移量
+        dOffsetZJ (float): J端Z轴偏移量
+        dFXJ (float): J端坐标系x方向的集中力
+        dFYJ (float): J端坐标系y方向的集中力
+        dFZJ (float): J端坐标系z方向的集中力
+        dMXJ (float): J端坐标系x方向的集中弯矩
+        dMYJ (float): J端坐标系y方向的集中弯矩
+        dMZJ (float): J端坐标系z方向的集中弯矩
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("Load")
 def osis_load_concentrated(eType: Literal['PTF', 'PTM'], strLCName: str, nEntity: int,
                            eCoordSystem: Literal[0, 1], nLoadRange: Literal[1, 2, 3, 4, 5],
                            params: list):
