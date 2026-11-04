@@ -112,6 +112,73 @@ def test_read_gbk_out_falls_through():
     assert "混凝土C五十" in _read_out_text(p)
 
 
+# ── 命令流字段重排回归 ────────────────────────────────────────
+
+def test_infl_algo_ref1_ve_keeps_spline_last():
+    """InflAlgo VE eRef=1: ESel,SplineName → ref_elems,空偏移,空偏移,spline_name"""
+    lines = _gen("InflAlgo,L2,VE,120,1,1,1,EG,SP1;\n")
+    assert lines == [
+        'engine.live.lane.create("L2", "VE", 120, 1, 1, 1, "EG", "", "", "SP1")'
+    ], lines
+
+
+def test_infl_algo_ref1_tcb_keeps_spline_last():
+    lines = _gen("InflAlgo,L4,TCB,EGT,40,1,1,1,EG,SP1;\n")
+    assert lines == [
+        'engine.live.lane.create("L4", "TCB", "EGT", 40, 1, 1, 1, "EG", "", "", "SP1")'
+    ], lines
+
+
+def test_buckl_inc_substitute_uses_include():
+    """BucklAnalInc OP=s 的 7 字段形式不再错位到 include 的固定 4 参数"""
+    lines = _gen("BucklAnalInc,B1,s,LC2,1.2,0,LC1,1,0;\n")
+    assert lines == [
+        'engine.stability.get("B1").include("s", "LC2", 1.2, 0, "LC1", 1, 0)'
+    ], lines
+
+
+def test_ltm_inc_routes_op_to_include():
+    """LTMAnalInc 的 OP 列由 include 消费，不再顶掉 LCName"""
+    lines = _gen("LTMAnalInc,M1,a,LC1,2.0,9.806,1,1,1,1,1,1;\n")
+    assert "include(op=\"a\", lc_name=\"LC1\"" in lines[0], lines
+
+
+def test_seis_rsp_import_num_before_spectrum():
+    """SeisRspSpec 导入型: num 必须在谱值之前"""
+    lines = _gen("SeisRspSpec,RS1,A,9.806,0,2,0.1,0.5,0.2,0.8;\n")
+    assert lines == [
+        'engine.dynamic.seismic.create("RS1", "A", 9.806, 0, 2, 0.1, 0.5, 0.2, 0.8)'
+    ], lines
+
+
+def test_plane_load_flat_points():
+    """布置平面荷载: P1/P2/P3 各三个坐标展平输入"""
+    lines = _gen(
+        "Load,Plane,LC1,PL1,SHELL,0,0,0,1,0,0,0,1,0,0.01,1,EG1,1,"
+        "SurfaceN,NoProjection,0,X;\n"
+    )
+    assert lines == [
+        'engine.load.get("LC1").create("Plane", "PL1", "SHELL", 0, 0, 0, '
+        '1, 0, 0, 0, 1, 0, 0.01, 1, "EG1", 1, "SurfaceN", "NoProjection", 0, "X")'
+    ], lines
+
+
+def test_shaped_steel_catalog_fields():
+    """型钢选型: UseCatalog=1 后紧跟 Code,Designation"""
+    lines = _gen("Section,2,S2,SteelL,1,GB_YB,L20;\n")
+    assert lines == [
+        'engine.section.create(2, "S2", "SteelL", 1, "GB_YB", "L20")'
+    ], lines
+
+
+def test_pre_tendon_has_no_pipe_placeholder():
+    """先张法 PRE 无 Pipe 列: deltaT 后直接是张拉/松弛系数"""
+    lines = _gen("TdProp,P1,PRE,1,1,GBT5224,12.7,5,7.0,0.8,0.7;\n")
+    assert lines == [
+        'engine.tendon.prop.create("P1", "PRE", 1, 1, "GBT5224", 12.7, 5, 7.0, 0.8, 0.7)'
+    ], lines
+
+
 if __name__ == "__main__":
     fns = [v for k, v in sorted(globals().items()) if k.startswith("test_")]
     failed = 0

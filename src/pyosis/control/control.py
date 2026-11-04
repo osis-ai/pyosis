@@ -1,4 +1,19 @@
+from typing import Literal
+
 from ..core import REGISTRY
+
+@REGISTRY.register("Unit")
+def osis_unit(eLength: Literal["mm", "cm", "m", "in"], eForce: Literal["N", "kN", "MN", "lbf", "tonf"]):
+    '''
+    设置单位制
+
+    Args:
+        eLength (str): 长度单位，mm / cm / m / in
+        eForce (str): 力单位，N / kN / MN / lbf / tonf
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
 
 @REGISTRY.register("Acel")
 def osis_acel(dG: float = 9.8066):

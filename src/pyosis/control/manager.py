@@ -20,6 +20,7 @@ from typing import Literal
 from ..core import osis_run
 from ..core.client import osis_client
 from .control import (
+    osis_unit,
     osis_acel,
     osis_calc_tendon,
     osis_calc_con_force,
@@ -52,22 +53,23 @@ class ControlManager:
 
     # ── 单位与项目 ──────────────────────────────
 
-    # def set_unit(
-    #     self,
-    #     length: str = "m",
-    #     force: str = "kN",
-    #     temperature: str = "C",
-    # ) -> None:
-    #     """设置单位制
+    def set_unit(
+        self,
+        length: Literal["mm", "cm", "m", "in"] = "m",
+        force: Literal["N", "kN", "MN", "lbf", "tonf"] = "kN",
+    ) -> None:
+        """设置单位制
 
-    #     Args:
-    #         length: 长度单位
-    #         force: 力单位
-    #         temperature: 温度单位
-    #     """
-    #     ok, err = osis_set_unit(length, force, temperature)
-    #     if not ok:
-    #         raise RuntimeError(f"设置单位制失败: {err}")
+        Args:
+            length: 长度单位，mm / cm / m / in
+            force: 力单位，N / kN / MN / lbf / tonf
+
+        Raises:
+            RuntimeError: 设置失败时抛出异常
+        """
+        ok, err = osis_unit(length, force)
+        if not ok:
+            raise RuntimeError(f"设置单位制失败: {err}")
 
 
     def set_gravity_acceleration(self, g: float = 9.8066) -> None:

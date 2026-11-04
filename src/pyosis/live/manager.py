@@ -27,6 +27,10 @@ from .grade import (
     osis_livegrade_fatigue,
     osis_livegrade_del,
     osis_livegrade_mod, osis_livegrade_custom,
+    osis_livegrade_custom_vehicle,
+    osis_livegrade_custom_nhwcd,
+    osis_livegrade_custom_nhwrq,
+    osis_livegrade_custom_ohwrq,
 )
 from .analysis import (
     osis_live_analysis,
@@ -75,6 +79,28 @@ _BRIDGE_TYPE_ALIASES = {
 def _norm_bridge_type(value) -> str:
     t = str(value or "").strip().upper()
     return _BRIDGE_TYPE_ALIASES.get(t, t)
+
+
+def _flatten_veh_layout(layout) -> list[float]:
+    """把（轴距, 轴载）序列统一展平成 [轴距1, 轴载1, ...]。
+
+    既接受 [[d1, p1], [d2, p2]]，也接受已经平铺的 [d1, p1, d2, p2]。
+    """
+    if layout is None:
+        return []
+    items = list(layout)
+    if not items:
+        return []
+    if all(isinstance(x, (int, float)) for x in items):
+        if len(items) % 2:
+            raise ValueError(f"轴载参数须成对 (轴距, 轴载)，当前 {len(items)} 个: {items!r}")
+        return [float(x) for x in items]
+    flat: list[float] = []
+    for pair in items:
+        if len(pair) != 2:
+            raise ValueError(f"轴载参数须成对 (轴距, 轴载)，当前: {pair!r}")
+        flat.extend((float(pair[0]), float(pair[1])))
+    return flat
 
 
 # ──────────────────────────────────────────────
@@ -329,14 +355,14 @@ class LiveCase:
                 "CUSTOM": 1,
             }
             grade_name, scalar, mu_flag = args[0], float(args[1]), int(args[2])
-            rest = args[4:]
             if mu_flag == 1:
                 bridge_type = _norm_bridge_type(args[3]) or "SIMPLE"
                 mu_count = _MU_PARAM_COUNT.get(bridge_type, 1)
-                mu_params: list[float] = [float(x) for x in rest[:mu_count]]
-                lane_names: list[str] = list(rest[mu_count:])
+                mu_params: list[float] = [float(x) for x in args[4:4 + mu_count]]
+                lane_names: list[str] = list(args[4 + mu_count:])
             else:
-                mu_params, lane_names = [], list(rest)
+                # muFlag=0 时命令流没有 bridgeType 列，车道名紧跟 muFlag
+                mu_params, lane_names = [], list(args[3:])
                 bridge_type = None
             if op == "a":
                 return self.create_sub(
@@ -588,7 +614,11 @@ class LiveGradeManager(BasicManager):
             * "FATIGUE_I"   → create_fatigue
             * "FATIGUE_II"  → create_fatigue
             * "FATIGUE_III" → create_fatigue
+            * "V"           → create_custom_vehicle
             * "VG"          → create_custom（OSIS 平铺: grp_num, 轴距, 轴载, ...）
+            * "NHWCD"       → create_custom_nhwcd
+            * "NHWRQ"       → create_custom_nhwrq
+            * "OHWRQ"       → create_custom_ohwrq
         """
         type_key = type.upper()
 
@@ -599,16 +629,28 @@ class LiveGradeManager(BasicManager):
             if not args:
                 return self.create_custom(name, code, "VG")
             grp_num = int(args[0])
-            rest = args[1:]
-            if len(rest) % 2 != 0:
-                raise ValueError(
-                    f"VG 轴载参数须成对 (轴距, 轴载)，当前 {len(rest)} 个: {rest!r}"
-                )
-            layout = [
-                (float(rest[i]), float(rest[i + 1]))
-                for i in range(0, len(rest), 2)
-            ]
-            return self.create_custom(name, code, "VG", grp_num, layout)
+            rest = list(args[1:])
+            if len(rest) == 1 and isinstance(rest[0], (list, tuple)):
+                rest = list(rest[0])
+            return self.create_custom(name, code, "VG", grp_num, rest)
+
+        # OSIS: LiveGrade, name, CUSTOM, V, (轴距, 轴载) × N
+        if type_key == "V":
+            if kwargs.get("veh_layout") is not None:
+                return self.create_custom_vehicle(name, code, type_key, *args, **kwargs)
+            layout = args[0] if len(args) == 1 and isinstance(args[0], (list, tuple)) else args
+            return self.create_custom_vehicle(name, code, "V", layout)
+
+        # OSIS: LiveGrade, name, CUSTOM, NHWCD/NHWRQ/OHWRQ, 规范参数...
+        if type_key in ("NHWCD", "NHWRQ", "OHWRQ"):
+            creator = {
+                "NHWCD": self.create_custom_nhwcd,
+                "NHWRQ": self.create_custom_nhwrq,
+                "OHWRQ": self.create_custom_ohwrq,
+            }[type_key]
+            if len(args) == 1 and isinstance(args[0], (list, tuple)):
+                args = tuple(args[0])
+            return creator(name, code, type_key, *args, **kwargs)
 
         _creator = {
             "HIGHWAY_I": self.create_highway,
@@ -619,6 +661,7 @@ class LiveGradeManager(BasicManager):
             "FATIGUE_II": self.create_fatigue,
             "FATIGUE_III": self.create_fatigue,
             "VG": self.create_custom,
+            "V": self.create_custom_vehicle,
         }
         if type_key not in _creator:
             raise ValueError(
@@ -761,18 +804,140 @@ class LiveGradeManager(BasicManager):
         Raises:
             RuntimeError: 创建失败时抛出异常
         """
-        layout_flat: list[float] = []
-        for pair in veh_grp_layout:
-            if len(pair) != 2:
-                raise ValueError(
-                    f"veh_grp_layout 每项须为 (轴距, 轴载)，当前: {pair!r}"
-                )
-            layout_flat.extend((float(pair[0]), float(pair[1])))
+        layout_flat = _flatten_veh_layout(veh_grp_layout)
         ok, err = osis_livegrade_custom(
             name, code, live_load_type, grp_num, layout_flat
         )
         if not ok:
             raise RuntimeError(f"创建自定义活载等级 {name} 失败: {err}")
+        return self.get(name)
+
+    def create_custom_vehicle(
+        self,
+        name: str,
+        code: Literal["CUSTOM"] = "CUSTOM",
+        live_load_type: Literal["V"] = "V",
+        veh_layout: list = (),
+    ) -> LiveGrade:
+        """创建自定义车辆活载等级
+
+        Args:
+            name: 活载等级名称（对应 strName）
+            code: 规范类型（对应 eCode），固定为 CUSTOM
+            live_load_type: 活载类型（对应 eLiveLoadType），固定为 V
+            veh_layout: 各轴的（轴距, 轴载），支持成对列表或平铺列表
+
+        Returns:
+            创建的 LiveGrade 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_livegrade_custom_vehicle(
+            name, code, live_load_type, _flatten_veh_layout(veh_layout)
+        )
+        if not ok:
+            raise RuntimeError(f"创建自定义车辆活载等级 {name} 失败: {err}")
+        return self.get(name)
+
+    def create_custom_nhwcd(
+        self,
+        name: str,
+        code: Literal["CUSTOM"] = "CUSTOM",
+        live_load_type: Literal["NHWCD"] = "NHWCD",
+        qk: float = 0.0,
+        L1: float = 0.0,
+        Pk1: float = 0.0,
+        L2: float = 0.0,
+        Pk2: float = 0.0,
+    ) -> LiveGrade:
+        """创建新公路车道荷载等级
+
+        Args:
+            name: 活载等级名称（对应 strName）
+            code: 规范类型（对应 eCode），固定为 CUSTOM
+            live_load_type: 活载类型（对应 eLiveLoadType），固定为 NHWCD
+            qk: 均布荷载
+            L1: 跨径1
+            Pk1: 小于等于 L1 时的集中荷载值
+            L2: 跨径2
+            Pk2: 大于等于 L2 时的集中荷载值
+
+        Returns:
+            创建的 LiveGrade 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_livegrade_custom_nhwcd(
+            name, code, live_load_type, qk, L1, Pk1, L2, Pk2
+        )
+        if not ok:
+            raise RuntimeError(f"创建新公路车道荷载等级 {name} 失败: {err}")
+        return self.get(name)
+
+    def create_custom_nhwrq(
+        self,
+        name: str,
+        code: Literal["CUSTOM"] = "CUSTOM",
+        live_load_type: Literal["NHWRQ"] = "NHWRQ",
+        B: float = 0.0,
+        L1: float = 0.0,
+        P1: float = 0.0,
+        L2: float = 0.0,
+        P2: float = 0.0,
+    ) -> LiveGrade:
+        """创建新公路人群荷载等级
+
+        Args:
+            name: 活载等级名称（对应 strName）
+            code: 规范类型（对应 eCode），固定为 CUSTOM
+            live_load_type: 活载类型（对应 eLiveLoadType），固定为 NHWRQ
+            B: 人群横向宽度
+            L1: 跨径1
+            P1: 小于等于 L1 时的人群压强值
+            L2: 跨径2
+            P2: 大于等于 L2 时的人群压强值
+
+        Returns:
+            创建的 LiveGrade 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_livegrade_custom_nhwrq(
+            name, code, live_load_type, B, L1, P1, L2, P2
+        )
+        if not ok:
+            raise RuntimeError(f"创建新公路人群荷载等级 {name} 失败: {err}")
+        return self.get(name)
+
+    def create_custom_ohwrq(
+        self,
+        name: str,
+        code: Literal["CUSTOM"] = "CUSTOM",
+        live_load_type: Literal["OHWRQ"] = "OHWRQ",
+        P: float = 0.0,
+    ) -> LiveGrade:
+        """创建旧公路人群荷载等级
+
+        Args:
+            name: 活载等级名称（对应 strName）
+            code: 规范类型（对应 eCode），固定为 CUSTOM
+            live_load_type: 活载类型（对应 eLiveLoadType），固定为 OHWRQ
+            P: 人群荷载值
+
+        Returns:
+            创建的 LiveGrade 对象
+
+        Raises:
+            RuntimeError: 创建失败时抛出异常
+        """
+        ok, err = osis_livegrade_custom_ohwrq(
+            name, code, live_load_type, P
+        )
+        if not ok:
+            raise RuntimeError(f"创建旧公路人群荷载等级 {name} 失败: {err}")
         return self.get(name)
 
     def delete(self, name: str) -> None:
@@ -965,9 +1130,9 @@ class LaneManager(BasicManager):
             ref: 车道参照方式
                 - 0: 参照单元组（默认）
                 - 1: 参照样条曲线
-            ref_elems: 参照纵梁单元组名称（ref=0 时必填）
-            offset_y: Y方向偏移量（m），默认 0.0
-            offset_z: Z方向偏移量（m），默认 0.0
+            ref_elems: 参照纵梁单元组名称（ref=0/1 均必填）
+            offset_y: Y方向偏移量（m），默认 0.0；ref=1 时不使用
+            offset_z: Z方向偏移量（m），默认 0.0；ref=1 时不使用
             spline_name: 样条曲线名称（ref=1 时必填）
 
         Returns:
@@ -981,9 +1146,12 @@ class LaneManager(BasicManager):
                 raise RuntimeError(f"参照单元组名称 ref_elems 不能为空")
             param = [ref_elems, offset_y, offset_z]
         else:
+            # 命令流 eRef=1：ESel, SplineName
+            if not ref_elems:
+                raise RuntimeError(f"参照纵梁单元组名称 ref_elems 不能为空")
             if not spline_name:
                 raise RuntimeError(f"样条曲线名称 spline_name 不能为空")
-            param = [spline_name]
+            param = [ref_elems, spline_name]
 
         ok, err = osis_lane_ve(name, "VE", length, wheel, orientation, ref, param)
         if not ok:
@@ -1019,9 +1187,9 @@ class LaneManager(BasicManager):
             ref: 车道参照方式
                 - 0: 参照单元组（默认）
                 - 1: 参照样条曲线
-            ref_elems: 参照纵梁单元组名称（ref=0 时必填）
-            offset_y: Y方向偏移量（m），默认 0.0
-            offset_z: Z方向偏移量（m），默认 0.0
+            ref_elems: 参照纵梁单元组名称（ref=0/1 均必填）
+            offset_y: Y方向偏移量（m），默认 0.0；ref=1 时不使用
+            offset_z: Z方向偏移量（m），默认 0.0；ref=1 时不使用
             spline_name: 样条曲线名称（ref=1 时必填）
 
         Returns:
@@ -1035,9 +1203,12 @@ class LaneManager(BasicManager):
                 raise RuntimeError(f"参照单元组名称 ref_elems 不能为空")
             param = [ref_elems, offset_y, offset_z]
         else:
+            # 命令流 eRef=1：RefESel, SplineName
+            if not ref_elems:
+                raise RuntimeError(f"参照纵梁单元组名称 ref_elems 不能为空")
             if not spline_name:
                 raise RuntimeError(f"样条曲线名称 spline_name 不能为空")
-            param = [spline_name]
+            param = [ref_elems, spline_name]
 
         ok, err = osis_lane_tcb(name, "TCB", crossbeam_elems, length, wheel, orientation, ref, param)
         if not ok:

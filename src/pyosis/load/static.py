@@ -151,6 +151,37 @@ def osis_load_beam_line(eType: Literal['BLINE'], strLCName: str, nEntity: int,
     pass
 
 @REGISTRY.register("Load")
+def osis_load_distrb(eType: Literal['DISTRB'], strLCName: str, nEntity: int,
+                     eCoordSystem: Literal[0, 1], eXMode: Literal[0, 1], eProj: Literal[0, 1],
+                     nPtNum: int, params: list):
+    '''
+    创建或修改梁单元分布荷载
+
+    Args:
+        eType (str): 荷载类型，不区分大小写。固定为 DISTRB
+        strLCName (str): 荷载工况名称
+        nEntity (int): 单元编号
+        eCoordSystem (int):
+            * 0-单元坐标系
+            * 1-整体坐标系
+        eXMode (int): X 偏移量单位
+            * 0 = 归一化无量纲，偏移量X/L 输入范围[0,1]
+            * 1 = 长度，偏移量为实际长度，不能大于单元长度
+        eProj (int):
+            * 0 = 不投影
+            * 1 = 投影
+        nPtNum (int): 荷载控制点数，2~6
+        params (list): 各控制点的偏移量与荷载，按顺序平铺填入：
+            [offsetX1, offsetY1, offsetZ1, Fx1, Fy1, Fz1, Mx1, My1, Mz1,
+             offsetX2, ...]
+            每组包含 9 个参数：偏移量X, Y轴偏移量, Z轴偏移量,
+            x/y/z 方向力的集度, x/y/z 方向力矩的集度
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("Load")
 def osis_load_concentrated(eType: Literal['PTF', 'PTM'], strLCName: str, nEntity: int,
                            eCoordSystem: Literal[0, 1], nLoadRange: Literal[1, 2, 3, 4, 5],
                            params: list):
@@ -436,6 +467,32 @@ def osis_load_pst(eType: str="PST", strLCName: str="自定义工况1", strEntity
     pass
 
 @REGISTRY.register("Load")
+def osis_load_pst_single(eType: str="PST", strLCName: str="自定义工况1", strEntity: str="钢束1",
+                         eTensionType: Literal["BEG", "END"]="BEG", eTensionForceType: Literal["ST", "IF"]="ST",
+                         dVal: float=100, n_grout_after: int=0):
+    '''
+    创建或修改单端张拉预应力荷载
+
+    命令流（单端张拉）：Load, PST, LC, Entity, TensionType, TensionForceType, Val, GroutAfter
+
+    Args:
+        eType (str): 荷载类型，不区分大小写。固定为 PST
+        strLCName (str): 荷载工况名称
+        strEntity (str): 钢束形状名称，由TdShape定义
+        eTensionType (str): 张拉类型
+            * BEG = 起点张拉
+            * END = 终点张拉
+        eTensionForceType (str): 张拉力类型
+            * ST = 应力
+            * IF = 内力
+        dVal (float): 起点或终点的应力/内力值
+        n_grout_after (int): 延后灌浆阶段数，整数且 ≥ 0，可缺省，缺省为 0，非 0 表示在后几个阶段灌浆
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
+@REGISTRY.register("Load")
 def osis_load_cforce(eType: str="CFORCE", strLCName: str="自定义工况1", nEntity: int=1, eLoadType: Literal["IN", "EX"]="IN", dForce: float=100):
     '''
     创建或修改索力
@@ -585,7 +642,7 @@ def osis_load_plane(eType: Literal["Plane"]="Plane", strLCName: str="自定义�
     pass
 
 @REGISTRY.register("LoadDel")
-def osis_load_del(eType: Literal["GRAVITY", "NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"]="NFORCE", strLCName: str="自定义工况1", entity: int|str=1):
+def osis_load_del(eType: Literal["GRAVITY", "NFORCE", "LINE", "BLINE", "DISTRB", "PTF", "PTM", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE", "ESRFC", "FP", "PLANE"]="NFORCE", strLCName: str="自定义工况1", entity: int|str=None):
     '''
     删除荷载
 
@@ -594,12 +651,17 @@ def osis_load_del(eType: Literal["GRAVITY", "NFORCE", "LINE", "DISPLACEMENT", "I
             * GRAVITY = 自重荷载
             * NFORCE = 节点荷载
             * LINE = 线荷载
+            * BLINE = 变截面梁单元两端线荷载
+            * DISTRB = 梁单元分布荷载
             * DISPLACEMENT = 强迫位移荷载
             * INITIAL = 初始内力荷载
             * UTEMP = 均匀温度荷载
             * GTEMP = 梯度温度荷载
             * PST = 预应力荷载
             * CFORCE = 索力荷载
+            * ESRFC = 单元面荷载
+            * FP = 流体压力荷载
+            * PLANE = 布置的平面荷载
         strLCName (str): 荷载工况名称
         entity (int|str): 要删除的荷载所作用的节点/单元/钢束形状。eType 为 GRAVITY 时需要填 None
 
@@ -609,7 +671,7 @@ def osis_load_del(eType: Literal["GRAVITY", "NFORCE", "LINE", "DISPLACEMENT", "I
     pass
 
 @REGISTRY.register("LoadMod")
-def osis_load_mod(eType: Literal["NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"]="NFORCE", strLCName: str="自定义工况1", oldEntity: int|str=1, newEntity: int|str=2):
+def osis_load_mod(eType: Literal["NFORCE", "LINE", "BLINE", "DISTRB", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE", "ESRFC", "FP", "PLANE"]="NFORCE", strLCName: str="自定义工况1", oldEntity: int|str=1, newEntity: int|str=2):
     '''
     修改工况内荷载作用的单元或节点或钢束形状
 

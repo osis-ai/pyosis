@@ -6,7 +6,7 @@ from typing import Literal
 from ..core import REGISTRY
 
 @REGISTRY.register("StgEle")
-def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strGroupName: str, nBirth: int, ePart: Literal[0, 1, 2]=None):
+def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strGroupName: str, nBirth: int = None, ePart: Literal[0, 1, 2]=None):
     """通过单元组激活单元
 
     Args:

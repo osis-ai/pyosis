@@ -360,10 +360,10 @@ class PostManager:
 
     def set_crack_params(
         self,
-        c1: float | str | None = None,
-        c2: float | str | None = None,
-        c3: float | str | None = None,
-        cover: float | str | None = None,
+        c1: float | str | None = "",
+        c2: float | str | None = "",
+        c3: float | str | None = "",
+        cover: float | str | None = "",
     ) -> None:
         """设置裂缝计算参数（需先选中单元）
 
@@ -413,10 +413,10 @@ class PostManager:
 
     def set_geo_length(
         self,
-        ly: float,
-        ky: float,
-        lz: float,
-        kz: float,
+        ly: float | str | None = "",
+        ky: float | str | None = "",
+        lz: float | str | None = "",
+        kz: float | str | None = "",
     ) -> None:
         """设置构件几何长度及计算长度系数（需先选中单元）
 

@@ -184,10 +184,10 @@ def osis_cd_e(
 
 @REGISTRY.register('CdCrack')
 def osis_cd_crack(
-    dC1: float | str | None = None,
-    dC2: float | str | None = None,
-    dC3: float | str | None = None,
-    dCover: float | str | None = None,
+    dC1: float | str | None = "",
+    dC2: float | str | None = "",
+    dC3: float | str | None = "",
+    dCover: float | str | None = "",
 ):
     """设置裂缝计算参数（需先选中单元）。
 
@@ -249,10 +249,10 @@ def osis_cd_crack_weld(
 
 @REGISTRY.register('CdGeoLCo')
 def osis_cd_geo_lco(
-    dLy: float,
-    dKy: float,
-    dLz: float,
-    dKz: float,
+    dLy: float | str | None = "",
+    dKy: float | str | None = "",
+    dLz: float | str | None = "",
+    dKz: float | str | None = "",
 ):
     """设置构件几何长度及计算长度系数（需先选中单元）。
 

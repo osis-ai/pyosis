@@ -49,6 +49,7 @@ from .static import (
     osis_load_nforce,
     osis_load_line,
     osis_load_beam_line,
+    osis_load_distrb,
     osis_load_concentrated,
     osis_load_surface_load,
     osis_load_surface_load_vector,
@@ -58,6 +59,7 @@ from .static import (
     osis_load_utemp,
     osis_load_gtemp,
     osis_load_pst,
+    osis_load_pst_single,
     osis_load_cforce,
     osis_load_plane,
     osis_planar_load_point,
@@ -258,6 +260,7 @@ class LoadCase:
             NFORCE       -> create_nforce
             LINE         -> create_line_load
             BLINE        -> create_beam_line_load
+            DISTRB       -> create_distrb
             DISPLACEMENT -> create_displacement
             INITIAL      -> create_initial_force
             UTEMP        -> create_uniform_temperature
@@ -289,6 +292,7 @@ class LoadCase:
             "NFORCE":       self.create_nforce,
             "LINE":         self.create_line_load,
             "BLINE":        self.create_beam_line_load,
+            "DISTRB":       self.create_distrb,
             "DISPLACEMENT": self.create_displacement,
             "INITIAL":      self.create_initial_force,
             "UTEMP":        self.create_uniform_temperature,
@@ -314,6 +318,25 @@ class LoadCase:
             raise ValueError(f"未知荷载类型: {type!r}，支持: {', '.join(_creator)}")
         if type_key in ("ESRFC", "FP"):
             kwargs.setdefault("e_type", type_key)
+        # 布置平面荷载：命令流把三个点坐标展平成 9 列，create_plane_load 收 3 个元组
+        if type_key == "PLANE" and len(args) >= 3 and not isinstance(args[2], (tuple, list)):
+            if len(args) < 11:
+                raise ValueError(
+                    f"布置平面荷载至少需要 PlanarLoadName, ElemType, P1..P3 共 11 个字段，"
+                    f"收到 {len(args)} 个: {args!r}"
+                )
+            name, elem_type = args[0], args[1]
+            p1, p2, p3 = tuple(args[2:5]), tuple(args[5:8]), tuple(args[8:11])
+            tail = list(args[11:])
+            head = tail[:8]
+            while len(head) < 8:
+                head.append(None)
+            tolerance, load_position, elem_group, load_surface, direction, projection, copy_op, copy_dir = head
+            copies = tail[8:] or None
+            return self.create_plane_load(
+                name, elem_type, p1, p2, p3, tolerance, load_position,
+                elem_group, load_surface, direction, projection, copy_op, copy_dir, copies,
+            )
         return _creator[type_key](*args, **kwargs)
 
     def create_gravity(
@@ -510,6 +533,50 @@ class LoadCase:
         )
         if not ok:
             raise RuntimeError(f"添加梁单元线荷载到工况 {self.name} 失败: {err}")
+        return self.refresh()
+
+    def create_distrb(
+            self,
+            entity: int,
+            coord_system: Literal[0, 1] = 1,
+            x_mode: Literal[0, 1] = 0,
+            proj: Literal[0, 1] = 0,
+            pt_num: int = 2,
+            *points: float,
+    ) -> LoadCase:
+        '''添加梁单元分布荷载
+
+        Args:
+            entity (int): 单元编号
+            coord_system (int): 坐标系
+                * 0 = 单元坐标系
+                * 1 = 整体坐标系
+            x_mode (int): X 偏移量单位
+                * 0 = 归一化无量纲，偏移量X/L 输入范围[0,1]
+                * 1 = 长度，偏移量为实际长度，不能大于单元长度
+            proj (int):
+                * 0 = 不投影
+                * 1 = 投影
+            pt_num (int): 荷载控制点数，2~6
+            *points (float): 各控制点的偏移量与荷载，按顺序平铺：
+                offsetX, offsetY, offsetZ, Fx, Fy, Fz, Mx, My, Mz（每个控制点 9 个）
+
+        Returns:
+            更新后的 LoadCase 对象
+
+        Raises:
+            RuntimeError: 添加失败时抛出异常
+        '''
+        flat = _flatten_params(list(points), 9, "DISTRB 控制点")
+        if len(flat) != pt_num * 9:
+            raise ValueError(
+                f"DISTRB 控制点数 {pt_num} 与参数个数 {len(flat)} 不符（每点 9 个）"
+            )
+        ok, err = osis_load_distrb(
+            "DISTRB", self.name, entity, coord_system, x_mode, proj, pt_num, flat
+        )
+        if not ok:
+            raise RuntimeError(f"添加梁单元分布荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
 
     def create_concentrated_force(
@@ -732,7 +799,7 @@ class LoadCase:
             tension_type: Literal["BOTH", "BEG", "END"] = "BOTH",
             tension_force_type: Literal["ST", "IF"] = "ST",
             beg: float = 100,
-            end: float = 100,
+            end: float | None = None,
             n_grout_after: int = 0,
     ) -> LoadCase:
         '''添加预应力荷载
@@ -746,9 +813,10 @@ class LoadCase:
             tension_force_type (str): 张拉力类型
                 * ST = 应力
                 * IF = 内力
-            beg (float): 起点应力或内力。tension_type 为 END 时填 None
-            end (float): 终点应力或内力。tension_type 为 BEG 时填 None
-            n_grout_after (int): 延后灌浆阶段数，整数且 ≥ 0，缺省为 0，非 0 表示在后几个阶段灌浆
+            beg (float): 应力或内力值；两端张拉时为起点值，单端张拉时为唯一张拉值
+            end (float): 两端张拉时为终点值；单端张拉时按命令流字段序表示 GroutAfter
+            n_grout_after (int): 延后灌浆阶段数，整数且 ≥ 0，缺省为 0，非 0 表示在后几个阶段灌浆；
+                单端张拉时优先于 end
 
         Returns:
             更新后的 LoadCase 对象
@@ -756,7 +824,18 @@ class LoadCase:
         Raises:
             RuntimeError: 添加失败时抛出异常
         '''
-        ok, err = osis_load_pst("PST", self.name, entity, tension_type, tension_force_type, beg, end, n_grout_after)
+        if tension_type.upper() == "BOTH":
+            end_value = beg if end is None else end
+            ok, err = osis_load_pst(
+                "PST", self.name, entity, tension_type, tension_force_type,
+                beg, end_value, n_grout_after,
+            )
+        else:
+            grout = n_grout_after if n_grout_after else (int(end) if end is not None else 0)
+            ok, err = osis_load_pst_single(
+                "PST", self.name, entity, tension_type, tension_force_type,
+                beg, grout,
+            )
         if not ok:
             raise RuntimeError(f"添加预应力荷载到工况 {self.name} 失败: {err}")
         return self.refresh()
@@ -957,7 +1036,7 @@ class LoadCase:
 
     def delete(
             self,
-            load_type: Literal["GRAVITY", "NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"],
+            load_type: Literal["GRAVITY", "NFORCE", "LINE", "BLINE", "DISTRB", "PTF", "PTM", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE", "ESRFC", "FP", "PLANE"],
             entity: int | str | None = None
     ) -> None:
         '''删除荷载
@@ -995,7 +1074,7 @@ class LoadCase:
     # ── 荷载修改 ──────────────────────────────
     def modify(
             self,
-            load_type: Literal["NFORCE", "LINE", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE"],
+            load_type: Literal["NFORCE", "LINE", "BLINE", "DISTRB", "DISPLACEMENT", "INITIAL", "UTEMP", "GTEMP", "PST", "CFORCE", "ESRFC", "FP", "PLANE"],
             old_entity: int | str,
             new_entity: int | str,
     ) -> LoadCase:
@@ -1135,8 +1214,8 @@ class TendonShape:
         self,
         layout_type: Literal['GLOBAL', "ELEMENT"],
         element: int = None,
-        begin: Literal[0, 1] = 1,
-        direction: Literal[0, 1] = 1,
+        begin: Literal[0, 1] = None,
+        direction: Literal[0, 1] = None,
         offset_x: float = None,
         offset_y: float = None,
         offset_z: float = None,
@@ -1489,7 +1568,6 @@ class TendonPropManager(BasicManager):
         diameter: float,
         num: int,
         delta_t: float = 10.0,
-        pipe: float = 0.0,  # .out 第 9 字段，PRE 不使用
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
@@ -1504,7 +1582,6 @@ class TendonPropManager(BasicManager):
             diameter (float): 公称直径
             num (int): 每束钢束根数
             delta_t (float): 与台座温差
-            pipe (float): 管道直径，PRE 不使用，仅为占位
             tensioning_coeff (float): 张拉系数
             relaxation_coeff (float): 松弛系数
 
@@ -1528,7 +1605,6 @@ class TendonPropManager(BasicManager):
         mat: int,
         val: float,
         delta_t: float = 10.0,
-        pipe: float = 0.0,  # .out 占位，PRE 不使用，不调入底层
         tensioning_coeff: float = 1.0,
         relaxation_coeff: float = 1.0,
     ) -> TendonProp:
@@ -1539,7 +1615,6 @@ class TendonPropManager(BasicManager):
             mat (int): 材料编号
             val (float): 用户输入的钢束面积
             delta_t (float): 与台座温差
-            pipe (float): 管道直径，PRE 不使用，仅为占位
             tensioning_coeff (float): 张拉系数
             relaxation_coeff (float): 松弛系数
 

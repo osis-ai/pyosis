@@ -20,11 +20,20 @@ import re
 # 5.01 版 .out 使用缩写命令名，生成代码前统一归一化为全名
 CMD_ALIASES = {
     "N": "Node",
+    "NDel": "NodeDel",
+    "NMod": "NodeMod",
     "Ele": "Element",
+    "EleDel": "ElementDel",
+    "EleMod": "ElementMod",
     "Sec": "Section",
+    "SecDel": "SectionDel",
+    "SecMod": "SectionMod",
     "SecOff": "SectionOffset",
     "SecMesh": "SectionMesh",
+    "SecPt": "StressPoint",
     "Mat": "Material",
+    "MatDel": "MaterialDel",
+    "MatMod": "MaterialMod",
     "LC": "LoadCase",
     "LCDel": "LoadCaseDel",
     "Bd": "Boundary",
@@ -121,15 +130,36 @@ def _fix_creep_shrk(rest: list[str], ctx=None) -> list[str]:
             type_coeff, shrink_age, fly_ash]
 
 
+def _fix_infl_algo(rest: list[str], ctx=None) -> list[str]:
+    """InflAlgo eRef=1 的命令流字段序 → create_ve/create_tcb 形参序
+
+    命令流 ref=1: ... ref, ESel, SplineName
+    方法形参:    ... ref, ref_elems, offset_y, offset_z, spline_name
+    ref=1 时 offset_y/offset_z 不参与命令组装，补两个空列占位，
+    把 SplineName 挪到 spline_name 形参上。
+    """
+    if len(rest) < 7:
+        return rest
+    type_key = rest[1].upper()
+    ref_idx = 5 if type_key == "VE" else 6
+    if ref_idx >= len(rest) or rest[ref_idx].strip() != "1":
+        return rest
+    if len(rest) != ref_idx + 3:
+        return rest
+    return rest[:-1] + ["", "", rest[-1]]
+
+
 REST_FIXERS = {
     "SectionMesh": _fix_section_mesh,
     "SectionPart": _fix_section_part,
     "CrpShrk": _fix_creep_shrk,
+    "InflAlgo": _fix_infl_algo,
 }
 
 ROUTES = {
     # ─── CONTROL ───
     "Acel": "engine.control.set_gravity_acceleration",
+    "Unit": "engine.control.set_unit",
     "CalcTendon": "engine.control.set_calc_tendon",
     "CalcRebarGravity": "engine.control.set_calc_rebar_gravity",
     "CalcConForce": "engine.control.set_calc_concurrent_force",
@@ -230,8 +260,9 @@ ROUTES = {
     "LCMod": "engine.load.rename",
     # Load 子命令:  Load,type,lcName,... →  engine.load.get(lcName).create(type, ...)
     "Load": ("chain", "engine.load.get", "create", 1, 1),  # skip=1(lcName), rest_prefix=1(type)
-    "LoadDel": ("chain", "engine.load.get", "delete", 0),
-    "LoadMod": ("chain", "engine.load.get", "modify", 0),
+    # LoadDel/LoadMod: TYPE, LC, ... → engine.load.get(LC).delete/modify(TYPE, ...)
+    "LoadDel": ("chain", "engine.load.get", "delete", 1, 1),
+    "LoadMod": ("chain", "engine.load.get", "modify", 1, 1),
     "PlanarLoad": "engine.load.planar_load",
     "PlanarLoadCopy": "engine.load.planar_load_copy_flat",
     "PlanarLoadDel": "engine.load.planar_load_del",
@@ -290,7 +321,7 @@ ROUTES = {
     "LTMAnal": "engine.dynamic.load_to_mass.create",
     "LTMAnalDel": "engine.dynamic.load_to_mass.delete",
     "LTMAnalMod": "engine.dynamic.load_to_mass.rename",
-    "LTMAnalInc": ("chain", "engine.dynamic.load_to_mass.get", "add", 0),
+    "LTMAnalInc": ("chain", "engine.dynamic.load_to_mass.get", "include", 0),
     "SeisRspSpec": "engine.dynamic.seismic.create",
     "SeisRspSpecDel": "engine.dynamic.seismic.delete",
     "SeisRspSpecMod": "engine.dynamic.seismic.rename",

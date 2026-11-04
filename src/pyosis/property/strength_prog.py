@@ -208,20 +208,27 @@ class StrengthProgManager(BasicManager):
         if not ok:
             raise RuntimeError(f"创建 CEBFIP2010 强度进展特性 {index} 失败: {err}")
 
-    def create_custom(self, index: str, factor: float, curve: list[float]) -> None:
+    def create_custom(self, index: str, factor: float, *curve: float, **kwargs: Any) -> None:
         '''创建或修改用户定义强度进展特性
 
         Args:
             index (str): 强度进展名称
             factor (float): 调幅系数
-            curve (list): 曲线点展平后的数值，每点依次为 day、comp、tension、e，
-                点数 n 时共 4*n 个数
+            *curve (float): 曲线点展平后的数值，每点依次为 day、comp、tension、e，
+                点数 n 时共 4*n 个数；也可直接传一个列表
 
         Raises:
             ValueError: 曲线点数不足、每点不是 4 个值、或 day 不是严格单调递增
             RuntimeError: 创建失败时抛出
         '''
-        values = [float(x) for x in curve]
+        if not curve and "curve" in kwargs:
+            curve = (kwargs.pop("curve"),)
+        if kwargs:
+            raise TypeError(f"未知参数: {', '.join(kwargs)}")
+        if len(curve) == 1 and isinstance(curve[0], (list, tuple)):
+            values = [float(x) for x in curve[0]]
+        else:
+            values = [float(x) for x in curve]
         if len(values) % 4 != 0:
             raise ValueError(
                 f"用户定义强度进展特性 {index} 的曲线点数需为 4 的整数倍"

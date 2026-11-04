@@ -288,7 +288,7 @@ def osis_tendon_shape_mod(strOldName: str, strNewName: str):
     pass
 
 @REGISTRY.register("LayoutTS")
-def osis_layout_tendons(strShapeName: str, eLayoutType: Literal["GLOBAL", "ELEMENT"], nEle: int, nBeg: Literal[0, 1], nDir: Literal[0, 1], dOffsetX: float, dOffsetY: float, dOffsetZ: float):
+def osis_layout_tendons(strShapeName: str, eLayoutType: Literal["GLOBAL", "ELEMENT"], nEle: int=None, nBeg: Literal[0, 1]=None, nDir: Literal[0, 1]=None, dOffsetX: float=None, dOffsetY: float=None, dOffsetZ: float=None):
     '''
     修改钢束形状
 

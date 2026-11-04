@@ -24,7 +24,8 @@ def osis_lane_ve(strName: str, eType: Literal["VE"], dLength: float, wheel: floa
                 - ESel (str): 参照纵梁单元组名称（纵梁）
                 - OffsetY (float): 局部坐标系下Y方向偏移量（m），车道路径相对于单元组的横向偏移
                 - OffsetZ (float): 局部坐标系下Z方向偏移量（m），车道路径相对于单元组的竖向偏移
-            - **当 eRef=1 时**: param = [SplineName]
+            - **当 eRef=1 时**: param = [ESel, SplineName]
+                - ESel (str): 参照纵梁单元组名称
                 - SplineName (str): 样条曲线名称（需在命令流中预先用数组定义）
 
     Returns:
@@ -70,7 +71,8 @@ def osis_lane_tcb(strName: str, eType: Literal["TCB"], ESel: str, dLength: float
                 - RefESel (str): 参照纵梁单元组名称（主梁）
                 - OffsetY (float): 局部坐标系下Y方向偏移量（m）
                 - OffsetZ (float): 局部坐标系下Z方向偏移量（m）
-            - **当 eRef=1 时**: param = [SplineName]
+            - **当 eRef=1 时**: param = [RefESel, SplineName]
+                - RefESel (str): 参照纵梁单元组名称（主梁）
                 - SplineName (str): 样条曲线名称
 
     Returns:

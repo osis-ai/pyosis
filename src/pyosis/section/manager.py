@@ -125,6 +125,29 @@ from ..core.enums import (
 )
 from ..core.normalize import as_no, as_name
 
+# 型钢截面命令流字段序 → create_shaped_steel_* 形参名
+# 手动输入与数据库选型的字段不同，按 UseCatalog 分别映射
+_SHAPED_STEEL_FIELDS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
+    "STEELL": (("h", "b", "tw", "tf"), ("code", "designation")),
+    "STEELC": (("h", "tw", "b1", "tf1", "b2", "tf2", "r1", "r2"), ("code", "designation")),
+    "STEELI": (("h", "tw", "b1", "tf1", "b2", "tf2", "r1", "r2"), ("code", "designation")),
+    "STEELT": (("h", "b", "tw", "tf"), ("code", "designation")),
+    "STEELBOX": (("h", "b", "tw", "tf1", "c", "tf2"), ("code", "designation")),
+    "STEELCC": (("h", "b", "tw", "r", "d"), ("code", "designation")),
+    "STEELCIRCULARHOLLOW": (("d", "tw"), ("code", "designation")),
+    "STEELZ": (("h", "b", "tw", "r", "d", "th"), ("code", "designation")),
+    "BUDOUBLEANGLE1": (("h", "b", "tf1", "tf2", "c"), ("code", "designation")),
+    "BUDOUBLEANGLE2": (("h", "b", "tf1", "tf2", "c"), ("code", "designation", "c")),
+    "BUDOUBLEC": (("h", "b", "tw", "tf", "c"), ("code", "designation")),
+    "BUDOUBLEH": (
+        ("h1", "b1", "tw1", "tf1", "h2", "b2", "tw2", "tf2"),
+        ("code1", "designation1", "code2", "designation2"),
+    ),
+    "BUDOUBLECWEB1": (("h", "b", "tw", "tf", "bs", "ts"), ("code", "designation", "bs", "ts")),
+    "BUDOUBLECWEB2": (("h", "b", "tw", "tf", "bs", "ts"), ("code", "designation", "bs", "ts")),
+    "BUHWITHPLATES": (("h", "b", "tw", "tf", "c", "ts"), ("code", "designation", "c", "ts")),
+}
+
 
 def _require(names: tuple[str, ...], **values: Any) -> None:
     """检查当前分支所需的参数是否齐全。
@@ -1248,6 +1271,30 @@ class SectionManager(BasicManager):
             if no is None:
                 no = self._next_no()
             return _creator[type_key](no, name, *args, **kwargs)
+        # 旧版 .out 的 STEELI/STEELBOX 指钢梁截面（引擎 UpdatePreviousCommand
+        # 更名为 SteelBeamI/SteelBeamBox）；新版同名类型供单型钢截面使用。
+        # 两者字段数不同：钢梁 7/9 个，型钢手动 9/7 个、选型 3 个。
+        if type_key == "STEELI" and len(args) == 7:
+            return self.create_steel_i(no, name, *args)
+        if type_key == "STEELBOX" and len(args) == 9:
+            return self.create_steel_box(no, name, *args)
+        # 文档把扁平箱梁的 Type 也写成 ConventionalBox，但它是 51 字段的 STREAMEDBOX
+        if type_key == "CONVENTIONALBOX" and len(args) == 51:
+            return self.create_streamed_box(no, name, *args)
+        # 型钢截面：手动/选型两种字段序，按 UseCatalog 映射到形参名
+        if type_key in _SHAPED_STEEL_FIELDS and args and not kwargs:
+            try:
+                use_catalog = int(args[0])
+            except (TypeError, ValueError):
+                raise ValueError(f"{type_key} 的 UseCatalog 必须为 0 或 1: {args[0]!r}")
+            names = _SHAPED_STEEL_FIELDS[type_key][1 if use_catalog else 0]
+            extra = args[1:]
+            if len(extra) > len(names):
+                raise ValueError(
+                    f"{type_key} UseCatalog={use_catalog} 最多 {len(names)} 个参数，"
+                    f"收到 {len(extra)} 个: {extra!r}"
+                )
+            return _creator[type_key](no, name, use_catalog, **dict(zip(names, extra)))
         return _creator[type_key](no, name, *args, **kwargs)
 
     def create_Lshape(
@@ -2633,7 +2680,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -2673,7 +2719,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         tw: float | None = None,
         b1: float | None = None,
@@ -2722,7 +2767,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         tw: float | None = None,
         b1: float | None = None,
@@ -2771,7 +2815,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -2811,7 +2854,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -2856,7 +2898,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -2898,7 +2939,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         d: float | None = None,
         tw: float | None = None,
         code: str | None = None,
@@ -2934,7 +2974,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -2978,7 +3017,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tf1: float | None = None,
@@ -3020,7 +3058,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tf1: float | None = None,
@@ -3062,7 +3099,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -3104,7 +3140,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h1: float | None = None,
         b1: float | None = None,
         tw1: float | None = None,
@@ -3161,7 +3196,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -3207,7 +3241,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,
@@ -3253,7 +3286,6 @@ class SectionManager(BasicManager):
         no: int | None,
         name: str,
         use_catalog: Literal[0, 1] = 0,
-        *,
         h: float | None = None,
         b: float | None = None,
         tw: float | None = None,

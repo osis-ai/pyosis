@@ -32,6 +32,24 @@ def osis_cnv_config(Criteria: str="F", Norm: str="L2", Val: float=1e-4):
     '''
     pass
 
+@REGISTRY.register("CnvConfig")
+def osis_cnv_tol(Criteria: str="F", Norm: str="L2", Val: float=1e-4):
+    '''
+    非线性收敛准则（文档命令名 CnvTol；引擎注册名为 CnvConfig）
+
+    与 osis_cnv_config 参数相同。命令流里的 CnvTol 由转换器路由到本接口，
+    实际发出引擎可识别的 CnvConfig。
+
+    Args:
+        Criteria (str): 收敛准则，F = 力收敛
+        Norm (str): L2 = 二范数
+        Val (float): 收敛阈值，须大于 0
+
+    Returns:
+        tuple (bool, str): 是否成功，失败原因
+    '''
+    pass
+
 @REGISTRY.register("LnSrch")
 def osis_ln_srch(bFlag: int=0):
     '''

@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from .buckling import (
     osis_buckl_anal,
@@ -53,18 +53,20 @@ class BucklCase:
 
     def include(
         self,
-        op: Literal["a", "r"],
+        op: Literal["a", "r", "s"],
         lc_name: str,
         scalar: float,
         lc_type: Literal[0, 1],
+        *old_group: Any,
     ) -> None:
-        '''添加或移除参与屈曲分析的荷载工况
+        '''添加、移除或替换参与屈曲分析的荷载工况
 
         Args:
-            op (str): 操作类型，"a"=添加，"r"=移除
-            lc_name (str): 荷载工况名称
-            scalar (float): 系数
-            lc_type (int): 荷载类型，1=可变，0=不变
+            op (str): 操作类型，"a"=添加，"r"=移除，"s"=替换
+            lc_name (str): 荷载工况名称；op="s" 时为新的荷载工况名称
+            scalar (float): 系数；op="s" 时为新系数
+            lc_type (int): 荷载类型，1=可变，0=不变；op="s" 时为新类型
+            *old_group: op="s" 时为被替换工况的 (旧名称, 旧系数, 旧类型)
 
         Examples:
             >>> # 创建屈曲工况
@@ -73,7 +75,19 @@ class BucklCase:
             >>> buck.include("a", "D", 1.0, 0)
             >>> # 从屈曲工况 B1 移除荷载工况 D
             >>> buck.include("r", "D", 1.0, 0)
+            >>> # 将 D 替换为 DC
+            >>> buck.include("s", "DC", 1.2, 0, "D", 1.0, 0)
         '''
+        if op.lower() == "s":
+            if len(old_group) < 1:
+                raise ValueError("替换荷载工况须给出旧工况名称")
+            old_lc = old_group[0]
+            old_scalar = old_group[1] if len(old_group) > 1 else scalar
+            old_type = old_group[2] if len(old_group) > 2 else lc_type
+            self.replace(lc_name, scalar, lc_type, old_lc, old_scalar, old_type)
+            return
+        if old_group:
+            raise ValueError("添加/移除荷载工况不接受旧工况参数")
         ok, err = osis_buckl_anal_inc(self.name, op, lc_name, scalar, lc_type)
         if not ok:
             raise RuntimeError(f"{'添加' if op == 'a' else '移除'}荷载工况 {lc_name} {'到' if op == 'a' else '从'}屈曲工况 {self.name} 失败: {err}")

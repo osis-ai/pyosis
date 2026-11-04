@@ -839,6 +839,7 @@ class BoundaryManager(BasicManager):
         mxj_state: bool,myj_state: bool,mzj_state: bool,mbj_state: bool,
         fxj: float,fyj: float,fzj: float,
         mxj: float,myj: float,mzj: float,mbj: float,
+        relative: int = 1,
     ) -> ReleaseBoundary:
         '''创建释放梁端约束
 
@@ -876,6 +877,7 @@ class BoundaryManager(BasicManager):
             myj: J 端 MY 部分约束残余百分比（0-1）
             mzj: J 端 MZ 部分约束残余百分比（0-1）
             mbj: J 端 MB 部分约束残余百分比（0-1）
+            relative: 1 = 上面的数值为相对值（0-1），0 = 绝对刚度值；缺省 1
 
         Returns:
             ReleaseBoundary 对象
@@ -894,6 +896,7 @@ class BoundaryManager(BasicManager):
             fxi, fyi, fzi, mxi, myi, mzi, mbi,
             fxj_state, fyj_state, fzj_state, mxj_state, myj_state, mzj_state, mbj_state,
             fxj, fyj, fzj, mxj, myj, mzj, mbj,
+            relative,
         )
         if not ok:
             raise RuntimeError(f"创建释放梁端约束 {no} 失败: {err}")
@@ -1109,7 +1112,12 @@ class BoundaryManager(BasicManager):
         if no is None:
             no = self._next_no()
         if str(e_dir).upper() == "VECTOR":
-            ori = None
+            # 命令流 VECTOR 形式：SubType, Val, Dir, Vec_x, Vec_y, Vec_z
+            # 位置实参落在 ori, vec_x, vec_y 上，整体后移一位还原
+            if vec_z is None and (vec_x is not None or vec_y is not None):
+                ori, vec_x, vec_y, vec_z = None, ori, vec_x, vec_y
+            else:
+                ori = None
         else:
             vec_x = vec_y = vec_z = None
         ok, err = osis_boundary_unispt(
@@ -1195,11 +1203,10 @@ class BoundaryManager(BasicManager):
         no: int | None,
         coor: int | str = "",
         curve_type: int = 1,
-        *,
-        soil_type: Literal["SAND", "CLAY"],
-        ground_lv: float,
-        d: float,
-        gamma: float,
+        soil_type: Literal["SAND", "CLAY"] = "SAND",
+        ground_lv: float = 0.0,
+        d: float = 0.0,
+        gamma: float = 0.0,
         phi: float | str | None = None,
         k: float | str | None = None,
         su: float | str | None = None,
@@ -1254,9 +1261,9 @@ class BoundaryManager(BasicManager):
             if float(e50) <= 0:
                 raise ValueError(f"参考应变必须大于零: {e50}")
         elif soil == "SAND":
-            if phi is None:
+            if phi is None or str(phi).strip() == "":
                 raise ValueError("砂土必须给出内摩擦角 phi")
-            if su is not None or e50 is not None or j is not None:
+            if any(str(x).strip() != "" for x in (su, e50, j) if x is not None):
                 raise ValueError("砂土的 su、e50、j 必须留空")
         else:
             raise ValueError(f"未知土类: {soil_type!r}，支持: SAND, CLAY")

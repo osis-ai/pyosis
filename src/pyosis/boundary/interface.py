@@ -89,18 +89,22 @@ def osis_boundary_release(nBd: int, eBoundaryType: Literal["RELEASE"],
                           Fxi_state: bool, Fyi_state: bool, Fzi_state: bool, Mxi_state: bool, Myi_state: bool, Mzi_state: bool, Mbi_state: bool,
                           Fxi: float,      Fyi: float,      Fzi: float,      Mxi: float,      Myi: float,      Mzi: float,      Mbi: float,
                           Fxj_state: bool, Fyj_state: bool, Fzj_state: bool, Mxj_state: bool, Myj_state: bool, Mzj_state: bool, Mbj_state: bool,
-                          Fxj: float,      Fyj: float,      Fzj: float,      Mxj: float,      Myj: float,      Mzj: float,      Mbj: float):
+                          Fxj: float,      Fyj: float,      Fzj: float,      Mxj: float,      Myj: float,      Mzj: float,      Mbj: float,
+                          Relative: int = 1):
     '''
     ## 定义或修改释放梁端约束
     pyosis.boundary.osis_boundary_release
-    
+
     Args:
         nBd (int): 编号
         eBoundaryType (str): 固定为 RELEASE
-        \\*_state (bool): 
+        \\*_state (bool):
             * 0 = 完全释放
             * 1 = 完全约束
-        F\\*i and M\\*i (float): 部分约束的大小，0-1之间，表示释放后残余的约束能力的百分比
+        F\\*i and M\\*i (float):
+            * Relative = 1 时为残余约束能力，取值 0-1
+            * Relative = 0 时为刚度值，前三个量纲为力/长度，后四个为力×长度，且不能小于 0
+        Relative (int): 1 = 相对值，0 = 刚度值；可缺省，缺省为 1
     Returns:
         tuple (bool, str): 是否成功，失败原因
     '''

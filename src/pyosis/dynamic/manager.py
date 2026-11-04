@@ -123,6 +123,39 @@ class LoadToMass:
         if not ok:
             raise RuntimeError(f"移除荷载转换质量项 {lc_name} 从 {self.name} 失败: {err}")
 
+    def include(
+        self,
+        op: Literal["a", "r"],
+        lc_name: str,
+        mass_factor: float | None = None,
+        g: float | None = None,
+        bx: Literal[0, 1] = 1,
+        by: Literal[0, 1] = 1,
+        bz: Literal[0, 1] = 1,
+        bnf: Literal[0, 1] = 1,
+        bbf: Literal[0, 1] = 1,
+        bsf: Literal[0, 1] = 1,
+    ) -> None:
+        """按命令流 OP 添加/移除荷载转换质量项。
+
+        Args:
+            op: "a"=添加，"r"=移除
+            lc_name: 荷载工况名称
+            mass_factor: 质量系数，op="a" 时必填
+            g: 重力加速度值，op="a" 时必填
+            bx/by/bz/bnf/bbf/bsf: 同 add
+        """
+        op_key = op.lower()
+        if op_key == "a":
+            if mass_factor is None or g is None:
+                raise ValueError("添加荷载转换质量项须给出质量系数与重力加速度")
+            self.add(lc_name, mass_factor, g, bx, by, bz, bnf, bbf, bsf)
+            return
+        if op_key == "r":
+            self.remove(lc_name)
+            return
+        raise ValueError(f"未知操作: {op!r}，支持 a/r")
+
     def _sync_from_dict(self, d: dict) -> None:
         """用 dict 同步当前对象（内部使用）"""
         self.name = d.get("name")
@@ -482,7 +515,8 @@ class SeisRspSpecManager(BasicManager):
             spec_type: 谱类型
             g: 输入g值
             input_type: 输入类型
-            *args: 按位置传给对应 create_* 的参数
+            *args: input_type=0 时按命令流字段序传 num, T_i, S_i, ...（也接受直接传
+                [(T, S), ...] 数据列表）；input_type=1 时按位置传给 create_code
             **kwargs: 按关键字传给对应 create_* 的参数
 
         Raises:
@@ -491,6 +525,7 @@ class SeisRspSpecManager(BasicManager):
 
         Examples:
             >>> data = [(0.1, 0.5), (0.2, 0.8)]
+            >>> dynamic_manager.seismic.create("RS1", "A", 9.806, 0, 2, 0.1, 0.5, 0.2, 0.8)
             >>> dynamic_manager.seismic.create("RS1", "A", 9.806, 0, data)
             >>> dynamic_manager.seismic.create("RS2", "N", 9.806, 1,
             ...     code="JTGT_2231_01_2020", bridge_type="A", site=2)
@@ -507,6 +542,18 @@ class SeisRspSpecManager(BasicManager):
             raise ValueError(
                 f"未知 input_type: {input_type!r}，支持: 0=导入, 1=按规范生成"
             )
+        if it == 0:
+            # 命令流：Name, type, g, inputType, num, T_i, S_i, ...
+            # create_import：Name, type, g, spectrum_data, n_num
+            if not args:
+                return self.create_import(name, spec_type, g)
+            if isinstance(args[0], (list, tuple)):
+                # 直接调用：create(..., 0, [(T, S), ...])
+                return self.create_import(name, spec_type, g, args[0], *args[1:])
+            num, spectrum = args[0], list(args[1:])
+            if len(spectrum) == 1 and isinstance(spectrum[0], (list, tuple)):
+                spectrum = spectrum[0]
+            return self.create_import(name, spec_type, g, spectrum, num)
         return _creator[it](name, spec_type, g, *args, **kwargs)
 
     def create_import(
