@@ -38,7 +38,7 @@ def setup_control(engine: OSISEngine) -> None:
     engine.control.set_calc_rebar_gravity(False)
     engine.control.set_inc_rebar(True)
     engine.control.set_inc_tendon(True)
-    engine.control.set_nonlinear(geom=False, link=False)
+    engine.control.set_nonlinear(geom=False)
     engine.control.set_line_search(False)
     engine.control.set_auto_time_step(False)
     engine.control.set_substitution_steps(1, 20)
@@ -672,7 +672,7 @@ def build_analysis(engine: OSISEngine, node_nos: list[int], elem_group_names: li
 
     engine.live.grade.create_highway('简支小箱梁移动荷载', code='JTGD60_2015', live_load_type='HIGHWAY_I')
 
-    engine.live.lane.create_ve('车道', length=19.1000, wheel=1.80, orientation=1, ref=0, ref_elems='主梁单元', offset_y=0.00000E+00, offset_z=0.00000E+00)
+    engine.live.lane.create_ve('车道', 19.1000, 1.80, 1, 0, '主梁单元', 0.0, 0.0)
 
     lc = engine.live.case.create('车道荷载包络', code='JTGD60_2015', sub_cmb_type=1)
     live_names.append(lc.name)

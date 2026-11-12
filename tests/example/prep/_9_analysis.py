@@ -224,14 +224,13 @@ def build_live_analysis(engine: OSISEngine, element_group_names: list[str]):
     bridge_span = 15.51
     # 车道（名称标识）
     lane1 = live.lane.create_ve(
-        name="车道", length=bridge_span, wheel=1.80, orientation=1, ref=0,
-        ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0,
+        "车道", bridge_span, 1.80, 1, 0, eg_main_beam, 0.0, 0.0,
     )
     _expect_attr(lane1,"name","车道")
 
     lane2 = live.lane.create_tcb(
-        "车道2", eg_main_beam, length=bridge_span, wheel=1.80, orientation=1, ref=0,
-        ref_elems=eg_main_beam, offset_y=0.0, offset_z=0.0,
+        "车道2", eg_main_beam, bridge_span, 1.80, 1, 0,
+        eg_main_beam, 0.0, 0.0,
     )
     _expect_attr(lane2,"name","车道2")
 

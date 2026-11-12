@@ -58,6 +58,33 @@ def _manager(cls, **stub):
 
 # ── 截面 ──────────────────────────────────────────────────────
 
+def _section(no: int = 1):
+    """Section 是 dataclass 实体，这里只借用实例方法，不构造完整字段。"""
+    s = sm.Section.__new__(sm.Section)
+    s.no = no
+    return s
+
+
+def test_section_mesh_param_order():
+    """set_mesh 形参序与 SectionMesh, Index, PartID, MeshMethod, MeshSize 一致"""
+    with capture(sm, "osis_section_mesh"):
+        _section(1).set_mesh(2, 1, 0.25)
+    assert CAPTURED == ["SectionMesh,1,2,1,0.25;"], CAPTURED
+    CAPTURED.clear()
+
+
+def test_section_part_param_order():
+    """add_part 的 PartGeoType 保持在命令流原位置，不做前置"""
+    with capture(sm, "osis_section_part_polygon", "osis_section_part_line"):
+        _section(2).add_part(1, "Concrete", 3e10, 0.2, 2.5, "Polygon", "M1", "W1")
+        _section(2).add_part(2, "Steel", 2e11, 0.3, 7.8, "Line", "P1", "L1", "W2")
+    assert CAPTURED == [
+        "SectionPart,2,1,Concrete,30000000000.0,0.2,2.5,Polygon,M1,W1;",
+        "SectionPart,2,2,Steel,200000000000.0,0.3,7.8,Line,P1,L1,W2;",
+    ], CAPTURED
+    CAPTURED.clear()
+
+
 def test_shaped_steel_manual_and_catalog():
     m = _manager(sm.SectionManager, get=lambda n: n)
     with capture(sm, "osis_section_shaped_steel_l", "osis_section_shaped_steel_l_catalog"):
@@ -148,13 +175,23 @@ def test_soilspring_sand_empty_tail():
     CAPTURED.clear()
 
 
+def test_stage_boundary_optional_pos():
+    """StgBd 的 pos 缺省时不进命令流，显式传入时追加在 grp 之后"""
+    info = CMD_REGISTRY.commands["osis_stage_boundary"]
+    func, name = info["func"], info["cmd_name"]
+    cmd, _ = CMD_REGISTRY._process_arguments(func, name, 1, 1, 1, "边界组")
+    assert cmd == "StgBd,1,1,1,边界组;", cmd
+    cmd, _ = CMD_REGISTRY._process_arguments(func, name, 1, 1, 1, "边界组", 0)
+    assert cmd == "StgBd,1,1,1,边界组,0;", cmd
+
+
 # ── 车道 / 活载 ───────────────────────────────────────────────
 
 def test_infl_algo_ref1_manager_emits_two_params():
     m = _manager(lvm.LaneManager, get=lambda n: n)
     with capture(lvm, "osis_lane_ve", "osis_lane_tcb"):
-        m.create("L1", "VE", 120.0, 1, 1, 1, "EG", "", "", "SP1")
-        m.create("L2", "TCB", "EGT", 40.0, 1, 1, 1, "EG", "", "", "SP1")
+        m.create("L1", "VE", 120.0, 1, 1, 1, "EG", "SP1")
+        m.create("L2", "TCB", "EGT", 40.0, 1, 1, 1, "EG", "SP1")
     assert CAPTURED == [
         "InflAlgo,L1,VE,120.0,1,1,1,EG,SP1;",
         "InflAlgo,L2,TCB,EGT,40.0,1,1,1,EG,SP1;",

@@ -1,21 +1,23 @@
 """命令流 → pyosis 路由表
 
-字典格式:
+转换规则（全局唯一，不再为单个命令写例外）:
+    Cmd, f0, f1, f2, ... 的字段顺序必须与目标函数的位置参数顺序一致。
+
     key   = OSIS 命令名
-    value = (kind, ...)
-    kind:
-        "direct":   str (engine 方法路径)
-        "chain":    (engine_get_path, obj_method_name, skip_fields)
-                    Cmd,fields[skip_fields=0]=key, fields[skip_fields+1:]=args
-                    生成: engine.get(key).method(args...)
+    value = 目标，三种形态:
+        "direct": str (engine 方法路径)
+            生成: engine.method(f0, f1, ...)
+        ("chain", get_path, method_name, key_index)
+            第 key_index 个字段用于取对象，其余字段保持原序:
+            生成: get(f[key_index]).method(f0, ..., f[key_index-1],
+                                         f[key_index+1], ...)
+        ("list", target, n_head)
+            前 n_head 个字段按位置传，其余字段聚合成一个 list:
+            生成: target(f0, ..., f[n_head-1], [f[n_head], f[n_head+1], ...])
 
-fixer 签名: fixer(rest, ctx=None) -> list[str]
-    ctx 为生成器下文(dict),无跨命令信息时忽略;key 约定:
-        ctx["creep_grades"]: {收缩徐变编号(str): {"C40", ...}} 引用它的 CONC 材料等级
-        ctx["warnings"]: list[str],fixer 追加、生成器作为注释行输出
+字段重排/补位/旧格式升级一律通过修改对应的 Python 函数解决，不要在这里
+增加 fixer。
 """
-
-import re
 
 # 5.01 版 .out 使用缩写命令名，生成代码前统一归一化为全名
 CMD_ALIASES = {
@@ -42,118 +44,6 @@ CMD_ALIASES = {
     "StgDel": "StageDel",
     "StgIst": "StageIst",
     "StgRmv": "StageRmv",
-}
-
-# 命令流字段顺序 ≠ 方法形参顺序的命令，按字段名重排后再生成调用
-def _fix_section_mesh(rest: list[str], ctx=None) -> list[str]:
-    """SectionMesh 字段序 → set_mesh(mesh_method, mesh_size, part_id)
-
-    新格式: PartID, MeshMethod, MeshSize  →  MeshMethod, MeshSize, PartID
-    旧格式: MeshMethod, MeshSize          →  原样（part_id 缺省 1）
-    """
-    if len(rest) == 3:
-        part_id, mesh_method, mesh_size = rest
-        return [mesh_method, mesh_size, part_id]
-    return rest
-
-
-def _fix_section_part(rest: list[str], ctx=None) -> list[str]:
-    """SectionPart 字段序 → add_part(type, part_index, mat_type, e, mu, density, *matrices)
-
-    命令流: PartIndex, PartMatType, PartE, PartMu, PartDensity, PartGeoType, Matrices...
-    """
-    if len(rest) >= 6:
-        return [rest[5], *rest[:5], *rest[6:]]
-    return rest
-
-
-_GRADE_RE = re.compile(r"^C(\d+)$", re.IGNORECASE)
-
-
-def _resolve_fcuk(index: str, ctx: dict | None) -> str:
-    """从引用该收缩徐变特性的 CONC 材料等级推断 fcuk（如 C50 → 5e7，单位随工程）。
-
-    软件侧 UpdatePreviousCommand 与本转换器旧逻辑都硬编码 50MPa——C40/C55 的
-    旧模型会静默算错收缩徐变，这里改为按材料等级取值；多等级共用/无引用时
-    保持 50MPa 并追加告警注释。
-    """
-    default = "50000000"
-    if not ctx:
-        return default
-    grades = (ctx.get("creep_grades") or {}).get(index.strip().strip('"\'')) or set()
-    if not grades:
-        (ctx.setdefault("warnings", [])).append(
-            f"CrpShrk {index}: 未找到引用它的 CONC 材料，fcuk 保持默认 50MPa"
-            "（旧命令流未记录强度，请核对该特性参数）"
-        )
-        return default
-    if len(grades) > 1:
-        (ctx.setdefault("warnings", [])).append(
-            f"CrpShrk {index}: 被 {'/'.join(sorted(grades))} 多种强度等级共用，"
-            f"无法唯一推断 fcuk，保持默认 50MPa；请核对该特性参数"
-        )
-        return default
-    m = _GRADE_RE.match(next(iter(grades)).strip())
-    if not m:
-        (ctx.setdefault("warnings", [])).append(
-            f"CrpShrk {index}: 材料等级 {next(iter(grades))!r} 无法换算 fcuk，保持默认 50MPa"
-        )
-        return default
-    return f"{int(m.group(1))}e6"
-
-
-def _fix_creep_shrk(rest: list[str], ctx=None) -> list[str]:
-    """CrpShrk 旧命令流 → 新 9 字段序（同软件侧 UpdatePreviousCommand 的升级逻辑）
-
-    新:        Index, Name, Code, Fcuk, AVG.Humidity, ComponentApproximateSize,
-               Type.Coeff, BirthByShrinking, FlyAshRatio
-    早期5.01:  Index, Name, Humidity, Birth, Type.Coeff, BirthByShrinking,
-               FlyAshRatio, ComponentApproximateSize          (8 字段)
-    4.9.6:     Index, Name, Humidity, Birth, Type.Coeff, BirthByShrinking (6 字段)
-
-    旧格式的 Birth（加载龄期）在新命令流里已取消，直接丢弃；
-    Code 固定 JTG3362_2018；Fcuk 优先按引用材料的混凝土强度等级取值
-    （C40→4e7），取不到时回退软件升级用的默认值 50MPa 并追加告警。
-    """
-    n = len(rest)
-    if n == 9:
-        return rest
-    if n == 6:
-        index, name, humidity, _birth, type_coeff, shrink_age = rest
-        fly_ash, size = "0", "1"
-    elif n == 8:
-        index, name, humidity, _birth, type_coeff, shrink_age, fly_ash, size = rest
-    else:
-        return rest
-    fcuk = _resolve_fcuk(index, ctx)
-    return [index, name, "JTG3362_2018", fcuk, humidity, size,
-            type_coeff, shrink_age, fly_ash]
-
-
-def _fix_infl_algo(rest: list[str], ctx=None) -> list[str]:
-    """InflAlgo eRef=1 的命令流字段序 → create_ve/create_tcb 形参序
-
-    命令流 ref=1: ... ref, ESel, SplineName
-    方法形参:    ... ref, ref_elems, offset_y, offset_z, spline_name
-    ref=1 时 offset_y/offset_z 不参与命令组装，补两个空列占位，
-    把 SplineName 挪到 spline_name 形参上。
-    """
-    if len(rest) < 7:
-        return rest
-    type_key = rest[1].upper()
-    ref_idx = 5 if type_key == "VE" else 6
-    if ref_idx >= len(rest) or rest[ref_idx].strip() != "1":
-        return rest
-    if len(rest) != ref_idx + 3:
-        return rest
-    return rest[:-1] + ["", "", rest[-1]]
-
-
-REST_FIXERS = {
-    "SectionMesh": _fix_section_mesh,
-    "SectionPart": _fix_section_part,
-    "CrpShrk": _fix_creep_shrk,
-    "InflAlgo": _fix_infl_algo,
 }
 
 ROUTES = {
@@ -259,10 +149,10 @@ ROUTES = {
     "LoadCaseDel": "engine.load.delete",
     "LCMod": "engine.load.rename",
     # Load 子命令:  Load,type,lcName,... →  engine.load.get(lcName).create(type, ...)
-    "Load": ("chain", "engine.load.get", "create", 1, 1),  # skip=1(lcName), rest_prefix=1(type)
+    "Load": ("chain", "engine.load.get", "create", 1),
     # LoadDel/LoadMod: TYPE, LC, ... → engine.load.get(LC).delete/modify(TYPE, ...)
-    "LoadDel": ("chain", "engine.load.get", "delete", 1, 1),
-    "LoadMod": ("chain", "engine.load.get", "modify", 1, 1),
+    "LoadDel": ("chain", "engine.load.get", "delete", 1),
+    "LoadMod": ("chain", "engine.load.get", "modify", 1),
     "PlanarLoad": "engine.load.planar_load",
     "PlanarLoadCopy": "engine.load.planar_load_copy_flat",
     "PlanarLoadDel": "engine.load.planar_load_del",

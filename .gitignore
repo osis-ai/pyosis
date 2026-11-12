@@ -51,3 +51,4 @@ pyosis_logs/
 
 # Local scratch workspace (generated projects, .out fixtures, demo output)
 temp/
+/AGENTS.md

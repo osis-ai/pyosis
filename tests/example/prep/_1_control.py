@@ -12,7 +12,7 @@ def setup_control(engine: OSISEngine) -> None:
     control.set_calc_relaxation(True)
     control.set_mod_loc_coor(False)
     control.set_inc_tendon(True)
-    control.set_nonlinear(False, False)
+    control.set_nonlinear(False)
     control.set_line_search(False)
     control.set_auto_time_step(True)
     control.set_substitution_steps(1, 20)

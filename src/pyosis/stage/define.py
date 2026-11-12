@@ -35,7 +35,7 @@ def osis_stage_element(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], st
     pass
 
 @REGISTRY.register("StgBd")
-def osis_stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strGroupName: str):
+def osis_stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], strGroupName: str, nPos: int = None):
     """通过边界组激活/钝化边界
 
     Args:
@@ -43,11 +43,14 @@ def osis_stage_boundary(nIndex: int, eOP: Literal[1, 0], eType: Literal[1, 0], s
         eOP (int): 操作
             * 1 = 添加
             * 0 = 移除
-        eType (int): 
+        eType (int):
             * 1 = 激活
             * 0 = 钝化
         strGroupName (str): 待操作的边界组名称
-        
+        nPos (int): 变形位置，可缺省（None）
+            * 1 = 变形前（默认）
+            * 0 = 变形后
+
     Returns:
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功

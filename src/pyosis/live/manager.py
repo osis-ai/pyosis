@@ -1089,8 +1089,8 @@ class LaneManager(BasicManager):
             RuntimeError: 创建失败
 
         Examples:
-            >>> live_manager.lane.create("车道1", "VE", length=30.0, wheel=1.8, ref_elems="主梁", offset_y=2.5)
-            >>> live_manager.lane.create("重车道", "TCB", crossbeam_elems="横梁", length=30.0, wheel=1.8, ref_elems="主梁")
+            >>> live_manager.lane.create("车道1", "VE", 30.0, 1.8, 1, 0, "主梁", 2.5, 0.0)
+            >>> live_manager.lane.create("重车道", "TCB", "横梁", 30.0, 1.8, 0, 0, "主梁", 0.0, 0.0)
         """
         _creator = {
             "VE":  self.create_ve,
@@ -1110,14 +1110,13 @@ class LaneManager(BasicManager):
         wheel: float = 0,
         orientation: Literal[-1, 0, 1] = 0,
         ref: Literal[0, 1] = 0,
-        ref_elems: str | None = None,
-        offset_y: float = 0.0,
-        offset_z: float = 0.0,
-        spline_name: str | None = None,
+        *params: Any,
     ) -> Lane:
         """创建车道（车道单元法 VE）
 
         适用于主梁为梁单元的桥梁结构，车辆沿纵向路径移动。
+        位置参数与命令流严格对应：
+        InflAlgo, Name, type, length, wheel, vehOri, ref, par1, par2, par3
 
         Args:
             name: 车道名称
@@ -1130,10 +1129,12 @@ class LaneManager(BasicManager):
             ref: 车道参照方式
                 - 0: 参照单元组（默认）
                 - 1: 参照样条曲线
-            ref_elems: 参照纵梁单元组名称（ref=0/1 均必填）
-            offset_y: Y方向偏移量（m），默认 0.0；ref=1 时不使用
-            offset_z: Z方向偏移量（m），默认 0.0；ref=1 时不使用
-            spline_name: 样条曲线名称（ref=1 时必填）
+            *params: 与命令流 par1..par3 一一对应的尾部字段
+                - ref=0: (ref_elems, offset_y, offset_z)
+                  ref_elems 为参照纵梁单元组名称，offset_y/offset_z 为局部
+                  坐标系下的 Y/Z 偏移量（m）
+                - ref=1: (ref_elems, spline_name)
+                  ref_elems 为参照纵梁单元组名称，spline_name 为样条曲线名称
 
         Returns:
             创建的 Lane 对象
@@ -1142,11 +1143,19 @@ class LaneManager(BasicManager):
             RuntimeError: 参数校验失败或创建失败时抛出
         """
         if ref == 0:
+            if len(params) != 3:
+                raise RuntimeError(
+                    "ref=0 时尾部参数应为 (ref_elems, offset_y, offset_z)"
+                )
+            ref_elems, offset_y, offset_z = params
             if not ref_elems:
                 raise RuntimeError(f"参照单元组名称 ref_elems 不能为空")
             param = [ref_elems, offset_y, offset_z]
         else:
             # 命令流 eRef=1：ESel, SplineName
+            if len(params) != 2:
+                raise RuntimeError("ref=1 时尾部参数应为 (ref_elems, spline_name)")
+            ref_elems, spline_name = params
             if not ref_elems:
                 raise RuntimeError(f"参照纵梁单元组名称 ref_elems 不能为空")
             if not spline_name:
@@ -1166,14 +1175,13 @@ class LaneManager(BasicManager):
         wheel: float = 0,
         orientation: Literal[-1, 0, 1] = 0,
         ref: Literal[0, 1] = 0,
-        ref_elems: str | None = None,
-        offset_y: float = 0.0,
-        offset_z: float = 0.0,
-        spline_name: str | None = None,
+        *params: Any,
     ) -> Lane:
         """创建车道（横向联系梁法 TCB）
 
         适用于由主梁+横梁组成的空间传力结构，荷载先分配给横梁再传递至主梁。
+        位置参数与命令流严格对应：
+        InflAlgo, Name, type, ESel, length, wheel, vehOri, ref, par1, par2, par3, par4
 
         Args:
             name: 车道名称
@@ -1187,10 +1195,9 @@ class LaneManager(BasicManager):
             ref: 车道参照方式
                 - 0: 参照单元组（默认）
                 - 1: 参照样条曲线
-            ref_elems: 参照纵梁单元组名称（ref=0/1 均必填）
-            offset_y: Y方向偏移量（m），默认 0.0；ref=1 时不使用
-            offset_z: Z方向偏移量（m），默认 0.0；ref=1 时不使用
-            spline_name: 样条曲线名称（ref=1 时必填）
+            *params: 与命令流 par1..par4 一一对应的尾部字段
+                - ref=0: (ref_elems, offset_y, offset_z)
+                - ref=1: (ref_elems, spline_name)
 
         Returns:
             创建的 Lane 对象
@@ -1199,11 +1206,19 @@ class LaneManager(BasicManager):
             RuntimeError: 参数校验失败或创建失败时抛出
         """
         if ref == 0:
+            if len(params) != 3:
+                raise RuntimeError(
+                    "ref=0 时尾部参数应为 (ref_elems, offset_y, offset_z)"
+                )
+            ref_elems, offset_y, offset_z = params
             if not ref_elems:
                 raise RuntimeError(f"参照单元组名称 ref_elems 不能为空")
             param = [ref_elems, offset_y, offset_z]
         else:
             # 命令流 eRef=1：RefESel, SplineName
+            if len(params) != 2:
+                raise RuntimeError("ref=1 时尾部参数应为 (ref_elems, spline_name)")
+            ref_elems, spline_name = params
             if not ref_elems:
                 raise RuntimeError(f"参照纵梁单元组名称 ref_elems 不能为空")
             if not spline_name:
@@ -1480,7 +1495,7 @@ class LiveManager:
         >>> grade = live_manager.grade.create_highway("简支空心板移动荷载",code="JTGD60_2015",live_load_type="HIGHWAY_I")
         >>>
         >>> # 创建车道（VE 车道单元法）
-        >>> lane = live_manager.lane.create_ve(name="车道1",length=30.0,wheel=1.80,orientation=1,ref=0,ref_elems="主梁单元",offset_y=2.5,offset_z=0.0)
+        >>> lane = live_manager.lane.create_ve("车道1", 30.0, 1.80, 1, 0, "主梁单元", 2.5, 0.0)
         >>>
         >>> # 创建活载工况并添加子工况
         >>> live_case = live_manager.case.create("活载工况1", "JTGD60_2015", 1)
@@ -1514,7 +1529,7 @@ class LiveManager:
         
         用法::
             
-            >>> live_manager.lane.create_ve("车道1", 30.0, ref_elems="主梁")
+            >>> live_manager.lane.create_ve("车道1", 30.0, 0, 0, 0, "主梁", 0.0, 0.0)
             >>> live_manager.lane.all()
             >>> live_manager.lane.get("车道1")
         """

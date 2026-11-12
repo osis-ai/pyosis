@@ -399,7 +399,6 @@ class CreepShrinkManager(BasicManager):
         type_coeff: float = 5.0,
         birth_by_shrinking: int = 3,
         fly_ash_ratio: float = 0.0,
-        shrink_birth: int | None = None,
     ) -> CreepShrink:
         '''创建或修改收缩徐变特性
 
@@ -418,7 +417,6 @@ class CreepShrinkManager(BasicManager):
             type_coeff (float): 水泥种类系数
             birth_by_shrinking (int): 收缩开始时的混凝土龄期（天数）
             fly_ash_ratio (float): 粉煤灰添加量（百分比），0~50
-            shrink_birth (int|None): birth_by_shrinking 的旧写法，传了就覆盖上面的值
 
         Returns:
             创建的 CreepShrink 对象
@@ -426,8 +424,6 @@ class CreepShrinkManager(BasicManager):
         Raises:
             RuntimeError: 创建失败时抛出
         '''
-        if shrink_birth is not None:
-            birth_by_shrinking = shrink_birth
         ok, err = osis_creep_shrink(
             nNO=no,
             strName=name,

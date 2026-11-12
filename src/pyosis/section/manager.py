@@ -331,18 +331,20 @@ class Section:
 
     def set_mesh(
             self,
+            part_id: int = 1,
             mesh_method: Literal[0, 1] = 0,
             mesh_size: float = 0.0,
-            part_id: int = 1,
     ) -> None:
         '''设置截面网格（适用于混凝土截面、模板组合截面与自定义组合截面）。
 
+        形参顺序与命令流 SectionMesh, Index, PartID, MeshMethod, MeshSize 一致。
+
         Args:
+            part_id (int): 分部编号，混凝土截面输入 1，模板组合截面输入 2
             mesh_method (int): 网格划分方式
                 * 0 = 自动划分
                 * 1 = 手动划分
             mesh_size (float): 网格划分尺寸，在 mesh_method=1 时起作用
-            part_id (int): 分部编号，混凝土截面输入 1，模板组合截面输入 2
 
         Raises:
             RuntimeError: 设置失败时抛出
@@ -437,24 +439,41 @@ class Section:
 
     def add_part(
         self,
-        type: Literal["POLYGON", "LINE"],
-        *args: float,
+        part_index: int,
+        part_mat_type: Literal["Concrete", "Steel"],
+        part_e: float,
+        part_mu: float,
+        part_density: float,
+        part_geo_type: Literal["Polygon", "Line"],
+        *matrices: str,
     ) -> None:
-        """添加或修改组合截面 Part（按类型分发）
+        """添加或修改组合截面 Part（按几何类型分发）
+
+        形参顺序与命令流
+        SectionPart, SecIndex, PartIndex, PartMatType, PartE, PartMu,
+        PartDensity, PartGeoType, Matrices... 一致。
 
         Args:
-            type: Part 类型（大小写不敏感）
-                * POLYGON = 多边形
-                * LINE    = 折线
-            args: 剩余参数透传给对应子方法
+            part_index: Part 编号
+            part_mat_type: 分部材料类型
+                * Concrete = 混凝土，可布置钢筋
+                * Steel = 钢，不可布置钢筋
+            part_e: 分部弹性模量
+            part_mu: 分部泊松比
+            part_density: 分部重度
+            part_geo_type: 分部几何类型（大小写不敏感）
+                * Polygon = 面域（后面 2 个矩阵：ContourMatrix, ContourWidth）
+                * Line    = 线域（后面 3 个矩阵：PointMatrix, LineMatrix, WidthMatrix）
+            matrices: 几何矩阵，数量由 part_geo_type 决定
         """
-        key = str(type).upper()
+        key = str(part_geo_type).upper()
+        head = (part_index, part_mat_type, part_e, part_mu, part_density)
         if key == "POLYGON":
-            self.add_composite_part_polygon(*args)
+            self.add_composite_part_polygon(*head, *matrices)
         elif key == "LINE":
-            self.add_composite_part_line(*args)
+            self.add_composite_part_line(*head, *matrices)
         else:
-            raise ValueError(f"未知 Part 类型: {type!r}，支持 POLYGON/LINE")
+            raise ValueError(f"未知 Part 类型: {part_geo_type!r}，支持 POLYGON/LINE")
 
     # ── 组合截面材料 ──────────────────────────
 

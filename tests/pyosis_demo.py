@@ -58,7 +58,7 @@ def setup_control(engine: OSISEngine) -> None:
     engine.control.set_calc_relaxation(1)
     engine.control.set_mod_loc_coor(0)
     engine.control.set_inc_tendon(1)
-    engine.control.set_nonlinear(0, 0)
+    engine.control.set_nonlinear(0)
     engine.control.set_line_search(0)
     engine.control.set_auto_time_step(0)
     engine.control.set_substitution_steps(1, 20)
@@ -113,7 +113,7 @@ def build_sections(engine: OSISEngine) -> None:
                      (4, "墩顶截面"), (5, "加厚截面")]:
         engine.section.create(no, name, "SMALLBOX", "Middle", 1.4, 1.65, 1.2, 0.0, 1.0, 0.18, 0.2, 0.2, 3.5, 0.18, 0.25, 0.2, 0.15, 0.25, 0.05, 0.05, 0, 0.0, 0.0, 0.05)
         engine.section.get(no).set_offset("Middle", 0.0, "Top", 0.0)
-        engine.section.get(no).set_mesh(0, 0.1)
+        engine.section.get(no).set_mesh(1, 0, 0.1)
 
 
 # ===== 6. NODE 节点 =====

@@ -2723,7 +2723,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     # 设置偏移量
     sec1.set_offset("Middle", 0.0000, "Top", 0.0000)
     # 设置网格
-    sec1.set_mesh(0, 0.1000)
+    sec1.set_mesh(1, 0, 0.1000)
 
     # 点号、x、y 按 OSIS/截面默认应力点编号修改
     sec1.set_stress_point(1, 1, 0.0, 0.0)
@@ -2737,7 +2737,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     )
     _expect_attr(sec2, "name", "墩顶截面")
     sec2.set_offset("Middle", 0.0000, "Top", 0.0000)
-    sec2.set_mesh(0, 0.1000)
+    sec2.set_mesh(1, 0, 0.1000)
 
     # 截面 3: 加厚截面
     sec3 = section.create(71,"加厚截面","HOLLOWSLAB","MIDDLE",
@@ -2748,7 +2748,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     )
     _expect_attr(sec3, "name", "加厚截面")
     sec3.set_offset("Middle", 0.0000, "Top", 0.0000)
-    sec3.set_mesh(0, 0.1000)
+    sec3.set_mesh(1, 0, 0.1000)
 
     # 截面 4: 墩顶截面
     sec4 = section.create(72,"墩顶截面","HOLLOWSLAB", "MIDDLE",
@@ -2759,7 +2759,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     )
     _expect_attr(sec4, "name", "墩顶截面")
     sec4.set_offset("Middle", 0.0000, "Top", 0.0000)
-    sec4.set_mesh(0, 0.1000)
+    sec4.set_mesh(1, 0, 0.1000)
 
     # 截面 5: 加厚截面
     sec5 = section.create(73,"加厚截面","HOLLOWSLAB", "MIDDLE",
@@ -2770,7 +2770,7 @@ def build_sections(engine: OSISEngine, mat_nos: list[int]) -> list[int]:
     )
     _expect_attr(sec5, "name", "加厚截面")
     sec5.set_offset("Middle", 0.0000, "Top", 0.0000)
-    sec5.set_mesh(0, 0.1000)
+    sec5.set_mesh(1, 0, 0.1000)
 
     # 钢筋
     mat_no = mat_nos[1]  # 钢筋材料

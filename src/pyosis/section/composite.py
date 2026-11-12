@@ -252,6 +252,7 @@ def osis_section_part_polygon(
     PartDensity: float,
     PartGeoType: Literal["Polygon"],
     ContourMatrix: str,
+    ContourWidth: str,
 ):
     """定义或修改自定义组合截面的面域Part信息。
     Args:
@@ -263,6 +264,7 @@ def osis_section_part_polygon(
         PartDensity：分部重度
         PartGeoType：分部几何类型，=Polygon为面域
         ContourMatrix：轮廓点矩阵，大小为n*3，n为点的个数，第一列为点所在的轮廓线编号，第二列为点的x坐标，第三列为点的y坐标
+        ContourWidth：轮廓线宽度矩阵，大小为n*1，n为轮廓线数量
     Returns:
         tuple (bool, str): 返回一个元组，包含：
             - bool: 操作是否成功

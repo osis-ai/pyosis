@@ -221,8 +221,7 @@ shape = engine.tendon.shape.create_arc3d(
 
 # 活载：等级 -> 车道 -> 工况
 engine.live.grade.create_highway("公路I级", code="JTGD60_2015", live_load_type="HIGHWAY_I")
-engine.live.lane.create_ve("车道", length=19.1, wheel=1.8, orientation=1,
-                           ref=0, ref_elems="主梁单元", offset_y=0.0, offset_z=0.0)
+engine.live.lane.create_ve("车道", 19.1, 1.8, 1, 0, "主梁单元", 0.0, 0.0)
 lc = engine.live.case.create("车道荷载包络", code="JTGD60_2015", sub_cmb_type=1)
 lc.create_sub("车道荷载工况1", "公路I级", scalar=0.75, calc_mu=True,
               bridge_type="CUSTOM", mu_params=[6.586960], lane_names=["车道"])
@@ -467,7 +466,7 @@ engine.control.set_calc_shear(True)
 engine.control.set_calc_relaxation(True)
 engine.control.set_mod_loc_coor(False)
 engine.control.set_inc_tendon(True)
-engine.control.set_nonlinear(geom=False, link=False)
+engine.control.set_nonlinear(geom=False)
 
 # 截面
 engine.section.create_circle(no=1, name="圆形截面1", d=0.219, tw=0.012)

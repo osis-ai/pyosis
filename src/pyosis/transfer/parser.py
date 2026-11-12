@@ -10,7 +10,6 @@
     - 分号分隔的多条命令
     - 空行
     - *dim / 矩阵赋值（kind=matrix_dim / matrix_assign）
-    - OSIS 粘连命令拆分（如 BothSectionOffset → Both + SectionOffset）
 """
 
 from __future__ import annotations
@@ -20,9 +19,6 @@ from dataclasses import dataclass
 from typing import Iterator, List
 
 from .split import split_cmd, split_commands
-
-# OSIS 导出时将下一条命令名粘在上一个字段末尾的情况（如 BothSectionOffset）
-_GLUED_TAIL_COMMANDS = ("SectionOffset",)
 
 # 矩阵赋值命令正则表达式
 MATRIX_ASSIGN_RE = re.compile(r"^(\w+)\[([\d,\s]+)\]\s*=\s*(.+)$")
@@ -64,46 +60,6 @@ def _join_continuation_lines(lines: List[str]) -> List[str]:
     if buf:
         result.append(buf.strip().rstrip(";"))
     return result
-
-
-def _split_glued_command_fields(fields: List[str]) -> List[List[str]]:
-    """将粘连字段拆成多条命令的 fields 列表。
-
-    例: SteelPlate,...,BothSectionOffset,50,... →
-        [SteelPlate,...,Both] + [SectionOffset,50,...]
-    """
-    if not fields:
-        return [fields]
-
-    groups: List[List[str]] = []
-    current = list(fields)
-
-    while current:
-        split_at: int | None = None
-        tail_cmd: str | None = None
-        prefix: str | None = None
-
-        for i, field in enumerate(current):
-            for tail in _GLUED_TAIL_COMMANDS:
-                if len(field) > len(tail) and field.endswith(tail):
-                    split_at = i
-                    tail_cmd = tail
-                    prefix = field[: -len(tail)]
-                    break
-            if split_at is not None:
-                break
-
-        if split_at is None:
-            groups.append(current)
-            break
-
-        head = current[:split_at]
-        if prefix:
-            head.append(prefix)
-        groups.append(head)
-        current = [tail_cmd] + current[split_at + 1 :]  # type: ignore[list-item]
-
-    return groups
 
 
 # 去除一行内的 // 注释（保留 // 之前的有效命令部分）
@@ -178,12 +134,8 @@ def _parse_one_command(source: str) -> List[ParsedCommand]:
         ]
 
     result: List[ParsedCommand] = []
-    # 处理粘连命令
-    for group in _split_glued_command_fields(fields):
-        if not group:
-            continue
-        sub_source = ",".join(group)
-        result.append(_make_parsed_command(group, sub_source))
+    if fields:
+        result.append(_make_parsed_command(fields, source))
     return result
 
 

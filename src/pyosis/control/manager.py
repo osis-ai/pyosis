@@ -288,14 +288,13 @@ class ControlManager:
 
     # ── 非线性分析 ──────────────────────────────
 
-    def set_nonlinear(self, geom: Literal[0,1] = 0, link: Literal[0,1] | None = None) -> None:
+    def set_nonlinear(self, geom: Literal[0,1] = 0) -> None:
         '''设置非线性分析控制开关
 
-        非线性连接单元由软件在转换时强制考虑，link 参数已废弃、不再下发。
+        非线性连接单元由软件在转换时强制考虑。
 
         Args:
             geom (int): 是否打开几何非线性（大位移大转角），1=开，0=关
-            link (int): 已废弃，仅为兼容旧调用保留
 
         Returns:
             None

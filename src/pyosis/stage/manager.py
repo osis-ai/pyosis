@@ -264,9 +264,12 @@ class Stage:
         self,
         op: Literal[1, 0],
         type: Literal[1, 0],
-        group_name: str
+        group_name: str,
+        pos: int | None = None,
     ) -> None:
         """通过边界组激活/钝化边界
+
+        形参顺序与命令流 StgBd, Index, OP, type, grp, pos 一致。
 
         Args:
             op (int): 操作
@@ -276,11 +279,14 @@ class Stage:
                 * 1 = 激活
                 * 0 = 钝化
             group_name (str): 待操作的边界组名称
-            
+            pos (int|None): 变形位置，缺省时不下发
+                * 1 = 变形前（默认）
+                * 0 = 变形后
+
         Raises:
             RuntimeError: 操作失败时抛出异常
         """
-        ok, err = osis_stage_boundary(self.no, op, type, group_name)
+        ok, err = osis_stage_boundary(self.no, op, type, group_name, pos)
         if not ok:
             raise RuntimeError(f"阶段 {self.no} 定义边界组 {group_name} 失败: {err}")
 
