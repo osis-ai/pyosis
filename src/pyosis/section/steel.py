@@ -245,7 +245,7 @@ def osis_section_steel_custom_plate(Index: int, Name: str, Type: Literal["STEELC
 @REGISTRY.register("SteelPlate")
 def osis_steel_plate(Index: int, PlateID: int, PlateType: Literal["Top", "Bottom", "Web"],
                      StartX: float, StartY: float, EndX: float, EndY: float, Thickness: float):
-    """定义或修改自定义钢梁截面的板件。
+    """定义或修改自定义钢梁截面的母板。
 
     Args:
         Index (int): 截面编号。
@@ -259,6 +259,102 @@ def osis_steel_plate(Index: int, PlateID: int, PlateType: Literal["Top", "Bottom
         EndX (float): 板件终点x坐标。
         EndY (float): 板件终点y坐标。
         Thickness (float): 板件厚度，大于 0。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
+@REGISTRY.register("SteelPlate")
+def osis_steel_plate_detail(Index: int, PlatePosition: str,
+                            StartX: float, StartY: float, EndX: float, EndY: float,
+                            Thickness: float, IsSymmetric: Literal[0, 1],
+                            RibStartPosition: Literal[0, 1], RibStartDistance: float,
+                            RibLocation: Literal["Left", "Right", "Both"]):
+    """定义或修改自定义钢梁截面的板件（母板定义完成后的逐板参数）。
+
+    Args:
+        Index (int): 截面编号。
+        PlatePosition (str): 板件所在位置。
+            * 顶板：TopFlange、TopFlange1~TopFlange10
+            * 斜顶板：TopFlangeInclined、TopFlangeInclined1~TopFlangeInclined10
+            * 底板：BottomFlange、BottomFlange1~BottomFlange10
+            * 斜底板：BottomFlangeInclined、BottomFlangeInclined1~BottomFlangeInclined10
+            * 边腹板：SideWeb、SideWebL、SideWebR
+            * 中腹板：MiddleWeb、MiddleWeb1~MiddleWeb10
+            * 无加劲肋的板件：PlateWithoutRib
+        StartX (float): 板件起始点x坐标。
+        StartY (float): 板件起始点y坐标。
+        EndX (float): 板件终点x坐标。
+        EndY (float): 板件终点y坐标。
+        Thickness (float): 板件厚度。
+        IsSymmetric (int): 板件是否关于 y 轴对称，1=对称，0=不对称。
+        RibStartPosition (int): 加劲肋起始位置，1=从起点开始布置，0=从终点开始布置。
+        RibStartDistance (float): 加劲肋起始位置与板件端点的距离。
+        RibLocation (str): 加劲肋布置位置。
+            * 非中腹板的一般板件：以起点到终点的线段为基准，Left=左侧，Right=右侧，不可选 Both
+            * 中腹板：加劲肋在腹板两侧布置的绝对位置，与起止点无关
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
+@REGISTRY.register("SteelPlateDel")
+def osis_steel_plate_del(Index: int, PlateID: int):
+    """删除自定义钢梁截面的母板。
+
+    Args:
+        Index (int): 截面编号。
+        PlateID (int): 母板编号。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
+@REGISTRY.register("RibLayoutC")
+def osis_rib_layout_c(Index: int, PlateID: int, LayoutID: int, RibName: str,
+                      RibStartPosition: Literal[0, 1],
+                      RibLocation: Literal["Left", "Right", "Both"],
+                      *layout: Any):
+    """定义或修改自定义钢梁截面的加劲肋布置。
+
+    Args:
+        Index (int): 截面编号。
+        PlateID (int): 母板编号。
+        LayoutID (int): 加劲肋布置信息编号。
+        RibName (str): 加劲肋名称。
+        RibStartPosition (int): 加劲肋布置参考点，1=从起点开始布置，0=从终点开始布置。
+        RibLocation (str): 以起点到终点的线段为基准，Left=左侧，Right=右侧，Both=双侧。
+        *layout: 展平的 (布置间距, 布置次数) 序列：
+            LayoutDis1, LayoutNum1, ..., LayoutDisi, LayoutNumi。
+
+    Returns:
+        tuple (bool, str): 返回一个元组，包含：
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+
+@REGISTRY.register("RibLayoutCDel")
+def osis_rib_layout_c_del(Index: int, PlateID: int, LayoutID: int):
+    """删除自定义钢梁截面板件上的加劲肋布置。
+
+    Args:
+        Index (int): 截面编号。
+        PlateID (int): 母板编号。
+        LayoutID (int): 加劲肋布置信息编号。
 
     Returns:
         tuple (bool, str): 返回一个元组，包含：

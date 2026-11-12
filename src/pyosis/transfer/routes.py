@@ -95,6 +95,9 @@ ROUTES = {
     "RibLayout": ("chain", "engine.section.get", "add_rib_layout", 0),
     "RibLayoutDel": ("chain", "engine.section.get", "delete_rib_layout", 0),
     "SteelPlate": ("chain", "engine.section.get", "add_steel_plate", 0),
+    "SteelPlateDel": ("chain", "engine.section.get", "delete_steel_plate", 0),
+    "RibLayoutC": ("chain", "engine.section.get", "add_rib_layout_c", 0),
+    "RibLayoutCDel": ("chain", "engine.section.get", "delete_rib_layout_c", 0),
 
     # ─── NODE ───
     "Node": "engine.node.create",

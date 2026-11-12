@@ -138,6 +138,44 @@ def test_pre_tendon_has_no_pipe_placeholder():
     ], lines
 
 
+# ── 自定义钢梁截面（参数板）────────────────────────────────────
+
+def test_steel_plate_mother_form():
+    """SteelPlate 母板形式: PlateID, Type, 几何, 厚度"""
+    lines = _gen("SteelPlate,2,1,Top,0,0,1,0,0.02;\n")
+    assert lines == [
+        'engine.section.get(2).add_steel_plate(1, "Top", 0, 0, 1, 0, 0.02)'
+    ], lines
+
+
+def test_steel_plate_detail_form():
+    """SteelPlate 板件形式: PlatePosition 开头，尾部带对称/加劲肋参数"""
+    lines = _gen("SteelPlate,2,TopFlange,0,0,1,0,0.02,1,1,0.05,Left;\n")
+    assert lines == [
+        'engine.section.get(2).add_steel_plate("TopFlange", 0, 0, 1, 0, '
+        '0.02, 1, 1, 0.05, "Left")'
+    ], lines
+
+
+def test_steel_plate_del():
+    lines = _gen("SteelPlateDel,2,1;\n")
+    assert lines == ["engine.section.get(2).delete_steel_plate(1)"], lines
+
+
+def test_rib_layout_c():
+    """RibLayoutC 的间距/次数对原样展开"""
+    lines = _gen("RibLayoutC,2,1,3,R1,1,Both,0.2,3,0.3,2;\n")
+    assert lines == [
+        'engine.section.get(2).add_rib_layout_c(1, 3, "R1", 1, "Both", '
+        "0.2, 3, 0.3, 2)"
+    ], lines
+
+
+def test_rib_layout_c_del():
+    lines = _gen("RibLayoutCDel,2,1,3;\n")
+    assert lines == ["engine.section.get(2).delete_rib_layout_c(1, 3)"], lines
+
+
 # ── 编码 ──────────────────────────────────────────────────────
 
 def test_read_utf8_out(tmp_path=None):

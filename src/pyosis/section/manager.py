@@ -49,6 +49,10 @@ from .steel import (
     osis_section_steel_custom,
     osis_section_steel_custom_plate,
     osis_steel_plate,
+    osis_steel_plate_detail,
+    osis_steel_plate_del,
+    osis_rib_layout_c,
+    osis_rib_layout_c_del,
 )
 from .shaped_steel import (
     osis_section_shaped_steel_l,
@@ -1101,40 +1105,149 @@ class Section:
 
     def add_steel_plate(
             self,
-            plate_id: int,
-            plate_type: Literal["Top", "Bottom", "Web"],
-            start_x: float,
-            start_y: float,
-            end_x: float,
-            end_y: float,
-            thickness: float,
+            plate_id_or_position: int | str,
+            *args: Any,
     ) -> None:
-        """定义或修改自定义钢梁截面的板件。
+        """定义或修改自定义钢梁截面的母板 / 板件。
+
+        命令流 `SteelPlate` 有两种字段组合，用第一个字段区分：
+
+        * 母板（PlateID 为数字）::
+
+            SteelPlate, Index, PlateID, Type, StartX, StartY, EndX, EndY, Thickness
+
+        * 板件（PlatePosition 为板件位置名）::
+
+            SteelPlate, Index, PlatePosition, StartX, StartY, EndX, EndY,
+                       Thickness, IsSymmetric, RibStartPosition,
+                       RibStartDistance, RibLocation
 
         Args:
-            plate_id (int): 板件编号，大于 0，同一截面内唯一；已存在的编号表示修改
-            plate_type (str): 板件类型
-                * Top = 顶板
-                * Bottom = 底板
-                * Web = 腹板
-            start_x (float): 板件起始点x坐标。
-            start_y (float): 板件起始点y坐标。
-            end_x (float): 板件终点x坐标。
-            end_y (float): 板件终点y坐标。
-            thickness (float): 板件厚度，大于 0。
+            plate_id_or_position: 母板形式为板件编号（int）；板件形式为
+                板件位置（str，如 "TopFlange" / "SideWeb" / "MiddleWeb1"）。
+            *args: 其余字段按命令流原序：
+                - 母板: (plate_type, start_x, start_y, end_x, end_y, thickness)
+                - 板件: (start_x, start_y, end_x, end_y, thickness,
+                  is_symmetric, rib_start_position, rib_start_distance,
+                  rib_location)
 
         Raises:
+            ValueError: 字段个数与形式不匹配
             RuntimeError: 添加失败时抛出
-
-        Note:
-            加劲肋不在这里定义，用 add_rib_layout。
         """
-        ok, err = osis_steel_plate(
-            self.no, plate_id, plate_type,
-            start_x, start_y, end_x, end_y, thickness,
+        if isinstance(plate_id_or_position, int):
+            plate_id = plate_id_or_position
+        elif (
+            isinstance(plate_id_or_position, str)
+            and plate_id_or_position.strip().isdigit()
+        ):
+            plate_id = int(plate_id_or_position)
+        else:
+            plate_id = None
+
+        if plate_id is not None:
+            if len(args) != 6:
+                raise ValueError(
+                    "母板形式需要 6 个参数: "
+                    "(plate_type, start_x, start_y, end_x, end_y, thickness)"
+                )
+            plate_type, start_x, start_y, end_x, end_y, thickness = args
+            ok, err = osis_steel_plate(
+                self.no, plate_id, plate_type,
+                start_x, start_y, end_x, end_y, thickness,
+            )
+            if not ok:
+                raise RuntimeError(f"添加截面 {self.no} 母板 {plate_id} 失败: {err}")
+            return
+
+        if len(args) != 9:
+            raise ValueError(
+                "板件形式需要 9 个参数: "
+                "(start_x, start_y, end_x, end_y, thickness, is_symmetric, "
+                "rib_start_position, rib_start_distance, rib_location)"
+            )
+        ok, err = osis_steel_plate_detail(
+            self.no, str(plate_id_or_position), *args,
         )
         if not ok:
-            raise RuntimeError(f"添加截面 {self.no} 板件 {plate_id} 失败: {err}")
+            raise RuntimeError(
+                f"添加截面 {self.no} 板件 {plate_id_or_position} 失败: {err}"
+            )
+
+    def delete_steel_plate(self, plate_id: int) -> None:
+        """删除自定义钢梁截面的母板。
+
+        Args:
+            plate_id (int): 母板编号。
+
+        Raises:
+            RuntimeError: 删除失败时抛出
+        """
+        ok, err = osis_steel_plate_del(self.no, plate_id)
+        if not ok:
+            raise RuntimeError(f"删除截面 {self.no} 母板 {plate_id} 失败: {err}")
+
+    def add_rib_layout_c(
+            self,
+            plate_id: int,
+            layout_id: int,
+            rib_name: str,
+            rib_start_position: Literal[0, 1],
+            rib_location: Literal["Left", "Right", "Both"],
+            *layout: Any,
+    ) -> None:
+        """定义或修改自定义钢梁截面板件上的加劲肋布置。
+
+        命令流：RibLayoutC, Index, PlateID, LayoutID, RibName,
+        RibStartPosition, RibLocation, LayoutDis1, LayoutNum1, ..., LayoutDisi, LayoutNumi
+
+        Args:
+            plate_id: 母板编号
+            layout_id: 加劲肋布置信息编号
+            rib_name: 加劲肋名称
+            rib_start_position: 布置参考点，1=从起点开始，0=从终点开始
+            rib_location: 以起点到终点的线段为基准，Left=左侧，Right=右侧，Both=双侧
+            *layout: (布置间距, 布置次数) 序列。可直接展平传
+                (d1, n1, d2, n2, ...)，也可传 [(d1, n1), (d2, n2), ...]。
+
+        Raises:
+            ValueError: 间距/次数不是成对出现
+            RuntimeError: 添加失败时抛出
+        """
+        flat: list[Any] = []
+        stack = list(layout)
+        while stack:
+            item = stack.pop(0)
+            if isinstance(item, (list, tuple)):
+                stack[0:0] = list(item)
+            else:
+                flat.append(item)
+        if len(flat) % 2:
+            raise ValueError("加劲肋布置需要 (间距, 次数) 成对出现")
+        ok, err = osis_rib_layout_c(
+            self.no, plate_id, layout_id, rib_name,
+            rib_start_position, rib_location, *flat,
+        )
+        if not ok:
+            raise RuntimeError(
+                f"添加截面 {self.no} 母板 {plate_id} 加劲肋布置 {layout_id} 失败: {err}"
+            )
+
+    def delete_rib_layout_c(self, plate_id: int, layout_id: int) -> None:
+        """删除自定义钢梁截面板件上的加劲肋布置。
+
+        Args:
+            plate_id (int): 母板编号
+            layout_id (int): 加劲肋布置信息编号
+
+        Raises:
+            RuntimeError: 删除失败时抛出
+        """
+        ok, err = osis_rib_layout_c_del(self.no, plate_id, layout_id)
+        if not ok:
+            raise RuntimeError(
+                f"删除截面 {self.no} 母板 {plate_id} 加劲肋布置 {layout_id} 失败: {err}"
+            )
 
     def renumber(self, new_no: int) -> None:
         '''修改截面编号

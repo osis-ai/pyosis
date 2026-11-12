@@ -85,6 +85,34 @@ def test_section_part_param_order():
     CAPTURED.clear()
 
 
+def test_custom_steel_plate_commands():
+    """SteelPlate 两种形态、SteelPlateDel、RibLayoutC/RibLayoutCDel 字段序"""
+    sec = _section(2)
+    with capture(
+        sm,
+        "osis_steel_plate",
+        "osis_steel_plate_detail",
+        "osis_steel_plate_del",
+        "osis_rib_layout_c",
+        "osis_rib_layout_c_del",
+    ):
+        sec.add_steel_plate(1, "Top", 0.0, 0.0, 1.0, 0.0, 0.02)
+        sec.add_steel_plate(
+            "TopFlange", 0.0, 0.0, 1.0, 0.0, 0.02, 1, 1, 0.05, "Left",
+        )
+        sec.add_rib_layout_c(1, 3, "R1", 1, "Both", 0.2, 3, [(0.3, 2)])
+        sec.delete_rib_layout_c(1, 3)
+        sec.delete_steel_plate(1)
+    assert CAPTURED == [
+        "SteelPlate,2,1,Top,0.0,0.0,1.0,0.0,0.02;",
+        "SteelPlate,2,TopFlange,0.0,0.0,1.0,0.0,0.02,1,1,0.05,Left;",
+        "RibLayoutC,2,1,3,R1,1,Both,0.2,3,0.3,2;",
+        "RibLayoutCDel,2,1,3;",
+        "SteelPlateDel,2,1;",
+    ], CAPTURED
+    CAPTURED.clear()
+
+
 def test_shaped_steel_manual_and_catalog():
     m = _manager(sm.SectionManager, get=lambda n: n)
     with capture(sm, "osis_section_shaped_steel_l", "osis_section_shaped_steel_l_catalog"):
