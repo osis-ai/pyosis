@@ -138,8 +138,26 @@ def test_pre_tendon_has_no_pipe_placeholder():
     ], lines
 
 
-# ── 自定义钢梁截面（参数板）────────────────────────────────────
+# ── 材料 ──────────────────────────────────────────────────────
 
+def test_material_unassigned_grade_empty():
+    """无规范材料: Grade 缺省（空列），其余字段原序"""
+    lines = _gen("Mat,1,自定义混凝土,CONC,Unassigned,,,0.05;\n")
+    assert lines == [
+        'engine.material.create(1, "自定义混凝土", "CONC", "Unassigned", "", "", 0.05)'
+    ], lines
+
+
+def test_material_modify_para():
+    """MaterialMP 字段序与命令流一致"""
+    lines = _gen("MaterialMP,1,m,CONC,3.45e10,1.5e10,0.2,1e-5,25000,2550,20,18,1.8,1.5;\n")
+    assert lines == [
+        'engine.material.modify_para(1, "m", "CONC", 34500000000.0, '
+        '15000000000.0, 0.2, 1e-05, 25000, 2550, 20, 18, 1.8, 1.5)'
+    ], lines
+
+
+# ── 自定义钢梁截面（参数板）────────────────────────────────────
 def test_steel_plate_mother_form():
     """SteelPlate 母板形式: PlateID, Type, 几何, 厚度"""
     lines = _gen("SteelPlate,2,1,Top,0,0,1,0,0.02;\n")

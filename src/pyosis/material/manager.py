@@ -21,6 +21,7 @@ from .interface import (
     osis_material_prestressed,
     osis_material_rebar,
     osis_material_custom,
+    osis_material_modify_para,
     osis_material_del,
     osis_material_mod,
 )
@@ -219,8 +220,8 @@ class MaterialManager(BasicManager):
         self,
         no: int | None,
         name: str,
-        code: Literal["JTG3362_2018", "JTGD62_2004"],
-        grade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
+        code: Literal["JTG3362_2018", "JTGD62_2004", "GB50010_2002", "GB50010_2010", "Unassigned"],
+        grade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"] | str = "",
         crep_shrk: int | str = "",
         dmp: float = 0.05,
         strength_prog: str = None,
@@ -233,9 +234,12 @@ class MaterialManager(BasicManager):
             code: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
+                - GB50010_2002
+                - GB50010_2010
+                - Unassigned（无规范）
             grade: 材料等级牌号，可选值：
-                C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80
-            no: 材料编号，不指定时自动生成（取最大编号+1）
+                C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80；
+                选择 Unassigned（无规范）时缺省
             crep_shrk: 收缩徐变特性编号，可缺省
             dmp: 材料阻尼比
             strength_prog: 强度进展特性名称（StrengthPrg 定义），None 时不带该列
@@ -257,8 +261,12 @@ class MaterialManager(BasicManager):
         self,
         no: int | None,
         name: str,
-        code: Literal["JTGD64_2015"],
-        grade: Literal["Q235", "Q345", "Q390", "Q420"],
+        code: Literal["JTGD64_2015", "GB50017_2017", "GB50018_2002", "GBT50018_2025",
+                      "GB50017_2003", "GBJ17_1988", "JGJ99_2015", "JGJ99_1998",
+                      "JTJ025_86", "Unassigned"],
+        grade: Literal["Q235", "Q345", "Q345GJ", "Q355", "Q390", "Q420", "Q460", "Q550",
+                       "S280", "S350", "S550", "Grade3", "16Mn", "16Mnq", "15MnV",
+                       "15MnVq", "A3"] | str = "",
         dmp: float = 0.0,
 
     ) -> Material:
@@ -269,11 +277,19 @@ class MaterialManager(BasicManager):
             name: 材料名称
             code: 材料标准代码，可选值：
                 - JTGD64_2015
+                - GB50017_2017
+                - GB50018_2002
+                - GBT50018_2025
+                - GB50017_2003
+                - GBJ17_1988
+                - JGJ99_2015
+                - JGJ99_1998
+                - JTJ025_86
+                - Unassigned（无规范）
             grade: 材料等级牌号，根据材料类型可选：
-                - Q235
-                - Q345
-                - Q390
-                - Q420
+                - Q235, Q345, Q345GJ, Q355, Q390, Q420, Q460, Q550
+                - S280, S350, S550, Grade3, 16Mn, 16Mnq, 15MnV, 15MnVq, A3
+                - 选择 Unassigned（无规范）时缺省
             dmp: 材料阻尼比
 
         Returns:
@@ -296,8 +312,8 @@ class MaterialManager(BasicManager):
         self,
         no: int | None,
         name: str,
-        code: Literal["JTG3362_2018", "JTGD62_2004"],
-        grade: str,
+        code: Literal["JTG3362_2018", "JTGD62_2004", "Unassigned"],
+        grade: str = "",
         dmp: float = 0.0,
 
     ) -> Material:
@@ -309,10 +325,12 @@ class MaterialManager(BasicManager):
             code: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
+                - Unassigned（无规范）
             grade: 材料等级牌号，根据材料标准可选：
                 - JTG3362_2018: Strand1720, Strand1860, Strand1960, Wire1470, Wire1570,
                   Wire1770, Wire1860, Rebar785, Rebar930, Rebar1080
                 - JTGD62_2004: Strand1860, Wire1670, Wire1770, Rebar785, Rebar930
+                - 选择 Unassigned（无规范）时缺省
             dmp: 材料阻尼比
 
         Returns:
@@ -335,8 +353,9 @@ class MaterialManager(BasicManager):
         self,
         no: int | None,
         name: str,
-        code: Literal["JTG3362_2018", "JTGD62_2004"],
-        grade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"],
+        code: Literal["JTG3362_2018", "JTGD62_2004", "Unassigned"],
+        grade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"]
+                | Literal["R235", "HRB335", "HRB400", "KL400"] | str = "",
         dmp: float = 0.0,
     ) -> Material:
         """创建钢筋材料。
@@ -347,9 +366,11 @@ class MaterialManager(BasicManager):
             code: 材料标准代码，可选值：
                 - JTG3362_2018
                 - JTGD62_2004
+                - Unassigned（无规范）
             grade: 材料等级牌号，根据材料类型可选（不按照规定填写可能会有错误）：
                 - JTG3362_2018: HPB300, HRB400, HRBF400, RRB400, HRB500
                 - JTGD62_2004: R235, HRB335, HRB400, KL400
+                - 选择 Unassigned（无规范）时缺省
             dmp: 材料阻尼比
 
         Returns:
@@ -414,6 +435,66 @@ class MaterialManager(BasicManager):
         )
         if not ok:
             raise RuntimeError(f"创建自定义材料 {no} 失败: {err}")
+        return self.get(no)
+
+    def modify_para(
+        self,
+        no: int | None,
+        op: str,
+        type: Literal["CONC", "STEEL", "PRESTRESSED", "REBAR"],
+        e: float,
+        g: float,
+        mu: float,
+        exp_coeff: float,
+        unit_weight: float,
+        density: float,
+        f_type1: float = 0.0,
+        f_type2: float = 0.0,
+        f_type3: float = 0.0,
+        f_type4: float = 0.0,
+    ) -> Material:
+        """修改已有材料数据（对应命令流 MaterialMP）。
+
+        用于在选定 Unassigned（无规范）后修改上一规范材料的弹性和设计数据。
+        形参顺序与命令流一致：
+        MaterialMP, Index, OP, Type, E, G, Mu, ExpCoeff, UnitWeight, Density,
+        fType1, fType2, fType3, fType4
+
+        Args:
+            no: 已有材料编号
+            op: 操作，m = 修改
+            type: 材料类型
+                - CONC = 混凝土
+                - STEEL = 钢材
+                - PRESTRESSED = 预应力材料
+                - REBAR = 普通钢筋
+            e: 弹性模量(Pa)
+            g: 剪切模量(Pa)
+            mu: 泊松比
+            exp_coeff: 线膨胀系数(1/摄氏度)
+            unit_weight: 容重(N/m3)
+            density: 质量密度(kg/m3)
+            f_type1: 第一个强度值
+            f_type2: 第二个强度值
+            f_type3: 第三个强度值
+            f_type4: 第四个强度值
+
+                混凝土 fck,fcd,ftk,ftd；钢材暂无(填0)；
+                预应力 fpk,fpd,fppd；钢筋 fsk,fsd,fssd
+
+        Returns:
+            修改后的材料对象
+
+        Raises:
+            RuntimeError: 修改失败时抛出异常
+        """
+        ok, err = osis_material_modify_para(
+            no, op, str(type).upper(),
+            e, g, mu, exp_coeff, unit_weight, density,
+            f_type1, f_type2, f_type3, f_type4,
+        )
+        if not ok:
+            raise RuntimeError(f"修改材料 {no} 参数失败: {err}")
         return self.get(no)
 
     def delete(self, no: int) -> None:

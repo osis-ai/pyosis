@@ -18,6 +18,7 @@ import pyosis.boundary.manager as bm
 import pyosis.dynamic.manager as dm
 import pyosis.live.manager as lvm
 import pyosis.load.manager as lm
+import pyosis.material.manager as mm
 import pyosis.property.strength_prog as sp
 import pyosis.section.manager as sm
 import pyosis.stability.manager as stm
@@ -54,6 +55,25 @@ def _manager(cls, **stub):
     for k, v in stub.items():
         setattr(obj, k, v)
     return obj
+
+
+# ── 材料 ──────────────────────────────────────────────────────
+
+def test_material_unassigned_and_modify_para():
+    """无规范材料 Grade 缺省；MaterialMP 字段序与命令流一致"""
+    m = _manager(mm.MaterialManager, get=lambda n: n)
+    with capture(mm, "osis_material_conc", "osis_material_modify_para"):
+        m.create_conc(1, "自定义混凝土", "Unassigned", "", "", 0.05)
+        m.modify_para(
+            1, "m", "CONC", 3.45e10, 1.5e10, 0.2, 1e-5, 25000.0, 2550.0,
+            20.0, 18.0, 1.8, 1.5,
+        )
+    assert CAPTURED == [
+        "Material,1,自定义混凝土,CONC,Unassigned,,,0.05;",
+        "MaterialMP,1,m,CONC,34500000000.0,15000000000.0,0.2,1e-05,"
+        "25000.0,2550.0,20.0,18.0,1.8,1.5;",
+    ], CAPTURED
+    CAPTURED.clear()
 
 
 # ── 截面 ──────────────────────────────────────────────────────

@@ -10,8 +10,8 @@ from ..core import REGISTRY
 
 @REGISTRY.register('Material')
 def osis_material_conc(nMat: int, strName: str, eMaterialType: Literal["CONC"],
-                       eCode: Literal["JTG3362_2018", "JTGD62_2004"],
-                       eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"],
+                       eCode: Literal["JTG3362_2018", "JTGD62_2004", "GB50010_2002", "GB50010_2010", "Unassigned"],
+                       eGrade: Literal["C15", "C20", "C25", "C30", "C35", "C40", "C45", "C50", "C55", "C60", "C65", "C70", "C75", "C80"] | str = "",
                        nCrepShrk: int | str = "", dDmp: float = 0.05, strStrengthPrg: str = None):
     """创建或修改混凝土材料
 
@@ -22,8 +22,12 @@ def osis_material_conc(nMat: int, strName: str, eMaterialType: Literal["CONC"],
         eCode (str): 材料标准代码，不区分大小写。可选值：
             * JTG3362_2018
             * JTGD62_2004
+            * GB50010_2002
+            * GB50010_2010
+            * Unassigned（无规范）
         eGrade (str): 材料等级牌号，不区分大小写。根据材料类型可选：
             * C15, C20, C25, C30, C35, C40, C45, C50, C55, C60, C65, C70, C75, C80
+            * 选择 Unassigned（无规范）时缺省
         nCrepShrk (int): 收缩徐变特性编号，可以缺省，缺省时设为 ""， 不缺省时设置为1
         dDmp (float): 材料阻尼比
         strStrengthPrg (str): 强度进展特性名称（StrengthPrg 定义），可缺省，缺省时不带该列
@@ -36,7 +40,14 @@ def osis_material_conc(nMat: int, strName: str, eMaterialType: Literal["CONC"],
     pass
 
 @REGISTRY.register('Material')
-def osis_material_steel(nMat: int, strName: str, eMaterialType: Literal["STEEL"], eCode: Literal["JTGD64_2015"], eGrade: Literal["Q235", "Q345", "Q390", "Q420"], dDmp: float):
+def osis_material_steel(nMat: int, strName: str, eMaterialType: Literal["STEEL"],
+                         eCode: Literal["JTGD64_2015", "GB50017_2017", "GB50018_2002", "GBT50018_2025",
+                                        "GB50017_2003", "GBJ17_1988", "JGJ99_2015", "JGJ99_1998",
+                                        "JTJ025_86", "Unassigned"],
+                         eGrade: Literal["Q235", "Q345", "Q345GJ", "Q355", "Q390", "Q420", "Q460", "Q550",
+                                         "S280", "S350", "S550", "Grade3", "16Mn", "16Mnq", "15MnV",
+                                         "15MnVq", "A3"] | str = "",
+                         dDmp: float = 0.0):
     """创建或修改钢材
 
     Args:
@@ -45,11 +56,19 @@ def osis_material_steel(nMat: int, strName: str, eMaterialType: Literal["STEEL"]
         eMaterialType (str): 材料类型，不区分大小写。固定为 STEEL
         eCode (str): 材料标准代码，可选值：
             * JTGD64_2015
+            * GB50017_2017
+            * GB50018_2002
+            * GBT50018_2025
+            * GB50017_2003
+            * GBJ17_1988
+            * JGJ99_2015
+            * JGJ99_1998
+            * JTJ025_86
+            * Unassigned（无规范）
         eGrade (str): 材料等级牌号，根据材料类型可选：
-            * Q235
-            * Q345
-            * Q390
-            * Q420
+            * Q235, Q345, Q345GJ, Q355, Q390, Q420, Q460, Q550
+            * S280, S350, S550, Grade3, 16Mn, 16Mnq, 15MnV, 15MnVq, A3
+            * 选择 Unassigned（无规范）时缺省
         dDmp (float): 材料阻尼比
 
     Returns:
@@ -60,7 +79,9 @@ def osis_material_steel(nMat: int, strName: str, eMaterialType: Literal["STEEL"]
     pass
 
 @REGISTRY.register('Material')
-def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["PRESTRESSED"], eCode: Literal["JTG3362_2018", "JTGD62_2004"], eGrade: str, dDmp: float):
+def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["PRESTRESSED"],
+                              eCode: Literal["JTG3362_2018", "JTGD62_2004", "Unassigned"],
+                              eGrade: str = "", dDmp: float = 0.0):
     """创建或修改预应力材料。
 
     Args:
@@ -70,10 +91,12 @@ def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["P
         eCode (str): 材料标准代码，可选值：
             * JTG3362_2018
             * JTGD62_2004
+            * Unassigned（无规范）
         eGrade (str): 材料等级牌号，根据材料类型可选：
-            * JTG3362_2018: Strand1720, Strand1860, Strand1960, Wire1470, Wire1570, 
+            * JTG3362_2018: Strand1720, Strand1860, Strand1960, Wire1470, Wire1570,
                   Wire1770, Wire1860, Rebar785, Rebar930, Rebar1080
             * JTGD62_2004: Strand1860, Wire1670, Wire1770, Rebar785, Rebar930
+            * 选择 Unassigned（无规范）时缺省
         dDmp (float): 材料阻尼比
 
     Returns:
@@ -84,8 +107,11 @@ def osis_material_prestressed(nMat: int, strName: str, eMaterialType: Literal["P
     pass
 
 @REGISTRY.register('Material')
-def osis_material_rebar(nMat: int, strName: str, eMaterialType: Literal["REBAR"], eCode: Literal["JTG3362_2018", "JTGD62_2004"], 
-                        eGrade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"] | Literal["R235", "HRB335", "HRB400", "KL400"], dDmp: float):
+def osis_material_rebar(nMat: int, strName: str, eMaterialType: Literal["REBAR"],
+                        eCode: Literal["JTG3362_2018", "JTGD62_2004", "Unassigned"],
+                        eGrade: Literal["HPB300", "HRB400", "HRBF400", "RRB400", "HRB500"]
+                                | Literal["R235", "HRB335", "HRB400", "KL400"] | str = "",
+                        dDmp: float = 0.0):
     """创建或修改普通钢筋材料
 
     Args:
@@ -95,9 +121,11 @@ def osis_material_rebar(nMat: int, strName: str, eMaterialType: Literal["REBAR"]
         eCode (str): 材料标准代码，可选值：
             * JTG3362_2018
             * JTGD62_2004
+            * Unassigned（无规范）
         eGrade (str): 材料等级牌号，根据材料类型可选（不按照规定填写可能会有错误）：
             * JTG3362_2018: HPB300, HRB400, HRBF400, RRB400, HRB500
             * JTGD62_2004: R235, HRB335, HRB400, KL400
+            * 选择 Unassigned（无规范）时缺省
         dDmp (float): 材料阻尼比
 
     Returns:
@@ -122,6 +150,41 @@ def osis_material_custom(nMat: int, strName: str, eMaterialType: Literal["CUSTOM
         dUnitWeight (float): 容重(N/m^3)
         dDensity (float): 质量密度(kg/m^3)
         dDmp (float): 材料阻尼比
+
+    Returns:
+        tuple (bool, str):
+            - bool: 操作是否成功
+            - str: 失败原因（如果操作失败）
+    """
+    pass
+
+@REGISTRY.register('MaterialMP')
+def osis_material_modify_para(nMat: int, strOP: str,
+                              eMaterialType: Literal["CONC", "STEEL", "PRESTRESSED", "REBAR"],
+                              dE: float, dG: float, dMu: float, dExpCoeff: float,
+                              dUnitWeight: float, dDensity: float,
+                              fType1: float = 0.0, fType2: float = 0.0,
+                              fType3: float = 0.0, fType4: float = 0.0):
+    """修改已有材料数据。
+
+    用于在选定 Unassigned（无规范）后修改上一规范材料的弹性和设计数据。
+
+    Args:
+        nMat (int): 已有材料编号
+        strOP (str): 操作，m = 修改
+        eMaterialType (str): 材料类型，不区分大小写。CONC/STEEL/PRESTRESSED/REBAR
+        dE (float): 弹性模量(Pa)
+        dG (float): 剪切模量(Pa)
+        dMu (float): 泊松比
+        dExpCoeff (float): 线膨胀系数(1/摄氏度)
+        dUnitWeight (float): 容重(N/m3)
+        dDensity (float): 质量密度(kg/m3)
+        fType1 (float): 第一个强度值
+        fType2 (float): 第二个强度值
+        fType3 (float): 第三个强度值
+        fType4 (float): 第四个强度值
+
+            混凝土 fck,fcd,ftk,ftd；钢材暂无(填0)；预应力 fpk,fpd,fppd；钢筋 fsk,fsd,fssd
 
     Returns:
         tuple (bool, str):

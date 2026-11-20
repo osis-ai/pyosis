@@ -70,6 +70,7 @@ ROUTES = {
 
     # ─── MATERIAL ───
     "Material": "engine.material.create",
+    "MaterialMP": "engine.material.modify_para",
     "MaterialDel": "engine.material.delete",
     "MaterialMod": "engine.material.renumber",
 
