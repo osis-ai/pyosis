@@ -364,7 +364,7 @@ engine.solve()
 
 ## 端到端示例
 
-见 [`tests/pyosis_demo.py`](tests/pyosis_demo.py):一个可运行的端到端示例,完成以下流程:
+见 [`tests/pyosis_demo.py`](../tests/pyosis/sdk/pyosis_demo.py):一个可运行的端到端示例,完成以下流程:
 
 - 通过 `OSISSolver` 直接启动求解器(无需 GUI)
 - 建模 25m 简支小箱梁示例(10 个 prep 模块)

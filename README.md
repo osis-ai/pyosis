@@ -371,7 +371,7 @@ engine.solve()
 
 ## End-to-End Demo
 
-See [`tests/pyosis_demo.py`](tests/pyosis_demo.py) for a runnable end-to-end example that:
+See [`tests/pyosis_demo.py`](../tests/pyosis/sdk/pyosis_demo.py) for a runnable end-to-end example that:
 
 - Starts the solver directly via `OSISSolver` (no GUI required)
 - Builds the 25m 简支小箱梁 example model (10 prep modules)
